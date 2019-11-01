@@ -32,3 +32,7 @@ In Visual Studio 2017, set the Default Processor Architecture to match the curre
 ## Running CPvC
 
 Once built, launch the application (set the `cpvc` project as the startup project for the solution) and create a new instance (File -> New...), or open an existing one (File -> Open...).
+
+## See also
+
+For more details about the code itself, see [this file](Code.md).
