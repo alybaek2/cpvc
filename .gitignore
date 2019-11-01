@@ -1,0 +1,16 @@
+.vs/
+cpvc/bin/
+cpvc/obj/
+cpvc-core/Debug/
+cpvc-core/x64/
+cpvc-core-clr/Release/
+cpvc-core-test/Debug/
+cpvc-core-test/x64/
+Debug/
+Release/
+packages/
+x64/
+roms/*.rom
+*.db
+*.user
+*.rom

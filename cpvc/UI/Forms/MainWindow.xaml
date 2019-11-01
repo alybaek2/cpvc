@@ -1,0 +1,151 @@
+﻿<Window x:Class="CPvC.UI.Forms.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:converters="clr-namespace:CPvC.UI.Converters"
+        mc:Ignorable="d"
+        Title="CPvC" Height="705.125" Width="784.535" Closing="Window_Closing" Loaded="Window_Loaded" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp" SizeToContent="WidthAndHeight" ResizeMode="NoResize" Icon="../Resources/cpvc.png">
+    <Window.Resources>
+        <converters:Ticks x:Key="ticksConverter" />
+        <converters:IsNotNull x:Key="isNotNullConverter" />
+        <converters:RunningIcon x:Key="runningIconConverter" />
+        <Style x:Key="MachineMenuItemStyle" TargetType="MenuItem">
+            <Setter Property="IsEnabled" Value="{Binding Machine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
+        </Style>
+        <Style x:Key="MachineButtonStyle" TargetType="Button">
+            <Setter Property="IsEnabled" Value="{Binding Machine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
+            <Style.Resources>
+                <Style TargetType="Image">
+                    <Style.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Style.Resources>
+        </Style>
+    </Window.Resources>
+    <Grid AllowDrop="True" Margin="0,0,0,0" Background="#FFF0F0F0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+        <Menu Height="30" Margin="0" VerticalAlignment="Top" VerticalContentAlignment="Center">
+            <MenuItem Header="File">
+                <MenuItem x:Name="_newMenuItem" Header="New..." Click="_newMenuItem_Click"/>
+                <MenuItem x:Name="_openMenuItem" Header="Open..." Click="_openMenuItem_Click"/>
+                <MenuItem x:Name="_closeMenuItem" Header="Close" Click="_closeMenuItem_Click" Style="{StaticResource MachineMenuItemStyle}"/>
+                <Separator/>
+                <MenuItem x:Name="_exitMenuItem" Header="Exit" Click="_exitMenuItem_Click"/>
+            </MenuItem>
+            <MenuItem x:Name="_cpvcMenuItem" Header="CPvC" Style="{StaticResource MachineMenuItemStyle}">
+                <MenuItem x:Name="_driveAMenuItem" Header="Drive A:..." Click="_driveAMenuItem_Click">
+                    <MenuItem.Icon>
+                        <Image Width="16" Height="16" Source="../Resources/floppy.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem x:Name="_driveBMenuItem" Header="Drive B:..." Click="_driveBMenuItem_Click">
+                    <MenuItem.Icon>
+                        <Image Width="16" Height="16" Source="../Resources/floppy.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem x:Name="_tapeMenuItem" Header="Tape..." Click="_tapeMenuItem_Click">
+                    <MenuItem.Icon>
+                        <Image Width="16" Height="16" Source="../Resources/tape16.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem x:Name="_pauseMenuItem" Header="Pause" Click="_pauseMenuItem_Click">
+                    <MenuItem.Icon>
+                        <Image Width="16" Height="16" Source="../Resources/pause16.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem x:Name="_resumeMenuItem" Header="Resume" Click="_resumeMenuItem_Click">
+                    <MenuItem.Icon>
+                        <Image Width="16" Height="16" Source="../Resources/resume16.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem x:Name="_resetMenuItem" Header="Reset" Click="_resetMenuItem_Click">
+                    <MenuItem.Icon>
+                        <Image Width="16" Height="16" Source="../Resources/reset16.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem x:Name="_addBookmarkMenuItem" Header="Add Bookmark" Click="_addBookmarkMenuItem_Click">
+                    <MenuItem.Icon>
+                        <Image Width="16" Height="16" Source="../Resources/bookmark16.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem x:Name="_previousBookmarkMenuItem" Header="Back to Previous Bookmark" Click="_previousBookmarkMenuItem_Click">
+                    <MenuItem.Icon>
+                        <Image Width="16" Height="16" Source="../Resources/prevbookmark16.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem x:Name="_jumpToBookmarkMenuItem" Header="Jump to Bookmark..." Click="_jumpToBookmarkMenuItem_Click"/>
+                <Separator/>
+                <MenuItem x:Name="_propertiesMenuItem" Header="Properties..." Click="_propertiesMenuItem_Click"/>
+            </MenuItem>
+            <MenuItem Header="Tools">
+                <MenuItem x:Name="_optionsMenuItem" Header="Options..." Click="_optionsMenuItem_Click"/>
+            </MenuItem>
+        </Menu>
+        <ToolBarTray x:Name="toolBarTray" Margin="0" VerticalAlignment="Top" Grid.Row="1" Background="#FFF0F0F0">
+            <ToolBar x:Name="toolBar" ToolBarTray.IsLocked="True" HorizontalContentAlignment="Left" VerticalAlignment="Center" VerticalContentAlignment="Center" Background="#FFF0F0F0">
+                <Button x:Name="_driveAButton" Height="25" VerticalAlignment="Top" Width="40" Click="_driveAButton_Click" Style="{StaticResource MachineButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="../Resources/floppy.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
+                        <TextBlock>A:</TextBlock>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="_driveBButton" Height="25" VerticalAlignment="Top" Width="40" Click="_driveBButton_Click" Style="{StaticResource MachineButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="../Resources/floppy.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
+                        <TextBlock>B:</TextBlock>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="_tapeButton" Height="25" VerticalAlignment="Top" Width="25" Click="_tapeButton_Click" Style="{StaticResource MachineButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="../Resources/tape16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
+                    </StackPanel>
+                </Button>
+                <Separator/>
+                <Button x:Name="_pauseButton" Height="25" VerticalAlignment="Top" Width="25" Click="_pauseButton_Click" Style="{StaticResource MachineButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="../Resources/pause16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="_resumeButton" Height="25" VerticalAlignment="Top" Width="25" Click="_resumeButton_Click" Style="{StaticResource MachineButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="../Resources/resume16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="_resetButton" Height="25" VerticalAlignment="Top" Width="25" Click="_resetButton_Click" Style="{StaticResource MachineButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="../Resources/reset16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
+                    </StackPanel>
+                </Button>
+                <Separator/>
+                <Button x:Name="_addBookmarkButton" Height="25" VerticalAlignment="Top" Width="25" Click="_addBookmarkButton_Click" Style="{StaticResource MachineButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="../Resources/bookmark16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="_seekToLastBookmarkButton" Height="25" VerticalAlignment="Top" Width="25" Click="_seekToLastBookmarkButton_Click" Style="{StaticResource MachineButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="../Resources/prevbookmark16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
+                    </StackPanel>
+                </Button>
+            </ToolBar>
+        </ToolBarTray>
+        <TabControl x:Name="_machineTabControl" Margin="5,5,5,5" Grid.Row="2" SelectionChanged="_machineTabControl_SelectionChanged" Height="576" Width="768"/>
+        <StatusBar x:Name="_statusBar" Height="30" Grid.Row="3" VerticalAlignment="Top">
+            <TextBlock x:Name="_clockTextBlock" TextWrapping="Wrap" Text="{Binding Machine.Core.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
+            <Separator/>
+            <Slider x:Name="_volumeSlider" Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding Machine.Core.Volume, Mode=TwoWay}" />
+        </StatusBar>
+    </Grid>
+</Window>

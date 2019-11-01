@@ -1,0 +1,28 @@
+﻿<Window x:Class="CPvC.UI.Forms.OptionsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CPvC.UI.Forms"
+        mc:Ignorable="d"
+        Title="Options" Height="294" Width="494" Loaded="Window_Loaded" ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
+    <Grid>
+        <Button x:Name="_okButton" Content="OK" HorizontalAlignment="Right" Margin="0,0,90,10" VerticalAlignment="Bottom" Width="75" Click="_okButton_Click"/>
+        <Button x:Name="_cancelButton" Content="Cancel" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="75" Click="_cancelButton_Click"/>
+        <TabControl HorizontalAlignment="Left" Height="200" Margin="10,10,0,0" VerticalAlignment="Top" Width="463">
+            <TabItem Header="Folders">
+                <Grid Margin="0,0,0,0" Background="#FFE5E5E5">
+                    <Label Content="Machines" HorizontalAlignment="Left" Margin="8,7,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.5,1.423"/>
+                    <TextBox x:Name="_machinesFolderTextBox" HorizontalAlignment="Left" Height="23" Margin="73,10,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="273" Grid.Column="1"/>
+                    <Button x:Name="_machinesFolderBrowseButton" Content="Browse..." HorizontalAlignment="Left" Margin="351,10,0,0" VerticalAlignment="Top" Width="75" Grid.Column="1" Click="_machinesFolderBrowseButton_Click"/>
+                    <Label Content="Discs" HorizontalAlignment="Left" Margin="8,32,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.5,1.423"/>
+                    <TextBox x:Name="_discsFolderTextBox" HorizontalAlignment="Left" Height="23" Margin="73,35,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="273"/>
+                    <Button x:Name="_discsFolderBrowseButton" Content="Browse..." HorizontalAlignment="Left" Margin="351,35,0,0" VerticalAlignment="Top" Width="75" Click="_discsFolderBrowseButton_Click"/>
+                    <Label Content="Tapes" HorizontalAlignment="Left" Margin="8,57,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.5,1.423"/>
+                    <TextBox x:Name="_tapesFolderTextBox" HorizontalAlignment="Left" Height="23" Margin="73,60,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="273"/>
+                    <Button x:Name="_tapesFolderBrowseButton" Content="Browse..." HorizontalAlignment="Left" Margin="351,60,0,0" VerticalAlignment="Top" Width="75" Click="_tapesFolderBrowseButton_Click"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
