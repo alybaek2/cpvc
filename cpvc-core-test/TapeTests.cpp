@@ -107,8 +107,8 @@ bool AddPauseTones(std::vector<Tone>& expectedTones, bool startingLevel, word pa
     if (pause > 0)
     {
         // Do 1ms at the opposite of the current level...
-        startingLevel = AddTone(expectedTones, startingLevel, 1, 3500);
-        startingLevel = AddTone(expectedTones, false, 1, (qword)(3500 * pause));
+        AddTone(expectedTones, startingLevel, 1, 3500);
+        startingLevel = AddTone(expectedTones, false, 1, (qword)(3500 * (qword)pause));
 
         return true;
     }

@@ -135,7 +135,7 @@ namespace CPvC
 
                 // Rewind from the current event to the most recent one with a bookmark...
                 HistoryEvent bookmarkEvent = machine.CurrentEvent;
-                while (bookmarkEvent != null && bookmarkEvent.Bookmark == null)
+                while (bookmarkEvent.Parent != null && bookmarkEvent.Bookmark == null)
                 {
                     bookmarkEvent = bookmarkEvent.Parent;
                 }
@@ -209,13 +209,20 @@ namespace CPvC
         {
             Stop();
 
-            // Create a system bookmark so the machine can resume from where it left off the next time it's loaded, but don't
-            // create one if we already have a system bookmark at the current event.
-            if (Core != null && CurrentEvent.Ticks != Core.Ticks || CurrentEvent.Bookmark == null || !CurrentEvent.Bookmark.System)
+            try
             {
-                Bookmark bookmark = GetBookmark(true);
-                HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(NextEventId(), bookmark.Ticks, DateTime.UtcNow, bookmark);
-                AddEvent(historyEvent, true);
+                // Create a system bookmark so the machine can resume from where it left off the next time it's loaded, but don't
+                // create one if we already have a system bookmark at the current event.
+                if (Core != null && CurrentEvent.Ticks != Core.Ticks || CurrentEvent.Bookmark == null || !CurrentEvent.Bookmark.System)
+                {
+                    Bookmark bookmark = GetBookmark(true);
+                    HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(NextEventId(), bookmark.Ticks, DateTime.UtcNow, bookmark);
+                    AddEvent(historyEvent, true);
+                }
+            }
+            finally
+            {
+                _file.Close();
             }
 
             if (_core != null)
@@ -229,8 +236,6 @@ namespace CPvC
                 Display.Dispose();
                 Display = null;
             }
-
-            _file.Close();
         }
 
         /// <summary>

@@ -49,18 +49,16 @@ bool FDD::Seek(const byte cylinder)
         return false;
     }
 
-    bool found = false;
     for (size_t t = 0; t < _disk._tracks.size(); t++)
     {
         if (_disk._tracks.at(t)._id == cylinder)
         {
-            found = true;
             _currentTrack = t;
-            break;
+            return true;
         }
     }
 
-    return true;
+    return false;
 }
 
 bool FDD::ReadId(CHRN& chrn)
