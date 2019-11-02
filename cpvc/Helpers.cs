@@ -3,7 +3,7 @@ using System.IO;
 
 namespace CPvC
 {
-    public class Helpers
+    static public class Helpers
     {
         /// <summary>
         /// Encodes a DateTime as a 64-bit integer.

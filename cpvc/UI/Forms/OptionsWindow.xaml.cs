@@ -16,7 +16,7 @@ namespace CPvC.UI.Forms
             Owner = owner;
         }
 
-        private void BrowseForFolder(TextBox textBox)
+        static private void BrowseForFolder(TextBox textBox)
         {
             using (System.Windows.Forms.FolderBrowserDialog folderDialog = new System.Windows.Forms.FolderBrowserDialog())
             {
@@ -32,7 +32,7 @@ namespace CPvC.UI.Forms
             }
         }
 
-        private void SetTextBox(TextBox textBox, string value)
+        static private void SetTextBox(TextBox textBox, string value)
         {
             if (Settings.MachinesFolder != null)
             {
@@ -40,7 +40,7 @@ namespace CPvC.UI.Forms
             }
         }
 
-        private void GetTextBox(TextBox textBox, Action<string> propSet)
+        static private void GetTextBox(TextBox textBox, Action<string> propSet)
         {
             if (!string.IsNullOrWhiteSpace(textBox.Text))
             {

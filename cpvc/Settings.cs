@@ -3,7 +3,7 @@
     /// <summary>
     /// Encapsulates all application-level settings.
     /// </summary>
-    public class Settings
+    static public class Settings
     {
         private const string _machinesFolderSettingName = "MachinesFolder";
         private const string _discsFolderSettingName = "DiscsFolder";

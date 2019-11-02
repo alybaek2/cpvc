@@ -9,62 +9,62 @@ namespace cpvc_test
 {
     public class MainWindowLogicTests
     {
-        private string AnyString()
+        static private string AnyString()
         {
             return It.IsAny<string>();
         }
 
-        private Expression<Func<IUserInterface, string>> PromptForFile()
+        static private Expression<Func<IUserInterface, string>> PromptForFile()
         {
             return userInterface => userInterface.PromptForFile(It.IsAny<FileTypes>(), It.IsAny<bool>());
         }
 
-        private Expression<Func<IUserInterface, string>> SelectItem()
+        static private Expression<Func<IUserInterface, string>> SelectItem()
         {
             return userInterface => userInterface.SelectItem(It.IsAny<List<string>>());
         }
 
-        private Expression<Action<IUserInterface>> ReportError()
+        static private Expression<Action<IUserInterface>> ReportError()
         {
             return userInterface => userInterface.ReportError(AnyString());
         }
 
-        private Expression<Action<IUserInterface>> AddMachine()
+        static private Expression<Action<IUserInterface>> AddMachine()
         {
             return userInterface => userInterface.AddMachine(It.IsAny<Machine>());
         }
 
-        private Expression<Func<IFileSystem, byte[]>> GetZipFileEntry(string filename)
+        static private Expression<Func<IFileSystem, byte[]>> GetZipFileEntry(string filename)
         {
             return fileSystem => fileSystem.GetZipFileEntry(filename, AnyString());
         }
 
-        private Expression<Func<IFileSystem, byte[]>> GetZipFileEntry(string filename, string entryName)
+        static private Expression<Func<IFileSystem, byte[]>> GetZipFileEntry(string filename, string entryName)
         {
             return fileSystem => fileSystem.GetZipFileEntry(filename, entryName);
         }
 
-        private Expression<Func<IFileSystem, List<string>>> GetZipFileEntryNames(string filename)
+        static private Expression<Func<IFileSystem, List<string>>> GetZipFileEntryNames(string filename)
         {
             return fileSystem => fileSystem.GetZipFileEntryNames(filename);
         }
 
-        private Expression<Func<IFileSystem, byte[]>> ReadBytes()
+        static private Expression<Func<IFileSystem, byte[]>> ReadBytes()
         {
             return fileSystem => fileSystem.ReadBytes(AnyString());
         }
 
-        private Expression<Func<IFileSystem, byte[]>> ReadBytes(string filename)
+        static private Expression<Func<IFileSystem, byte[]>> ReadBytes(string filename)
         {
             return fileSystem => fileSystem.ReadBytes(filename);
         }
 
-        private Expression<Action<IFileSystem>> DeleteFile(string filename)
+        static private Expression<Action<IFileSystem>> DeleteFile(string filename)
         {
             return fileSystem => fileSystem.DeleteFile(filename);
         }
 
-        private Mock<IFileSystem> GetFileSystem(IFile file, string filename)
+        static private Mock<IFileSystem> GetFileSystem(IFile file, string filename)
         {
             Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
             mockFileSystem.Setup(ReadBytes()).Returns(new byte[1]);

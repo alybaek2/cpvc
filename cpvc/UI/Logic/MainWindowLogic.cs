@@ -13,9 +13,9 @@ namespace CPvC
     /// </remarks>
     public class MainWindowLogic : INotifyPropertyChanged
     {
-        private List<Machine> _machines;
-        private IUserInterface _userInterface;
-        private IFileSystem _fileSystem;
+        private readonly List<Machine> _machines;
+        private readonly IUserInterface _userInterface;
+        private readonly IFileSystem _fileSystem;
 
         private Machine _machine;
 

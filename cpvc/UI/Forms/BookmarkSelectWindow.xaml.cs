@@ -13,7 +13,7 @@ namespace CPvC.UI.Forms
 
         public HistoryEvent SelectedEvent { get; private set; }
 
-        private Machine _machine;
+        private readonly Machine _machine;
 
         public BookmarkSelectWindow(Window owner, Machine machine)
         {

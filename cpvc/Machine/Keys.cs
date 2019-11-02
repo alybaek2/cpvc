@@ -5,7 +5,7 @@
     /// the keyboard bit and the second being the keyboard line. See http://cpctech.cpc-live.com/docs/keyboard.html for more
     /// details on the CPC's keyboard.
     /// </summary>
-    public class Keys
+    static public class Keys
     {
         public const byte CursorUp = 0;
         public const byte CursorLeft = 1;

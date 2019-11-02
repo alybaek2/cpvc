@@ -10,10 +10,9 @@ namespace cpvc_test
     public class MachineTests
     {
         private List<string> _lines;
-        private Mock<IFile> _mockWriter;
         private Mock<IFileSystem> _mockFileSystem;
 
-        private string AnyString()
+        private static string AnyString()
         {
             return It.IsAny<string>();
         }
@@ -48,11 +47,11 @@ namespace cpvc_test
             _mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
             _mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(AnyString()));
 
-            _mockWriter = new Mock<IFile>(MockBehavior.Strict);
-            _mockWriter.Setup(s => s.WriteLine(AnyString())).Callback<string>(line => _lines.Add(line));
-            _mockWriter.Setup(s => s.Close());
+            Mock<IFile> mockWriter = new Mock<IFile>(MockBehavior.Strict);
+            mockWriter.Setup(s => s.WriteLine(AnyString())).Callback<string>(line => _lines.Add(line));
+            mockWriter.Setup(s => s.Close());
 
-            _mockFileSystem.Setup(fileSystem => fileSystem.OpenFile(AnyString())).Returns(_mockWriter.Object);
+            _mockFileSystem.Setup(fileSystem => fileSystem.OpenFile(AnyString())).Returns(mockWriter.Object);
 
             _lines = new List<string>();
         }

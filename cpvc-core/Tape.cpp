@@ -10,6 +10,17 @@ Tape::Tape()
     _tickPos = 0;
     _ticksToNextLevelChange = 0;
     _playing = false;
+
+    _currentBlockIndex = 0;
+    _blockIndex = 0;
+    _phase = BlockPhase::Start;
+    _pulsesRemaining = 0;
+    _dataIndex = 0;
+    _levelChanged = false;
+    _dataByte = 0;
+    _remainingBits = 0;
+    _pulseIndex = 0;
+    _pause = false;
 }
 
 Tape::~Tape()

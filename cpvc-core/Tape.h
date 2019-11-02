@@ -26,6 +26,14 @@ inline dword BlockTripleByte(byte* pBlock, int offset)
 
 struct SpeedBlockData
 {
+    SpeedBlockData()
+    {
+        _pilotPulseLength = 0;
+        _sync1Length = 0;
+        _sync2Length = 0;
+        _pilotPulseCount = 0;
+    }
+
     word _pilotPulseLength;
     word _sync1Length;
     word _sync2Length;
@@ -34,6 +42,15 @@ struct SpeedBlockData
 
 struct DataBlock
 {
+    DataBlock()
+    {
+        _zeroLength = 0;
+        _oneLength = 0;
+        _usedBitsLastByte = 0;
+        _pause = 0;
+        _length = 0;
+    }
+
     word _zeroLength;
     word _oneLength;
     byte _usedBitsLastByte;

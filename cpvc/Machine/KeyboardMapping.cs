@@ -8,7 +8,7 @@ namespace CPvC
     /// </summary>
     public class KeyboardMapping
     {
-        private Dictionary<Key, byte> _keyMap;
+        private readonly Dictionary<Key, byte> _keyMap;
 
         public KeyboardMapping()
         {

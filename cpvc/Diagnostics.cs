@@ -2,7 +2,7 @@
 
 namespace CPvC
 {
-    public class Diagnostics
+    static public class Diagnostics
     {
         static public void Trace(string format, params object[] args)
         {

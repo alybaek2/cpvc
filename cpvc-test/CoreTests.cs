@@ -10,17 +10,17 @@ namespace cpvc_test
         /// Effectively a Times value representing 0 or more times.
         /// </summary>
         /// <returns>A Times value representing 0 or more times.</returns>
-        private Times TimesAny()
+        static private Times TimesAny()
         {
             return Times.AtMost(int.MaxValue);
         }
 
-        private string AnyString()
+        static private string AnyString()
         {
             return It.IsAny<string>();
         }
 
-        private Mock<IFileSystem> GetFileSystem(int size)
+        static private Mock<IFileSystem> GetFileSystem(int size)
         {
             Mock<IFileSystem> mock = new Mock<IFileSystem>(MockBehavior.Strict);
             mock.Setup(fileSystem => fileSystem.ReadBytes(AnyString())).Returns(new byte[size]);
@@ -28,42 +28,42 @@ namespace cpvc_test
             return mock;
         }
 
-        private CoreRequest KeyRequest(byte keycode, bool down)
+        static private CoreRequest KeyRequest(byte keycode, bool down)
         {
             return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.KeyPress && r.KeyCode == keycode && r.KeyDown == down);
         }
 
-        private CoreAction KeyAction(byte keycode, bool down)
+        static private CoreAction KeyAction(byte keycode, bool down)
         {
             return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.KeyPress && r.KeyCode == keycode && r.KeyDown == down);
         }
 
-        private CoreRequest TapeRequest()
+        static private CoreRequest TapeRequest()
         {
             return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.LoadTape);
         }
 
-        private CoreAction TapeAction()
+        static private CoreAction TapeAction()
         {
             return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.LoadTape);
         }
 
-        private CoreRequest ResetRequest()
+        static private CoreRequest ResetRequest()
         {
             return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.Reset);
         }
 
-        private CoreAction ResetAction()
+        static private CoreAction ResetAction()
         {
             return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.Reset);
         }
 
-        private CoreRequest RunUntilRequest()
+        static private CoreRequest RunUntilRequest()
         {
             return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.RunUntil);
         }
 
-        private CoreAction RunUntilAction()
+        static private CoreAction RunUntilAction()
         {
             return It.Is<CoreAction>(r => r == null || r.Type == CoreActionBase.Types.RunUntil);
         }

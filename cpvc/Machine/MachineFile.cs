@@ -7,7 +7,7 @@ namespace CPvC
     /// </summary>
     public class MachineFile
     {
-        private IFile _file;
+        private readonly IFile _file;
 
         public const string _checkpointToken = "checkpoint";
         public const string _deleteToken = "delete";
@@ -59,22 +59,22 @@ namespace CPvC
             WriteLine(HistoryEventLine(historyEvent));
         }
 
-        private string NameLine(string name)
+        static private string NameLine(string name)
         {
             return String.Format("{0}:{1}", _nameToken, name);
         }
 
-        private string CurrentLine(HistoryEvent historyEvent)
+        static private string CurrentLine(HistoryEvent historyEvent)
         {
             return String.Format("{0}:{1}", _currentToken, historyEvent.Id);
         }
 
-        private string DeleteLine(HistoryEvent historyEvent)
+        static private string DeleteLine(HistoryEvent historyEvent)
         {
             return String.Format("{0}:{1}", _deleteToken, historyEvent.Id);
         }
 
-        private string BookmarkLine(HistoryEvent historyEvent, Bookmark bookmark)
+        static private string BookmarkLine(HistoryEvent historyEvent, Bookmark bookmark)
         {
             if (bookmark == null)
             {
@@ -90,7 +90,7 @@ namespace CPvC
                 Helpers.HexString(historyEvent.Bookmark.State));
         }
 
-        private string HistoryEventLine(HistoryEvent historyEvent)
+        static private string HistoryEventLine(HistoryEvent historyEvent)
         {
             switch (historyEvent.Type)
             {
@@ -115,7 +115,7 @@ namespace CPvC
             }
         }
 
-        private string CheckpointLine(HistoryEvent historyEvent)
+        static private string CheckpointLine(HistoryEvent historyEvent)
         {
             // Checkpoint format: <event id>:<ticks>:checkpoint:<bookmark type>:<core state binary>
             // <bookmark type> is one of the following:

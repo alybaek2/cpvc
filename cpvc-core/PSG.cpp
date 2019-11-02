@@ -8,6 +8,7 @@ constexpr byte envRelease = 3;
 
 PSG::PSG(Keyboard& keyboard) : _keyboard(keyboard)
 {
+    Reset();
 }
 
 PSG::~PSG()

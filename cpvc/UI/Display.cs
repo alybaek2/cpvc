@@ -10,7 +10,7 @@ namespace CPvC
     /// </summary>
     public class Display : IDisposable
     {
-        private Int32Rect _drawRect;
+        private readonly Int32Rect _drawRect;
 
         public UnmanagedMemory Buffer { get; private set; }
 
@@ -22,9 +22,9 @@ namespace CPvC
 
         public Display()
         {
-            Buffer = new UnmanagedMemory(Height * Pitch);
-
             _drawRect = new Int32Rect(0, 0, Width, Height);
+
+            Buffer = new UnmanagedMemory(Height * Pitch);
             Bitmap = new WriteableBitmap(Width, Height, 0, 0, PixelFormats.Bgr32, BitmapPalettes.Halftone256);
         }
 
@@ -58,7 +58,7 @@ namespace CPvC
             // Otherwise, use the bookmark to create a core, and run it for 2 VSync's in order to populate the screen buffer.
             using (Core core = Core.Create(bookmark.State))
             {
-                core.ScreenBuffer = Buffer;
+                core.SetScreenBuffer(Buffer);
                 core.RunForVSync(2);
 
                 CopyFromBuffer();

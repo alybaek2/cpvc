@@ -8,18 +8,17 @@ namespace CPvC
     /// </summary>
     public class File : IFile, IDisposable
     {
-        private FileStream _fileStream;
         private StreamWriter _streamWriter;
 
         public File(string filepath)
         {
-            _fileStream = System.IO.File.Open(filepath, FileMode.Append, FileAccess.Write, FileShare.None);
-            _streamWriter = new StreamWriter(_fileStream);
+            FileStream fileStream = System.IO.File.Open(filepath, FileMode.Append, FileAccess.Write, FileShare.None);
+            _streamWriter = new StreamWriter(fileStream);
         }
 
         public void Dispose()
         {
-            // Note that the _fileStream will also be disposed of automatically by _streamWriter being closed.
+            // Note that the FileStream will also be disposed of automatically by _streamWriter being closed.
             if (_streamWriter != null)
             {
                 _streamWriter.Close();

@@ -5,6 +5,7 @@
 
 CRTC::CRTC(bool& requestInterrupt) : _requestInterrupt(requestInterrupt)
 {
+    Reset();
 }
 
 CRTC::~CRTC()

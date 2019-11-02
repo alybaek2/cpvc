@@ -9,9 +9,9 @@ namespace CPvC.UI.Forms
     /// </summary>
     public sealed partial class MachinePropertiesWindow : Window, IDisposable
     {
-        private Machine _machine;
+        private readonly Machine _machine;
         private Display _display;
-        private MachinePropertiesWindowLogic _logic;
+        private readonly MachinePropertiesWindowLogic _logic;
 
         public MachinePropertiesWindow(Window owner, Machine machine)
         {

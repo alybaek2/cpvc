@@ -121,10 +121,7 @@ void Border(dword(&pixels)[8], byte border)
 
 GateArray::GateArray(Memory& memory, bool& pInterruptRequested, byte& pScanLineCount) : _memory(memory), _interruptRequested(pInterruptRequested), _scanLineCount(pScanLineCount)
 {
-    _selectedPen = 0;
-    memset(_pen, 0, 16);
-    _border = 0;
-    _mode = 0;
+    Reset();
 };
 
 GateArray::~GateArray()

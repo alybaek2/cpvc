@@ -17,12 +17,12 @@ namespace CPvC
     public class Audio : WaveStream
     {
         private const int _latency = 70;
-        private IWavePlayer _wavePlayer;
+        private readonly IWavePlayer _wavePlayer;
 
         private const long _size = 48000;
         private readonly WaveFormat _waveFormat = new WaveFormat(48000, 16, 2);
         private long _position;
-        private ReadAudioDelegate _readAudio;
+        private readonly ReadAudioDelegate _readAudio;
 
         public Audio(ReadAudioDelegate readAudioDelegate)
         {

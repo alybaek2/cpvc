@@ -25,7 +25,7 @@ namespace CPvC
 
         private int _nextEventId;
 
-        private IFileSystem _fileSystem;
+        private readonly IFileSystem _fileSystem;
         private MachineFile _file;
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -148,21 +148,21 @@ namespace CPvC
 
                 core.Auditors += machine.RequestProcessed;
                 core.BeginVSync = machine.BeginVSync;
-                core.ScreenBuffer = machine.Display.Buffer;
+                core.SetScreenBuffer(machine.Display.Buffer);
                 core.EnableTurbo(false);
 
                 machine.Core = core;
 
                 return machine;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 if (machine != null)
                 {
                     machine.Dispose();
                 }
 
-                throw e;
+                throw;
             }
         }
 
@@ -190,7 +190,7 @@ namespace CPvC
                 machine._core = Core.Create(Core.Type.CPC6128);
                 machine._core.Auditors += machine.RequestProcessed;
                 machine._core.BeginVSync = machine.BeginVSync;
-                machine._core.ScreenBuffer = machine.Display.Buffer;
+                machine._core.SetScreenBuffer(machine.Display.Buffer);
 
                 return machine;
             }
@@ -442,7 +442,7 @@ namespace CPvC
             }
 
             Core.Dispose();
-            newCore.ScreenBuffer = Display.Buffer;
+            newCore.SetScreenBuffer(Display.Buffer);
             Core = newCore;
 
             _file.WriteCurrentEvent(bookmarkEvent);

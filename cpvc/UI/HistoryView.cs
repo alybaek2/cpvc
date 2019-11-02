@@ -8,7 +8,7 @@ namespace CPvC
     /// <summary>
     /// Provides a group of static helper methods for the history view shown in MachinePropertiesWindow and BookmarkSelectWindow.
     /// </summary>
-    public class HistoryView
+    static public class HistoryView
     {
         /// <summary>
         /// Populates a ListView control with HistoryViewItems based on the given rootEvent.

@@ -29,7 +29,7 @@ namespace CPvC
         }
 
         private CoreCLR _coreCLR;
-        private List<CoreRequest> _requests;
+        private readonly List<CoreRequest> _requests;
 
         private bool _quitThread;
         private Thread _coreThread;
@@ -64,17 +64,6 @@ namespace CPvC
             10392, 16706, 23339, 29292, 36969, 46421, 55195, 65535
         };
 
-        /// <summary>
-        /// Pointer to a block of unmanaged memory to be used by the core for video rendering.
-        /// </summary>
-        public IntPtr ScreenBuffer
-        {
-            set
-            {
-                _coreCLR.SetScreen(value, Display.Pitch, Display.Height);
-            }
-        }
-
         public byte Volume
         {
             get
@@ -102,7 +91,7 @@ namespace CPvC
 
             BeginVSync = null;
 
-            ScreenBuffer = IntPtr.Zero;
+            SetScreenBuffer(IntPtr.Zero);
 
             _audioSamplingFrequency = 48000;
             _volume = 40;
@@ -200,6 +189,14 @@ namespace CPvC
         public int GetAudioBuffers(int samples, byte[] channelA, byte[] channelB, byte[] channelC)
         {
             return _coreCLR.GetAudioBuffers(samples, channelA, channelB, channelC);
+        }
+
+        /// <summary>
+        /// Sets a Pointer to a block of unmanaged memory to be used by the core for video rendering.
+        /// </summary>
+        public void SetScreenBuffer(IntPtr screenBuffer)
+        {
+            _coreCLR.SetScreen(screenBuffer, Display.Pitch, Display.Height);
         }
 
         /// <summary>
