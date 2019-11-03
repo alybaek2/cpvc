@@ -248,6 +248,6 @@
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>if not exist "$(ProjectDir)Resources\Roms" mkdir "$(ProjectDir)Resources\Roms"
-copy "$(SolutionDir)roms\*.rom" "$(ProjectDir)Resources\Roms"</PreBuildEvent>
+if exist "$(SolutionDir)roms\*.rom" copy "$(SolutionDir)roms\*.rom" "$(ProjectDir)Resources\Roms"</PreBuildEvent>
   </PropertyGroup>
 </Project>
