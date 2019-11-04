@@ -133,8 +133,11 @@ namespace cpvc_test
             Mock<IUserInterface> mockUserInterface = new Mock<IUserInterface>(MockBehavior.Strict);
 
             // Act
-            MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object);
-            logic.Machine = null;
+            MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object)
+            {
+                Machine = null
+            };
+
             logic.LoadDisc(drive);
 
             // Verify
@@ -151,8 +154,11 @@ namespace cpvc_test
             Mock<IUserInterface> mockUserInterface = new Mock<IUserInterface>(MockBehavior.Strict);
 
             // Act
-            MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object);
-            logic.Machine = null;
+            MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object)
+            {
+                Machine = null
+            };
+
             logic.LoadTape();
 
             // Verify

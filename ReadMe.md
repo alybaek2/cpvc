@@ -2,16 +2,22 @@
 
 An Amstrad CPC emulator written in C++ and C# for Windows.
 
+## Introduction
+
+The Amstrad CPC ("Colour Personal Computer") is a range of 8-bit computers produced by Amstrad and popular in the UK and Europe during the mid-to-late 1980s.
+
+See the [CPC Wiki](http://www.cpcwiki.eu/) for more information.
+
+## What is CPvC short for?
+
+Colour Personal *Virtual* Computer.
+
 ## How is CPvC different from every other CPC emulator?
 
 CPvC has additional features on top of the standard ones offered by most emulators:
 
 * A more "persistent" emulator model, where one or more virtual CPC instances can be created and persist even after the application is closed. These instances can be loaded again and resume from where they left off.
 * Snapshots (or "bookmarks" as they're called in CPvC) are organized as part of a branching timeline, instead of as separate .SNA files. 
-
-## What is CPvC short for?
-
-Colour Personal *Virtual* Computer.
 
 ## Which CPC models are supported?
 
@@ -23,7 +29,11 @@ Before building, the Amstrad CPC roms must be manually copied to the `roms` fold
 
 Open the `cpvc.sln` solution file in Visual Studio (File -> Open -> Project/Solution...), select the solution configuration and platform (Build -> Configuration Manager...), then build the solution (Build -> Build Solution).
 
-Note that CPvC is currently being developed in Visual Studio Community 2017 (version 15.5.7). It may be buildable in other versions of Visual Studio.
+Note that CPvC is currently being developed in Visual Studio Community 2017 (version 15.5.7). It should be buildable in later versions of Visual Studios as well. Note that since CPvC is written in both C++ and C#, Visual Studio needs at least the following Workloads installed:
+
+* .NET desktop development
+* Desktop development with C++
+* Universal Windows Platform development
 
 ## How to run unit tests
 

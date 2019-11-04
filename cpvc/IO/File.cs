@@ -6,7 +6,7 @@ namespace CPvC
     /// <summary>
     /// Class for opening a file with exclusive access for appending.
     /// </summary>
-    public class File : IFile, IDisposable
+    public sealed class File : IFile, IDisposable
     {
         private StreamWriter _streamWriter;
 

@@ -5,7 +5,7 @@
     /// </summary>
     public class MachinePropertiesWindowLogic
     {
-        private Machine _machine;
+        private readonly Machine _machine;
 
         public MachinePropertiesWindowLogic(Machine machine)
         {

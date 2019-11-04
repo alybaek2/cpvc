@@ -265,7 +265,7 @@ namespace CPvC
 
             string machineName = System.IO.Path.GetFileNameWithoutExtension(filepath);
 
-            Machine machine;
+            Machine machine = null;
 
             try
             {
@@ -275,6 +275,11 @@ namespace CPvC
             {
                 string msg = String.Format("An error occurred while creating a new instance:\n\n{0}", ex.Message);
                 _userInterface.ReportError(msg);
+
+                if (machine != null)
+                {
+                    machine.Dispose();
+                }
 
                 return;
             }
@@ -291,7 +296,7 @@ namespace CPvC
                 return;
             }
 
-            Machine machine;
+            Machine machine = null;
 
             try
             {
@@ -301,6 +306,11 @@ namespace CPvC
             {
                 string msg = String.Format("An error occurred while opening an existing instance:\n\n{0}", ex.Message);
                 _userInterface.ReportError(msg);
+
+                if (machine != null)
+                {
+                    machine.Dispose();
+                }
 
                 return;
             }

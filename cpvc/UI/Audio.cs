@@ -29,9 +29,12 @@ namespace CPvC
             _readAudio = readAudioDelegate;
 
             // Create audio device
-            WaveOutEvent waveOut = new WaveOutEvent();
-            waveOut.DeviceNumber = -1;
-            waveOut.DesiredLatency = _latency;
+            WaveOutEvent waveOut = new WaveOutEvent
+            {
+                DeviceNumber = -1,
+                DesiredLatency = _latency
+            };
+
             waveOut.Init(this);
 
             _wavePlayer = waveOut;

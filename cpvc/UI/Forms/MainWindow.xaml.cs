@@ -11,9 +11,9 @@ namespace CPvC.UI.Forms
     /// </summary>
     public partial class MainWindow : Window, IUserInterface, IDisposable
     {
-        private MainWindowLogic _logic;
+        private readonly FileSystem _fileSystem;
+        private readonly MainWindowLogic _logic;
         private Audio _audio;
-        private FileSystem _fileSystem;
         private KeyboardMapping _keyMap;
 
         public MainWindow()
@@ -371,8 +371,10 @@ namespace CPvC.UI.Forms
 
         public string SelectItem(List<string> items)
         {
-            SelectItemWindow dialog = new SelectItemWindow();
-            dialog.Owner = this;
+            SelectItemWindow dialog = new SelectItemWindow
+            {
+                Owner = this
+            };
 
             dialog.SetListItems(items);
 

@@ -179,8 +179,10 @@ namespace CPvC
             try
             {
                 fileSystem.DeleteFile(machineFilepath);
-                machine = new Machine(null, machineFilepath, fileSystem);
-                machine.Name = name;
+                machine = new Machine(null, machineFilepath, fileSystem)
+                {
+                    Name = name
+                };
 
                 machine.RootEvent = HistoryEvent.CreateCheckpoint(machine.NextEventId(), 0, DateTime.UtcNow, null);
                 machine._file.WriteHistoryEvent(machine.RootEvent);
@@ -194,14 +196,14 @@ namespace CPvC
 
                 return machine;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 if (machine != null)
                 {
                     machine.Dispose();
                 }
 
-                throw e;
+                throw;
             }
         }
 
@@ -697,14 +699,14 @@ namespace CPvC
 
                 return core;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 if (core != null)
                 {
                     core.Dispose();
                 }
 
-                throw e;
+                throw;
             }
         }
 
