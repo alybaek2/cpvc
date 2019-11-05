@@ -29,11 +29,14 @@ Before building, the Amstrad CPC roms must be manually copied to the `roms` fold
 
 Open the `cpvc.sln` solution file in Visual Studio (File -> Open -> Project/Solution...), select the solution configuration and platform (Build -> Configuration Manager...), then build the solution (Build -> Build Solution).
 
-Note that CPvC is currently being developed in Visual Studio Community 2017 (version 15.5.7). It should be buildable in later versions of Visual Studios as well. Note that since CPvC is written in both C++ and C#, Visual Studio needs at least the following Workloads installed:
+Note that CPvC is currently being developed in Visual Studio Community 2017 (version 15.5.7). Note that since CPvC is written in both C++ and C#, Visual Studio needs at least the following Workloads/Components installed:
 
 * .NET desktop development
 * Desktop development with C++
+  * Windows 10 SDK (10.0.16299.0)
 * Universal Windows Platform development
+
+The solution can also be built in the latest version of Visual Studio Community 2019 (16.3.7), though note that the Visual Studio 2017 C++ x64/x86 build tools (v14.16) need to be installed.
 
 ## How to run unit tests
 
@@ -43,6 +46,10 @@ In Visual Studio 2017, set the Default Processor Architecture to match the curre
 
 Once built, launch the application (set the `cpvc` project as the startup project for the solution) and create a new instance (File -> New...), or open an existing one (File -> Open...).
 
+## Features
+
+See the [Features.md](Features.md) file for more details.
+
 ## See also
 
-For more details about the code itself, see [this file](Code.md).
+For more details about the code, see [this file](Code.md).
