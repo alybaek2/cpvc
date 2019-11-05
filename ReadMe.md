@@ -29,7 +29,7 @@ Before building, the Amstrad CPC roms must be manually copied to the `roms` fold
 
 Open the `cpvc.sln` solution file in Visual Studio (File -> Open -> Project/Solution...), select the solution configuration and platform (Build -> Configuration Manager...), then build the solution (Build -> Build Solution).
 
-Note that CPvC is currently being developed in Visual Studio Community 2017 (version 15.5.7). Note that since CPvC is written in both C++ and C#, Visual Studio needs at least the following Workloads/Components installed:
+Note that CPvC is currently being developed in Visual Studio Community 2017 (version 15.5.6). Note that since CPvC is written in both C++ and C#, Visual Studio needs at least the following Workloads/Components installed:
 
 * .NET desktop development
 * Desktop development with C++
