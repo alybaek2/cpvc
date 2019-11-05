@@ -107,6 +107,23 @@ void Mode2(dword(&pixels)[8], byte* pens, byte b)
     pixels[7] = colours[pens[pen7]];
 }
 
+// Mode 3 is not an official screen mode, but is just a quirk of the hardware (given that the gate array
+// uses two bits for the screen mode). It's the same as Mode 0, but bits 0, 1, 4, and 5 are unused.
+void Mode3(dword(&pixels)[8], byte* pens, byte b)
+{
+    byte pen0 = Nibble(false, false, Bit(b, 3), Bit(b, 7));
+    byte pen1 = Nibble(false, false, Bit(b, 2), Bit(b, 6));
+
+    pixels[0] = colours[pens[pen0]];
+    pixels[1] = pixels[0];
+    pixels[2] = pixels[0];
+    pixels[3] = pixels[0];
+    pixels[4] = colours[pens[pen1]];
+    pixels[5] = pixels[4];
+    pixels[6] = pixels[4];
+    pixels[7] = pixels[4];
+}
+
 void Border(dword(&pixels)[8], byte border)
 {
     pixels[0] = colours[border];
@@ -156,6 +173,7 @@ void GateArray::RenderPens()
         Mode0(_renderedPenBytes[0][b], _pen, b);
         Mode1(_renderedPenBytes[1][b], _pen, b);
         Mode2(_renderedPenBytes[2][b], _pen, b);
+        Mode3(_renderedPenBytes[3][b], _pen, b);
     }
 }
 

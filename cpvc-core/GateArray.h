@@ -21,7 +21,7 @@ public:
     byte& _scanLineCount;
     bool& _interruptRequested;
 
-    dword _renderedPenBytes[3][256][8];
+    dword _renderedPenBytes[4][256][8];
     dword _renderedBorderBytes[8];
 
     void Reset();
