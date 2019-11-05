@@ -16,7 +16,6 @@ namespace CPvC
 
         void OpenProperties();
         HistoryEvent PromptForBookmark();
-        void OpenOptions();
 
         void ReportError(string message);
     }

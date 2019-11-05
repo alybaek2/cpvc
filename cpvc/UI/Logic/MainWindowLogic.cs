@@ -115,11 +115,6 @@ namespace CPvC
             }
         }
 
-        public void OpenOptions()
-        {
-            _userInterface.OpenOptions();
-        }
-
         public void EnableTurbo(bool enabled)
         {
             if (Machine == null)

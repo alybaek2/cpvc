@@ -111,9 +111,6 @@
     <Compile Include="IO\IFileSystem.cs" />
     <Compile Include="Machine\MachineFile.cs" />
     <Compile Include="Settings.cs" />
-    <Compile Include="UI\Forms\OptionsWindow.xaml.cs">
-      <DependentUpon>OptionsWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="UI\HistoryView.cs" />
     <Compile Include="UI\Logic\MachinePropertiesWindowLogic.cs" />
     <Compile Include="Machine\HistoryEvent.cs" />
@@ -164,10 +161,6 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="UI\Forms\OptionsWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="UI\Forms\SelectItemWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

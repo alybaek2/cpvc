@@ -334,7 +334,7 @@ namespace CPvC.UI.Forms
                     break;
                 case FileTypes.Tape:
                     defaultExtension = "zip";
-                    fileFilter = "Tape files (*.cdt;*.zip)|*.cdt;*.zip|All files (*.*)|*.*";
+                    fileFilter = "Tape files (*.cdt;*.tzx;*.zip)|*.cdt;*.tzx;*.zip|All files (*.*)|*.*";
                     initialFolder = Settings.TapesFolder;
                     break;
                 case FileTypes.Machine:
@@ -360,12 +360,28 @@ namespace CPvC.UI.Forms
                 fileDialog.Filter = fileFilter;
 
                 System.Windows.Forms.DialogResult r = fileDialog.ShowDialog();
-                if (r == System.Windows.Forms.DialogResult.OK)
+                if (r != System.Windows.Forms.DialogResult.OK)
                 {
-                    return fileDialog.FileName;
+                    return null;
                 }
 
-                return null;
+                // "Remember to the selected file.
+                string filename = fileDialog.FileName;
+                string folder = System.IO.Path.GetDirectoryName(filename);
+                switch (type)
+                {
+                    case FileTypes.Disc:
+                        Settings.DiscsFolder = folder;
+                        break;
+                    case FileTypes.Tape:
+                        Settings.TapesFolder = folder;
+                        break;
+                    case FileTypes.Machine:
+                        Settings.MachinesFolder = folder;
+                        break;
+                }
+
+                return filename;
             }
         }
 
@@ -432,12 +448,6 @@ namespace CPvC.UI.Forms
             }
         }
 
-        public void OpenOptions()
-        {
-            OptionsWindow dialog = new OptionsWindow(this);
-            dialog.ShowDialog();
-        }
-
         public void ReportError(string message)
         {
             // Need to replace this with a messagebox that is centred over its parent. This option
@@ -458,11 +468,6 @@ namespace CPvC.UI.Forms
         private void _jumpToBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _logic.SelectBookmark();
-        }
-
-        private void _optionsMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _logic.OpenOptions();
         }
     }
 }

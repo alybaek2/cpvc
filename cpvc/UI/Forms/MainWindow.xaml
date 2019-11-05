@@ -89,9 +89,6 @@
                 <Separator/>
                 <MenuItem x:Name="_propertiesMenuItem" Header="Properties..." Click="_propertiesMenuItem_Click"/>
             </MenuItem>
-            <MenuItem Header="Tools">
-                <MenuItem x:Name="_optionsMenuItem" Header="Options..." Click="_optionsMenuItem_Click"/>
-            </MenuItem>
         </Menu>
         <ToolBarTray x:Name="toolBarTray" Margin="0" VerticalAlignment="Top" Grid.Row="1" Background="#FFF0F0F0">
             <ToolBar x:Name="toolBar" ToolBarTray.IsLocked="True" HorizontalContentAlignment="Left" VerticalAlignment="Center" VerticalContentAlignment="Center" Background="#FFF0F0F0">
