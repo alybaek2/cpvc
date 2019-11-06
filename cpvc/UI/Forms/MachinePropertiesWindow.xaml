@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:converters="clr-namespace:CPvC.UI.Converters"
         mc:Ignorable="d"
-        Title="Properties" Height="578" Width="844" Loaded="Window_Loaded" WindowStartupLocation="CenterOwner" SizeToContent="Width">
+        Title="Properties" Height="508" Width="844" Loaded="Window_Loaded" WindowStartupLocation="CenterOwner" SizeToContent="Width">
     <Grid>
         <Grid.Resources>
             <converters:Ticks x:Key="ticksConverter" />
@@ -18,7 +18,7 @@
                 </Canvas>
             </DataTemplate>
         </Grid.Resources>
-        <GroupBox Header="History" HorizontalAlignment="Left" Height="341" Margin="10,172,0,0" VerticalAlignment="Top" Width="817">
+        <GroupBox Header="History" HorizontalAlignment="Left" Height="341" Margin="10,92,0,0" VerticalAlignment="Top" Width="817">
             <Grid HorizontalAlignment="Left" Margin="0,0,0,0" VerticalAlignment="Top" Width="798">
                 <StackPanel Orientation="Horizontal">
                     <Grid Width="384" Height="288" VerticalAlignment="Top" Margin="10,10,0,10">
@@ -58,10 +58,5 @@
         </GroupBox>
         <Button x:Name="_okButton" Content="OK" HorizontalAlignment="Right" Margin="0,0,90,10" VerticalAlignment="Bottom" Width="75" Click="_okButton_Click"/>
         <Button x:Name="_cancelButton" Content="Cancel" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="75" Click="_cancelButton_Click"/>
-        <GroupBox Header="Tools" HorizontalAlignment="Left" Height="76" Margin="10,91,0,0" VerticalAlignment="Top" Width="174">
-            <Grid Margin="0,0,0,0">
-                <Button x:Name="_compactFileButton" Content="Compact Machine File" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="140" Click="_compactFileButton_Click"/>
-            </Grid>
-        </GroupBox>
     </Grid>
 </Window>

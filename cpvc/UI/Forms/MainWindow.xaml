@@ -93,6 +93,8 @@
                 </MenuItem>
                 <MenuItem x:Name="_jumpToBookmarkMenuItem" Header="Jump to Bookmark..." Click="JumpToBookmarkMenuItem_Click"/>
                 <Separator/>
+                <MenuItem x:Name="_compactFileMenuItem" Header="Compact machine file" Click="_compactFileMenuItem_Click"/>
+                <Separator/>
                 <MenuItem x:Name="_propertiesMenuItem" Header="Properties..." Click="PropertiesMenuItem_Click"/>
             </MenuItem>
         </Menu>

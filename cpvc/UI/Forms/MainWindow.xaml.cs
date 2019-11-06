@@ -484,5 +484,10 @@ namespace CPvC.UI.Forms
         {
             _logic.EjectTape();
         }
+
+        private void _compactFileMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            _logic.CompactFile();
+        }
     }
 }

@@ -256,6 +256,16 @@ namespace CPvC
             }
         }
 
+        public void CompactFile()
+        {
+            if (Machine == null)
+            {
+                return;
+            }
+
+            Machine.RewriteMachineFile();
+        }
+
         private void AddMachine(Machine machine)
         {
             lock (_machines)
