@@ -8,7 +8,7 @@
         Title="CPvC" Height="173.184" Width="240.317" WindowStartupLocation="CenterOwner" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
     <Grid>
         <ListBox x:Name="_itemsListBox" Height="95" Margin="10,10,10,0" VerticalAlignment="Top"/>
-        <Button x:Name="_cancelButton" Content="Cancel" Margin="0,0,10,10" VerticalAlignment="Bottom" Click="_cancelButton_Click" HorizontalAlignment="Right" Width="75"/>
-        <Button x:Name="_okButton" Content="OK" HorizontalAlignment="Right" Margin="0,0,90,10" Width="75" Click="_okButton_Click" Height="20" VerticalAlignment="Bottom"/>
+        <Button x:Name="_cancelButton" Content="Cancel" Margin="0,0,10,10" VerticalAlignment="Bottom" Click="CancelButton_Click" HorizontalAlignment="Right" Width="75"/>
+        <Button x:Name="_okButton" Content="OK" HorizontalAlignment="Right" Margin="0,0,90,10" Width="75" Click="OkButton_Click" Height="20" VerticalAlignment="Bottom"/>
     </Grid>
 </Window>

@@ -29,14 +29,14 @@ namespace CPvC.UI.Forms
             return (string)_itemsListBox.SelectedValue;
         }
 
-        private void _okButton_Click(object sender, RoutedEventArgs e)
+        private void OkButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = true;
 
             Close();
         }
 
-        private void _cancelButton_Click(object sender, RoutedEventArgs e)
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
 
