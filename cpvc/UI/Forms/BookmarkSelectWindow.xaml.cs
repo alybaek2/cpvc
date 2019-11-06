@@ -44,7 +44,7 @@ namespace CPvC.UI.Forms
             _historyListView.SelectedIndex = 0;
         }
 
-        private void _selectButton_Click(object sender, RoutedEventArgs e)
+        private void SelectButton_Click(object sender, RoutedEventArgs e)
         {
             HistoryViewItem item = (HistoryViewItem)_historyListView.SelectedItem;
             if (item != null && item.HistoryEvent != null)
@@ -57,16 +57,16 @@ namespace CPvC.UI.Forms
             Close();
         }
 
-        private void _cancelButton_Click(object sender, RoutedEventArgs e)
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
 
             Close();
         }
 
-        private void _timelineListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void HistoryListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            bool loaded = HistoryView.SelectBookmark(_historyListView, _display);
+            bool loaded = HistoryView.SelectBookmark(_historyListView, _display, _machine, _fullScreenImage);
 
             _fullScreenImage.Visibility = loaded ? Visibility.Visible : Visibility.Hidden;
             _noBookmarkSelectedLabel.Visibility = loaded ? Visibility.Hidden : Visibility.Visible;

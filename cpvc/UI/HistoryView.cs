@@ -40,16 +40,27 @@ namespace CPvC
         /// </summary>
         /// <param name="historyListView">The ListView control.</param>
         /// <param name="display">The Display object to populate.</param>
+        /// <param name="machine">The Machine object whose history is being displayed.</param>
+        /// <param name="image">The Image object displaying the selected bookmark.</param>
         /// <returns>A boolean indicating if the Display object was populated (true if the selected HistoryViewItem has a bookmark; false otherwise).</returns>
-        static public bool SelectBookmark(ListView historyListView, Display display)
+        static public bool SelectBookmark(ListView historyListView, Display display, Machine machine, Image image)
         {
             HistoryViewItem viewItem = (HistoryViewItem)historyListView.SelectedItem;
             if (viewItem != null)
             {
                 HistoryEvent historyEvent = viewItem.HistoryEvent;
+
+                // Even though the current event doesn't necessarily have a bookmark, we cen still populate the display.
+                if (historyEvent == machine.CurrentEvent)
+                {
+                    image.Source = machine.Display.Bitmap;
+                    return true;
+                }
+
                 if (historyEvent != null && historyEvent.Type == HistoryEvent.Types.Checkpoint && historyEvent.Bookmark != null)
                 {
                     display.GetFromBookmark(historyEvent.Bookmark);
+                    image.Source = display.Bitmap;
 
                     return true;
                 }

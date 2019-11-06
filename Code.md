@@ -44,5 +44,5 @@ This project provides the `CoreCLR` class, which wraps the `Core` class so that 
 
 The WPF UI project for CPvC. Important classes include:
 
-* `Core`: A wrapper for the `CoreCLR` class, with the ability to run the core continually in a background thread and providing delegates for VSync events and auditing.
+* `Core`: A wrapper for the `CoreCLR` class, with the ability to run the core continually in a background thread and provide delegates for VSync events and auditing.
 * `Machine`: Represents an instance of a CPvC virtual machine. In addition to running the core, this class also maintains the history of the machine in the form of a branching timeline. Bookmarks (essentially just snapshots) are organized within this timeline. Other events, such as key presses are also captured, though not currently used.

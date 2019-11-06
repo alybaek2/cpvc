@@ -439,7 +439,7 @@ namespace CPvC.UI.Forms
                 machine.SetCheckpoint();
 
                 bool? result = dialog.ShowDialog();
-                if (result.HasValue && result.Value && dialog.SelectedEvent != null)
+                if (result.HasValue && result.Value && dialog.SelectedEvent != null && dialog.SelectedEvent.Bookmark != null)
                 {
                     return dialog.SelectedEvent;
                 }

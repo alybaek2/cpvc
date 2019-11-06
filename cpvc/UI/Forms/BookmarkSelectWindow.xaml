@@ -23,7 +23,7 @@
                 <Image x:Name="_fullScreenImage" Width="384" Height="288" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill" Margin="0"/>
                 <Label x:Name="_noBookmarkSelectedLabel" Content="No bookmark selected" HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Grid>
-            <ListView x:Name="_historyListView" Margin="10,10,10,10" Height="250" SelectionMode="Single" SelectionChanged="_timelineListView_SelectionChanged">
+            <ListView x:Name="_historyListView" Margin="10,10,10,10" Height="250" SelectionMode="Single" SelectionChanged="HistoryListView_SelectionChanged">
                 <ListView.ItemContainerStyle>
                     <Style TargetType="{x:Type ListViewItem}">
                         <Setter Property="BorderThickness" Value="0"/>
@@ -40,8 +40,8 @@
                 </ListView.View>
             </ListView>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="_selectButton" Content="Select" Width="100" Height="20" Margin="0,0,10,10" Click="_selectButton_Click" IsEnabled="{Binding SelectedItem.IsBookmark, ElementName=_timelineListView, Mode=OneWay}"/>
-                <Button x:Name="_cancelButton" Content="Cancel" Width="100" Height="20" Margin="0,0,10,10" Click="_cancelButton_Click"/>
+                <Button x:Name="_selectButton" Content="Select" Width="100" Height="20" Margin="0,0,10,10" Click="SelectButton_Click" IsEnabled="{Binding SelectedItem.IsBookmark, ElementName=_timelineListView, Mode=OneWay}"/>
+                <Button x:Name="_cancelButton" Content="Cancel" Width="100" Height="20" Margin="0,0,10,10" Click="CancelButton_Click"/>
             </StackPanel>
         </StackPanel>
     </Grid>

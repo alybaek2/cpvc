@@ -54,7 +54,7 @@ namespace CPvC.UI.Forms
 
         private void _timelineListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            bool visible = HistoryView.SelectBookmark(_historyListView, _display);
+            bool visible = HistoryView.SelectBookmark(_historyListView, _display, _machine, _fullScreenImage);
 
             _fullScreenImage.Visibility = visible ? Visibility.Visible : Visibility.Hidden;
             _noBookmarkSelectedLabel.Visibility = visible ? Visibility.Hidden : Visibility.Visible;

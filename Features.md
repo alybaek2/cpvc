@@ -1,4 +1,4 @@
-# CPvC features
+# CPvC Features
 
 The main CPvC window appears as follows:
 
@@ -70,7 +70,7 @@ Opens a dialog displaying information on the currently selected machine. The fol
 
 Open CPvC machine instances are shown in a tabbed view in the main window. The active tab displays the currently selected machine, and audio is played for that machine only.
 
-Note that clicking anywhere on the tab window will pause that machine. Clicking again will resume it.
+Note that clicking anywhere on the tab window will pause the machine. Clicking again will resume it.
 
 ## Status bar
 
