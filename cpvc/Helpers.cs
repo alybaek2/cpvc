@@ -32,6 +32,11 @@ namespace CPvC
         /// <returns>Hexadecimal string representation of the byte array.</returns>
         static public string HexString(byte[] b)
         {
+            if (b == null)
+            {
+                return String.Empty;
+            }
+
             char[] buffer = new char[b.Length * 2];
 
             for (int c = 0; c < b.Length; c++)

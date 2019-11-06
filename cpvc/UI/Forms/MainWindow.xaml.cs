@@ -469,5 +469,20 @@ namespace CPvC.UI.Forms
         {
             _logic.SelectBookmark();
         }
+
+        private void DriveAEjectMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            _logic.EjectDisc(0);
+        }
+
+        private void DriveBEjectMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            _logic.EjectDisc(1);
+        }
+
+        private void TapeEjectMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            _logic.EjectTape();
+        }
     }
 }

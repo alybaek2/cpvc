@@ -42,20 +42,26 @@
                 <MenuItem x:Name="_exitMenuItem" Header="Exit" Click="_exitMenuItem_Click"/>
             </MenuItem>
             <MenuItem x:Name="_cpvcMenuItem" Header="CPvC" Style="{StaticResource MachineMenuItemStyle}">
-                <MenuItem x:Name="_driveAMenuItem" Header="Drive A:..." Click="_driveAMenuItem_Click">
+                <MenuItem Header="Drive A:">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
+                    <MenuItem x:Name="_driveAMenuItem" Header="Load..." Click="_driveAMenuItem_Click"/>
+                    <MenuItem x:Name="DriveAEjectMenuItem" Header="Eject" Click="DriveAEjectMenuItem_Click"/>
                 </MenuItem>
-                <MenuItem x:Name="_driveBMenuItem" Header="Drive B:..." Click="_driveBMenuItem_Click">
+                <MenuItem Header="Drive B:">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
+                    <MenuItem x:Name="_driveBMenuItem" Header="Load..." Click="_driveBMenuItem_Click"/>
+                    <MenuItem x:Name="DriveBEjectMenuItem" Header="Eject" Click="DriveBEjectMenuItem_Click"/>
                 </MenuItem>
-                <MenuItem x:Name="_tapeMenuItem" Header="Tape..." Click="_tapeMenuItem_Click">
+                <MenuItem Header="Tape">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/tape16.png" />
                     </MenuItem.Icon>
+                    <MenuItem x:Name="_tapeMenuItem" Header="Load..." Click="_tapeMenuItem_Click"/>
+                    <MenuItem x:Name="TapeEjectMenuItem" Header="Eject" Click="TapeEjectMenuItem_Click"/>
                 </MenuItem>
                 <Separator/>
                 <MenuItem x:Name="_pauseMenuItem" Header="Pause" Click="_pauseMenuItem_Click">

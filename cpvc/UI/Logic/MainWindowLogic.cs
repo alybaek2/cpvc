@@ -213,6 +213,19 @@ namespace CPvC
             }
         }
 
+        public void EjectDisc(byte drive)
+        {
+            if (Machine == null)
+            {
+                return;
+            }
+
+            using (Machine.AutoPause())
+            {
+                Machine.LoadDisc(drive, null);
+            }
+        }
+
         public void LoadTape()
         {
             if (Machine == null)
@@ -227,6 +240,19 @@ namespace CPvC
                 {
                     Machine.LoadTape(image);
                 }
+            }
+        }
+
+        public void EjectTape()
+        {
+            if (Machine == null)
+            {
+                return;
+            }
+
+            using (Machine.AutoPause())
+            {
+                Machine.LoadTape(null);
             }
         }
 
