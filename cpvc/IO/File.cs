@@ -34,6 +34,7 @@ namespace CPvC
         public void WriteLine(string line)
         {
             _streamWriter.WriteLine(line);
+            _streamWriter.Flush();
         }
     }
 }
