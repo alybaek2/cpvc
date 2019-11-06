@@ -149,39 +149,39 @@ namespace CPvC.UI.Forms
             StopAudio();
         }
 
-        private void _exitMenuItem_Click(object sender, RoutedEventArgs e)
+        private void ExitMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _logic.CloseAll();
 
             Close();
         }
 
-        private void _driveAButton_Click(object sender, RoutedEventArgs e)
+        private void DriveAButton_Click(object sender, RoutedEventArgs e)
         {
             _logic.LoadDisc(0);
         }
 
-        private void _driveBButton_Click(object sender, RoutedEventArgs e)
+        private void DriveBButton_Click(object sender, RoutedEventArgs e)
         {
             _logic.LoadDisc(1);
         }
 
-        private void _tapeButton_Click(object sender, RoutedEventArgs e)
+        private void TapeButton_Click(object sender, RoutedEventArgs e)
         {
             _logic.LoadTape();
         }
 
-        private void _pauseButton_Click(object sender, RoutedEventArgs e)
+        private void PauseButton_Click(object sender, RoutedEventArgs e)
         {
             _logic.Pause();
         }
 
-        private void _resumeButton_Click(object sender, RoutedEventArgs e)
+        private void ResumeButton_Click(object sender, RoutedEventArgs e)
         {
             _logic.Resume();
         }
 
-        private void _resetButton_Click(object sender, RoutedEventArgs e)
+        private void ResetButton_Click(object sender, RoutedEventArgs e)
         {
             _logic.Reset();
         }
@@ -219,7 +219,7 @@ namespace CPvC.UI.Forms
             _logic.OpenMachine();
         }
 
-        private void _machineTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void MachineTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             TabItem tabItem = (TabItem)_machineTabControl.SelectedItem;
             if (tabItem != null)
@@ -228,67 +228,67 @@ namespace CPvC.UI.Forms
             }
         }
 
-        private void _addBookmarkButton_Click(object sender, RoutedEventArgs e)
+        private void AddBookmarkButton_Click(object sender, RoutedEventArgs e)
         {
             _logic.AddBookmark();
         }
 
-        private void _seekToLastBookmarkButton_Click(object sender, RoutedEventArgs e)
+        private void SeekToLastBookmarkButton_Click(object sender, RoutedEventArgs e)
         {
             _logic.SeekToLastBookmark();
         }
 
-        private void _closeButton_Click(object sender, RoutedEventArgs e)
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             _logic.Close();
         }
 
-        private void _openMenuItem_Click(object sender, RoutedEventArgs e)
+        private void OpenMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _logic.OpenMachine();
         }
 
-        private void _closeMenuItem_Click(object sender, RoutedEventArgs e)
+        private void CloseMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _logic.Close();
         }
 
-        private void _pauseMenuItem_Click(object sender, RoutedEventArgs e)
+        private void PauseMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _logic.Pause();
         }
 
-        private void _resumeMenuItem_Click(object sender, RoutedEventArgs e)
+        private void ResumeMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _logic.Resume();
         }
 
-        private void _resetMenuItem_Click(object sender, RoutedEventArgs e)
+        private void ResetMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _logic.Reset();
         }
 
-        private void _addBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
+        private void AddBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _logic.AddBookmark();
         }
 
-        private void _previousBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
+        private void PreviousBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _logic.SeekToLastBookmark();
         }
 
-        private void _driveAMenuItem_Click(object sender, RoutedEventArgs e)
+        private void DriveAMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _logic.LoadDisc(0);
         }
 
-        private void _driveBMenuItem_Click(object sender, RoutedEventArgs e)
+        private void DriveBMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _logic.LoadDisc(1);
         }
 
-        private void _tapeMenuItem_Click(object sender, RoutedEventArgs e)
+        private void TapeMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _logic.LoadTape();
         }
@@ -455,17 +455,17 @@ namespace CPvC.UI.Forms
             MessageBox.Show(this, message, "CPvC", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
-        private void _propertiesMenuItem_Click(object sender, RoutedEventArgs e)
+        private void PropertiesMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _logic.OpenProperties();
         }
 
-        private void _newMenuItem_Click(object sender, RoutedEventArgs e)
+        private void NewMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _logic.NewMachine();
         }
 
-        private void _jumpToBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
+        private void JumpToBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _logic.SelectBookmark();
         }
