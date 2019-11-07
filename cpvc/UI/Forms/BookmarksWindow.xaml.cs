@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -41,7 +43,7 @@ namespace CPvC.UI.Forms
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            HistoryView.PopulateListView(_historyListView, _machine.RootEvent, _machine.CurrentEvent);
+            RefreshHistoryView();
 
             _historyListView.SelectedIndex = 0;
         }
@@ -88,7 +90,7 @@ namespace CPvC.UI.Forms
             _jumpToBookmarkButton.IsEnabled = (bookmarksSelected == 1);
             _deleteBranchButton.IsEnabled = (_historyListView.SelectedItems.Count > 0);
 
-            bool loaded = HistoryView.SelectBookmark(_historyListView, _display, _machine, _fullScreenImage);
+            bool loaded = SelectBookmark(_historyListView, _display, _machine, _fullScreenImage);
 
             _fullScreenImage.Visibility = loaded ? Visibility.Visible : Visibility.Hidden;
             _noBookmarkSelectedLabel.Visibility = loaded ? Visibility.Hidden : Visibility.Visible;
@@ -104,7 +106,7 @@ namespace CPvC.UI.Forms
 
             _logic.DeleteBranches(items);
 
-            HistoryView.PopulateListView(_historyListView, _machine.RootEvent, _machine.CurrentEvent);
+            RefreshHistoryView();
         }
 
         private void DeleteBookmarkButton_Click(object sender, RoutedEventArgs e)
@@ -117,7 +119,186 @@ namespace CPvC.UI.Forms
 
             _logic.DeleteBookmarks(items);
 
-            HistoryView.PopulateListView(_historyListView, _machine.RootEvent, _machine.CurrentEvent);
+            RefreshHistoryView();
+        }
+
+        /// <summary>
+        /// Populates the ListView control with HistoryViewItems based on the machine's history.
+        /// </summary>
+        private void RefreshHistoryView()
+        {
+            // Generate items...
+            List<HistoryViewItem> items = GetHistoryViewItems();
+
+            // Render items...
+            HistoryViewItem next = null;
+            _historyListView.Items.Clear();
+            for (int i = items.Count - 1; i >= 0; i--)
+            {
+                HistoryViewItem item = items[i];
+                item.Draw(next, _machine.CurrentEvent);
+                _historyListView.Items.Add(item);
+
+                next = item;
+            }
+        }
+
+        /// <summary>
+        /// Generates a list of HistoryViewItem objects that are used to populate the history view.
+        /// </summary>
+        /// <returns>A list of HistoryEventItems</returns>
+        private List<HistoryViewItem> GetHistoryViewItems()
+        {
+            // Avoid calling this function recursively since the depth of the history could be large...
+            List<Tuple<int, HistoryEvent>> eventStack = new List<Tuple<int, HistoryEvent>>
+            {
+                new Tuple<int, HistoryEvent>(0, _machine.RootEvent)
+            };
+
+            // Note that items is sorted in ascending order of ticks (i.e. oldest to most recent).
+            List<HistoryViewItem> items = new List<HistoryViewItem>();
+
+            while (eventStack.Count > 0)
+            {
+                int left = eventStack[0].Item1;
+                HistoryEvent historyEvent = eventStack[0].Item2;
+                eventStack.RemoveAt(0);
+
+                if (ShouldShow(historyEvent))
+                {
+                    HistoryViewItem item = new HistoryViewItem(historyEvent);
+
+                    // Figure out where this new item should be placed.
+                    int itemIndex = items.FindIndex(x => x.Ticks > historyEvent.Ticks);
+                    if (itemIndex == -1)
+                    {
+                        // Not found? Add the item to the end.
+                        itemIndex = items.Count;
+                    }
+
+                    // Add passthrough events to all items inbetween the item and its parent.
+                    HistoryEvent parent = MostRecentShownAncestor(historyEvent);
+                    if (parent != null)
+                    {
+                        for (int i = itemIndex - 1; i >= 0 && items[i].HistoryEvent != parent; i--)
+                        {
+                            left = items[i].AddEvent(left, historyEvent);
+                        }
+                    }
+
+                    // Copy the Events from the next item so passthroughs are correctly rendered.
+                    if (itemIndex < items.Count)
+                    {
+                        item.Events = new List<HistoryEvent>(items[itemIndex].Events);
+                    }
+
+                    // Now add the actual event itself.
+                    left = item.AddEvent(left, historyEvent);
+
+                    items.Insert(itemIndex, item);
+                }
+
+                List<HistoryEvent> sortedChildren = new List<HistoryEvent>(historyEvent.Children);
+                sortedChildren.Sort((x, y) => GetMaxDescendentTicks(y).CompareTo(GetMaxDescendentTicks(x)));
+
+                for (int c = 0; c < sortedChildren.Count; c++)
+                {
+                    // Place the children at the top of the stack; effectively means we're doing a depth-first walk of the tree.
+                    eventStack.Insert(c, new Tuple<int, HistoryEvent>(left, sortedChildren[c]));
+                }
+            }
+
+            return items;
+        }
+        
+        /// <summary>
+        /// Returns the maximum ticks value of any given HistoryEvent's descendents. Used when sorting children in <c>AddEventToItem</c>.
+        /// </summary>
+        /// <param name="historyEvent">The HistoryEvent object.</param>
+        /// <returns></returns>
+        static private UInt64 GetMaxDescendentTicks(HistoryEvent historyEvent)
+        {
+            if (historyEvent.Children.Count == 0)
+            {
+                return historyEvent.Ticks;
+            }
+
+            return historyEvent.Children.Select(x => GetMaxDescendentTicks(x)).Max();
+        }
+
+        /// <summary>
+        /// Returns a boolean indicating whether the given event should be shown in the history view.
+        /// </summary>
+        /// <param name="historyEvent">The HistoryEvent object.</param>
+        /// <returns>Boolean indicating whether <c>historyEvent</c> should be shown in the history view.</returns>
+        static private bool ShouldShow(HistoryEvent historyEvent)
+        {
+            if (historyEvent.Children.Count != 1)
+            {
+                return true;
+            }
+
+            if (historyEvent.Type == HistoryEvent.Types.Checkpoint && historyEvent.Bookmark != null)
+            {
+                return true;
+            }
+
+            if (historyEvent.Parent == null)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Returns the most recent ancestor of <c>historyEvent</c> which is shown in the history view.
+        /// </summary>
+        /// <param name="historyEvent">The HistoryEvent object.</param>
+        /// <returns>The most recent ancestor of <c>historyEvent</c> which is shown in the history view.</returns>
+        static private HistoryEvent MostRecentShownAncestor(HistoryEvent historyEvent)
+        {
+            HistoryEvent parent = historyEvent.Parent;
+            while (parent != null && !ShouldShow(parent))
+            {
+                parent = parent.Parent;
+            }
+
+            return parent;
+        }
+
+        /// <summary>
+        /// Populates the given Display with the currently selected HistoryViewItem if it has a bookmark.
+        /// </summary>
+        /// <param name="historyListView">The ListView control.</param>
+        /// <param name="display">The Display object to populate.</param>
+        /// <param name="machine">The Machine object whose history is being displayed.</param>
+        /// <param name="image">The Image object displaying the selected bookmark.</param>
+        /// <returns>A boolean indicating if the Display object was populated (true if the selected HistoryViewItem has a bookmark; false otherwise).</returns>
+        static private bool SelectBookmark(ListView historyListView, Display display, Machine machine, Image image)
+        {
+            HistoryViewItem viewItem = (HistoryViewItem)historyListView.SelectedItem;
+            if (viewItem != null)
+            {
+                HistoryEvent historyEvent = viewItem.HistoryEvent;
+
+                // Even though the current event doesn't necessarily have a bookmark, we can still populate the display.
+                if (historyEvent == machine.CurrentEvent)
+                {
+                    image.Source = machine.Display.Bitmap;
+                    return true;
+                }
+
+                if (historyEvent != null && historyEvent.Type == HistoryEvent.Types.Checkpoint && historyEvent.Bookmark != null)
+                {
+                    display.GetFromBookmark(historyEvent.Bookmark);
+                    image.Source = display.Bitmap;
+
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
