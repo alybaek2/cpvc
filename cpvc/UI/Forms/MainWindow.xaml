@@ -91,11 +91,10 @@
                         <Image Width="16" Height="16" Source="../Resources/prevbookmark16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem x:Name="_jumpToBookmarkMenuItem" Header="Jump to Bookmark..." Click="JumpToBookmarkMenuItem_Click"/>
+                <MenuItem x:Name="_jumpToBookmarkMenuItem" Header="Bookmarks..." Click="JumpToBookmarkMenuItem_Click"/>
                 <Separator/>
+                <MenuItem x:Name="_renameFileMenuItem" Header="Rename machine..." Click="_renameFileMenuItem_Click"/>
                 <MenuItem x:Name="_compactFileMenuItem" Header="Compact machine file" Click="_compactFileMenuItem_Click"/>
-                <Separator/>
-                <MenuItem x:Name="_propertiesMenuItem" Header="Properties..." Click="PropertiesMenuItem_Click"/>
             </MenuItem>
         </Menu>
         <ToolBarTray x:Name="toolBarTray" Margin="0" VerticalAlignment="Top" Grid.Row="1" Background="#FFF0F0F0">

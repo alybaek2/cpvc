@@ -414,20 +414,6 @@ namespace CPvC.UI.Forms
             return null;
         }
 
-        public void OpenProperties()
-        {
-            Machine machine = _logic.Machine;
-
-            using (MachinePropertiesWindow dialog = new MachinePropertiesWindow(this, machine))
-            using (machine.AutoPause())
-            {
-                // Set a checkpoint here so the UI shows the current timeline position correctly.
-                machine.SetCheckpoint();
-
-                dialog.ShowDialog();
-            }
-        }
-
         public HistoryEvent PromptForBookmark()
         {
             Machine machine = _logic.Machine;
@@ -453,11 +439,6 @@ namespace CPvC.UI.Forms
             // Need to replace this with a messagebox that is centred over its parent. This option
             // doesn't seem to be available with MessageBox.Show().
             MessageBox.Show(this, message, "CPvC", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-
-        private void PropertiesMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _logic.OpenProperties();
         }
 
         private void NewMenuItem_Click(object sender, RoutedEventArgs e)
@@ -488,6 +469,21 @@ namespace CPvC.UI.Forms
         private void _compactFileMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _logic.CompactFile();
+        }
+
+        private void _renameFileMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            Machine machine = _logic.Machine;
+            RenameWindow dialog = new RenameWindow(this, machine.Name);
+
+            using (machine.AutoPause())
+            {
+                bool? result = dialog.ShowDialog();
+                if (result.HasValue && result.Value)
+                {
+                    machine.Name = dialog.NewName;
+                }
+            }
         }
     }
 }

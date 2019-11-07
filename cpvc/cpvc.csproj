@@ -111,12 +111,12 @@
     <Compile Include="IO\IFileSystem.cs" />
     <Compile Include="Machine\MachineFile.cs" />
     <Compile Include="Settings.cs" />
-    <Compile Include="UI\HistoryView.cs" />
-    <Compile Include="UI\Logic\MachinePropertiesWindowLogic.cs" />
-    <Compile Include="Machine\HistoryEvent.cs" />
-    <Compile Include="UI\Forms\MachinePropertiesWindow.xaml.cs">
-      <DependentUpon>MachinePropertiesWindow.xaml</DependentUpon>
+    <Compile Include="UI\Forms\RenameWindow.xaml.cs">
+      <DependentUpon>RenameWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UI\HistoryView.cs" />
+    <Compile Include="UI\Logic\BookmarkSelectWindowLogic.cs" />
+    <Compile Include="Machine\HistoryEvent.cs" />
     <Compile Include="UI\Converters\RunningIcon.cs" />
     <Compile Include="Core\Core.cs" />
     <Compile Include="UI\Display.cs" />
@@ -128,17 +128,13 @@
       <DependentUpon>SelectItemWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="UI\Converters\Ticks.cs" />
-    <Compile Include="UI\Forms\BookmarkSelectWindow.xaml.cs">
-      <DependentUpon>BookmarkSelectWindow.xaml</DependentUpon>
+    <Compile Include="UI\Forms\BookmarksWindow.xaml.cs">
+      <DependentUpon>BookmarksWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="UI\HistoryViewItem.cs" />
     <Compile Include="UI\Logic\MainWindowLogic.cs" />
     <Compile Include="UI\Converters\Invisibility.cs" />
     <Compile Include="UnmanagedMemory.cs" />
-    <Page Include="UI\Forms\MachinePropertiesWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="UI\Forms\MachineTabItem.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -161,11 +157,15 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="UI\Forms\RenameWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="UI\Forms\SelectItemWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="UI\Forms\BookmarkSelectWindow.xaml">
+    <Page Include="UI\Forms\BookmarksWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

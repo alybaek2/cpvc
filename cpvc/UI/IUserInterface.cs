@@ -14,7 +14,6 @@ namespace CPvC
 
         Machine GetActiveMachine();
 
-        void OpenProperties();
         HistoryEvent PromptForBookmark();
 
         void ReportError(string message);

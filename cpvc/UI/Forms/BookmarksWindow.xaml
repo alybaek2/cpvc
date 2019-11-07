@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:converters="clr-namespace:CPvC.UI.Converters"
         mc:Ignorable="d"
-        Title="Select Bookmark" Width="413" Loaded="Window_Loaded" ResizeMode="NoResize" SizeToContent="Height" WindowStartupLocation="CenterOwner">
+        Title="Bookmarks" Loaded="Window_Loaded" ResizeMode="NoResize" SizeToContent="WidthAndHeight" WindowStartupLocation="CenterOwner">
     <Grid>
         <Grid.Resources>
             <converters:Ticks x:Key="ticksConverter" />
@@ -19,11 +19,11 @@
             </DataTemplate>
         </Grid.Resources>
         <StackPanel>
-            <Grid Width="384" Height="288" VerticalAlignment="Top" Margin="10,10,10,0">
+            <Grid x:Name="_grid" VerticalAlignment="Top" Margin="10,10,10,0" HorizontalAlignment="Center">
                 <Image x:Name="_fullScreenImage" Width="384" Height="288" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill" Margin="0"/>
                 <Label x:Name="_noBookmarkSelectedLabel" Content="No bookmark selected" HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Grid>
-            <ListView x:Name="_historyListView" Margin="10,10,10,10" Height="250" SelectionMode="Single" SelectionChanged="HistoryListView_SelectionChanged">
+            <ListView x:Name="_historyListView" Margin="10,10,10,10" Height="250" SelectionChanged="HistoryListView_SelectionChanged" Width="{Binding ActualWidth, ElementName=_grid, Mode=OneWay}">
                 <ListView.ItemContainerStyle>
                     <Style TargetType="{x:Type ListViewItem}">
                         <Setter Property="BorderThickness" Value="0"/>
@@ -40,8 +40,10 @@
                 </ListView.View>
             </ListView>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="_selectButton" Content="Select" Width="100" Height="20" Margin="0,0,10,10" Click="SelectButton_Click" IsEnabled="{Binding SelectedItem.IsBookmark, ElementName=_timelineListView, Mode=OneWay}"/>
-                <Button x:Name="_cancelButton" Content="Cancel" Width="100" Height="20" Margin="0,0,10,10" Click="CancelButton_Click"/>
+                <Button x:Name="_deleteBranchButton" Content="Delete Branch" Width="90" Height="20" Margin="0,0,10,10" Click="DeleteBranchButton_Click"/>
+                <Button x:Name="_deleteBookmarkButton" Content="Delete Bookmark" Width="102" Height="20" Margin="0,0,10,10" Click="DeleteBookmarkButton_Click"/>
+                <Button x:Name="_jumpToBookmarkButton" Content="Jump to Bookmark" Width="111" Height="20" Margin="0,0,10,10" Click="JumpToBookmarkButton_Click" IsEnabled="{Binding SelectedItem.IsBookmark, ElementName=_timelineListView, Mode=OneWay}"/>
+                <Button x:Name="_closeButton" Content="Close" Width="54" Height="20" Margin="0,0,10,10" Click="CloseButton_Click"/>
             </StackPanel>
         </StackPanel>
     </Grid>

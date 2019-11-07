@@ -1,18 +1,21 @@
-﻿namespace CPvC
-{
-    /// <summary>
-    /// Encapsulates the logic needed by the Machine Properties dialog.
-    /// </summary>
-    public class MachinePropertiesWindowLogic
-    {
-        private readonly Machine _machine;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-        public MachinePropertiesWindowLogic(Machine machine)
+namespace CPvC
+{
+    public class BookmarkSelectWindowLogic
+    {
+        private Machine _machine;
+
+        public BookmarkSelectWindowLogic(Machine machine)
         {
             _machine = machine;
         }
 
-        public void DeleteTimelines(System.Collections.IList items)
+        public void DeleteBranches(System.Collections.IList items)
         {
             foreach (HistoryViewItem item in items)
             {
@@ -32,11 +35,6 @@
                     _machine.SetBookmark(item.HistoryEvent, null);
                 }
             }
-        }
-
-        public void RewriteMachineFile()
-        {
-            _machine.RewriteMachineFile();
         }
     }
 }

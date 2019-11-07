@@ -6,7 +6,7 @@ using System.Windows.Controls;
 namespace CPvC
 {
     /// <summary>
-    /// Provides a group of static helper methods for the history view shown in MachinePropertiesWindow and BookmarkSelectWindow.
+    /// Provides a group of static helper methods for the history view shown in BookmarkSelectWindow.
     /// </summary>
     static public class HistoryView
     {
@@ -50,7 +50,7 @@ namespace CPvC
             {
                 HistoryEvent historyEvent = viewItem.HistoryEvent;
 
-                // Even though the current event doesn't necessarily have a bookmark, we cen still populate the display.
+                // Even though the current event doesn't necessarily have a bookmark, we can still populate the display.
                 if (historyEvent == machine.CurrentEvent)
                 {
                     image.Source = machine.Display.Bitmap;

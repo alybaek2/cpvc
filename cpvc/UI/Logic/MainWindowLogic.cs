@@ -90,14 +90,6 @@ namespace CPvC
             }
         }
 
-        public void OpenProperties()
-        {
-            if (Machine != null)
-            {
-                _userInterface.OpenProperties();
-            }
-        }
-
         public void SelectBookmark()
         {
             if (Machine == null)
