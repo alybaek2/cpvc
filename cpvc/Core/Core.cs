@@ -94,7 +94,7 @@ namespace CPvC
             SetScreenBuffer(IntPtr.Zero);
 
             _audioSamplingFrequency = 48000;
-            _volume = 40;
+            _volume = 80;
 
             _audioReady = new AutoResetEvent(true);
             _requestQueueEmpty = new AutoResetEvent(true);

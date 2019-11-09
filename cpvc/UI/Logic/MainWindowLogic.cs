@@ -283,7 +283,7 @@ namespace CPvC
 
             _userInterface.AddMachine(machine);
 
-            foreach (MachineInfo info in RecentlyOpenedMachines.Where(x => x.Filepath == machine.Filepath))
+            foreach (MachineInfo info in RecentlyOpenedMachines.Where(x => x.Filepath == machine.Filepath).ToList())
             {
                 RecentlyOpenedMachines.Remove(info);
             }
