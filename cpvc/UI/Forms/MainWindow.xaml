@@ -28,7 +28,7 @@
         <DataTemplate x:Key="MachinePreview">
             <Grid MouseLeftButtonUp="Grid_MouseLeftButtonUp">
                 <StackPanel Margin="5">
-                    <Image x:Name="_machineImage" Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" Source="{Binding Path=Display.Bitmap}"/>
+                    <Image x:Name="_machineImage" Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" Source="{Binding Path=Display.Bitmap}" ToolTip="{Binding Path=Filepath}" Cursor="Hand"/>
                     <Label Content="{Binding Name}" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Grid>
