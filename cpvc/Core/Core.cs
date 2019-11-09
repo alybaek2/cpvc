@@ -371,6 +371,9 @@ namespace CPvC
         /// <returns>The number of samples that were copied in the buffer. Note this can be less than <c>samplesRequested</c>.</returns>
         public int ReadAudio16BitStereo(byte[] buffer, int offset, int samplesRequested)
         {
+            // Skew the volume factor so the volume control presents a more balanced range of volumes.
+            double volumeFactor = Math.Pow(_volume / 255.0, 3);
+
             int samplesWritten = 0;
             while (samplesWritten < samplesRequested)
             {
@@ -380,8 +383,8 @@ namespace CPvC
                 for (int s = 0; s < samplesReturned; s++)
                 {
                     // Treat Channel A as "Left", Channel B as "Centre", and Channel C as "Right".
-                    UInt32 left = (UInt32)((2 * _amplitudes[_audioChannelA[s]] + _amplitudes[_audioChannelB[s]]) * (_volume / 255.0)) / 3;
-                    UInt32 right = (UInt32)((2 * _amplitudes[_audioChannelC[s]] + _amplitudes[_audioChannelB[s]]) * (_volume / 255.0)) / 3;
+                    UInt32 left = (UInt32)((2 * _amplitudes[_audioChannelA[s]] + _amplitudes[_audioChannelB[s]]) * volumeFactor) / 3;
+                    UInt32 right = (UInt32)((2 * _amplitudes[_audioChannelC[s]] + _amplitudes[_audioChannelB[s]]) * volumeFactor) / 3;
 
                     // Divide by two to deal with the fact NAudio requires signed 16-bit samples.
                     left = (UInt16)(left / 2);
