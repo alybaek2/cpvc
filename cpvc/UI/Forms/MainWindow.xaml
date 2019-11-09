@@ -25,6 +25,17 @@
                 </Style>
             </Style.Resources>
         </Style>
+        <DataTemplate x:Key="MachinePreview">
+            <Grid MouseLeftButtonUp="Grid_MouseLeftButtonUp">
+                <StackPanel Margin="5">
+                    <Image x:Name="_machineImage" Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" Source="{Binding Path=Display.Bitmap}"/>
+                    <Label Content="{Binding Name}" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+        <ItemsPanelTemplate x:Key="WrapPanel">
+            <WrapPanel/>
+        </ItemsPanelTemplate>
     </Window.Resources>
     <Grid AllowDrop="True" Margin="0,0,0,0" Background="#FFF0F0F0">
         <Grid.RowDefinitions>
@@ -145,7 +156,27 @@
                 </Button>
             </ToolBar>
         </ToolBarTray>
-        <TabControl x:Name="_machineTabControl" Margin="5,5,5,5" Grid.Row="2" SelectionChanged="MachineTabControl_SelectionChanged" Height="576" Width="768"/>
+        <TabControl x:Name="_machineTabControl" Margin="5,5,5,5" Grid.Row="2" SelectionChanged="MachineTabControl_SelectionChanged" Height="576" Width="768">
+            <TabItem x:Name="_homeTabItem" Header="Home">
+                <ScrollViewer>
+                    <Grid>
+                        <StackPanel>
+                            <StackPanel>
+                                <Label Content="Opened machines" FontWeight="Bold" FontSize="14" />
+                                <ItemsControl x:Name="_runningMachines" ItemsSource="{Binding Path=Machines, Mode=OneWay}" ItemTemplate="{StaticResource MachinePreview}" ItemsPanel="{StaticResource WrapPanel}"/>
+                                <Separator />
+                            </StackPanel>
+                            <StackPanel>
+                                <Label Content="Unopened machines" FontSize="14" FontWeight="Bold" />
+                                <Label Content="To open a machine, click its thumbnail." />
+                                <ItemsControl x:Name="_recentlyOpenedMachines" ItemsSource="{Binding Path=RecentlyOpenedMachines, Mode=OneWay}" ItemTemplate="{StaticResource MachinePreview}" ItemsPanel="{StaticResource WrapPanel}"/>
+                                <Separator />
+                            </StackPanel>                        
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
         <StatusBar x:Name="_statusBar" Height="30" Grid.Row="3" VerticalAlignment="Top">
             <TextBlock x:Name="_clockTextBlock" TextWrapping="Wrap" Text="{Binding Machine.Core.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
             <Separator/>

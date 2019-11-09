@@ -16,12 +16,15 @@ namespace CPvC.UI.Forms
         private Audio _audio;
         private KeyboardMapping _keyMap;
 
+        private ISettings _settings;
+
         public MainWindow()
         {
             InitializeComponent();
 
+            _settings = new Settings();
             _fileSystem = new FileSystem();
-            _logic = new MainWindowLogic(this, _fileSystem);
+            _logic = new MainWindowLogic(this, _fileSystem, _settings);
             _audio = new Audio(_logic.ReadAudio);
         }
 
@@ -138,6 +141,7 @@ namespace CPvC.UI.Forms
             InitKeyboardMap();
 
             DataContext = _logic;
+            _homeTabItem.DataContext = _logic;
 
             StartAudio();
         }
@@ -216,7 +220,7 @@ namespace CPvC.UI.Forms
 
         private void _openButton_Click(object sender, RoutedEventArgs e)
         {
-            _logic.OpenMachine();
+            _logic.OpenMachine(null);
         }
 
         private void MachineTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -224,7 +228,7 @@ namespace CPvC.UI.Forms
             TabItem tabItem = (TabItem)_machineTabControl.SelectedItem;
             if (tabItem != null)
             {
-                _logic.Machine = (Machine)tabItem.DataContext;
+                _logic.Machine = tabItem.DataContext as Machine;
             }
         }
 
@@ -245,7 +249,7 @@ namespace CPvC.UI.Forms
 
         private void OpenMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _logic.OpenMachine();
+            _logic.OpenMachine(null);
         }
 
         private void CloseMenuItem_Click(object sender, RoutedEventArgs e)
@@ -330,17 +334,17 @@ namespace CPvC.UI.Forms
                 case FileTypes.Disc:
                     defaultExtension = "zip";
                     fileFilter = "Disc files (*.dsk;*.zip)|*.dsk;*.zip|All files (*.*)|*.*";
-                    initialFolder = Settings.DiscsFolder;
+                    initialFolder = _settings.DiscsFolder;
                     break;
                 case FileTypes.Tape:
                     defaultExtension = "zip";
                     fileFilter = "Tape files (*.cdt;*.tzx;*.zip)|*.cdt;*.tzx;*.zip|All files (*.*)|*.*";
-                    initialFolder = Settings.TapesFolder;
+                    initialFolder = _settings.TapesFolder;
                     break;
                 case FileTypes.Machine:
                     defaultExtension = "cpvc";
                     fileFilter = "CPvC files (*.cpvc)|*.cpvc|All files (*.*)|*.*";
-                    initialFolder = Settings.MachinesFolder;
+                    initialFolder = _settings.MachinesFolder;
                     break;
                 default:
                     throw new Exception(String.Format("Unknown FileTypes value {0}.", type));
@@ -371,13 +375,13 @@ namespace CPvC.UI.Forms
                 switch (type)
                 {
                     case FileTypes.Disc:
-                        Settings.DiscsFolder = folder;
+                        _settings.DiscsFolder = folder;
                         break;
                     case FileTypes.Tape:
-                        Settings.TapesFolder = folder;
+                        _settings.TapesFolder = folder;
                         break;
                     case FileTypes.Machine:
-                        Settings.MachinesFolder = folder;
+                        _settings.MachinesFolder = folder;
                         break;
                 }
 
@@ -484,6 +488,18 @@ namespace CPvC.UI.Forms
                     machine.Name = dialog.NewName;
                 }
             }
+        }
+
+        private void Grid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            Grid grid = sender as Grid;
+            MachineInfo info = grid.DataContext as MachineInfo;
+            if (info == null)
+            {
+                return;
+            }
+
+            _logic.OpenMachine(info.Filepath);
         }
     }
 }

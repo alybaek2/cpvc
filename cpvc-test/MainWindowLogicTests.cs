@@ -34,6 +34,11 @@ namespace cpvc_test
             return userInterface => userInterface.AddMachine(It.IsAny<Machine>());
         }
 
+        static private Expression<Action<IUserInterface>> RemoveMachine()
+        {
+            return userInterface => userInterface.RemoveMachine(It.IsAny<Machine>());
+        }
+
         static private Expression<Func<IFileSystem, byte[]>> GetZipFileEntry(string filename)
         {
             return fileSystem => fileSystem.GetZipFileEntry(filename, AnyString());
@@ -87,8 +92,10 @@ namespace cpvc_test
             mockUserInterface.Setup(PromptForFile()).Returns(filepath);
             mockUserInterface.Setup(ReportError());
 
+            Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Loose);
+
             // Act
-            MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object);
+            MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object, mockSettings.Object);
             logic.NewMachine();
 
             // Verify
@@ -107,9 +114,11 @@ namespace cpvc_test
             Mock<IUserInterface> mockUserInterface = new Mock<IUserInterface>(MockBehavior.Strict);
             mockUserInterface.Setup(PromptForFile()).Returns(filepath);
             mockUserInterface.Setup(AddMachine());
+            mockUserInterface.Setup(RemoveMachine());
+            Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Loose);
 
             // Act
-            MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object);
+            MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object, mockSettings.Object);
             logic.NewMachine();
             logic.CloseAll();
 
@@ -119,6 +128,7 @@ namespace cpvc_test
             if (filepath != null)
             {
                 mockUserInterface.Verify(AddMachine(), Times.Once());
+                mockUserInterface.Verify(RemoveMachine(), Times.Once());
             }
 
             mockUserInterface.VerifyNoOtherCalls();
@@ -131,9 +141,10 @@ namespace cpvc_test
             // Setup
             Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
             Mock<IUserInterface> mockUserInterface = new Mock<IUserInterface>(MockBehavior.Strict);
+            Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Loose);
 
             // Act
-            MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object)
+            MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object, mockSettings.Object)
             {
                 Machine = null
             };
@@ -152,9 +163,10 @@ namespace cpvc_test
             // Setup
             Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
             Mock<IUserInterface> mockUserInterface = new Mock<IUserInterface>(MockBehavior.Strict);
+            Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Loose);
 
             // Act
-            MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object)
+            MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object, mockSettings.Object)
             {
                 Machine = null
             };
@@ -179,8 +191,10 @@ namespace cpvc_test
             Mock<IUserInterface> mockUserInterface = new Mock<IUserInterface>(MockBehavior.Strict);
             mockUserInterface.Setup(PromptForFile()).Returns(filename);
 
+            Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Loose);
+
             // Act
-            MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object);
+            MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object, mockSettings.Object);
             Machine machine = Machine.New("test", "test.cpvc", mockFileSystem.Object);
             logic.Machine = machine;
             if (drive == 2)
@@ -238,8 +252,10 @@ namespace cpvc_test
                 }
             }
 
+            Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Loose);
+
             // Act
-            MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object);
+            MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object, mockSettings.Object);
             Machine machine = Machine.New("test", "test.cpvc", mockFileSystem.Object);
             logic.Machine = machine;
             if (drive == 2)

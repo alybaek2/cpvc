@@ -14,7 +14,6 @@ namespace CPvC
     public sealed class Machine : INotifyPropertyChanged, IDisposable
     {
         private string _name;
-        private string _machineFilepath;
         private Core _core;
         private bool _running;
         private int _autoPauseCount;
@@ -22,6 +21,8 @@ namespace CPvC
         public Display Display { get; private set; }
         public HistoryEvent CurrentEvent { get; private set; }
         public HistoryEvent RootEvent { get; private set; }
+
+        public string Filepath { get; }
 
         private int _nextEventId;
 
@@ -33,7 +34,7 @@ namespace CPvC
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
             _name = name;
-            _machineFilepath = machineFilepath;
+            Filepath = machineFilepath;
             _running = false;
             _autoPauseCount = 0;
 
@@ -326,7 +327,7 @@ namespace CPvC
             // Only copy to the display if the VSync is from a core we're interesting in.
             if (core != null && _core == core)
             {
-                Display.CopyFromBuffer();
+                Display.CopyFromBufferAsync();
             }
         }
 
@@ -526,7 +527,7 @@ namespace CPvC
         {
             using (AutoPause())
             {
-                string tempname = _machineFilepath + ".new";
+                string tempname = Filepath + ".new";
 
                 IFile file = _fileSystem.OpenFile(tempname);
 
@@ -548,9 +549,9 @@ namespace CPvC
 
                 _file.Close();
 
-                _fileSystem.ReplaceFile(_machineFilepath, tempname);
+                _fileSystem.ReplaceFile(Filepath, tempname);
 
-                file = _fileSystem.OpenFile(_machineFilepath);
+                file = _fileSystem.OpenFile(Filepath);
                 _file = new MachineFile(file);
             }
         }

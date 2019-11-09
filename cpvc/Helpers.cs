@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace CPvC
 {
@@ -103,6 +105,53 @@ namespace CPvC
 
                 return outStream.ToArray();
             }
+        }
+
+        /// <summary>
+        /// Splits a string based on a delimiter, while ignoring delimiters escaped with a backspace.
+        /// </summary>
+        /// <param name="delim">Delimiter character.</param>
+        /// <param name="str">String to split.</param>
+        /// <returns>An array of strings.</returns>
+        static public List<string> SplitWithEscape(char delim, string str)
+        {
+            List<string> strs = new List<string>();
+
+            string currentStr = "";
+            for (int i = 0; i < str.Length; i++)
+            {
+                if (str[i] != '\\' && str[i] != delim)
+                {
+                    currentStr += str[i];
+                }
+                else if (str[i] == delim)
+                {
+                    strs.Add(currentStr);
+                    currentStr = "";
+                }
+                else
+                {
+                    currentStr += str[i];
+                    currentStr += str[i + 1];
+                    i++;
+                }
+            }
+
+            strs.Add(currentStr);
+
+            return strs;
+        }
+
+        /// <summary>
+        /// Joins a list of strings, ensuring to escape any delimiter characters before joining.
+        /// </summary>
+        /// <param name="delim">Delimiter character.</param>
+        /// <param name="strs">Strings to join.</param>
+        /// <returns>A joined string.</returns>
+        static public string JoinWithEscape(char delim, List<string> strs)
+        {
+            string delimStr = delim.ToString();
+            return String.Join(delimStr, strs.Select(x => x.Replace(delimStr, String.Format("\\{0}", delim))));
         }
     }
 }

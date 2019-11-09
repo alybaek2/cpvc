@@ -1,13 +1,14 @@
 ﻿namespace CPvC
 {
     /// <summary>
-    /// Encapsulates all application-level settings.
+    /// Encapsulates all application-wide configuration settings.
     /// </summary>
-    static public class Settings
+    public class Settings : ISettings
     {
         private const string _machinesFolderSettingName = "MachinesFolder";
         private const string _discsFolderSettingName = "DiscsFolder";
         private const string _tapesFolderSettingName = "TapesFolder";
+        private const string _recentlyOpenedSettingName = "RecentlyOpened";
 
         static private string GetStringSetting(string name)
         {
@@ -23,7 +24,7 @@
         /// <summary>
         /// Default folder for loading machines.
         /// </summary>
-        static public string MachinesFolder
+        public string MachinesFolder
         {
             get
             {
@@ -39,7 +40,7 @@
         /// <summary>
         /// Default folder for loading disc images.
         /// </summary>
-        static public string DiscsFolder
+        public string DiscsFolder
         {
             get
             {
@@ -55,7 +56,7 @@
         /// <summary>
         /// Default folder for loading tape images.
         /// </summary>
-        static public string TapesFolder
+        public string TapesFolder
         {
             get
             {
@@ -65,6 +66,22 @@
             set
             {
                 SetStringSetting(_tapesFolderSettingName, value);
+            }
+        }
+
+        /// <summary>
+        /// Information on all recently opened machines.
+        /// </summary>
+        public string RecentlyOpened
+        {
+            get
+            {
+                return GetStringSetting(_recentlyOpenedSettingName);
+            }
+
+            set
+            {
+                SetStringSetting(_recentlyOpenedSettingName, value);
             }
         }
     }

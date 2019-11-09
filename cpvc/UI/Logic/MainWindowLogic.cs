@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 
@@ -13,19 +14,31 @@ namespace CPvC
     /// </remarks>
     public class MainWindowLogic : INotifyPropertyChanged
     {
-        private readonly List<Machine> _machines;
         private readonly IUserInterface _userInterface;
         private readonly IFileSystem _fileSystem;
+        private readonly ISettings _settings;
 
         private Machine _machine;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public MainWindowLogic(IUserInterface userInterface, IFileSystem fileSystem)
+        public MainWindowLogic(IUserInterface userInterface, IFileSystem fileSystem, ISettings settings)
         {
-            _machines = new List<Machine>();
+            Machines = new ObservableCollection<Machine>();
             _userInterface = userInterface;
             _fileSystem = fileSystem;
+            _settings = settings;
+
+            RecentlyOpenedMachines = new ObservableCollection<MachineInfo>();
+
+            string recent = _settings.RecentlyOpened;
+            if (recent != null)
+            {
+                foreach (MachineInfo info in Helpers.SplitWithEscape(',', recent).Select(x => MachineInfo.FromString(x, _fileSystem)).Where(y => y != null))
+                {
+                    RecentlyOpenedMachines.Add(info);
+                }
+            }
         }
 
         public Machine Machine
@@ -41,6 +54,9 @@ namespace CPvC
                 OnPropertyChanged("Machine");
             }
         }
+
+        public ObservableCollection<Machine> Machines { get; }
+        public ObservableCollection<MachineInfo> RecentlyOpenedMachines { get; }
 
         public void Key(byte key, bool down)
         {
@@ -260,19 +276,26 @@ namespace CPvC
 
         private void AddMachine(Machine machine)
         {
-            lock (_machines)
+            lock (Machines)
             {
-                _machines.Add(machine);
+                Machines.Add(machine);
             }
 
             _userInterface.AddMachine(machine);
+
+            foreach (MachineInfo info in RecentlyOpenedMachines.Where(x => x.Filepath == machine.Filepath))
+            {
+                RecentlyOpenedMachines.Remove(info);
+            }
+
+            UpdateRecentlyOpened();
         }
 
         private void RemoveMachine(Machine machine)
         {
-            lock (_machines)
+            lock (Machines)
             {
-                _machines.Remove(machine);
+                Machines.Remove(machine);
             }
 
             _userInterface.RemoveMachine(Machine);
@@ -311,9 +334,13 @@ namespace CPvC
             machine.Start();
         }
 
-        public void OpenMachine()
+        public void OpenMachine(string filepath)
         {
-            string filepath = _userInterface.PromptForFile(FileTypes.Machine, true);
+            if (filepath == null)
+            {
+                filepath = _userInterface.PromptForFile(FileTypes.Machine, true);
+            }
+
             if (filepath == null)
             {
                 return;
@@ -343,19 +370,15 @@ namespace CPvC
 
         public void Close()
         {
-            if (Machine != null)
-            {
-                Machine.Close();
-
-                RemoveMachine(Machine);
-            }
+            Close(Machine);
         }
 
         public void CloseAll()
         {
-            foreach (Machine machine in _machines)
+            // Make a copy of Machines since Close will be removing elements from it.
+            foreach (Machine machine in Machines.ToList())
             {
-                machine.Close();
+                Close(machine);
             }
         }
 
@@ -366,10 +389,10 @@ namespace CPvC
 
         public int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
-            lock (_machines)
+            lock (Machines)
             {
                 int samplesWritten = 0;
-                foreach (Machine machine in _machines)
+                foreach (Machine machine in Machines)
                 {
                     // Play audio only from the currently selected machine; for the rest, just
                     // advance the audio playback position.
@@ -384,6 +407,23 @@ namespace CPvC
                 }
 
                 return samplesWritten;
+            }
+        }
+
+        private void UpdateRecentlyOpened()
+        {
+            _settings.RecentlyOpened = Helpers.JoinWithEscape(',', RecentlyOpenedMachines.Select(x => x.AsString()).ToList());
+        }
+
+        private void Close(Machine machine)
+        {
+            if (machine != null)
+            {
+                RecentlyOpenedMachines.Add(new MachineInfo(machine));
+                UpdateRecentlyOpened();
+
+                machine.Close();
+                RemoveMachine(machine);
             }
         }
     }

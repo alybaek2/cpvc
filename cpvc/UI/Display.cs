@@ -29,17 +29,25 @@ namespace CPvC
         }
 
         /// <summary>
-        /// Copies the display's internal screen buffer to Bitmap. Note the copy must be done on the same thread in which the Bitmap was created.
+        /// Asynchronously copies the display's internal screen buffer to Bitmap. This method ensures this is done on the same thread in which the Bitmap was created.
         /// </summary>
-        public void CopyFromBuffer()
+        public void CopyFromBufferAsync()
         {
             Bitmap.Dispatcher.BeginInvoke(new Action(() =>
             {
-                if (Buffer != IntPtr.Zero)
-                {
-                    Bitmap.WritePixels(_drawRect, Buffer, Pitch * Height, Pitch);
-                }
+                CopyFromBuffer();
             }), null);
+        }
+
+        /// <summary>
+        /// Copies the display's internal screen buffer to Bitmap. Note this method should only be called on the same thread in which the Bitmap was created.
+        /// </summary>
+        public void CopyFromBuffer()
+        {
+            if (Buffer != IntPtr.Zero)
+            {
+                Bitmap.WritePixels(_drawRect, Buffer, Pitch * Height, Pitch);
+            }
         }
 
         /// <summary>
