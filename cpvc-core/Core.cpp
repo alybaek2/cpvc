@@ -60,10 +60,10 @@ bool Core::KeyPress(byte keycode, bool down)
 }
 
 // Screen methods
-void Core::SetScreen(dword* pBuffer, word pitch, word height)
+void Core::SetScreen(dword* pBuffer, word pitch, word height, word width)
 {
     _scrPitch = pitch;
-    _scrWidth = _scrPitch / (sizeof(dword) * 16); // 16 pixels per CRTC character
+    _scrWidth = width / 16;  // _scrWidth is in CRTC chars (16 pixels per char).
     _scrHeight = height;
     _pScreen = pBuffer;
 }
@@ -181,7 +181,7 @@ void Core::VideoRender()
     bool inSync = (_crtc._inHSync || _crtc._inVSync);
     bool inBorder = !inScreen && !inSync;
 
-    dword offset = (_scrPitch * _crtc._y) + _crtc._x * 16 * 4;
+    dword offset = (_scrPitch * _crtc._y) + _crtc._x * 16;
     byte* pPixel = ((byte*)_pScreen) + offset;
 
     if (inSync)
@@ -191,8 +191,7 @@ void Core::VideoRender()
 
     if (inBorder)
     {
-        memcpy(pPixel, _gateArray._renderedBorderBytes, 8 * sizeof(dword));
-        memcpy(pPixel + 32, _gateArray._renderedBorderBytes, 8 * sizeof(dword));
+        memset(pPixel, _gateArray._border, 16);
     }
     else
     {
@@ -202,10 +201,10 @@ void Core::VideoRender()
              ((_crtc._raster & 0x07) << 11) |
              ((memAddr & 0x03FF) << 1));
 
-        dword (&pens)[256][8] = _gateArray._renderedPenBytes[_gateArray._mode];
+        byte (&pens)[256][8] = _gateArray._renderedPenBytes[_gateArray._mode];
 
-        memcpy(pPixel, pens[_memory.VideoRead(addr)], 8 * sizeof(dword));
-        memcpy(pPixel + 32, pens[_memory.VideoRead(addr + 1)], 8 * sizeof(dword));
+        memcpy(pPixel, pens[_memory.VideoRead(addr)], 8);
+        memcpy(pPixel + 8, pens[_memory.VideoRead(addr + 1)], 8);
     }
 }
 

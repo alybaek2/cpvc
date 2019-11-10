@@ -34,7 +34,7 @@ namespace CPvC
                 // isn't the most efficient way to do this...
                 using (Machine machine = Machine.Open(filepath, fileSystem))
                 {
-                    _bitmap = machine.Display.Bitmap;
+                    _bitmap = machine.Display.ConvertToGreyscale();
                 }
             }
         }
@@ -43,7 +43,7 @@ namespace CPvC
         {
             Name = machine.Name;
             Filepath = machine.Filepath;
-            _bitmap = machine.Display.Bitmap;
+            _bitmap = machine.Display.ConvertToGreyscale();
         }
 
         static public MachineInfo FromString(string str, IFileSystem fileSystem)

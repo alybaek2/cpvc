@@ -1,50 +1,6 @@
 #include "common.h"
 #include "GateArray.h"
 
-constexpr byte on   = 0xFF;
-constexpr byte half = 0x7F;
-constexpr byte off  = 0x00;
-
-constexpr dword RGB(byte r, byte g, byte b)
-{
-    return (((dword) b) | ((dword) g << 8) | ((dword) r << 16));
-}
-
-dword colours[32] = {
-    RGB(half, half, half),   //  0 - White
-    RGB(half, half, half),   //  1 - White
-    RGB(off,  on,   half),   //  2 - Sea Green
-    RGB(on,   on,   half),   //  3 - Pastel Yellow
-    RGB(off,  off,  half),   //  4 - Blue
-    RGB(on,   off,  half),   //  5 - Purple
-    RGB(off,  half, half),   //  6 - Cyan
-    RGB(on,   half, half),   //  7 - Pink
-    RGB(on,   off,  half),   //  8 - Purple
-    RGB(on,   on,   half),   //  9 - Pastel Yellow
-    RGB(on,   on,   off),    // 10 - Bright Yellow
-    RGB(on,   on,   on),     // 11 - Bright White
-    RGB(on,   off,  off),    // 12 - Bright Red
-    RGB(on,   off,  on),     // 13 - Bright Magenta
-    RGB(on,   half, off),    // 14 - Orange
-    RGB(on,   half, on),     // 15 - Pastel Magenta
-    RGB(off,  off,  half),   // 16 - Blue
-    RGB(off,  on,   half),   // 17 - Sea Green
-    RGB(off,  on,   off),    // 18 - Bright Green
-    RGB(off,  on,   on),     // 19 - Bright Cyan
-    RGB(off,  off,  off),    // 20 - Black
-    RGB(off,  off,  on),     // 21 - Bright Blue
-    RGB(off,  half, off),    // 22 - Green
-    RGB(off,  half, on),     // 23 - Sky Blue
-    RGB(half, off,  half),   // 24 - Magenta
-    RGB(half, on,   half),   // 25 - Pastel Green
-    RGB(half, on,   off),    // 26 - Lime
-    RGB(half, on,   on),     // 27 - Pastel Cyan
-    RGB(half, off,  off),    // 28 - Red
-    RGB(half, off,  on),     // 29 - Mauve
-    RGB(half, half, off),    // 30 - Yellow
-    RGB(half, half, on)      // 31 - Pastel Blue
-};
-
 inline byte Nibble(bool b3, bool b2, bool b1, bool b0)
 {
     return
@@ -54,39 +10,39 @@ inline byte Nibble(bool b3, bool b2, bool b1, bool b0)
         (b0 ? 1 : 0);
 }
 
-void Mode0(dword (&pixels)[8], byte* pens, byte b)
+void Mode0(byte (&pixels)[8], byte (&pens)[16], byte b)
 {
     byte pen0 = Nibble(Bit(b, 1), Bit(b, 5), Bit(b, 3), Bit(b, 7));
     byte pen1 = Nibble(Bit(b, 0), Bit(b, 4), Bit(b, 2), Bit(b, 6));
 
-    pixels[0] = colours[pens[pen0]];
-    pixels[1] = pixels[0];
-    pixels[2] = pixels[0];
-    pixels[3] = pixels[0];
-    pixels[4] = colours[pens[pen1]];
-    pixels[5] = pixels[4];
-    pixels[6] = pixels[4];
-    pixels[7] = pixels[4];
+    pixels[0] = pens[pen0];
+    pixels[1] = pens[pen0];
+    pixels[2] = pens[pen0];
+    pixels[3] = pens[pen0];
+    pixels[4] = pens[pen1];
+    pixels[5] = pens[pen1];
+    pixels[6] = pens[pen1];
+    pixels[7] = pens[pen1];
 }
 
-void Mode1(dword(&pixels)[8], byte* pens, byte b)
+void Mode1(byte(&pixels)[8], byte(&pens)[16], byte b)
 {
     byte pen0 = Nibble(false, false, Bit(b, 3), Bit(b, 7));
     byte pen1 = Nibble(false, false, Bit(b, 2), Bit(b, 6));
     byte pen2 = Nibble(false, false, Bit(b, 1), Bit(b, 5));
     byte pen3 = Nibble(false, false, Bit(b, 0), Bit(b, 4));
 
-    pixels[0] = colours[pens[pen0]];
-    pixels[1] = pixels[0];
-    pixels[2] = colours[pens[pen1]];
-    pixels[3] = pixels[2];
-    pixels[4] = colours[pens[pen2]];
-    pixels[5] = pixels[4];
-    pixels[6] = colours[pens[pen3]];
-    pixels[7] = pixels[6];
+    pixels[0] = pens[pen0];
+    pixels[1] = pens[pen0];
+    pixels[2] = pens[pen1];
+    pixels[3] = pens[pen1];
+    pixels[4] = pens[pen2];
+    pixels[5] = pens[pen2];
+    pixels[6] = pens[pen3];
+    pixels[7] = pens[pen3];
 }
 
-void Mode2(dword(&pixels)[8], byte* pens, byte b)
+void Mode2(byte(&pixels)[8], byte(&pens)[16], byte b)
 {
     byte pen0 = Nibble(false, false, false, Bit(b, 7));
     byte pen1 = Nibble(false, false, false, Bit(b, 6));
@@ -97,43 +53,31 @@ void Mode2(dword(&pixels)[8], byte* pens, byte b)
     byte pen6 = Nibble(false, false, false, Bit(b, 1));
     byte pen7 = Nibble(false, false, false, Bit(b, 0));
 
-    pixels[0] = colours[pens[pen0]];
-    pixels[1] = colours[pens[pen1]];
-    pixels[2] = colours[pens[pen2]];
-    pixels[3] = colours[pens[pen3]];
-    pixels[4] = colours[pens[pen4]];
-    pixels[5] = colours[pens[pen5]];
-    pixels[6] = colours[pens[pen6]];
-    pixels[7] = colours[pens[pen7]];
+    pixels[0] = pens[pen0];
+    pixels[1] = pens[pen1];
+    pixels[2] = pens[pen2];
+    pixels[3] = pens[pen3];
+    pixels[4] = pens[pen4];
+    pixels[5] = pens[pen5];
+    pixels[6] = pens[pen6];
+    pixels[7] = pens[pen7];
 }
 
 // Mode 3 is not an official screen mode, but is just a quirk of the hardware (given that the gate array
 // uses two bits for the screen mode). It's the same as Mode 0, but bits 0, 1, 4, and 5 are unused.
-void Mode3(dword(&pixels)[8], byte* pens, byte b)
+void Mode3(byte(&pixels)[8], byte(&pens)[16], byte b)
 {
     byte pen0 = Nibble(false, false, Bit(b, 3), Bit(b, 7));
     byte pen1 = Nibble(false, false, Bit(b, 2), Bit(b, 6));
 
-    pixels[0] = colours[pens[pen0]];
-    pixels[1] = pixels[0];
-    pixels[2] = pixels[0];
-    pixels[3] = pixels[0];
-    pixels[4] = colours[pens[pen1]];
-    pixels[5] = pixels[4];
-    pixels[6] = pixels[4];
-    pixels[7] = pixels[4];
-}
-
-void Border(dword(&pixels)[8], byte border)
-{
-    pixels[0] = colours[border];
-    pixels[1] = pixels[0];
-    pixels[2] = pixels[0];
-    pixels[3] = pixels[0];
-    pixels[4] = pixels[0];
-    pixels[5] = pixels[0];
-    pixels[6] = pixels[0];
-    pixels[7] = pixels[0];
+    pixels[0] = pens[pen0];
+    pixels[1] = pens[pen0];
+    pixels[2] = pens[pen0];
+    pixels[3] = pens[pen0];
+    pixels[4] = pens[pen1];
+    pixels[5] = pens[pen1];
+    pixels[6] = pens[pen1];
+    pixels[7] = pens[pen1];
 }
 
 GateArray::GateArray(Memory& memory, bool& pInterruptRequested, byte& pScanLineCount) : _memory(memory), _interruptRequested(pInterruptRequested), _scanLineCount(pScanLineCount)
@@ -152,18 +96,12 @@ void GateArray::Reset()
     _mode = 0;
     memset(_pen, 0, sizeof(_pen[0]));
 
-    RenderBorder();
     RenderPens();
 }
 
 byte GateArray::Read()
 {
     return 0;
-}
-
-void GateArray::RenderBorder()
-{
-    Border(_renderedBorderBytes, _border);
 }
 
 void GateArray::RenderPens()
@@ -188,8 +126,6 @@ void GateArray::Write(byte b)
         if (Bit(_selectedPen, 4))
         {
             _border = b & 0x1F;
-
-            RenderBorder();
         }
         else
         {
@@ -230,7 +166,6 @@ StreamReader& operator>>(StreamReader& s, GateArray& gateArray)
     s >> gateArray._border;
     s >> gateArray._mode;
 
-    gateArray.RenderBorder();
     gateArray.RenderPens();
 
     return s;

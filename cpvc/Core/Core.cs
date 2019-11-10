@@ -196,7 +196,7 @@ namespace CPvC
         /// </summary>
         public void SetScreenBuffer(IntPtr screenBuffer)
         {
-            _coreCLR.SetScreen(screenBuffer, Display.Pitch, Display.Height);
+            _coreCLR.SetScreen(screenBuffer, Display.Pitch, Display.Height, Display.Width);
         }
 
         /// <summary>

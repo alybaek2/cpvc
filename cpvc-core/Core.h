@@ -43,7 +43,7 @@ public:
     void LoadTape(const byte* pBuffer, int size);
     void LoadDisc(byte drive, const byte* pBuffer, int size);
 
-    void SetScreen(dword* pBuffer, word pitch, word height);
+    void SetScreen(dword* pBuffer, word pitch, word height, word width);
 
     int GetAudioBuffers(int numSamples, byte* (&pChannels)[3]);
     void SetFrequency(dword frequency);

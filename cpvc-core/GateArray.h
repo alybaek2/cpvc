@@ -21,15 +21,13 @@ public:
     byte& _scanLineCount;
     bool& _interruptRequested;
 
-    dword _renderedPenBytes[4][256][8];
-    dword _renderedBorderBytes[8];
+    byte _renderedPenBytes[4][256][8];
 
     void Reset();
 
     byte Read();
     void Write(byte b);
 
-    void RenderBorder();
     void RenderPens();
 
     friend StreamWriter& operator<<(StreamWriter& s, const GateArray& gateArray);
