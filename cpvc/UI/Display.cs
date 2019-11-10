@@ -19,19 +19,36 @@ namespace CPvC
         {
             public CPCColour(byte r, byte g, byte b, byte intensity)
             {
-                _r = (byte)(255 * (r / 2.0));
-                _g = (byte)(255 * (g / 2.0));
-                _b = (byte)(255 * (b / 2.0));
+                _r = r;
+                _g = g;
+                _b = b;
                 _intensity = intensity;
             }
 
+            public Color GetColor()
+            {
+                return Color.FromRgb(Scale(_r, 2), Scale(_g, 2), Scale(_b, 2));
+            }
+
+            public Color GetGreyscaleColor()
+            {
+                byte i = Scale(_intensity, 26);
+
+                return Color.FromRgb(i, i, i);
+            }
+
+            private byte Scale(byte v, byte max)
+            {
+                return (byte)(255 * ((float) v / max));
+            }
+
             // Note that r, g, and b can be either 0, 1, 2, indicating the intensity of each for the colour.
-            public byte _r;
-            public byte _g;
-            public byte _b;
+            private byte _r;
+            private byte _g;
+            private byte _b;
 
             // Indicates the intensity of the colour for use with grey/green screen rendering.
-            public byte _intensity;
+            private byte _intensity;
         }
 
         static private List<CPCColour> _colours = new List<CPCColour>
@@ -69,21 +86,9 @@ namespace CPvC
             new CPCColour(1, 1, 0, 12),   // 30 - Yellow
             new CPCColour(1, 1, 2, 14)    // 31 - Pastel Blue
         };
-
-        /// <summary>
-        /// Maps an intensity value from 0 to 26 (inclusive) to a greyscale RGB Color.
-        /// </summary>
-        /// <param name="g">Intensity value (from 0 to 26 inclusive).</param>
-        /// <returns>A greyscale Color object.</returns>
-        static private Color Grey27(byte g)
-        {
-            byte i = (byte) (255 * (g / 26.0));
-
-            return Color.FromRgb(i, i, i);
-        }
-
-        static private readonly BitmapPalette _greyPalette = new BitmapPalette(_colours.Select(c => Grey27(c._intensity)).ToList());
-        static private readonly BitmapPalette _colourPalette = new BitmapPalette(_colours.Select(c => Color.FromRgb(c._r, c._g, c._b)).ToList());
+        
+        static private readonly BitmapPalette _greyPalette = new BitmapPalette(_colours.Select(c => c.GetGreyscaleColor()).ToList());
+        static private readonly BitmapPalette _colourPalette = new BitmapPalette(_colours.Select(c => c.GetColor()).ToList());
 
         private readonly Int32Rect _drawRect;
 
