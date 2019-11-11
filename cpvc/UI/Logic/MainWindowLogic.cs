@@ -18,7 +18,7 @@ namespace CPvC
         private readonly IFileSystem _fileSystem;
         private readonly ISettings _settings;
 
-        private Machine _machine;
+        private object _active;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -41,17 +41,33 @@ namespace CPvC
             }
         }
 
-        public Machine Machine
+        public object ActiveItem
         {
             get
             {
-                return _machine;
+                return _active;
             }
 
             set
             {
-                _machine = value;
-                OnPropertyChanged("Machine");
+                _active = value;
+                OnPropertyChanged("ActiveItem");
+                OnPropertyChanged("ActiveMachine");
+            }
+        }
+
+        public Machine ActiveMachine
+        {
+            get
+            {
+                return _active as Machine;
+            }
+
+            set
+            {
+                _active = value;
+                OnPropertyChanged("ActiveItem");
+                OnPropertyChanged("ActiveMachine");
             }
         }
 
@@ -60,79 +76,87 @@ namespace CPvC
 
         public void Key(byte key, bool down)
         {
-            if (Machine != null)
+            if (ActiveMachine != null)
             {
-                Machine.Key(key, down);
+                ActiveMachine.Key(key, down);
             }
         }
 
         public void Reset()
         {
-            if (Machine != null)
+            if (ActiveMachine != null)
             {
-                Machine.Reset();
+                ActiveMachine.Reset();
             }
         }
 
         public void Pause()
         {
-            if (Machine != null)
+            if (ActiveMachine != null)
             {
-                Machine.Stop();
+                ActiveMachine.Stop();
             }
         }
 
         public void Resume()
         {
-            if (Machine != null)
+            if (ActiveMachine != null)
             {
-                Machine.Start();
+                ActiveMachine.Start();
+            }
+        }
+
+        public void ToggleRunning(Machine machine)
+        {
+            if (machine != null)
+            {
+                machine.ToggleRunning();
             }
         }
 
         public void AddBookmark()
         {
-            if (Machine != null)
+            if (ActiveMachine != null)
             {
-                Machine.AddBookmark(false);
+                ActiveMachine.AddBookmark(false);
             }
         }
 
         public void SeekToLastBookmark()
         {
-            if (Machine != null)
+            if (ActiveMachine != null)
             {
-                Machine.SeekToLastBookmark();
+                ActiveMachine.SeekToLastBookmark();
             }
         }
 
         public void SelectBookmark()
         {
-            if (Machine == null)
+            if (ActiveMachine == null)
             {
                 return;
             }
 
-            using (Machine.AutoPause())
+            using (ActiveMachine.AutoPause())
             {
                 HistoryEvent historyEvent = _userInterface.PromptForBookmark();
                 if (historyEvent != null)
                 {
-                    Machine.SetCurrentEvent(historyEvent);
+                    ActiveMachine.SetCurrentEvent(historyEvent);
                 }
             }
         }
 
         public void EnableTurbo(bool enabled)
         {
-            if (Machine == null)
+            if (ActiveMachine == null)
             {
                 return;
             }
 
-            using (Machine.AutoPause())
+            using (ActiveMachine.AutoPause())
             {
-                Machine.EnableTurbo(enabled);
+                ActiveMachine.EnableTurbo(enabled);
             }
         }
 
@@ -206,72 +230,72 @@ namespace CPvC
 
         public void LoadDisc(byte drive)
         {
-            if (Machine == null)
+            if (ActiveMachine == null)
             {
                 return;
             }
 
-            using (Machine.AutoPause())
+            using (ActiveMachine.AutoPause())
             {
                 byte[] image = PromptForMedia(FileTypes.Disc);
                 if (image != null)
                 {
-                    Machine.LoadDisc(drive, image);
+                    ActiveMachine.LoadDisc(drive, image);
                 }
             }
         }
 
         public void EjectDisc(byte drive)
         {
-            if (Machine == null)
+            if (ActiveMachine == null)
             {
                 return;
             }
 
-            using (Machine.AutoPause())
+            using (ActiveMachine.AutoPause())
             {
-                Machine.LoadDisc(drive, null);
+                ActiveMachine.LoadDisc(drive, null);
             }
         }
 
         public void LoadTape()
         {
-            if (Machine == null)
+            if (ActiveMachine == null)
             {
                 return;
             }
 
-            using (Machine.AutoPause())
+            using (ActiveMachine.AutoPause())
             {
                 byte[] image = PromptForMedia(FileTypes.Tape);
                 if (image != null)
                 {
-                    Machine.LoadTape(image);
+                    ActiveMachine.LoadTape(image);
                 }
             }
         }
 
         public void EjectTape()
         {
-            if (Machine == null)
+            if (ActiveMachine == null)
             {
                 return;
             }
 
-            using (Machine.AutoPause())
+            using (ActiveMachine.AutoPause())
             {
-                Machine.LoadTape(null);
+                ActiveMachine.LoadTape(null);
             }
         }
 
         public void CompactFile()
         {
-            if (Machine == null)
+            if (ActiveMachine == null)
             {
                 return;
             }
 
-            Machine.RewriteMachineFile();
+            ActiveMachine.RewriteMachineFile();
         }
 
         private void AddMachine(Machine machine)
@@ -280,8 +304,6 @@ namespace CPvC
             {
                 Machines.Add(machine);
             }
-
-            _userInterface.AddMachine(machine);
 
             foreach (MachineInfo info in RecentlyOpenedMachines.Where(x => x.Filepath == machine.Filepath).ToList())
             {
@@ -297,8 +319,6 @@ namespace CPvC
             {
                 Machines.Remove(machine);
             }
-
-            _userInterface.RemoveMachine(Machine);
         }
 
         public void NewMachine()
@@ -370,7 +390,7 @@ namespace CPvC
 
         public void Close()
         {
-            Close(Machine);
+            Close(ActiveMachine);
         }
 
         public void CloseAll()
@@ -396,7 +416,7 @@ namespace CPvC
                 {
                     // Play audio only from the currently selected machine; for the rest, just
                     // advance the audio playback position.
-                    if (machine == Machine)
+                    if (machine == ActiveMachine)
                     {
                         samplesWritten = machine.ReadAudio(buffer, offset, samplesRequested);
                     }

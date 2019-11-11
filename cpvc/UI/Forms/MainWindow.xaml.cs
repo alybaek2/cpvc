@@ -20,12 +20,12 @@ namespace CPvC.UI.Forms
 
         public MainWindow()
         {
-            InitializeComponent();
-
             _settings = new Settings();
             _fileSystem = new FileSystem();
             _logic = new MainWindowLogic(this, _fileSystem, _settings);
             _audio = new Audio(_logic.ReadAudio);
+
+            InitializeComponent();
         }
 
         public void Dispose()
@@ -141,7 +141,6 @@ namespace CPvC.UI.Forms
             InitKeyboardMap();
 
             DataContext = _logic;
-            _homeTabItem.DataContext = _logic;
 
             StartAudio();
         }
@@ -223,15 +222,6 @@ namespace CPvC.UI.Forms
             _logic.OpenMachine(null);
         }
 
-        private void MachineTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            TabItem tabItem = (TabItem)_machineTabControl.SelectedItem;
-            if (tabItem != null)
-            {
-                _logic.Machine = tabItem.DataContext as Machine;
-            }
-        }
-
         private void AddBookmarkButton_Click(object sender, RoutedEventArgs e)
         {
             _logic.AddBookmark();
@@ -295,32 +285,6 @@ namespace CPvC.UI.Forms
         private void TapeMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _logic.LoadTape();
-        }
-
-        // IUserInterface implementation
-        public void AddMachine(Machine machine)
-        {
-            MachineTabItem machineTabItem = new MachineTabItem(machine);
-
-            _machineTabControl.Items.Add(machineTabItem);
-            _machineTabControl.SelectedItem = machineTabItem;
-        }
-
-        public void RemoveMachine(Machine machine)
-        {
-            List<TabItem> tabs = new List<TabItem>();
-            foreach (TabItem tabItem in _machineTabControl.Items)
-            {
-                if (tabItem.DataContext == machine)
-                {
-                    tabs.Add(tabItem);
-                }
-            }
-
-            foreach (TabItem tabItem in tabs)
-            {
-                _machineTabControl.Items.Remove(tabItem);
-            }
         }
 
         public string PromptForFile(FileTypes type, bool existing)
@@ -407,20 +371,9 @@ namespace CPvC.UI.Forms
             return null;
         }
 
-        public Machine GetActiveMachine()
-        {
-            TabItem tabItem = (TabItem)_machineTabControl.SelectedItem;
-            if (tabItem != null)
-            {
-                return (Machine)tabItem.DataContext;
-            }
-
-            return null;
-        }
-
         public HistoryEvent PromptForBookmark()
         {
-            Machine machine = _logic.Machine;
+            Machine machine = _logic.ActiveMachine;
 
             using (BookmarkSelectWindow dialog = new BookmarkSelectWindow(this, machine))
             using (machine.AutoPause())
@@ -477,7 +430,7 @@ namespace CPvC.UI.Forms
 
         private void _renameFileMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            Machine machine = _logic.Machine;
+            Machine machine = _logic.ActiveMachine;
             RenameWindow dialog = new RenameWindow(this, machine.Name);
 
             using (machine.AutoPause())
@@ -499,19 +452,17 @@ namespace CPvC.UI.Forms
                 _logic.OpenMachine(info.Filepath);
                 return;
             }
+        }
 
-            Machine machine = grid.DataContext as Machine;
-            if (machine != null)
+        private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            Grid grid = sender as Grid;
+            if (grid == null)
             {
-                foreach (TabItem tabItem in _machineTabControl.Items)
-                {
-                    if (tabItem.DataContext is Machine && tabItem.DataContext == machine)
-                    {
-                        _machineTabControl.SelectedItem = tabItem;
-                        break;
-                    }
-                }
+                return;
             }
+
+            _logic.ToggleRunning(grid.DataContext as Machine);
         }
     }
 }

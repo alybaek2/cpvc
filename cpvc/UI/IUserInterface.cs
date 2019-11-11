@@ -7,12 +7,8 @@ namespace CPvC
     /// </summary>
     public interface IUserInterface
     {
-        void AddMachine(Machine machine);
-        void RemoveMachine(Machine machine);
         string SelectItem(List<string> items);
         string PromptForFile(FileTypes type, bool existing);
-
-        Machine GetActiveMachine();
 
         HistoryEvent PromptForBookmark();
 

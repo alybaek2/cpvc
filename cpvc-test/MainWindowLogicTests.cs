@@ -29,16 +29,6 @@ namespace cpvc_test
             return userInterface => userInterface.ReportError(AnyString());
         }
 
-        static private Expression<Action<IUserInterface>> AddMachine()
-        {
-            return userInterface => userInterface.AddMachine(It.IsAny<Machine>());
-        }
-
-        static private Expression<Action<IUserInterface>> RemoveMachine()
-        {
-            return userInterface => userInterface.RemoveMachine(It.IsAny<Machine>());
-        }
-
         static private Expression<Func<IFileSystem, byte[]>> GetZipFileEntry(string filename)
         {
             return fileSystem => fileSystem.GetZipFileEntry(filename, AnyString());
@@ -113,8 +103,6 @@ namespace cpvc_test
             Mock<IFileSystem> mockFileSystem = GetFileSystem(mockFile.Object, filepath);
             Mock<IUserInterface> mockUserInterface = new Mock<IUserInterface>(MockBehavior.Strict);
             mockUserInterface.Setup(PromptForFile()).Returns(filepath);
-            mockUserInterface.Setup(AddMachine());
-            mockUserInterface.Setup(RemoveMachine());
             Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Loose);
 
             // Act
@@ -124,13 +112,6 @@ namespace cpvc_test
 
             // Verify
             mockUserInterface.Verify(PromptForFile(), Times.Once());
-
-            if (filepath != null)
-            {
-                mockUserInterface.Verify(AddMachine(), Times.Once());
-                mockUserInterface.Verify(RemoveMachine(), Times.Once());
-            }
-
             mockUserInterface.VerifyNoOtherCalls();
         }
 
@@ -146,7 +127,7 @@ namespace cpvc_test
             // Act
             MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object, mockSettings.Object)
             {
-                Machine = null
+                ActiveMachine = null
             };
 
             logic.LoadDisc(drive);
@@ -154,7 +135,7 @@ namespace cpvc_test
             // Verify
             mockUserInterface.VerifyNoOtherCalls();
             mockFileSystem.VerifyNoOtherCalls();
-            Assert.IsNull(logic.Machine);
+            Assert.IsNull(logic.ActiveMachine);
         }
 
         [Test]
@@ -168,7 +149,7 @@ namespace cpvc_test
             // Act
             MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object, mockSettings.Object)
             {
-                Machine = null
+                ActiveMachine = null
             };
 
             logic.LoadTape();
@@ -176,7 +157,7 @@ namespace cpvc_test
             // Verify
             mockUserInterface.VerifyNoOtherCalls();
             mockFileSystem.VerifyNoOtherCalls();
-            Assert.IsNull(logic.Machine);
+            Assert.IsNull(logic.ActiveMachine);
         }
 
         [TestCase(0)]
@@ -196,7 +177,7 @@ namespace cpvc_test
             // Act
             MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object, mockSettings.Object);
             Machine machine = Machine.New("test", "test.cpvc", mockFileSystem.Object);
-            logic.Machine = machine;
+            logic.ActiveMachine = machine;
             if (drive == 2)
             {
                 logic.LoadTape();
@@ -257,7 +238,7 @@ namespace cpvc_test
             // Act
             MainWindowLogic logic = new MainWindowLogic(mockUserInterface.Object, mockFileSystem.Object, mockSettings.Object);
             Machine machine = Machine.New("test", "test.cpvc", mockFileSystem.Object);
-            logic.Machine = machine;
+            logic.ActiveMachine = machine;
             if (drive == 2)
             {
                 logic.LoadTape();

@@ -10,11 +10,12 @@
         <converters:Ticks x:Key="ticksConverter" />
         <converters:IsNotNull x:Key="isNotNullConverter" />
         <converters:RunningIcon x:Key="runningIconConverter" />
+        <converters:Invisibility x:Key="invisibilityConverter" />
         <Style x:Key="MachineMenuItemStyle" TargetType="MenuItem">
-            <Setter Property="IsEnabled" Value="{Binding Machine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
+            <Setter Property="IsEnabled" Value="{Binding ActiveMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
         </Style>
         <Style x:Key="MachineButtonStyle" TargetType="Button">
-            <Setter Property="IsEnabled" Value="{Binding Machine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
+            <Setter Property="IsEnabled" Value="{Binding ActiveMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
             <Style.Resources>
                 <Style TargetType="Image">
                     <Style.Triggers>
@@ -33,9 +34,6 @@
                 </StackPanel>
             </Grid>
         </DataTemplate>
-        <ItemsPanelTemplate x:Key="WrapPanel">
-            <WrapPanel/>
-        </ItemsPanelTemplate>
         <CollectionViewSource x:Key="Machines" Source="{Binding Path=Machines}"/>
         <CollectionViewSource x:Key="RecentlyOpenedMachines" Source="{Binding Path=RecentlyOpenedMachines}"/>
         <CompositeCollection x:Key="AllMachines">
@@ -162,27 +160,64 @@
                 </Button>
             </ToolBar>
         </ToolBarTray>
-        <TabControl x:Name="_machineTabControl" Margin="5,5,5,5" Grid.Row="2" SelectionChanged="MachineTabControl_SelectionChanged" Height="576" Width="768">
-            <TabItem x:Name="_homeTabItem" Header="Home">
-                <ScrollViewer>
-                    <Grid>
-                        <StackPanel>
-                            <StackPanel>
-                                <Label Content="Machines" FontWeight="Bold" FontSize="14" />
-                                <Label Content="Click a greyscale thumbnail to load machine."/>
-                                <ItemsControl x:Name="_allMachines" ItemTemplate="{StaticResource MachinePreview}" ItemsPanel="{StaticResource WrapPanel}" ItemsSource="{Binding Source={StaticResource AllMachines}}">
-                                </ItemsControl>
-                                <Separator />
-                            </StackPanel>
-                        </StackPanel>
+        <TabControl x:Name="_machineTabControl" Margin="5,5,5,5" Grid.Row="2" Height="576" Width="768" SelectedItem="{Binding Path=ActiveItem, Mode=TwoWay}">
+            <TabControl.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <Image Width="16" Height="16" Stretch="None" Source="{Binding Core.Running, Mode=OneWay, Converter={StaticResource runningIconConverter}}"/>
+                        <TextBlock Text="{Binding Name, Mode=OneWay}"/>
+                    </StackPanel>
+                </DataTemplate>
+            </TabControl.ItemTemplate>
+            <TabControl.ContentTemplate>
+                <DataTemplate>
+                    <Grid MouseLeftButtonDown="Grid_MouseLeftButtonDown">
+                        <Label Content="Paused" Panel.ZIndex="2" Visibility="{Binding Core.Running, Mode=OneWay, Converter={StaticResource invisibilityConverter}}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="36"/>
+                        <Rectangle x:Name="_dimmerRectangle" Visibility="{Binding Core.Running, Mode=OneWay, Converter={StaticResource invisibilityConverter}}" Fill="#7F000000" Stroke="#7F000000" Width="768" Height="576" VerticalAlignment="Top" HorizontalAlignment="Left" Panel.ZIndex="1"/>
+                        <Image x:Name="_fullScreenImage" Width="768" Height="576" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" Source="{Binding Path=Display.Bitmap}"  RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill"/>
                     </Grid>
-                </ScrollViewer>
-            </TabItem>
+                </DataTemplate>
+            </TabControl.ContentTemplate>
+            <TabControl.ItemsSource>
+                <CompositeCollection>
+                    <TabItem x:Name="_homeTabItem4" Header="Home">
+                        <TabItem.HeaderTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Home"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </TabItem.HeaderTemplate>
+                        <TabItem.ContentTemplate>
+                            <DataTemplate>
+                                <ScrollViewer>
+                                    <Grid>
+                                        <StackPanel>
+                                            <StackPanel>
+                                                <Label Content="Machines" FontWeight="Bold" FontSize="14" />
+                                                <ItemsControl x:Name="_allMachines3" ItemTemplate="{StaticResource MachinePreview}" ItemsSource="{Binding Source={StaticResource AllMachines}}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                </ItemsControl>
+                                                <Separator />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Grid>
+                                </ScrollViewer>
+                            </DataTemplate>
+                        </TabItem.ContentTemplate>
+                    </TabItem>
+                    <CollectionContainer Collection="{Binding Source={StaticResource Machines}}" />
+                </CompositeCollection>
+            </TabControl.ItemsSource>
         </TabControl>
         <StatusBar x:Name="_statusBar" Height="30" Grid.Row="3" VerticalAlignment="Top">
-            <TextBlock x:Name="_clockTextBlock" TextWrapping="Wrap" Text="{Binding Machine.Core.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
+            <TextBlock x:Name="_clockTextBlock" TextWrapping="Wrap" Text="{Binding ActiveMachine.Core.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
             <Separator/>
-            <Slider x:Name="_volumeSlider" Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding Machine.Core.Volume, Mode=TwoWay}" />
+            <Slider x:Name="_volumeSlider" Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding ActiveMachine.Core.Volume, Mode=TwoWay}" />
         </StatusBar>
     </Grid>
 </Window>

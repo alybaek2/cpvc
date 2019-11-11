@@ -153,10 +153,6 @@
     <Compile Include="UI\Logic\MainWindowLogic.cs" />
     <Compile Include="UI\Converters\Invisibility.cs" />
     <Compile Include="UnmanagedMemory.cs" />
-    <Page Include="UI\Forms\MachineTabItem.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="UI\Forms\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -167,9 +163,6 @@
     </Compile>
     <Compile Include="Helpers.cs" />
     <Compile Include="Machine\Machine.cs" />
-    <Compile Include="UI\Forms\MachineTabItem.xaml.cs">
-      <DependentUpon>MachineTabItem.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Core\CoreRequest.cs" />
     <Compile Include="UI\Forms\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
