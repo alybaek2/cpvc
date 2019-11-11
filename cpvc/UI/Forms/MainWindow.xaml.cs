@@ -494,12 +494,24 @@ namespace CPvC.UI.Forms
         {
             Grid grid = sender as Grid;
             MachineInfo info = grid.DataContext as MachineInfo;
-            if (info == null)
+            if (info != null)
             {
+                _logic.OpenMachine(info.Filepath);
                 return;
             }
 
-            _logic.OpenMachine(info.Filepath);
+            Machine machine = grid.DataContext as Machine;
+            if (machine != null)
+            {
+                foreach (TabItem tabItem in _machineTabControl.Items)
+                {
+                    if (tabItem.DataContext is Machine && tabItem.DataContext == machine)
+                    {
+                        _machineTabControl.SelectedItem = tabItem;
+                        break;
+                    }
+                }
+            }
         }
     }
 }

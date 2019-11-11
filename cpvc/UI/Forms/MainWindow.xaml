@@ -36,6 +36,12 @@
         <ItemsPanelTemplate x:Key="WrapPanel">
             <WrapPanel/>
         </ItemsPanelTemplate>
+        <CollectionViewSource x:Key="Machines" Source="{Binding Path=Machines}"/>
+        <CollectionViewSource x:Key="RecentlyOpenedMachines" Source="{Binding Path=RecentlyOpenedMachines}"/>
+        <CompositeCollection x:Key="AllMachines">
+            <CollectionContainer Collection="{Binding Source={StaticResource Machines}}" />
+            <CollectionContainer Collection="{Binding Source={StaticResource RecentlyOpenedMachines}}" />
+        </CompositeCollection>
     </Window.Resources>
     <Grid AllowDrop="True" Margin="0,0,0,0" Background="#FFF0F0F0">
         <Grid.RowDefinitions>
@@ -162,16 +168,12 @@
                     <Grid>
                         <StackPanel>
                             <StackPanel>
-                                <Label Content="Opened machines" FontWeight="Bold" FontSize="14" />
-                                <ItemsControl x:Name="_runningMachines" ItemsSource="{Binding Path=Machines, Mode=OneWay}" ItemTemplate="{StaticResource MachinePreview}" ItemsPanel="{StaticResource WrapPanel}"/>
+                                <Label Content="Machines" FontWeight="Bold" FontSize="14" />
+                                <Label Content="Click a greyscale thumbnail to load machine."/>
+                                <ItemsControl x:Name="_allMachines" ItemTemplate="{StaticResource MachinePreview}" ItemsPanel="{StaticResource WrapPanel}" ItemsSource="{Binding Source={StaticResource AllMachines}}">
+                                </ItemsControl>
                                 <Separator />
                             </StackPanel>
-                            <StackPanel>
-                                <Label Content="Unopened machines" FontSize="14" FontWeight="Bold" />
-                                <Label Content="To open a machine, click its thumbnail." />
-                                <ItemsControl x:Name="_recentlyOpenedMachines" ItemsSource="{Binding Path=RecentlyOpenedMachines, Mode=OneWay}" ItemTemplate="{StaticResource MachinePreview}" ItemsPanel="{StaticResource WrapPanel}"/>
-                                <Separator />
-                            </StackPanel>                        
                         </StackPanel>
                     </Grid>
                 </ScrollViewer>
