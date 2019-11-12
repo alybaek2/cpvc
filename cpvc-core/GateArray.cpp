@@ -94,7 +94,7 @@ void GateArray::Reset()
     _selectedPen = 0;
     _border = 0;
     _mode = 0;
-    memset(_pen, 0, sizeof(_pen[0]));
+    memset(_pen, 0, sizeof(_pen) / sizeof(_pen[0]));
 
     RenderPens();
 }
