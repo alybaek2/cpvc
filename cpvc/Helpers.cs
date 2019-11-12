@@ -148,7 +148,7 @@ namespace CPvC
         /// <param name="delim">Delimiter character.</param>
         /// <param name="strs">Strings to join.</param>
         /// <returns>A joined string.</returns>
-        static public string JoinWithEscape(char delim, List<string> strs)
+        static public string JoinWithEscape(char delim, IEnumerable<string> strs)
         {
             string delimStr = delim.ToString();
             return String.Join(delimStr, strs.Select(x => x.Replace(delimStr, String.Format("\\{0}", delim))));

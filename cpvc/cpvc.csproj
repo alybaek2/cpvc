@@ -140,7 +140,6 @@
     <Compile Include="UI\Display.cs" />
     <Compile Include="UI\Converters\IsNotNull.cs" />
     <Compile Include="Machine\KeyboardMapping.cs" />
-    <Compile Include="UI\IUserInterface.cs" />
     <Compile Include="Machine\Keys.cs" />
     <Compile Include="UI\Forms\SelectItemWindow.xaml.cs">
       <DependentUpon>SelectItemWindow.xaml</DependentUpon>
@@ -150,8 +149,10 @@
       <DependentUpon>BookmarksWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="UI\HistoryViewItem.cs" />
-    <Compile Include="UI\Logic\MainWindowLogic.cs" />
     <Compile Include="UI\Converters\Invisibility.cs" />
+    <Compile Include="UI\MainModel.cs" />
+    <Compile Include="UI\MainViewLogic.cs" />
+    <Compile Include="UI\MainViewModel.cs" />
     <Compile Include="UnmanagedMemory.cs" />
     <Page Include="UI\Forms\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

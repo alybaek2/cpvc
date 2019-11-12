@@ -27,18 +27,18 @@
             </Style.Resources>
         </Style>
         <DataTemplate x:Key="MachinePreview">
-            <Grid MouseLeftButtonUp="Grid_MouseLeftButtonUp">
+            <Grid MouseLeftButtonUp="MachinePreviewGrid_MouseLeftButtonUp">
                 <StackPanel Margin="5">
-                    <Image x:Name="_machineImage" Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" Source="{Binding Path=Display.Bitmap}" ToolTip="{Binding Path=Filepath}" Cursor="Hand"/>
+                    <Image Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" Source="{Binding Path=Display.Bitmap}" ToolTip="{Binding Path=Filepath}" Cursor="Hand"/>
                     <Label Content="{Binding Name}" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Grid>
         </DataTemplate>
-        <CollectionViewSource x:Key="Machines" Source="{Binding Path=Machines}"/>
-        <CollectionViewSource x:Key="RecentlyOpenedMachines" Source="{Binding Path=RecentlyOpenedMachines}"/>
+        <CollectionViewSource x:Key="OpenMachines" Source="{Binding Path=Model.OpenMachines}"/>
+        <CollectionViewSource x:Key="ClosedMachines" Source="{Binding Path=Model.ClosedMachines}"/>
         <CompositeCollection x:Key="AllMachines">
-            <CollectionContainer Collection="{Binding Source={StaticResource Machines}}" />
-            <CollectionContainer Collection="{Binding Source={StaticResource RecentlyOpenedMachines}}" />
+            <CollectionContainer Collection="{Binding Source={StaticResource OpenMachines}}" />
+            <CollectionContainer Collection="{Binding Source={StaticResource ClosedMachines}}" />
         </CompositeCollection>
     </Window.Resources>
     <Grid AllowDrop="True" Margin="0,0,0,0" Background="#FFF0F0F0">
@@ -171,16 +171,16 @@
             </TabControl.ItemTemplate>
             <TabControl.ContentTemplate>
                 <DataTemplate>
-                    <Grid MouseLeftButtonDown="Grid_MouseLeftButtonDown">
+                    <Grid MouseLeftButtonUp="ScreenGrid_MouseLeftButtonUp">
                         <Label Content="Paused" Panel.ZIndex="2" Visibility="{Binding Core.Running, Mode=OneWay, Converter={StaticResource invisibilityConverter}}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="36"/>
-                        <Rectangle x:Name="_dimmerRectangle" Visibility="{Binding Core.Running, Mode=OneWay, Converter={StaticResource invisibilityConverter}}" Fill="#7F000000" Stroke="#7F000000" Width="768" Height="576" VerticalAlignment="Top" HorizontalAlignment="Left" Panel.ZIndex="1"/>
-                        <Image x:Name="_fullScreenImage" Width="768" Height="576" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" Source="{Binding Path=Display.Bitmap}"  RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill"/>
+                        <Rectangle Visibility="{Binding Core.Running, Mode=OneWay, Converter={StaticResource invisibilityConverter}}" Fill="#7F000000" Stroke="#7F000000" Width="768" Height="576" VerticalAlignment="Top" HorizontalAlignment="Left" Panel.ZIndex="1"/>
+                        <Image Width="768" Height="576" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" Source="{Binding Path=Display.Bitmap}"  RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill"/>
                     </Grid>
                 </DataTemplate>
             </TabControl.ContentTemplate>
             <TabControl.ItemsSource>
                 <CompositeCollection>
-                    <TabItem x:Name="_homeTabItem4" Header="Home">
+                    <TabItem Header="Home">
                         <TabItem.HeaderTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
@@ -195,7 +195,7 @@
                                         <StackPanel>
                                             <StackPanel>
                                                 <Label Content="Machines" FontWeight="Bold" FontSize="14" />
-                                                <ItemsControl x:Name="_allMachines3" ItemTemplate="{StaticResource MachinePreview}" ItemsSource="{Binding Source={StaticResource AllMachines}}">
+                                                <ItemsControl ItemTemplate="{StaticResource MachinePreview}" ItemsSource="{Binding Source={StaticResource AllMachines}}">
                                                     <ItemsControl.ItemsPanel>
                                                         <ItemsPanelTemplate>
                                                             <WrapPanel/>
@@ -210,7 +210,7 @@
                             </DataTemplate>
                         </TabItem.ContentTemplate>
                     </TabItem>
-                    <CollectionContainer Collection="{Binding Source={StaticResource Machines}}" />
+                    <CollectionContainer Collection="{Binding Source={StaticResource OpenMachines}}" />
                 </CompositeCollection>
             </TabControl.ItemsSource>
         </TabControl>

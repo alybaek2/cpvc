@@ -100,7 +100,8 @@
   <ItemGroup>
     <Compile Include="CoreTests.cs" />
     <Compile Include="MachineTests.cs" />
-    <Compile Include="MainWindowLogicTests.cs" />
+    <Compile Include="MainViewLogicTests.cs" />
+    <Compile Include="MainViewModelTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
