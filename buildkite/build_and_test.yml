@@ -1,0 +1,3 @@
+steps:
+  - command: "\"buildkite\\build_and_test.bat\""
+    label: "Build and Test"
