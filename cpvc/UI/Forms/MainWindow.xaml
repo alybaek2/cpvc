@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:cpvcui="clr-namespace:CPvC.UI"
         xmlns:converters="clr-namespace:CPvC.UI.Converters"
         mc:Ignorable="d"
         Title="CPvC" Height="705.125" Width="784.535" Closing="Window_Closing" Loaded="Window_Loaded" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp" SizeToContent="WidthAndHeight" ResizeMode="NoResize" Icon="../Resources/cpvc.png">
@@ -11,6 +12,8 @@
         <converters:IsNotNull x:Key="isNotNullConverter" />
         <converters:RunningIcon x:Key="runningIconConverter" />
         <converters:Invisibility x:Key="invisibilityConverter" />
+        <converters:BooleanInverter x:Key="booleanInverterConverter" />
+        <cpvcui:MachinePreviewDataTemplateSelector x:Key="machinePreviewDataTemplateSelector"/>
         <Style x:Key="MachineMenuItemStyle" TargetType="MenuItem">
             <Setter Property="IsEnabled" Value="{Binding ActiveMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
         </Style>
@@ -26,8 +29,29 @@
                 </Style>
             </Style.Resources>
         </Style>
-        <DataTemplate x:Key="MachinePreview">
+        <DataTemplate x:Key="OpenMachinePreview">
             <Grid MouseLeftButtonUp="MachinePreviewGrid_MouseLeftButtonUp">
+                <Grid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Pause" IsEnabled="{Binding Path=Core.Running, Mode=OneWay}"></MenuItem>
+                        <MenuItem Header="Resume" IsEnabled="{Binding Path=Core.Running, Converter={StaticResource booleanInverterConverter}, Mode=OneWay}"></MenuItem>
+                        <MenuItem x:Name="_removeOpenMachineMenuItem" Header="Remove" Click="RemoveOpenMachineMenuItem_Click"></MenuItem>
+                    </ContextMenu>
+                </Grid.ContextMenu>
+                <StackPanel Margin="5">
+                    <Image Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" Source="{Binding Path=Display.Bitmap}" ToolTip="{Binding Path=Filepath}" Cursor="Hand"/>
+                    <Label Content="{Binding Name}" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+        <DataTemplate x:Key="ClosedMachinePreview">
+            <Grid MouseLeftButtonUp="MachinePreviewGrid_MouseLeftButtonUp">
+                <Grid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem x:Name="_openPreviewMenuItem" Header="Open" Click="OpenPreviewMenuItem_Click"></MenuItem>
+                        <MenuItem x:Name="_removePreviewMenuItem" Header="Remove" Click="RemovePreviewMenuItem_Click"></MenuItem>
+                    </ContextMenu>
+                </Grid.ContextMenu>
                 <StackPanel Margin="5">
                     <Image Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" Source="{Binding Path=Display.Bitmap}" ToolTip="{Binding Path=Filepath}" Cursor="Hand"/>
                     <Label Content="{Binding Name}" HorizontalAlignment="Center"/>
@@ -195,7 +219,7 @@
                                         <StackPanel>
                                             <StackPanel>
                                                 <Label Content="Machines" FontWeight="Bold" FontSize="14" />
-                                                <ItemsControl ItemTemplate="{StaticResource MachinePreview}" ItemsSource="{Binding Source={StaticResource AllMachines}}">
+                                                <ItemsControl ItemTemplateSelector="{StaticResource machinePreviewDataTemplateSelector}" ItemsSource="{Binding Source={StaticResource AllMachines}}">
                                                     <ItemsControl.ItemsPanel>
                                                         <ItemsPanelTemplate>
                                                             <WrapPanel/>

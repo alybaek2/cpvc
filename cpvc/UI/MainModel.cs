@@ -35,38 +35,28 @@ namespace CPvC.UI
         public ObservableCollection<MachineInfo> ClosedMachines { get; }
 
         /// <summary>
-        /// Adds a machine to the model, by adding it to OpenMachines and removing the corresponding MachineInfo from ClosedMachines.
+        /// Adds a machine to OpenMachines and removes the corresponding MachineInfo from ClosedMachines.
         /// </summary>
         /// <param name="machine">The machine to add.</param>
-        public void AddMachine(Machine machine)
+        public void OpenMachine(Machine machine)
         {
             lock (OpenMachines)
             {
                 OpenMachines.Add(machine);
             }
 
-            lock (ClosedMachines)
-            {
-                List<MachineInfo> closedMachines = ClosedMachines.Where(m => String.Compare(m.Filepath, machine.Filepath, true) == 0).ToList();
-                foreach (MachineInfo machineInfo in closedMachines)
-                {
-                    ClosedMachines.Remove(machineInfo);
-                }
-            }
+            RemoveFromClosed(machine.Filepath);
 
             UpdateSettings();
         }
 
         /// <summary>
-        /// Removes a machine from the mode, by removing it from OpenMachines and adding a corresponding MachineInfo to ClosedMachines.
+        /// Removes a machine from OpenMachines and adds a corresponding MachineInfo to ClosedMachines.
         /// </summary>
         /// <param name="machine">The machine to remove.</param>
-        public void RemoveMachine(Machine machine)
+        public void CloseMachine(Machine machine)
         {
-            lock (OpenMachines)
-            {
-                OpenMachines.Remove(machine);
-            }
+            RemoveFromOpen(machine);
 
             lock (ClosedMachines)
             {
@@ -77,6 +67,49 @@ namespace CPvC.UI
             }
 
             UpdateSettings();
+        }
+
+        /// <summary>
+        /// Removes a machine from the model.
+        /// </summary>
+        /// <param name="machine">The machine to remove.</param>
+        public void Remove(Machine machine)
+        {
+            RemoveFromOpen(machine);
+            RemoveFromClosed(machine.Filepath);
+
+            UpdateSettings();
+        }
+
+        /// <summary>
+        /// Removes a closed machine from the model.
+        /// </summary>
+        /// <param name="machineInfo">The closed machine to remove.</param>
+        public void Remove(MachineInfo machineInfo)
+        {
+            RemoveFromClosed(machineInfo.Filepath);
+
+            UpdateSettings();
+        }
+
+        private void RemoveFromOpen(Machine machine)
+        {
+            lock (OpenMachines)
+            {
+                OpenMachines.Remove(machine);
+            }
+        }
+
+        private void RemoveFromClosed(string filepath)
+        {
+            lock (ClosedMachines)
+            {
+                List<MachineInfo> closedMachines = ClosedMachines.Where(m => String.Compare(m.Filepath, filepath, true) == 0).ToList();
+                foreach (MachineInfo machineInfo in closedMachines)
+                {
+                    ClosedMachines.Remove(machineInfo);
+                }
+            }
         }
 
         /// <summary>

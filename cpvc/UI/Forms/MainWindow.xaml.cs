@@ -475,5 +475,38 @@ namespace CPvC.UI.Forms
 
             _mainViewModel.ToggleRunning(grid.DataContext as Machine);
         }
+
+        private void OpenPreviewMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem menuItem = (MenuItem)sender;
+
+            MachineInfo machineInfo = (MachineInfo)menuItem.DataContext;
+            if (machineInfo != null)
+            {
+                _mainViewModel.OpenMachine(machineInfo.Filepath, _fileSystem);
+            }
+        }
+
+        private void RemovePreviewMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem menuItem = (MenuItem)sender;
+
+            MachineInfo machineInfo = (MachineInfo)menuItem.DataContext;
+            if (machineInfo != null)
+            {
+                _mainViewModel.Remove(machineInfo);
+            }
+        }
+
+        private void RemoveOpenMachineMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem menuItem = (MenuItem)sender;
+
+            Machine machine = (Machine)menuItem.DataContext;
+            if (machine != null)
+            {
+                _mainViewModel.Remove(machine);
+            }
+        }
     }
 }

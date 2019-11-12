@@ -4,7 +4,7 @@ using System.Windows.Media.Imaging;
 namespace CPvC
 {
     /// <summary>
-    /// Class exposing minimal information about a machine; used in "Recently opened machine" on the home tab.
+    /// Class exposing minimal information about a machine; used to represent a recently closed machine.
     /// </summary>
     public class MachineInfo
     {

@@ -125,6 +125,7 @@
     <Compile Include="Machine\Bookmark.cs" />
     <Compile Include="Core\CoreAction.cs" />
     <Compile Include="Diagnostics.cs" />
+    <Compile Include="UI\Converters\BooleanInverter.cs" />
     <Compile Include="UI\FileTypes.cs" />
     <Compile Include="IO\FileSystem.cs" />
     <Compile Include="IO\IFileSystem.cs" />
@@ -149,6 +150,7 @@
     </Compile>
     <Compile Include="UI\HistoryViewItem.cs" />
     <Compile Include="UI\Converters\Invisibility.cs" />
+    <Compile Include="UI\MachinePreviewDataTemplateSelector.cs" />
     <Compile Include="UI\MainModel.cs" />
     <Compile Include="UI\MainViewLogic.cs" />
     <Compile Include="UI\MainViewModel.cs" />

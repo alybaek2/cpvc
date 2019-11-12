@@ -136,8 +136,19 @@ namespace CPvC.UI
 
         public void Close(Machine machine)
         {
-            RemoveMachine(machine);
+            CloseMachine(machine);
             machine.Close();
+        }
+
+        public void Remove(Machine machine)
+        {
+            Model.Remove(machine);
+            machine.Close();
+        }
+
+        public void Remove(MachineInfo machineInfo)
+        {
+            Model.Remove(machineInfo);
         }
 
         public void CloseAll()
@@ -279,12 +290,12 @@ namespace CPvC.UI
 
         private void AddMachine(Machine machine)
         {
-            Model.AddMachine(machine);
+            Model.OpenMachine(machine);
         }
 
-        private void RemoveMachine(Machine machine)
+        private void CloseMachine(Machine machine)
         {
-            Model.RemoveMachine(machine);
+            Model.CloseMachine(machine);
         }
     }
 }
