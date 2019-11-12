@@ -12,7 +12,6 @@ namespace CPvC.UI.Forms
     public sealed partial class BookmarkSelectWindow : Window, IDisposable
     {
         private Display _display;
-        private BookmarkSelectWindowLogic _logic;
 
         public HistoryEvent SelectedEvent { get; private set; }
 
@@ -22,7 +21,6 @@ namespace CPvC.UI.Forms
         {
             InitializeComponent();
 
-            _logic = new BookmarkSelectWindowLogic(machine);
             _machine = machine;
             _display = new Display();
             _fullScreenImage.Source = _display.Bitmap;
@@ -90,7 +88,7 @@ namespace CPvC.UI.Forms
             _jumpToBookmarkButton.IsEnabled = (bookmarksSelected == 1);
             _deleteBranchButton.IsEnabled = (_historyListView.SelectedItems.Count > 0);
 
-            bool loaded = SelectBookmark(_historyListView, _display, _machine, _fullScreenImage);
+            bool loaded = SelectBookmark();
 
             _fullScreenImage.Visibility = loaded ? Visibility.Visible : Visibility.Hidden;
             _noBookmarkSelectedLabel.Visibility = loaded ? Visibility.Hidden : Visibility.Visible;
@@ -104,7 +102,13 @@ namespace CPvC.UI.Forms
                 return;
             }
 
-            _logic.DeleteBranches(items);
+            foreach (HistoryViewItem item in items)
+            {
+                if (item.HistoryEvent != null)
+                {
+                    _machine.TrimTimeline(item.HistoryEvent);
+                }
+            }
 
             RefreshHistoryView();
         }
@@ -117,7 +121,13 @@ namespace CPvC.UI.Forms
                 return;
             }
 
-            _logic.DeleteBookmarks(items);
+            foreach (HistoryViewItem item in items)
+            {
+                if (item.HistoryEvent != null)
+                {
+                    _machine.SetBookmark(item.HistoryEvent, null);
+                }
+            }
 
             RefreshHistoryView();
         }
@@ -270,29 +280,25 @@ namespace CPvC.UI.Forms
         /// <summary>
         /// Populates the given Display with the currently selected HistoryViewItem if it has a bookmark.
         /// </summary>
-        /// <param name="historyListView">The ListView control.</param>
-        /// <param name="display">The Display object to populate.</param>
-        /// <param name="machine">The Machine object whose history is being displayed.</param>
-        /// <param name="image">The Image object displaying the selected bookmark.</param>
         /// <returns>A boolean indicating if the Display object was populated (true if the selected HistoryViewItem has a bookmark; false otherwise).</returns>
-        static private bool SelectBookmark(ListView historyListView, Display display, Machine machine, Image image)
+        private bool SelectBookmark()
         {
-            HistoryViewItem viewItem = (HistoryViewItem)historyListView.SelectedItem;
+            HistoryViewItem viewItem = (HistoryViewItem)_historyListView.SelectedItem;
             if (viewItem != null)
             {
                 HistoryEvent historyEvent = viewItem.HistoryEvent;
 
                 // Even though the current event doesn't necessarily have a bookmark, we can still populate the display.
-                if (historyEvent == machine.CurrentEvent)
+                if (historyEvent == _machine.CurrentEvent)
                 {
-                    image.Source = machine.Display.Bitmap;
+                    _fullScreenImage.Source = _machine.Display.Bitmap;
                     return true;
                 }
 
                 if (historyEvent != null && historyEvent.Type == HistoryEvent.Types.Checkpoint && historyEvent.Bookmark != null)
                 {
-                    display.GetFromBookmark(historyEvent.Bookmark);
-                    image.Source = display.Bitmap;
+                    _display.GetFromBookmark(historyEvent.Bookmark);
+                    _fullScreenImage.Source = _display.Bitmap;
 
                     return true;
                 }
