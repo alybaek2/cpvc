@@ -508,5 +508,38 @@ namespace CPvC.UI.Forms
                 _mainViewModel.Remove(machine);
             }
         }
+
+        private void ClosePreviewMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem menuItem = (MenuItem)sender;
+
+            Machine machine = (Machine)menuItem.DataContext;
+            if (machine != null)
+            {
+                _mainViewModel.Close(machine);
+            }
+        }
+
+        private void PausePreviewMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem menuItem = (MenuItem)sender;
+
+            Machine machine = (Machine)menuItem.DataContext;
+            if (machine != null)
+            {
+                machine.Stop();
+            }
+        }
+
+        private void ResumePreviewMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem menuItem = (MenuItem)sender;
+
+            Machine machine = (Machine)menuItem.DataContext;
+            if (machine != null)
+            {
+                machine.Start();
+            }
+        }
     }
 }

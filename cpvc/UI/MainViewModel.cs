@@ -127,6 +127,8 @@ namespace CPvC.UI
             }
 
             AddMachine(machine);
+
+            ActiveMachine = machine;
         }
 
         public void Close()

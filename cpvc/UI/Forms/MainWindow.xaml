@@ -33,8 +33,9 @@
             <Grid MouseLeftButtonUp="MachinePreviewGrid_MouseLeftButtonUp">
                 <Grid.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="Pause" IsEnabled="{Binding Path=Core.Running, Mode=OneWay}"></MenuItem>
-                        <MenuItem Header="Resume" IsEnabled="{Binding Path=Core.Running, Converter={StaticResource booleanInverterConverter}, Mode=OneWay}"></MenuItem>
+                        <MenuItem x:Name="_pausePreviewMenuItem" Header="Pause" IsEnabled="{Binding Path=Core.Running, Mode=OneWay}" Click="PausePreviewMenuItem_Click"></MenuItem>
+                        <MenuItem x:Name="_resumePreviewMenuItem" Header="Resume" IsEnabled="{Binding Path=Core.Running, Converter={StaticResource booleanInverterConverter}, Mode=OneWay}" Click="ResumePreviewMenuItem_Click"></MenuItem>
+                        <MenuItem x:Name="_closePreviewMenuItem" Header="Close" Click="ClosePreviewMenuItem_Click"></MenuItem>
                         <MenuItem x:Name="_removeOpenMachineMenuItem" Header="Remove" Click="RemoveOpenMachineMenuItem_Click"></MenuItem>
                     </ContextMenu>
                 </Grid.ContextMenu>
