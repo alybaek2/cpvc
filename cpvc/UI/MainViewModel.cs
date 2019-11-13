@@ -99,6 +99,7 @@ namespace CPvC.UI
             }
 
             AddMachine(machine);
+            ActiveMachine = machine;
             machine.Start();
         }
 
@@ -127,7 +128,6 @@ namespace CPvC.UI
             }
 
             AddMachine(machine);
-
             ActiveMachine = machine;
         }
 
