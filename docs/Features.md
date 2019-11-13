@@ -2,7 +2,7 @@
 
 The main CPvC window appears as follows:
 
-![CPvC window](cpvc.png)
+![CPvC window](docs/cpvc.png)
 
 ## File menu
 
@@ -52,25 +52,35 @@ Adds a bookmark to the currently selected machine. This allows a user to later r
 
 Reverts the currently selected machine back to the most recent bookmark, creating a new branch in the machine's timeline. If there is no most recent bookmark, the machine is reverted back to the initial bootup.
 
-### Jump to Bookmark
+### Bookmarks
 
-Opens a dialog displaying all bookmarks for the currently selected machine, and prompts for the user to select one. The machine is reverted to this point in the timeline, and a new branch is created.
+Opens a dialog displaying all bookmarks for the currently selected machine. The user can delete bookmarks, delete history branches, and jump to a specific bookmark.
 
 Note that in this dialog, bookmarks created by the user are shown as red nodes in the history, and bookmarks created by the application (e.g. when the machine is closed) are shown in dark red. Then end of each branch of the history is shown as a solid dark blue node, and the current position in the timeline is shown as a hollow dark blue node.
 
-### Properties
+### Rename machine...
 
-Opens a dialog displaying information on the currently selected machine. The following are exposed within the dialog:
+Allows the user to rename the currently selected machine.
 
-* Machine Name: Display the machine, and allow the name to be changed.
-* Compact Machine File: When clicked, compacts the machine's file to save space. Useful after deleting bookmarks.
-* History: Shows the same timeline as in "Jump to Bookmark", but with the ability to delete bookmarks and branches. This functionality is accessed by right clicking a row in the history.
+### Compact machine file
+
+Compacts the machine's file to save space. Useful after deleting bookmarks.
 
 ## Main window
 
 Open CPvC machine instances are shown in a tabbed view in the main window. The active tab displays the currently selected machine, and audio is played for that machine only.
 
 Note that clicking anywhere on the tab window will pause the machine. Clicking again will resume it.
+
+### Home tab
+
+The leftmost tab in the main window shows all open or previously opened machines:
+
+![CPvC window](docs/home.png)
+
+Each machine is displayed as a thumbnail of the current state of the machine. For open machines, this thumbnail is in colour, while machines that are not currently open are shown in greyscale.
+
+Right-clicking a thumbnail shows a context menu where a machine can be paused, resumed, opened, closed, or removed from the Home tab. 
 
 ## Status bar
 

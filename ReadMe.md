@@ -50,8 +50,8 @@ Once built, launch the application (set the `cpvc` project as the startup projec
 
 ## Features
 
-See the [Features.md](Features.md) file for more details.
+See the [Features.md](docs/Features.md) file for more details.
 
 ## See also
 
-For more details about the code, see [this file](Code.md).
+For more details about the code, see [this file](docs/Code.md).

@@ -242,7 +242,7 @@
         <StatusBar x:Name="_statusBar" Height="30" Grid.Row="3" VerticalAlignment="Top">
             <TextBlock x:Name="_clockTextBlock" TextWrapping="Wrap" Text="{Binding ActiveMachine.Core.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
             <Separator/>
-            <Slider x:Name="_volumeSlider" Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding ActiveMachine.Core.Volume, Mode=TwoWay}" />
+            <Slider x:Name="_volumeSlider" Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding ActiveMachine.Core.Volume, Mode=TwoWay}" ToolTip="{Binding ActiveMachine.Core.Volume}" />
         </StatusBar>
     </Grid>
 </Window>
