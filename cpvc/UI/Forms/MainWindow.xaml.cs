@@ -15,7 +15,7 @@ namespace CPvC.UI.Forms
         private Audio _audio;
         private KeyboardMapping _keyMap;
 
-        private ISettings _settings;
+        private readonly ISettings _settings;
 
         private readonly MainViewLogic _mainViewLogic;
         private readonly MainViewModel _mainViewModel;
@@ -218,11 +218,6 @@ namespace CPvC.UI.Forms
             {
                 _mainViewModel.Key(cpcKey.Value, false);
             }
-        }
-
-        private void _openButton_Click(object sender, RoutedEventArgs e)
-        {
-            OpenMenuItem_Click(sender, e);
         }
 
         private void AddBookmarkButton_Click(object sender, RoutedEventArgs e)
@@ -438,12 +433,12 @@ namespace CPvC.UI.Forms
             _mainViewModel.LoadTape(null);
         }
 
-        private void _compactFileMenuItem_Click(object sender, RoutedEventArgs e)
+        private void CompactFileMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _mainViewModel.CompactFile();
         }
 
-        private void _renameFileMenuItem_Click(object sender, RoutedEventArgs e)
+        private void RenameFileMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _mainViewLogic.RenameMachine(PromptForName);
         }

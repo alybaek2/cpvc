@@ -44,15 +44,15 @@ namespace CPvC
             }
 
             // Note that r, g, and b can be either 0, 1, 2, indicating the intensity of each for the colour.
-            private byte _r;
-            private byte _g;
-            private byte _b;
+            private readonly byte _r;
+            private readonly byte _g;
+            private readonly byte _b;
 
             // Indicates the intensity of the colour for use with grey/green screen rendering.
-            private byte _intensity;
+            private readonly byte _intensity;
 
             // Indicates the hardware palette colour number.
-            public byte _hwColourNumber;
+            public readonly byte _hwColourNumber;
 
             // Colours.
             static public CPCColour White = new CPCColour(0, 1, 1, 1, 13);

@@ -10,7 +10,7 @@ namespace CPvC
     {
         public string Name { get; }
         public string Filepath { get; }
-        private WriteableBitmap _bitmap;
+        private readonly WriteableBitmap _bitmap;
 
         public object Display
         {

@@ -10,7 +10,7 @@ namespace CPvC.UI
     /// </summary>
     public class MainModel
     {
-        private ISettings _settings;
+        private readonly ISettings _settings;
 
         public MainModel(ISettings settings, IFileSystem fileSystem)
         {

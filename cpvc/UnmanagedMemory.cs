@@ -9,7 +9,7 @@ namespace CPvC
     public class UnmanagedMemory : IDisposable
     {
         private IntPtr _memory;
-        private int _size;
+        private readonly int _size;
 
         /// <summary>
         /// Creates an instance of UnmanagedMemory.

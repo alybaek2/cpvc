@@ -137,8 +137,8 @@
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem x:Name="_renameFileMenuItem" Header="Rename machine..." Click="_renameFileMenuItem_Click"/>
-                <MenuItem x:Name="_compactFileMenuItem" Header="Compact machine file" Click="_compactFileMenuItem_Click"/>
+                <MenuItem x:Name="_renameFileMenuItem" Header="Rename machine..." Click="RenameFileMenuItem_Click"/>
+                <MenuItem x:Name="_compactFileMenuItem" Header="Compact machine file" Click="CompactFileMenuItem_Click"/>
             </MenuItem>
         </Menu>
         <ToolBarTray x:Name="toolBarTray" Margin="0" VerticalAlignment="Top" Grid.Row="1" Background="#FFF0F0F0">
