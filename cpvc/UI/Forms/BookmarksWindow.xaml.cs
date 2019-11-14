@@ -43,7 +43,15 @@ namespace CPvC.UI.Forms
         {
             RefreshHistoryView();
 
-            _historyListView.SelectedIndex = 0;
+            // Select the current event.
+            foreach (HistoryViewItem item in _historyListView.Items)
+            {
+                if (item.HistoryEvent == _machine.CurrentEvent)
+                {
+                    _historyListView.SelectedItem = item;
+                    break;
+                }
+            }
         }
 
         private void JumpToBookmarkButton_Click(object sender, RoutedEventArgs e)

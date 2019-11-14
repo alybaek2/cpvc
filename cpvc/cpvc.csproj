@@ -242,7 +242,7 @@
     <Resource Include="UI\Resources\bookmark16.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="UI\Resources\prevbookmark16.png" />
+    <Resource Include="UI\Resources\bookmarkprev16.png" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="UI\Resources\reset16.png" />
@@ -258,6 +258,9 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="UI\Resources\bookmarkadd16.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
