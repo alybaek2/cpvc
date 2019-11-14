@@ -54,7 +54,17 @@ namespace CPvC
                 return null;
             }
 
-            return new MachineInfo(tokens[0], tokens[1], fileSystem);
+            // Since MachineInfo will try to load the machine to get the latest screen, assume that
+            // any exception thrown indicates the machine wasn't loadable, and therefore shouldn't
+            // be shown in the Home tab.
+            try
+            {
+                return new MachineInfo(tokens[0], tokens[1], fileSystem);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public string AsString()

@@ -17,8 +17,9 @@ namespace CPvC
         /// </summary>
         private struct CPCColour
         {
-            public CPCColour(byte r, byte g, byte b, byte intensity)
+            public CPCColour(byte hwColourNumber, byte r, byte g, byte b, byte intensity)
             {
+                _hwColourNumber = hwColourNumber;
                 _r = r;
                 _g = g;
                 _b = b;
@@ -49,46 +50,59 @@ namespace CPvC
 
             // Indicates the intensity of the colour for use with grey/green screen rendering.
             private byte _intensity;
-        }
 
-        static private List<CPCColour> _colours = new List<CPCColour>
-        {
-            new CPCColour(1, 1, 1, 13),   //  0 - White
-            new CPCColour(1, 1, 1, 13),   //  1 - White
-            new CPCColour(0, 2, 1, 19),   //  2 - Sea Green
-            new CPCColour(2, 2, 1, 25),   //  3 - Pastel Yellow
-            new CPCColour(0, 0, 1, 1),    //  4 - Blue
-            new CPCColour(2, 0, 1, 7),    //  5 - Purple
-            new CPCColour(0, 1, 1, 10),   //  6 - Cyan
-            new CPCColour(2, 1, 1, 16),   //  7 - Pink
-            new CPCColour(2, 0, 1, 7),    //  8 - Purple
-            new CPCColour(2, 2, 1, 25),   //  9 - Pastel Yellow
-            new CPCColour(2, 2, 0, 24),   // 10 - Bright Yellow
-            new CPCColour(2, 2, 2, 26),   // 11 - Bright White
-            new CPCColour(2, 0, 0, 6),    // 12 - Bright Red
-            new CPCColour(2, 0, 2, 8),    // 13 - Bright Magenta
-            new CPCColour(2, 1, 0, 15),   // 14 - Orange
-            new CPCColour(2, 1, 2, 17),   // 15 - Pastel Magenta
-            new CPCColour(0, 0, 1, 1),    // 16 - Blue
-            new CPCColour(0, 2, 1, 19),   // 17 - Sea Green
-            new CPCColour(0, 2, 0, 18),   // 18 - Bright Green
-            new CPCColour(0, 2, 2, 20),   // 19 - Bright Cyan
-            new CPCColour(0, 0, 0, 0),    // 20 - Black
-            new CPCColour(0, 0, 2, 2),    // 21 - Bright Blue
-            new CPCColour(0, 1, 0, 9),    // 22 - Green
-            new CPCColour(0, 1, 2, 11),   // 23 - Sky Blue
-            new CPCColour(1, 0, 1, 4),    // 24 - Magenta
-            new CPCColour(1, 2, 1, 22),   // 25 - Pastel Green
-            new CPCColour(1, 2, 0, 21),   // 26 - Lime
-            new CPCColour(1, 2, 2, 23),   // 27 - Pastel Cyan
-            new CPCColour(1, 0, 0, 3),    // 28 - Red
-            new CPCColour(1, 0, 2, 5),    // 29 - Mauve
-            new CPCColour(1, 1, 0, 12),   // 30 - Yellow
-            new CPCColour(1, 1, 2, 14)    // 31 - Pastel Blue
-        };
+            // Indicates the hardware palette colour number.
+            public byte _hwColourNumber;
+
+            // Colours.
+            static public CPCColour White = new CPCColour(0, 1, 1, 1, 13);
+            static public CPCColour White2 = new CPCColour(1, 1, 1, 1, 13);
+            static public CPCColour SeaGreen = new CPCColour(2, 0, 2, 1, 19);
+            static public CPCColour PastelYellow = new CPCColour(3, 2, 2, 1, 25);
+            static public CPCColour Blue = new CPCColour(4, 0, 0, 1, 1);
+            static public CPCColour Purple = new CPCColour(5, 2, 0, 1, 7);
+            static public CPCColour Cyan = new CPCColour(6, 0, 1, 1, 10);
+            static public CPCColour Pink = new CPCColour(7, 2, 1, 1, 16);
+            static public CPCColour Purple2 = new CPCColour(8, 2, 0, 1, 7);
+            static public CPCColour PastelYellow2 = new CPCColour(9, 2, 2, 1, 25);
+            static public CPCColour BrightYellow = new CPCColour(10, 2, 2, 0, 24);
+            static public CPCColour BrightWhite = new CPCColour(11, 2, 2, 2, 26);
+            static public CPCColour BrightRed = new CPCColour(12, 2, 0, 0, 6);
+            static public CPCColour BrightMagenta = new CPCColour(13, 2, 0, 2, 8);
+            static public CPCColour Orange = new CPCColour(14, 2, 1, 0, 15);
+            static public CPCColour PastelMagenta = new CPCColour(15, 2, 1, 2, 17);
+            static public CPCColour Blue2 = new CPCColour(16, 0, 0, 1, 1);
+            static public CPCColour SeaGreen2 = new CPCColour(17, 0, 2, 1, 19);
+            static public CPCColour BrightGreen = new CPCColour(18, 0, 2, 0, 18);
+            static public CPCColour BrightCyan = new CPCColour(19, 0, 2, 2, 20);
+            static public CPCColour Black = new CPCColour(20, 0, 0, 0, 0);
+            static public CPCColour BrightBlue = new CPCColour(21, 0, 0, 2, 2);
+            static public CPCColour Green = new CPCColour(22, 0, 1, 0, 9);
+            static public CPCColour SkyBlue = new CPCColour(23, 0, 1, 2, 11);
+            static public CPCColour Magenta = new CPCColour(24, 1, 0, 1, 4);
+            static public CPCColour PastelGreen = new CPCColour(25, 1, 2, 1, 22);
+            static public CPCColour Lime = new CPCColour(26, 1, 2, 0, 21);
+            static public CPCColour PastelCyan = new CPCColour(27, 1, 2, 2, 23);
+            static public CPCColour Red = new CPCColour(28, 1, 0, 0, 3);
+            static public CPCColour Mauve = new CPCColour(29, 1, 0, 2, 5);
+            static public CPCColour Yellow = new CPCColour(30, 1, 1, 0, 12);
+            static public CPCColour PastelBlue = new CPCColour(31, 1, 1, 2, 14);
+
+            // The entire palette.
+            static public List<CPCColour> Palette = new List<CPCColour>
+            {
+                CPCColour.White,         CPCColour.White2,        CPCColour.SeaGreen,      CPCColour.PastelYellow,  CPCColour.Blue,
+                CPCColour.Purple,        CPCColour.Cyan,          CPCColour.Pink,          CPCColour.Purple2,       CPCColour.PastelYellow2,
+                CPCColour.BrightYellow,  CPCColour.BrightWhite,   CPCColour.BrightRed,     CPCColour.BrightMagenta, CPCColour.Orange,
+                CPCColour.PastelMagenta, CPCColour.Blue2,         CPCColour.SeaGreen2,     CPCColour.BrightGreen,   CPCColour.BrightCyan,
+                CPCColour.Black,         CPCColour.BrightBlue,    CPCColour.Green,         CPCColour.SkyBlue,       CPCColour.Magenta,
+                CPCColour.PastelGreen,   CPCColour.Lime,          CPCColour.PastelCyan,    CPCColour.Red,           CPCColour.Mauve,
+                CPCColour.Yellow,        CPCColour.PastelBlue
+            };
+        }
         
-        static private readonly BitmapPalette _greyPalette = new BitmapPalette(_colours.Select(c => c.GetGreyscaleColor()).ToList());
-        static private readonly BitmapPalette _colourPalette = new BitmapPalette(_colours.Select(c => c.GetColor()).ToList());
+        static private readonly BitmapPalette _greyPalette = new BitmapPalette(CPCColour.Palette.Select(c => c.GetGreyscaleColor()).ToList());
+        static private readonly BitmapPalette _colourPalette = new BitmapPalette(CPCColour.Palette.Select(c => c.GetColor()).ToList());
 
         private readonly Int32Rect _drawRect;
 
@@ -106,7 +120,7 @@ namespace CPvC
         {
             _drawRect = new Int32Rect(0, 0, Width, Height);
 
-            Buffer = new UnmanagedMemory(Height * Pitch);
+            Buffer = new UnmanagedMemory(Height * Pitch, CPCColour.Black._hwColourNumber);
             Bitmap = new WriteableBitmap(Width, Height, 0, 0, PixelFormats.Indexed8, _colourPalette);
         }
 
@@ -138,21 +152,22 @@ namespace CPvC
         /// <param name="bookmark">Bookmark to populate the display from.</param>
         public void GetFromBookmark(Bookmark bookmark)
         {
-            // Assume a blank screen if no bookmark provided.
             if (bookmark == null)
             {
-                Buffer.Clear();
-                return;
+                // Assume a blank screen if no bookmark provided.
+                Buffer.Clear(CPCColour.Black._hwColourNumber);
             }
-
-            // Otherwise, use the bookmark to create a core, and run it for 2 VSync's in order to populate the screen buffer.
-            using (Core core = Core.Create(bookmark.State))
+            else
             {
-                core.SetScreenBuffer(Buffer);
-                core.RunForVSync(2);
-
-                CopyFromBuffer();
+                // Otherwise, use the bookmark to create a core, and run it for 2 VSync's in order to populate the screen buffer.
+                using (Core core = Core.Create(bookmark.State))
+                {
+                    core.SetScreenBuffer(Buffer);
+                    core.RunForVSync(2);
+                }
             }
+
+            CopyFromBuffer();
         }
 
         public WriteableBitmap ConvertToGreyscale()

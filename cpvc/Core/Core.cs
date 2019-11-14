@@ -95,6 +95,7 @@ namespace CPvC
 
             _audioSamplingFrequency = 48000;
             _volume = 80;
+            EnableTurbo(false);
 
             _audioReady = new AutoResetEvent(true);
             _requestQueueEmpty = new AutoResetEvent(true);

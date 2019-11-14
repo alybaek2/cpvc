@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace CPvC
 {
     /// <summary>
-    /// Simple wrapper for memory allocated with AllocHGlobal.
+    /// Simple wrapper for a memory buffer allocated with AllocHGlobal.
     /// </summary>
     public class UnmanagedMemory : IDisposable
     {
@@ -15,24 +15,26 @@ namespace CPvC
         /// Creates an instance of UnmanagedMemory.
         /// </summary>
         /// <param name="size">The number of bytes to allocate. Will be deallocated once Dispose or the finalizer is called.</param>
-        public UnmanagedMemory(int size)
+        /// <param name="initialValue">The initial value to set all bytes in the buffer to.</param>
+        public UnmanagedMemory(int size, byte initialValue)
         {
             _size = size;
             _memory = Marshal.AllocHGlobal(size);
 
-            Clear();
+            Clear(initialValue);
         }
 
         /// <summary>
-        /// Sets all bytes in the unmanager memory to zero.
+        /// Sets all bytes in the buffer to a given value.
         /// </summary>
-        public void Clear()
+        /// <param name="b">The value to set all bytes in the buffer to.</param>
+        public void Clear(byte b)
         {
-            // Zero out the buffer. This isn't the most efficient way of doing this, but there's not
-            // currently a pressing need for good performance here as this is called sparingly.
+            // This isn't the most efficient way of doing this, but there's not currently
+            // a pressing need for good performance here as this is called sparingly.
             for (int i = 0; i < _size; i++)
             {
-                Marshal.WriteByte(_memory, i, 0);
+                Marshal.WriteByte(_memory, i, b);
             }
         }
 

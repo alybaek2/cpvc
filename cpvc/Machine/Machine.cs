@@ -146,12 +146,6 @@ namespace CPvC
                 machine.CurrentEvent = bookmarkEvent;
 
                 machine.Display.GetFromBookmark(bookmarkEvent?.Bookmark);
-
-                core.Auditors += machine.RequestProcessed;
-                core.BeginVSync = machine.BeginVSync;
-                core.SetScreenBuffer(machine.Display.Buffer);
-                core.EnableTurbo(false);
-
                 machine.Core = core;
 
                 return machine;
@@ -190,10 +184,7 @@ namespace CPvC
 
                 machine.CurrentEvent = machine.RootEvent;
 
-                machine._core = Core.Create(Core.Type.CPC6128);
-                machine._core.Auditors += machine.RequestProcessed;
-                machine._core.BeginVSync = machine.BeginVSync;
-                machine._core.SetScreenBuffer(machine.Display.Buffer);
+                machine.Core = Core.Create(Core.Type.CPC6128);
 
                 return machine;
             }
@@ -215,8 +206,9 @@ namespace CPvC
             try
             {
                 // Create a system bookmark so the machine can resume from where it left off the next time it's loaded, but don't
-                // create one if we already have a system bookmark at the current event.
-                if (Core != null && CurrentEvent.Ticks != Core.Ticks || CurrentEvent.Bookmark == null || !CurrentEvent.Bookmark.System)
+                // create one if we already have a system bookmark at the current event, or we're at the root event.
+                if ((CurrentEvent != RootEvent) && 
+                    (Core != null && CurrentEvent.Ticks != Core.Ticks || CurrentEvent.Bookmark == null || !CurrentEvent.Bookmark.System))
                 {
                     Bookmark bookmark = GetBookmark(true);
                     HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(NextEventId(), bookmark.Ticks, DateTime.UtcNow, bookmark);
@@ -247,7 +239,7 @@ namespace CPvC
         /// <param name="core">The core the request was made for.</param>
         /// <param name="request">The original request.</param>
         /// <param name="action">The action taken.</param>
-        public void RequestProcessed(Core core, CoreRequest request, CoreAction action)
+        private void RequestProcessed(Core core, CoreRequest request, CoreAction action)
         {
             if (core == _core && action != null && action.Type != CoreAction.Types.RunUntil)
             {
@@ -264,7 +256,19 @@ namespace CPvC
 
             private set
             {
+                if (_core != null)
+                {
+                    value.Auditors -= RequestProcessed;
+                    value.BeginVSync = null;
+                    _core.Dispose();
+                }
+
+                value.SetScreenBuffer(Display.Buffer);
+                value.Auditors += RequestProcessed;
+                value.BeginVSync = BeginVSync;
+
                 _core = value;
+
                 OnPropertyChanged("Core");
             }
         }
@@ -322,7 +326,7 @@ namespace CPvC
         /// Delegate for VSync events.
         /// </summary>
         /// <param name="core">Core whose VSync signal went form low to high.</param>
-        public void BeginVSync(Core core)
+        private void BeginVSync(Core core)
         {
             // Only copy to the display if the VSync is from a core we're interesting in.
             if (core != null && _core == core)
@@ -436,22 +440,11 @@ namespace CPvC
         public void SetCurrentEvent(HistoryEvent bookmarkEvent)
         {
             // Add a checkpoint at the current position to properly mark the end of this branch...
+            Core.Stop();
             SetCheckpoint();
 
-            Core.Stop();
-
-            Core newCore = Machine.GetCore(bookmarkEvent);
-            newCore.Auditors += RequestProcessed;
-            newCore.BeginVSync = BeginVSync;
-
-            if (bookmarkEvent != null)
-            {
-                Display.GetFromBookmark(bookmarkEvent.Bookmark);
-            }
-
-            Core.Dispose();
-            newCore.SetScreenBuffer(Display.Buffer);
-            Core = newCore;
+            Display.GetFromBookmark(bookmarkEvent?.Bookmark);
+            Core = Machine.GetCore(bookmarkEvent);
 
             _file.WriteCurrentEvent(bookmarkEvent);
             CurrentEvent = bookmarkEvent;
@@ -464,7 +457,7 @@ namespace CPvC
         /// </summary>
         /// <param name="historyEvent">Event to delete.</param>
         /// <param name="loading">Indicates whether the MachineFile is being loaded from a file.</param>
-        public void DeleteEvent(HistoryEvent historyEvent, bool writeToFile)
+        private void DeleteEvent(HistoryEvent historyEvent, bool writeToFile)
         {
             if (historyEvent.Parent == null)
             {

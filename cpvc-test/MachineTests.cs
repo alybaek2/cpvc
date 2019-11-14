@@ -66,19 +66,12 @@ namespace cpvc_test
         [TestCase(true)]
         public void ConsecutiveSystemBookmarksOnClose(bool startBeforeClosing)
         {
-            // Setup
-            using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
-            {
-                machine.Close();
-            }
-
-            _mockFileSystem.Setup(fs => fs.ReadLines(AnyString())).Returns(_lines.ToArray());
-            _lines.Clear();
-
             // Act
             UInt64 ticks = 0;
-            using (Machine machine = Machine.Open("test.cpvc", _mockFileSystem.Object))
+            using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
             {
+                machine.AddBookmark(true);
+
                 if (startBeforeClosing)
                 {
                     RunForAWhile(machine);
@@ -92,13 +85,31 @@ namespace cpvc_test
             // Verify
             if (startBeforeClosing)
             {
-                Assert.AreEqual(1, _lines.Count);
-                Assert.True(_lines[0].StartsWith(String.Format("checkpoint:2:{0}:1:", ticks)));
+                Assert.AreEqual(4, _lines.Count);
+                Assert.True(_lines[3].StartsWith(String.Format("checkpoint:2:{0}:1:", ticks)));
             }
             else
             {
-                Assert.AreEqual(0, _lines.Count);
+                Assert.AreEqual(3, _lines.Count);
             }
+        }
+
+        /// <summary>
+        /// Ensures that a system bookmark isn't created when a machine at the root event is closed.
+        /// </summary>
+        [Test]
+        public void NoSystemBookmarksOnClose()
+        {
+            // Act
+            int linesCount = 0;
+            using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
+            {
+                linesCount = _lines.Count;
+                machine.Close();
+            }
+
+            // Verify
+            Assert.AreEqual(linesCount, _lines.Count);
         }
 
         /// <summary>
