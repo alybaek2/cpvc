@@ -452,7 +452,7 @@ namespace CPvC.UI.Forms
                         _mainViewModel.OpenMachine(machineInfo.Filepath, _fileSystem);
                         break;
                     case Machine machine:
-                        _mainViewModel.OpenMachine(machine.Filepath, _fileSystem);
+                        _mainViewModel.ActiveMachine = machine;
                         break;
                 }
             }
