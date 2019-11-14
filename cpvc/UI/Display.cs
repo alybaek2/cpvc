@@ -40,7 +40,7 @@ namespace CPvC
 
             private byte Scale(byte v, byte max)
             {
-                return (byte)(255 * ((float) v / max));
+                return (byte)(255 * ((float)v / max));
             }
 
             // Note that r, g, and b can be either 0, 1, 2, indicating the intensity of each for the colour.
@@ -100,7 +100,7 @@ namespace CPvC
                 CPCColour.Yellow,        CPCColour.PastelBlue
             };
         }
-        
+
         static private readonly BitmapPalette _greyPalette = new BitmapPalette(CPCColour.Palette.Select(c => c.GetGreyscaleColor()).ToList());
         static private readonly BitmapPalette _colourPalette = new BitmapPalette(CPCColour.Palette.Select(c => c.GetColor()).ToList());
 

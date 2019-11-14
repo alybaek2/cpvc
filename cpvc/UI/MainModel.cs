@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CPvC.UI
 {
@@ -17,7 +15,7 @@ namespace CPvC.UI
         public MainModel(ISettings settings, IFileSystem fileSystem)
         {
             _settings = settings;
-            
+
             OpenMachines = new ObservableCollection<Machine>();
             ClosedMachines = new ObservableCollection<MachineInfo>();
 

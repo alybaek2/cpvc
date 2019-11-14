@@ -228,7 +228,7 @@ namespace CPvC.UI.Forms
 
             return items;
         }
-        
+
         /// <summary>
         /// Returns the maximum ticks value of any given HistoryEvent's descendents. Used when sorting children in <c>AddEventToItem</c>.
         /// </summary>
