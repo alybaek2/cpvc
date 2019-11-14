@@ -16,7 +16,7 @@ Opens an existing instance of a CPvC machine. The machine will be opened in a pa
 
 ### Close
 
-Closes the currently selected machine. Note that a bookmark is automatically created at the moment the machine is closed, so that the machine can be resumed at the same point it was closed.
+Closes the currently selected machine. Note that a bookmark is automatically created at the moment the machine is closed, so that the machine can be resumed at the same point.
 
 ## CPvC menu
 
@@ -58,7 +58,7 @@ Opens a dialog displaying all bookmarks for the currently selected machine. The 
 
 Note that in this dialog, bookmarks created by the user are shown as red nodes in the history, and bookmarks created by the application (e.g. when the machine is closed) are shown in dark red. Then end of each branch of the history is shown as a solid dark blue node, and the current position in the timeline is shown as a hollow dark blue node.
 
-### Rename machine...
+### Rename machine
 
 Allows the user to rename the currently selected machine.
 

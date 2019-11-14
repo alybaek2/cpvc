@@ -5,10 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CPvC"
         mc:Ignorable="d"
-        Title="CPvC" Height="173.184" Width="240.317" WindowStartupLocation="CenterOwner" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+        Title="CPvC" Height="180" Width="240" WindowStartupLocation="CenterOwner" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" MinWidth="240" MinHeight="180">
     <Grid>
-        <ListBox x:Name="_itemsListBox" Height="95" Margin="10,10,10,0" VerticalAlignment="Top"/>
-        <Button x:Name="_cancelButton" Content="Cancel" Margin="0,0,10,10" VerticalAlignment="Bottom" Click="CancelButton_Click" HorizontalAlignment="Right" Width="75"/>
+        <ListBox x:Name="_itemsListBox" Margin="10,10,10,37"/>
+        <Button x:Name="_cancelButton" Content="Cancel" Margin="0,0,10,10" Click="CancelButton_Click" HorizontalAlignment="Right" Width="75" Height="20" VerticalAlignment="Bottom"/>
         <Button x:Name="_okButton" Content="OK" HorizontalAlignment="Right" Margin="0,0,90,10" Width="75" Click="OkButton_Click" Height="20" VerticalAlignment="Bottom"/>
     </Grid>
 </Window>
