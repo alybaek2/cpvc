@@ -78,8 +78,6 @@ namespace cpvc_test
                 }
 
                 ticks = machine.Core.Ticks;
-
-                machine.Close();
             }
 
             // Verify
@@ -105,7 +103,6 @@ namespace cpvc_test
             using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
             {
                 linesCount = _lines.Count;
-                machine.Close();
             }
 
             // Verify
@@ -140,8 +137,6 @@ namespace cpvc_test
                 }
 
                 Assert.IsTrue(machine.Core.Running);
-
-                machine.Close();
             }
         }
 
