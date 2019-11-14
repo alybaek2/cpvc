@@ -2,7 +2,7 @@
 
 The main CPvC window appears as follows:
 
-![CPvC window](docs/cpvc.png)
+![CPvC window](cpvc.png)
 
 ## File menu
 
@@ -76,7 +76,7 @@ Note that clicking anywhere on the tab window will pause the machine. Clicking a
 
 The leftmost tab in the main window shows all open or previously opened machines:
 
-![CPvC window](docs/home.png)
+![CPvC window](home.png)
 
 Each machine is displayed as a thumbnail of the current state of the machine. For open machines, this thumbnail is in colour, while machines that are not currently open are shown in greyscale.
 
