@@ -322,7 +322,6 @@ namespace CPvC.UI.Forms
                     fileDialog.InitialDirectory = initialFolder;
                 }
 
-
                 fileDialog.Filter = fileFilter;
 
                 System.Windows.Forms.DialogResult r = fileDialog.ShowDialog();
@@ -331,7 +330,7 @@ namespace CPvC.UI.Forms
                     return null;
                 }
 
-                // "Remember to the selected file.
+                // Remember the last folder for the selected filetype.
                 string filename = fileDialog.FileName;
                 string folder = System.IO.Path.GetDirectoryName(filename);
                 switch (type)
@@ -445,38 +444,31 @@ namespace CPvC.UI.Forms
 
         private void MachinePreviewGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            Grid grid = sender as Grid;
-            MachineInfo info = grid.DataContext as MachineInfo;
-            if (info != null)
+            if (sender is FrameworkElement element)
             {
-                _mainViewModel.OpenMachine(info.Filepath, _fileSystem);
-                return;
-            }
-
-            Machine machine = grid.DataContext as Machine;
-            if (machine != null)
-            {
-                _mainViewModel.ActiveItem = machine;
+                switch (element.DataContext)
+                {
+                    case MachineInfo machineInfo:
+                        _mainViewModel.OpenMachine(machineInfo.Filepath, _fileSystem);
+                        break;
+                    case Machine machine:
+                        _mainViewModel.OpenMachine(machine.Filepath, _fileSystem);
+                        break;
+                }
             }
         }
 
         private void ScreenGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            Grid grid = sender as Grid;
-            if (grid == null)
+            if (sender is FrameworkElement element && element.DataContext is Machine machine)
             {
-                return;
+                _mainViewModel.ToggleRunning(machine);
             }
-
-            _mainViewModel.ToggleRunning(grid.DataContext as Machine);
         }
 
         private void OpenPreviewMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            MenuItem menuItem = (MenuItem)sender;
-
-            MachineInfo machineInfo = (MachineInfo)menuItem.DataContext;
-            if (machineInfo != null)
+            if (sender is FrameworkElement element && element.DataContext is MachineInfo machineInfo)
             {
                 _mainViewModel.OpenMachine(machineInfo.Filepath, _fileSystem);
             }
@@ -484,10 +476,7 @@ namespace CPvC.UI.Forms
 
         private void RemovePreviewMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            MenuItem menuItem = (MenuItem)sender;
-
-            MachineInfo machineInfo = (MachineInfo)menuItem.DataContext;
-            if (machineInfo != null)
+            if (sender is FrameworkElement element && element.DataContext is MachineInfo machineInfo)
             {
                 _mainViewModel.Remove(machineInfo);
             }
@@ -495,10 +484,7 @@ namespace CPvC.UI.Forms
 
         private void RemoveOpenMachineMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            MenuItem menuItem = (MenuItem)sender;
-
-            Machine machine = (Machine)menuItem.DataContext;
-            if (machine != null)
+            if (sender is FrameworkElement element && element.DataContext is Machine machine)
             {
                 _mainViewModel.Remove(machine);
             }
@@ -506,10 +492,7 @@ namespace CPvC.UI.Forms
 
         private void ClosePreviewMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            MenuItem menuItem = (MenuItem)sender;
-
-            Machine machine = (Machine)menuItem.DataContext;
-            if (machine != null)
+            if (sender is FrameworkElement element && element.DataContext is Machine machine)
             {
                 _mainViewModel.Close(machine);
             }
@@ -517,10 +500,7 @@ namespace CPvC.UI.Forms
 
         private void PausePreviewMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            MenuItem menuItem = (MenuItem)sender;
-
-            Machine machine = (Machine)menuItem.DataContext;
-            if (machine != null)
+            if (sender is FrameworkElement element && element.DataContext is Machine machine)
             {
                 machine.Stop();
             }
@@ -528,10 +508,7 @@ namespace CPvC.UI.Forms
 
         private void ResumePreviewMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            MenuItem menuItem = (MenuItem)sender;
-
-            Machine machine = (Machine)menuItem.DataContext;
-            if (machine != null)
+            if (sender is FrameworkElement element && element.DataContext is Machine machine)
             {
                 machine.Start();
             }
