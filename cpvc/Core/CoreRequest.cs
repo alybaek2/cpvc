@@ -45,7 +45,7 @@ namespace CPvC
             CoreRequest request = new CoreRequest(Types.LoadDisc)
             {
                 Drive = drive,
-                MediaBuffer = (buffer != null) ? ((byte[])buffer.Clone()) : null
+                MediaBuffer = (byte[])buffer?.Clone()
             };
 
             return request;
@@ -55,7 +55,7 @@ namespace CPvC
         {
             CoreRequest request = new CoreRequest(Types.LoadTape)
             {
-                MediaBuffer = (buffer != null) ? ((byte[])buffer.Clone()) : null
+                MediaBuffer = (byte[])buffer?.Clone()
             };
 
             return request;

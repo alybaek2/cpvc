@@ -32,11 +32,8 @@ namespace CPvC.UI.Forms
 
         public void Dispose()
         {
-            if (_display != null)
-            {
-                _display.Dispose();
-                _display = null;
-            }
+            _display?.Dispose();
+            _display = null;
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -62,7 +59,7 @@ namespace CPvC.UI.Forms
             }
 
             HistoryViewItem item = (HistoryViewItem)_historyListView.SelectedItem;
-            if (item != null && item.HistoryEvent != null)
+            if (item?.HistoryEvent != null)
             {
                 SelectedEvent = item.HistoryEvent;
             }
@@ -86,7 +83,7 @@ namespace CPvC.UI.Forms
             int bookmarksSelected = 0;
             foreach (HistoryViewItem historyItem in _historyListView.SelectedItems)
             {
-                if (historyItem.HistoryEvent != null && historyItem.HistoryEvent.Bookmark != null)
+                if (historyItem?.HistoryEvent?.Bookmark != null)
                 {
                     bookmarksSelected++;
                 }
@@ -303,7 +300,7 @@ namespace CPvC.UI.Forms
                     return true;
                 }
 
-                if (historyEvent != null && historyEvent.Type == HistoryEvent.Types.Checkpoint && historyEvent.Bookmark != null)
+                if (historyEvent?.Type == HistoryEvent.Types.Checkpoint && historyEvent.Bookmark != null)
                 {
                     _display.GetFromBookmark(historyEvent.Bookmark);
                     _fullScreenImage.Source = _display.Bitmap;

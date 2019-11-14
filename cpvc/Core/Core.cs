@@ -114,23 +114,14 @@ namespace CPvC
             Auditors = null;
             BeginVSync = null;
 
-            if (_coreCLR != null)
-            {
-                _coreCLR.Dispose();
-                _coreCLR = null;
-            }
+            _coreCLR?.Dispose();
+            _coreCLR = null;
 
-            if (_audioReady != null)
-            {
-                _audioReady.Dispose();
-                _audioReady = null;
-            }
+            _audioReady?.Dispose();
+            _audioReady = null;
 
-            if (_requestQueueEmpty != null)
-            {
-                _requestQueueEmpty.Dispose();
-                _requestQueueEmpty = null;
-            }
+            _requestQueueEmpty?.Dispose();
+            _requestQueueEmpty = null;
         }
 
         /// <summary>
@@ -344,7 +335,7 @@ namespace CPvC
                     CoreRequest request = PopRequest() ?? CoreRequest.RunUntil(Ticks + 20000, (byte)(StopReasons.AudioOverrun | StopReasons.VSync));
 
                     CoreAction action = ProcessRequest(request);
-                    if (action != null && action.Type == CoreAction.Types.RunUntil)
+                    if (action?.Type == CoreAction.Types.RunUntil)
                     {
                         if ((action.StopReason & StopReasons.AudioOverrun) != 0)
                         {

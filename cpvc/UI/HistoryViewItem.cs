@@ -38,7 +38,7 @@ namespace CPvC
         {
             get
             {
-                return (HistoryEvent != null) ? HistoryEvent.Ticks : 0;
+                return HistoryEvent?.Ticks ?? 0;
             }
         }
 
@@ -46,7 +46,7 @@ namespace CPvC
         {
             get
             {
-                if (HistoryEvent != null && HistoryEvent.CreateDate != null)
+                if (HistoryEvent?.CreateDate != null)
                 {
                     return HistoryEvent.CreateDate.ToLocalTime();
                 }
@@ -193,7 +193,7 @@ namespace CPvC
             else
             {
                 // History events with no children are drawn as a terminating dot.
-                DrawDot(cx, (historyEvent != null && historyEvent.Bookmark != null) ? (historyEvent.Bookmark.System ? Brushes.DarkRed : Brushes.Crimson) : Brushes.DarkBlue, historyEvent != currentEvent);
+                DrawDot(cx, (historyEvent?.Bookmark != null) ? (historyEvent.Bookmark.System ? Brushes.DarkRed : Brushes.Crimson) : Brushes.DarkBlue, historyEvent != currentEvent);
             }
         }
     }

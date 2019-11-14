@@ -189,10 +189,7 @@ namespace CPvC
 
         protected virtual void Dispose(bool disposing)
         {
-            if (Buffer != null)
-            {
-                Buffer.Dispose();
-            }
+            Buffer?.Dispose();
         }
     }
 }

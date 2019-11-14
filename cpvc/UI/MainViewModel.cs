@@ -87,10 +87,7 @@ namespace CPvC.UI
             catch (Exception ex)
             {
                 Diagnostics.Trace("[MainViewModel.NewMachine] Exception caught: {0}", ex.Message);
-                if (machine != null)
-                {
-                    machine.Dispose();
-                }
+                machine?.Dispose();
 
                 throw;
             }
@@ -116,10 +113,7 @@ namespace CPvC.UI
             catch (Exception ex)
             {
                 Diagnostics.Trace("[MainViewModel.OpenMachine] Exception caught: {0}", ex.Message);
-                if (machine != null)
-                {
-                    machine.Dispose();
-                }
+                machine?.Dispose();
 
                 throw;
             }
@@ -187,42 +181,27 @@ namespace CPvC.UI
 
         public void Key(byte key, bool down)
         {
-            if (ActiveMachine != null)
-            {
-                ActiveMachine.Key(key, down);
-            }
+            ActiveMachine?.Key(key, down);
         }
 
         public void Reset()
         {
-            if (ActiveMachine != null)
-            {
-                ActiveMachine.Reset();
-            }
+            ActiveMachine?.Reset();
         }
 
         public void Pause()
         {
-            if (ActiveMachine != null)
-            {
-                ActiveMachine.Stop();
-            }
+            ActiveMachine?.Stop();
         }
 
         public void Resume()
         {
-            if (ActiveMachine != null)
-            {
-                ActiveMachine.Start();
-            }
+            ActiveMachine?.Start();
         }
 
         public void ToggleRunning(Machine machine)
         {
-            if (machine != null)
-            {
-                machine.ToggleRunning();
-            }
+            machine?.ToggleRunning();
         }
 
         public void EnableTurbo(bool enabled)
@@ -240,28 +219,17 @@ namespace CPvC.UI
 
         public void AddBookmark()
         {
-            if (ActiveMachine != null)
-            {
-                ActiveMachine.AddBookmark(false);
-            }
+            ActiveMachine?.AddBookmark(false);
         }
 
         public void SeekToLastBookmark()
         {
-            if (ActiveMachine != null)
-            {
-                ActiveMachine.SeekToLastBookmark();
-            }
+            ActiveMachine?.SeekToLastBookmark();
         }
 
         public void CompactFile()
         {
-            if (ActiveMachine == null)
-            {
-                return;
-            }
-
-            ActiveMachine.RewriteMachineFile();
+            ActiveMachine?.RewriteMachineFile();
         }
 
         public int ReadAudio(byte[] buffer, int offset, int samplesRequested)

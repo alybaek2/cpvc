@@ -152,10 +152,7 @@ namespace CPvC
             }
             catch (Exception)
             {
-                if (machine != null)
-                {
-                    machine.Dispose();
-                }
+                machine?.Dispose();
 
                 throw;
             }
@@ -190,10 +187,7 @@ namespace CPvC
             }
             catch (Exception)
             {
-                if (machine != null)
-                {
-                    machine.Dispose();
-                }
+                machine?.Dispose();
 
                 throw;
             }
@@ -220,17 +214,11 @@ namespace CPvC
                 _file.Close();
             }
 
-            if (_core != null)
-            {
-                _core.Dispose();
-                _core = null;
-            }
+            _core?.Dispose();
+            _core = null;
 
-            if (Display != null)
-            {
-                Display.Dispose();
-                Display = null;
-            }
+            Display?.Dispose();
+            Display = null;
         }
 
         /// <summary>
@@ -365,20 +353,12 @@ namespace CPvC
 
         public void AdvancePlayback(int samples)
         {
-            if (_core != null)
-            {
-                _core.AdvancePlayback(samples);
-            }
+            _core?.AdvancePlayback(samples);
         }
 
         public int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
-            if (_core == null)
-            {
-                return 0;
-            }
-
-            return _core.ReadAudio16BitStereo(buffer, offset, samplesRequested);
+            return _core?.ReadAudio16BitStereo(buffer, offset, samplesRequested) ?? 0;
         }
 
         public void AddBookmark(bool system)
@@ -534,10 +514,7 @@ namespace CPvC
                 }
                 finally
                 {
-                    if (tempfile != null)
-                    {
-                        tempfile.Close();
-                    }
+                    tempfile?.Close();
                 }
 
                 _file.Close();
@@ -695,10 +672,7 @@ namespace CPvC
             }
             catch (Exception)
             {
-                if (core != null)
-                {
-                    core.Dispose();
-                }
+                core?.Dispose();
 
                 throw;
             }
