@@ -82,12 +82,12 @@ namespace cpvc_test
 
             if (expectedMachineName != null)
             {
-                Assert.AreEqual(mockViewModel.Model.OpenMachines.Count, 1);
-                Assert.AreEqual(mockViewModel.Model.OpenMachines[0].Name, expectedMachineName);
+                Assert.AreEqual(mockViewModel.Model.Machines.Count, 1);
+                Assert.AreEqual(mockViewModel.Model.Machines[0].Name, expectedMachineName);
             }
             else
             {
-                Assert.AreEqual(mockViewModel.Model.OpenMachines.Count, 0);
+                Assert.AreEqual(mockViewModel.Model.Machines.Count, 0);
             }
         }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
@@ -10,7 +11,7 @@ namespace CPvC
     /// <summary>
     /// Small class to deal with copying the screen buffer from a Core to a WriteableBitmap object.
     /// </summary>
-    public class Display : IDisposable
+    public class Display : INotifyPropertyChanged, IDisposable
     {
         /// <summary>
         /// Helper struct encapsulating information on the Amstrad CPC's colour palette.
@@ -108,13 +109,39 @@ namespace CPvC
 
         public UnmanagedMemory Buffer { get; private set; }
 
+        public event PropertyChangedEventHandler PropertyChanged;
+
         public const ushort Width = 768;
         public const ushort Height = 288;
 
         // As Bitmap will use an 8-bit palette, each pixel will require one byte. Thus, Pitch will equal Width.
         public const ushort Pitch = Width;
 
-        public WriteableBitmap Bitmap { get; }
+        private WriteableBitmap _bitmap;
+
+        public WriteableBitmap Bitmap
+        {
+            get
+            {
+                return _bitmap;
+            }
+
+            private set
+            {
+                // If we already have a bitmap, copy its contents over to the new one.
+                if (_bitmap != null)
+                {
+                    byte[] pixels = new byte[_bitmap.PixelWidth * _bitmap.PixelHeight];
+                    Bitmap.CopyPixels(pixels, Pitch, 0);
+
+                    value.WritePixels(_drawRect, pixels, Pitch, 0);
+                }
+
+                _bitmap = value;
+
+                OnPropertyChanged("Bitmap");
+            }
+        }
 
         public Display()
         {
@@ -122,6 +149,8 @@ namespace CPvC
 
             Buffer = new UnmanagedMemory(Height * Pitch, CPCColour.Black._hwColourNumber);
             Bitmap = new WriteableBitmap(Width, Height, 0, 0, PixelFormats.Indexed8, _colourPalette);
+
+            CopyFromBuffer();
         }
 
         /// <summary>
@@ -170,16 +199,14 @@ namespace CPvC
             CopyFromBuffer();
         }
 
-        public WriteableBitmap ConvertToGreyscale()
+        public void ConvertToColour()
         {
-            WriteableBitmap bitmap = new WriteableBitmap(Width, Height, 0, 0, PixelFormats.Indexed8, _greyPalette);
+            Bitmap = new WriteableBitmap(Width, Height, 0, 0, PixelFormats.Indexed8, _colourPalette);
+        }
 
-            byte[] pixels = new byte[Bitmap.PixelWidth * Bitmap.PixelHeight];
-            Bitmap.CopyPixels(pixels, Pitch, 0);
-
-            bitmap.WritePixels(_drawRect, pixels, Pitch, 0);
-
-            return bitmap;
+        public void ConvertToGreyscale()
+        {
+            Bitmap = new WriteableBitmap(Width, Height, 0, 0, PixelFormats.Indexed8, _greyPalette);
         }
 
         public void Dispose()
@@ -190,6 +217,11 @@ namespace CPvC
         protected virtual void Dispose(bool disposing)
         {
             Buffer?.Dispose();
+        }
+
+        private void OnPropertyChanged(string name)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
     }
 }

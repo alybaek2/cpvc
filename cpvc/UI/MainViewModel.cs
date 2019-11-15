@@ -59,6 +59,12 @@ namespace CPvC.UI
             set
             {
                 _active = value;
+
+                if (_active is Machine machine && machine.RequiresOpen)
+                {
+                    machine.Open();
+                }
+
                 OnPropertyChanged("ActiveItem");
                 OnPropertyChanged("ActiveMachine");
             }
@@ -92,7 +98,7 @@ namespace CPvC.UI
                 throw;
             }
 
-            AddMachine(machine);
+            Model.Add(machine);
             ActiveMachine = machine;
             machine.Start();
         }
@@ -108,7 +114,7 @@ namespace CPvC.UI
 
             try
             {
-                machine = Machine.Open(filepath, fileSystem);
+                machine = Machine.Open(null, filepath, fileSystem, false);
             }
             catch (Exception ex)
             {
@@ -118,7 +124,7 @@ namespace CPvC.UI
                 throw;
             }
 
-            AddMachine(machine);
+            Model.Add(machine);
             ActiveMachine = machine;
         }
 
@@ -129,7 +135,6 @@ namespace CPvC.UI
 
         public void Close(Machine machine)
         {
-            CloseMachine(machine);
             machine.Close();
         }
 
@@ -139,15 +144,9 @@ namespace CPvC.UI
             machine.Close();
         }
 
-        public void Remove(MachineInfo machineInfo)
-        {
-            Model.Remove(machineInfo);
-        }
-
         public void CloseAll()
         {
-            // Make a copy of Machines since Close will be removing elements from it.
-            foreach (Machine machine in Model.OpenMachines.ToList())
+            foreach (Machine machine in Model.Machines)
             {
                 Close(machine);
             }
@@ -234,10 +233,10 @@ namespace CPvC.UI
 
         public int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
-            lock (Model.OpenMachines)
+            lock (Model.Machines)
             {
                 int samplesWritten = 0;
-                foreach (Machine machine in Model.OpenMachines)
+                foreach (Machine machine in Model.Machines)
                 {
                     // Play audio only from the currently active machine; for the rest, just
                     // advance the audio playback position.
@@ -253,16 +252,6 @@ namespace CPvC.UI
 
                 return samplesWritten;
             }
-        }
-
-        private void AddMachine(Machine machine)
-        {
-            Model.OpenMachine(machine);
-        }
-
-        private void CloseMachine(Machine machine)
-        {
-            Model.CloseMachine(machine);
         }
     }
 }

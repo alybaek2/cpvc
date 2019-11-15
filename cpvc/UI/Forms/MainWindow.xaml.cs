@@ -444,17 +444,9 @@ namespace CPvC.UI.Forms
 
         private void MachinePreviewGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is FrameworkElement element)
+            if (sender is FrameworkElement element && element.DataContext is Machine machine)
             {
-                switch (element.DataContext)
-                {
-                    case MachineInfo machineInfo:
-                        _mainViewModel.OpenMachine(machineInfo.Filepath, _fileSystem);
-                        break;
-                    case Machine machine:
-                        _mainViewModel.ActiveMachine = machine;
-                        break;
-                }
+                _mainViewModel.ActiveMachine = machine;
             }
         }
 
@@ -468,17 +460,14 @@ namespace CPvC.UI.Forms
 
         private void OpenPreviewMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is MachineInfo machineInfo)
-            {
-                _mainViewModel.OpenMachine(machineInfo.Filepath, _fileSystem);
-            }
+            MachinePreviewGrid_MouseLeftButtonUp(sender, null);
         }
 
         private void RemovePreviewMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is MachineInfo machineInfo)
+            if (sender is FrameworkElement element && element.DataContext is Machine machine)
             {
-                _mainViewModel.Remove(machineInfo);
+                _mainViewModel.Remove(machine);
             }
         }
 
@@ -512,6 +501,18 @@ namespace CPvC.UI.Forms
             {
                 machine.Start();
             }
+        }
+
+        private void OpenMachines_Filter(object sender, System.Windows.Data.FilterEventArgs e)
+        {
+            Machine machine = e.Item as Machine;
+            if (machine == null)
+            {
+                e.Accepted = false;
+                return;
+            }
+
+            e.Accepted = !machine.RequiresOpen;
         }
     }
 }

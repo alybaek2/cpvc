@@ -16,51 +16,27 @@ namespace CPvC.UI
         {
             _settings = settings;
 
-            OpenMachines = new ObservableCollection<Machine>();
-            ClosedMachines = new ObservableCollection<MachineInfo>();
+            Machines = new ObservableCollection<Machine>();
 
             LoadFromSettings(fileSystem);
         }
 
         /// <summary>
-        /// Represents the set of machines that are currently open.
+        /// Represents the set of machines that are currently open or closed.
         /// </summary>
-        public ObservableCollection<Machine> OpenMachines { get; }
+        public ObservableCollection<Machine> Machines { get; }
 
         /// <summary>
-        /// Represents the set of machines not currently open, but were opened at some point prior.
-        /// </summary>
-        public ObservableCollection<MachineInfo> ClosedMachines { get; }
-
-        /// <summary>
-        /// Adds a machine to OpenMachines and removes the corresponding MachineInfo from ClosedMachines.
+        /// Adds a machine to the model.
         /// </summary>
         /// <param name="machine">The machine to add.</param>
-        public void OpenMachine(Machine machine)
+        public void Add(Machine machine)
         {
-            lock (OpenMachines)
+            lock (Machines)
             {
-                OpenMachines.Add(machine);
-            }
-
-            RemoveFromClosed(machine.Filepath);
-
-            UpdateSettings();
-        }
-
-        /// <summary>
-        /// Removes a machine from OpenMachines and adds a corresponding MachineInfo to ClosedMachines.
-        /// </summary>
-        /// <param name="machine">The machine to remove.</param>
-        public void CloseMachine(Machine machine)
-        {
-            RemoveFromOpen(machine);
-
-            lock (ClosedMachines)
-            {
-                if (!ClosedMachines.Any(m => String.Compare(m.Filepath, machine.Filepath, true) == 0))
+                if (!Machines.Contains(machine))
                 {
-                    ClosedMachines.Add(new MachineInfo(machine));
+                    Machines.Add(machine);
                 }
             }
 
@@ -73,41 +49,12 @@ namespace CPvC.UI
         /// <param name="machine">The machine to remove.</param>
         public void Remove(Machine machine)
         {
-            RemoveFromOpen(machine);
-            RemoveFromClosed(machine.Filepath);
+            lock (Machines)
+            {
+                Machines.Remove(machine);
+            }
 
             UpdateSettings();
-        }
-
-        /// <summary>
-        /// Removes a closed machine from the model.
-        /// </summary>
-        /// <param name="machineInfo">The closed machine to remove.</param>
-        public void Remove(MachineInfo machineInfo)
-        {
-            RemoveFromClosed(machineInfo.Filepath);
-
-            UpdateSettings();
-        }
-
-        private void RemoveFromOpen(Machine machine)
-        {
-            lock (OpenMachines)
-            {
-                OpenMachines.Remove(machine);
-            }
-        }
-
-        private void RemoveFromClosed(string filepath)
-        {
-            lock (ClosedMachines)
-            {
-                List<MachineInfo> closedMachines = ClosedMachines.Where(m => String.Compare(m.Filepath, filepath, true) == 0).ToList();
-                foreach (MachineInfo machineInfo in closedMachines)
-                {
-                    ClosedMachines.Remove(machineInfo);
-                }
-            }
         }
 
         /// <summary>
@@ -115,25 +62,17 @@ namespace CPvC.UI
         /// </summary>
         private void UpdateSettings()
         {
-            Dictionary<string, MachineInfo> machineFilepathNameMap = new Dictionary<string, MachineInfo>();
+            Dictionary<string, string> machineFilepathNameMap = new Dictionary<string, string>();
 
-            lock (OpenMachines)
+            lock (Machines)
             {
-                foreach (Machine machine in OpenMachines)
+                foreach (Machine machine in Machines)
                 {
-                    machineFilepathNameMap[machine.Filepath.ToLower()] = new MachineInfo(machine.Name, machine.Filepath, null);
+                    machineFilepathNameMap[machine.Filepath.ToLower()] = machine.Name;
                 }
             }
 
-            lock (ClosedMachines)
-            {
-                foreach (MachineInfo machineInfo in ClosedMachines)
-                {
-                    machineFilepathNameMap[machineInfo.Filepath.ToLower()] = machineInfo;
-                }
-            }
-
-            _settings.RecentlyOpened = Helpers.JoinWithEscape(',', machineFilepathNameMap.Select(kv => kv.Value.AsString()));
+            _settings.RecentlyOpened = Helpers.JoinWithEscape(',', machineFilepathNameMap.Select(kv => Helpers.JoinWithEscape(';', new List<string> { kv.Value, kv.Key })));
         }
 
         /// <summary>
@@ -145,11 +84,18 @@ namespace CPvC.UI
             string recent = _settings.RecentlyOpened;
             if (recent != null)
             {
-                lock (ClosedMachines)
+                lock (Machines)
                 {
-                    foreach (MachineInfo info in Helpers.SplitWithEscape(',', recent).Select(x => MachineInfo.FromString(x, fileSystem)).Where(y => y != null))
+                    foreach (string machineStr in Helpers.SplitWithEscape(',', recent))
                     {
-                        ClosedMachines.Add(info);
+                        List<string> tokens = Helpers.SplitWithEscape(';', machineStr);
+                        if (tokens.Count < 2)
+                        {
+                            continue;
+                        }
+
+                        Machine machine = Machine.Open(tokens[0], tokens[1], fileSystem, true);
+                        Machines.Add(machine);
                     }
                 }
             }

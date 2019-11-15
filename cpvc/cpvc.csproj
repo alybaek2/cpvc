@@ -115,7 +115,6 @@
     <Compile Include="IO\File.cs" />
     <Compile Include="IO\IFile.cs" />
     <Compile Include="ISettings.cs" />
-    <Compile Include="Machine\MachineInfo.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -150,7 +149,6 @@
     </Compile>
     <Compile Include="UI\HistoryViewItem.cs" />
     <Compile Include="UI\Converters\Invisibility.cs" />
-    <Compile Include="UI\MachinePreviewDataTemplateSelector.cs" />
     <Compile Include="UI\MainModel.cs" />
     <Compile Include="UI\MainViewLogic.cs" />
     <Compile Include="UI\MainViewModel.cs" />

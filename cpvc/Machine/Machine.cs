@@ -38,10 +38,6 @@ namespace CPvC
             _running = false;
             _autoPauseCount = 0;
 
-            IFile file = fileSystem.OpenFile(machineFilepath);
-
-            _file = new MachineFile(file);
-
             Display = new Display();
 
             _nextEventId = 0;
@@ -52,22 +48,59 @@ namespace CPvC
         public void Dispose()
         {
             Close();
+
+            Display?.Dispose();
+            Display = null;
         }
 
         /// <summary>
         /// Opens an existing machine.
         /// </summary>
+        /// <param name="name">The name of the name. Not required if <c>lazy</c> is false.</param>
         /// <param name="machineFilepath">Filepath to the machine file.</param>
         /// <param name="fileSystem">File system interface.</param>
-        /// <returns>A Machine object in the same state it was in when it was previously closed.</returns>
-        static public Machine Open(string machineFilepath, IFileSystem fileSystem)
+        /// <param name="lazy">If true, executes a minimal "lazy" load of the machine - only the <c>Name</c>, <c>Filepath</c>, and <c>Display.Bitmap</c> properties will be populated. A subsequent call to <c>Open</c> will be required to fully load the machine.</param>
+        /// <returns>A Machine object in the same state it was in when it was previously closed, unless <c>lazy</c> is true..</returns>
+        static public Machine Open(string name, string machineFilepath, IFileSystem fileSystem, bool lazy)
         {
             Machine machine = null;
+
             try
             {
-                string[] lines = fileSystem.ReadLines(machineFilepath);
+                machine = new Machine(name, machineFilepath, fileSystem);
 
-                machine = new Machine(null, machineFilepath, fileSystem);
+                if (!lazy)
+                {
+                    machine.Open();
+                }
+                else
+                {
+                    // This is a very inefficient way to populate the Display. Need to revisit this!
+                    machine.Open();
+                    machine.Close();
+                }
+            }
+            catch (Exception)
+            {
+                machine?.Dispose();
+
+                throw;
+            }
+
+            return machine;
+        }
+
+        /// <summary>
+        /// Fully opens a machine that was previously lazy-loaded.
+        /// </summary>
+        public void Open()
+        {
+            try
+            {
+                string[] lines = _fileSystem.ReadLines(Filepath);
+
+                IFile file = _fileSystem.OpenFile(Filepath);
+                _file = new MachineFile(file);
 
                 Dictionary<int, HistoryEvent> events = new Dictionary<int, HistoryEvent>();
 
@@ -79,7 +112,7 @@ namespace CPvC
                     switch (tokens[0])
                     {
                         case MachineFile._nameToken:
-                            machine._name = tokens[1];
+                            _name = tokens[1];
                             break;
                         case MachineFile._bookmarkToken:
                             {
@@ -91,13 +124,13 @@ namespace CPvC
                         case MachineFile._currentToken:
                             {
                                 int id = Convert.ToInt32(tokens[1]);
-                                machine.CurrentEvent = events[id];
+                                CurrentEvent = events[id];
                             }
                             break;
                         case MachineFile._deleteToken:
                             {
                                 int id = Convert.ToInt32(tokens[1]);
-                                machine.DeleteEvent(events[id], false);
+                                DeleteEvent(events[id], false);
                             }
                             break;
                         case MachineFile._checkpointToken:
@@ -121,21 +154,21 @@ namespace CPvC
 
                     if (historyEventToAdd != null)
                     {
-                        machine.AddEvent(historyEventToAdd, false);
+                        AddEvent(historyEventToAdd, false);
                         events.Add(historyEventToAdd.Id, historyEventToAdd);
 
-                        machine._nextEventId = Math.Max(machine._nextEventId, historyEventToAdd.Id + 1);
+                        _nextEventId = Math.Max(_nextEventId, historyEventToAdd.Id + 1);
                     }
                 }
 
-                if (machine.CurrentEvent == null)
+                if (CurrentEvent == null)
                 {
                     // The machine file is either empty or has some other problem...
-                    throw new Exception(String.Format("Unable to load file \"{0}\"; CurrentEvent is null!", machineFilepath));
+                    throw new Exception(String.Format("Unable to load file \"{0}\"; CurrentEvent is null!", Filepath));
                 }
 
                 // Rewind from the current event to the most recent one with a bookmark...
-                HistoryEvent bookmarkEvent = machine.CurrentEvent;
+                HistoryEvent bookmarkEvent = CurrentEvent;
                 while (bookmarkEvent.Parent != null && bookmarkEvent.Bookmark == null)
                 {
                     bookmarkEvent = bookmarkEvent.Parent;
@@ -143,16 +176,15 @@ namespace CPvC
 
                 Core core = GetCore(bookmarkEvent);
 
-                machine.CurrentEvent = bookmarkEvent;
+                CurrentEvent = bookmarkEvent;
 
-                machine.Display.GetFromBookmark(bookmarkEvent?.Bookmark);
-                machine.Core = core;
-
-                return machine;
+                Display.ConvertToColour();
+                Display.GetFromBookmark(bookmarkEvent?.Bookmark);
+                Core = core;
             }
             catch (Exception)
             {
-                machine?.Dispose();
+                Dispose();
 
                 throw;
             }
@@ -171,10 +203,11 @@ namespace CPvC
             try
             {
                 fileSystem.DeleteFile(machineFilepath);
-                machine = new Machine(null, machineFilepath, fileSystem)
-                {
-                    Name = name
-                };
+                machine = new Machine(null, machineFilepath, fileSystem);
+
+                IFile file = fileSystem.OpenFile(machine.Filepath);
+                machine._file = new MachineFile(file);
+                machine.Name = name;
 
                 machine.RootEvent = HistoryEvent.CreateCheckpoint(machine.NextEventId(), 0, DateTime.UtcNow, null);
                 machine._file.WriteHistoryEvent(machine.RootEvent);
@@ -195,30 +228,40 @@ namespace CPvC
 
         public void Close()
         {
-            Stop();
-
-            try
+            // No need to do this if we're in a "lazy-loaded" state.
+            if (!RequiresOpen)
             {
-                // Create a system bookmark so the machine can resume from where it left off the next time it's loaded, but don't
-                // create one if we already have a system bookmark at the current event, or we're at the root event.
-                if ((CurrentEvent != RootEvent) &&
-                    (Core != null && CurrentEvent.Ticks != Core.Ticks || CurrentEvent.Bookmark == null || !CurrentEvent.Bookmark.System))
+                Stop();
+
+                try
                 {
-                    Bookmark bookmark = GetBookmark(true);
-                    HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(NextEventId(), bookmark.Ticks, DateTime.UtcNow, bookmark);
-                    AddEvent(historyEvent, true);
+                    // Create a system bookmark so the machine can resume from where it left off the next time it's loaded, but don't
+                    // create one if we already have a system bookmark at the current event, or we're at the root event.
+                    if ((CurrentEvent != RootEvent) &&
+                        (Core != null && CurrentEvent.Ticks != Core.Ticks || CurrentEvent.Bookmark == null || !CurrentEvent.Bookmark.System))
+                    {
+                        Bookmark bookmark = GetBookmark(true);
+                        HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(NextEventId(), bookmark.Ticks, DateTime.UtcNow, bookmark);
+                        AddEvent(historyEvent, true);
+                    }
+                }
+                finally
+                {
+                    _file.Close();
                 }
             }
-            finally
-            {
-                _file.Close();
-            }
 
-            _core?.Dispose();
-            _core = null;
+            Core = null;
 
-            Display?.Dispose();
-            Display = null;
+            _running = false;
+            _autoPauseCount = 0;
+
+            CurrentEvent = null;
+            RootEvent = null;
+
+            _nextEventId = 0;
+
+            Display.ConvertToGreyscale();
         }
 
         /// <summary>
@@ -244,20 +287,35 @@ namespace CPvC
 
             private set
             {
+                if (_core == value)
+                {
+                    return;
+                }
+
                 if (_core != null)
                 {
-                    value.Auditors -= RequestProcessed;
-                    value.BeginVSync = null;
                     _core.Dispose();
                 }
 
-                value.SetScreenBuffer(Display.Buffer);
-                value.Auditors += RequestProcessed;
-                value.BeginVSync = BeginVSync;
+                if (value != null)
+                {
+                    value.SetScreenBuffer(Display.Buffer);
+                    value.Auditors += RequestProcessed;
+                    value.BeginVSync = BeginVSync;
+                }
 
                 _core = value;
 
                 OnPropertyChanged("Core");
+                OnPropertyChanged("RequiresOpen");
+            }
+        }
+
+        public bool RequiresOpen
+        {
+            get
+            {
+                return _core == null;
             }
         }
 
@@ -304,7 +362,7 @@ namespace CPvC
             set
             {
                 _name = value;
-                _file.WriteName(_name);
+                _file?.WriteName(_name);
 
                 OnPropertyChanged("Name");
             }
