@@ -18,7 +18,6 @@ namespace CPvC.UI
         public delegate string SelectItemDelegate(List<string> items);
         public delegate HistoryEvent PromptForBookmarkDelegate();
         public delegate string PromptForNameDelegate(string existingName);
-        public delegate void ReportErrorDelegate(string message);
 
         private MainViewModel _mainViewModel;
 
@@ -27,7 +26,7 @@ namespace CPvC.UI
             _mainViewModel = mainViewModel;
         }
 
-        public void NewMachine(IFileSystem fileSystem, PromptForFileDelegate promptForFile, ReportErrorDelegate reportError)
+        public void NewMachine(IFileSystem fileSystem, PromptForFileDelegate promptForFile)
         {
             string filepath = promptForFile(FileTypes.Machine, false);
             if (filepath == null)
@@ -35,17 +34,10 @@ namespace CPvC.UI
                 return;
             }
 
-            try
-            {
-                _mainViewModel.NewMachine(filepath, fileSystem);
-            }
-            catch (Exception ex)
-            {
-                reportError(ex.Message);
-            }
+            _mainViewModel.NewMachine(filepath, fileSystem);
         }
 
-        public void OpenMachine(string filepath, IFileSystem fileSystem, PromptForFileDelegate promptForFile, ReportErrorDelegate reportError)
+        public void OpenMachine(string filepath, IFileSystem fileSystem, PromptForFileDelegate promptForFile)
         {
             if (filepath == null)
             {
@@ -56,14 +48,7 @@ namespace CPvC.UI
                 }
             }
 
-            try
-            {
-                _mainViewModel.OpenMachine(filepath, fileSystem);
-            }
-            catch (Exception ex)
-            {
-                reportError(ex.Message);
-            }
+            _mainViewModel.OpenMachine(filepath, fileSystem);
         }
 
         public void LoadDisc(byte drive, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)

@@ -70,11 +70,10 @@ namespace cpvc_test
             mockPrompt.Setup(x => x(FileTypes.Machine, false)).Returns(filepath);
             Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Loose);
             MainViewModel mockViewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object);
-            Mock<MainViewLogic.ReportErrorDelegate> mockReport = new Mock<MainViewLogic.ReportErrorDelegate>();
 
             // Act
             MainViewLogic logic = new MainViewLogic(mockViewModel);
-            logic.NewMachine(mockFileSystem.Object, mockPrompt.Object, mockReport.Object);
+            logic.NewMachine(mockFileSystem.Object, mockPrompt.Object);
 
             // Verify
             mockPrompt.Verify(x => x(FileTypes.Machine, false), Times.Once());

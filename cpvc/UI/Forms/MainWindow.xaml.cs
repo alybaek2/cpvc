@@ -237,7 +237,14 @@ namespace CPvC.UI.Forms
 
         private void OpenMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.OpenMachine(null, _fileSystem, PromptForFile, ReportError);
+            try
+            {
+                _mainViewLogic.OpenMachine(null, _fileSystem, PromptForFile);
+            }
+            catch (Exception ex)
+            {
+                ReportError(ex.Message);
+            }
         }
 
         private void CloseMenuItem_Click(object sender, RoutedEventArgs e)
@@ -409,7 +416,14 @@ namespace CPvC.UI.Forms
 
         private void NewMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.NewMachine(_fileSystem, PromptForFile, ReportError);
+            try
+            {
+                _mainViewLogic.NewMachine(_fileSystem, PromptForFile);
+            }
+            catch (Exception ex)
+            {
+                ReportError(ex.Message);
+            }
         }
 
         private void JumpToBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
