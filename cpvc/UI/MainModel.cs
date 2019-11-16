@@ -81,21 +81,23 @@ namespace CPvC.UI
         private void LoadFromSettings(IFileSystem fileSystem)
         {
             string recent = _settings.RecentlyOpened;
-            if (recent != null)
+            if (recent == null)
             {
-                lock (Machines)
-                {
-                    foreach (string machineStr in Helpers.SplitWithEscape(',', recent))
-                    {
-                        List<string> tokens = Helpers.SplitWithEscape(';', machineStr);
-                        if (tokens.Count < 2)
-                        {
-                            continue;
-                        }
+                return;
+            }
 
-                        Machine machine = Machine.Open(tokens[0], tokens[1], fileSystem, true);
-                        Machines.Add(machine);
+            lock (Machines)
+            {
+                foreach (string machineStr in Helpers.SplitWithEscape(',', recent))
+                {
+                    List<string> tokens = Helpers.SplitWithEscape(';', machineStr);
+                    if (tokens.Count < 2)
+                    {
+                        continue;
                     }
+
+                    Machine machine = Machine.Open(tokens[0], tokens[1], fileSystem, true);
+                    Machines.Add(machine);
                 }
             }
         }
