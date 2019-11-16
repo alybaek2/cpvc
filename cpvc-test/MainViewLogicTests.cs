@@ -81,12 +81,12 @@ namespace cpvc_test
 
             if (expectedMachineName != null)
             {
-                Assert.AreEqual(mockViewModel.Model.Machines.Count, 1);
-                Assert.AreEqual(mockViewModel.Model.Machines[0].Name, expectedMachineName);
+                Assert.AreEqual(mockViewModel.Machines.Count, 1);
+                Assert.AreEqual(mockViewModel.Machines[0].Name, expectedMachineName);
             }
             else
             {
-                Assert.AreEqual(mockViewModel.Model.Machines.Count, 0);
+                Assert.AreEqual(mockViewModel.Machines.Count, 0);
             }
         }
 
@@ -109,7 +109,7 @@ namespace cpvc_test
             // Act
             MainViewLogic logic = new MainViewLogic(viewModel);
             Machine machine = Machine.New("test", "test.cpvc", mockFileSystem.Object);
-            viewModel.ActiveMachine = machine;
+            logic.ActiveMachine = machine;
             if (fileType == FileTypes.Tape)
             {
                 logic.LoadTape(mockFileSystem.Object, mockPrompt.Object, null);
@@ -174,7 +174,7 @@ namespace cpvc_test
 
             // Act
             Machine machine = Machine.New("test", "test.cpvc", mockFileSystem.Object);
-            viewModel.ActiveMachine = machine;
+            logic.ActiveMachine = machine;
             if (drive == 2)
             {
                 logic.LoadTape(mockFileSystem.Object, mockPrompt.Object, mockSelect.Object);

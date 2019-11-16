@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 
@@ -11,62 +12,21 @@ namespace CPvC.UI
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private object _active;
-
-        public MainViewModel(ISettings settings, IFileSystem fileSystem)
-        {
-            Model = new MainModel(settings, fileSystem);
-        }
-
         /// <summary>
         /// The data model associated with this view model.
         /// </summary>
-        /// <remarks>
-        /// It might be questionable to expose the model directly to the view, but doing so reduces the numbder of passthrough
-        /// methods and properties in the view model.
-        /// </remarks>
-        public MainModel Model { get; }
+        private readonly MainModel _model;
 
-        /// <summary>
-        /// Represents the currently active item in the main window. Corresponds to the DataContext associated with the currently
-        /// selected tab in the main window.
-        /// </summary>
-        public object ActiveItem
+        public MainViewModel(ISettings settings, IFileSystem fileSystem)
         {
-            get
-            {
-                return _active;
-            }
-
-            set
-            {
-                _active = value;
-                OnPropertyChanged("ActiveItem");
-                OnPropertyChanged("ActiveMachine");
-            }
+            _model = new MainModel(settings, fileSystem);
         }
 
-        /// <summary>
-        /// If the currently selected tab corresponds to a Machine, this property will be a reference to that machine. Otherwise, this property is null.
-        /// </summary>
-        public Machine ActiveMachine
+        public ObservableCollection<Machine> Machines
         {
             get
             {
-                return _active as Machine;
-            }
-
-            set
-            {
-                _active = value;
-
-                if (_active is Machine machine && machine.RequiresOpen)
-                {
-                    machine.Open();
-                }
-
-                OnPropertyChanged("ActiveItem");
-                OnPropertyChanged("ActiveMachine");
+                return _model.Machines;
             }
         }
 
@@ -75,11 +35,11 @@ namespace CPvC.UI
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        public void NewMachine(string filepath, IFileSystem fileSystem)
+        public Machine NewMachine(string filepath, IFileSystem fileSystem)
         {
             if (filepath == null)
             {
-                return;
+                return null;
             }
 
             string machineName = System.IO.Path.GetFileNameWithoutExtension(filepath);
@@ -98,16 +58,17 @@ namespace CPvC.UI
                 throw;
             }
 
-            Model.Add(machine);
-            ActiveMachine = machine;
+            _model.Add(machine);
             machine.Start();
+
+            return machine;
         }
 
-        public void OpenMachine(string filepath, IFileSystem fileSystem)
+        public Machine OpenMachine(string filepath, IFileSystem fileSystem)
         {
             if (filepath == null)
             {
-                return;
+                return null;
             }
 
             Machine machine = null;
@@ -124,13 +85,9 @@ namespace CPvC.UI
                 throw;
             }
 
-            Model.Add(machine);
-            ActiveMachine = machine;
-        }
+            _model.Add(machine);
 
-        public void Close()
-        {
-            Close(ActiveMachine);
+            return machine;
         }
 
         public void Close(Machine machine)
@@ -140,118 +97,47 @@ namespace CPvC.UI
 
         public void Remove(Machine machine)
         {
-            Model.Remove(machine);
+            _model.Remove(machine);
             machine.Close();
         }
 
         public void CloseAll()
         {
-            foreach (Machine machine in Model.Machines)
+            foreach (Machine machine in _model.Machines)
             {
                 Close(machine);
             }
         }
 
-        public void LoadDisc(byte drive, byte[] image)
+        public void LoadDisc(Machine machine, byte drive, byte[] image)
         {
-            if (ActiveMachine == null)
+            if (machine == null)
             {
                 return;
             }
 
-            using (ActiveMachine.AutoPause())
+            using (machine.AutoPause())
             {
-                ActiveMachine.LoadDisc(drive, image);
+                machine.LoadDisc(drive, image);
             }
         }
 
-        public void LoadTape(byte[] image)
+        public void LoadTape(Machine machine, byte[] image)
         {
-            if (ActiveMachine == null)
+            if (machine == null)
             {
                 return;
             }
 
-            using (ActiveMachine.AutoPause())
+            using (machine.AutoPause())
             {
-                ActiveMachine.LoadTape(image);
+                machine.LoadTape(image);
             }
-        }
-
-        public void Key(byte key, bool down)
-        {
-            ActiveMachine?.Key(key, down);
-        }
-
-        public void Reset()
-        {
-            ActiveMachine?.Reset();
-        }
-
-        public void Pause()
-        {
-            ActiveMachine?.Stop();
-        }
-
-        public void Resume()
-        {
-            ActiveMachine?.Start();
         }
 
         public void ToggleRunning(Machine machine)
         {
             machine?.ToggleRunning();
-        }
-
-        public void EnableTurbo(bool enabled)
-        {
-            if (ActiveMachine == null)
-            {
-                return;
-            }
-
-            using (ActiveMachine.AutoPause())
-            {
-                ActiveMachine.EnableTurbo(enabled);
-            }
-        }
-
-        public void AddBookmark()
-        {
-            ActiveMachine?.AddBookmark(false);
-        }
-
-        public void SeekToLastBookmark()
-        {
-            ActiveMachine?.SeekToLastBookmark();
-        }
-
-        public void CompactFile()
-        {
-            ActiveMachine?.RewriteMachineFile();
-        }
-
-        public int ReadAudio(byte[] buffer, int offset, int samplesRequested)
-        {
-            lock (Model.Machines)
-            {
-                int samplesWritten = 0;
-                foreach (Machine machine in Model.Machines)
-                {
-                    // Play audio only from the currently active machine; for the rest, just
-                    // advance the audio playback position.
-                    if (machine == ActiveMachine)
-                    {
-                        samplesWritten = machine.ReadAudio(buffer, offset, samplesRequested);
-                    }
-                    else
-                    {
-                        machine.AdvancePlayback(samplesRequested);
-                    }
-                }
-
-                return samplesWritten;
-            }
         }
     }
 }

@@ -26,7 +26,7 @@ namespace CPvC.UI.Forms
             _fileSystem = new FileSystem();
             _mainViewModel = new MainViewModel(_settings, _fileSystem);
             _mainViewLogic = new MainViewLogic(_mainViewModel);
-            _audio = new Audio(_mainViewModel.ReadAudio);
+            _audio = new Audio(_mainViewLogic.ReadAudio);
 
             InitializeComponent();
         }
@@ -143,7 +143,7 @@ namespace CPvC.UI.Forms
         {
             InitKeyboardMap();
 
-            DataContext = _mainViewModel;
+            DataContext = _mainViewLogic;
 
             StartAudio();
         }
@@ -179,30 +179,30 @@ namespace CPvC.UI.Forms
 
         private void PauseButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.Pause();
+            _mainViewLogic.Pause();
         }
 
         private void ResumeButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.Resume();
+            _mainViewLogic.Resume();
         }
 
         private void ResetButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.Reset();
+            _mainViewLogic.Reset();
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.OemTilde)
             {
-                _mainViewModel.EnableTurbo(true);
+                _mainViewLogic.EnableTurbo(true);
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);
             if (cpcKey.HasValue)
             {
-                _mainViewModel.Key(cpcKey.Value, true);
+                _mainViewLogic.Key(cpcKey.Value, true);
             }
         }
 
@@ -210,29 +210,29 @@ namespace CPvC.UI.Forms
         {
             if (e.Key == Key.OemTilde)
             {
-                _mainViewModel.EnableTurbo(false);
+                _mainViewLogic.EnableTurbo(false);
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);
             if (cpcKey.HasValue)
             {
-                _mainViewModel.Key(cpcKey.Value, false);
+                _mainViewLogic.Key(cpcKey.Value, false);
             }
         }
 
         private void AddBookmarkButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.AddBookmark();
+            _mainViewLogic.AddBookmark();
         }
 
         private void SeekToLastBookmarkButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.SeekToLastBookmark();
+            _mainViewLogic.SeekToLastBookmark();
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.Close();
+            _mainViewLogic.Close();
         }
 
         private void OpenMenuItem_Click(object sender, RoutedEventArgs e)
@@ -249,32 +249,32 @@ namespace CPvC.UI.Forms
 
         private void CloseMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.Close();
+            _mainViewLogic.Close();
         }
 
         private void PauseMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.Pause();
+            _mainViewLogic.Pause();
         }
 
         private void ResumeMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.Resume();
+            _mainViewLogic.Resume();
         }
 
         private void ResetMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.Reset();
+            _mainViewLogic.Reset();
         }
 
         private void AddBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.AddBookmark();
+            _mainViewLogic.AddBookmark();
         }
 
         private void PreviousBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.SeekToLastBookmark();
+            _mainViewLogic.SeekToLastBookmark();
         }
 
         private void DriveAMenuItem_Click(object sender, RoutedEventArgs e)
@@ -377,7 +377,7 @@ namespace CPvC.UI.Forms
 
         public HistoryEvent PromptForBookmark()
         {
-            Machine machine = _mainViewModel.ActiveMachine;
+            Machine machine = _mainViewLogic.ActiveMachine;
 
             using (BookmarkSelectWindow dialog = new BookmarkSelectWindow(this, machine))
             using (machine.AutoPause())
@@ -433,22 +433,22 @@ namespace CPvC.UI.Forms
 
         private void DriveAEjectMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.LoadDisc(0, null);
+            _mainViewModel.LoadDisc(_mainViewLogic.ActiveMachine, 0, null);
         }
 
         private void DriveBEjectMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.LoadDisc(1, null);
+            _mainViewModel.LoadDisc(_mainViewLogic.ActiveMachine, 1, null);
         }
 
         private void TapeEjectMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.LoadTape(null);
+            _mainViewModel.LoadTape(_mainViewLogic.ActiveMachine, null);
         }
 
         private void CompactFileMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.CompactFile();
+            _mainViewLogic.CompactFile();
         }
 
         private void RenameFileMenuItem_Click(object sender, RoutedEventArgs e)
@@ -460,7 +460,7 @@ namespace CPvC.UI.Forms
         {
             if (sender is FrameworkElement element && element.DataContext is Machine machine)
             {
-                _mainViewModel.ActiveMachine = machine;
+                _mainViewLogic.ActiveMachine = machine;
             }
         }
 
@@ -519,14 +519,14 @@ namespace CPvC.UI.Forms
 
         private void OpenMachines_Filter(object sender, System.Windows.Data.FilterEventArgs e)
         {
-            Machine machine = e.Item as Machine;
-            if (machine == null)
+            if (e.Item is Machine machine)
+            {
+                e.Accepted = !machine.RequiresOpen;
+            }
+            else
             {
                 e.Accepted = false;
-                return;
             }
-
-            e.Accepted = !machine.RequiresOpen;
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 
 namespace CPvC.UI
@@ -12,18 +13,72 @@ namespace CPvC.UI
     /// was moved to this class to allow it to be easily unit tested. Interaction with the user is handled by delegates here, which was be easily mocked
     /// for sake of testing. Notice that most of the code left in MainWindow is just passing straight through to MainViewModel or MainViewLogic.
     /// </remarks>
-    public class MainViewLogic
+    public class MainViewLogic : INotifyPropertyChanged
     {
         public delegate string PromptForFileDelegate(FileTypes type, bool existing);
         public delegate string SelectItemDelegate(List<string> items);
         public delegate HistoryEvent PromptForBookmarkDelegate();
         public delegate string PromptForNameDelegate(string existingName);
 
-        private MainViewModel _mainViewModel;
+        private object _active;
+        private readonly MainViewModel _mainViewModel;
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public MainViewLogic(MainViewModel mainViewModel)
         {
             _mainViewModel = mainViewModel;
+        }
+
+        public MainViewModel ViewModel
+        {
+            get
+            {
+                return _mainViewModel;
+            }
+        }
+
+        /// <summary>
+        /// Represents the currently active item in the main window. Corresponds to the DataContext associated with the currently
+        /// selected tab in the main window.
+        /// </summary>
+        public object ActiveItem
+        {
+            get
+            {
+                return _active;
+            }
+
+            set
+            {
+                _active = value;
+                OnPropertyChanged("ActiveItem");
+                OnPropertyChanged("ActiveMachine");
+            }
+        }
+
+        /// <summary>
+        /// If the currently selected tab corresponds to a Machine, this property will be a reference to that machine. Otherwise, this property is null.
+        /// </summary>
+        public Machine ActiveMachine
+        {
+            get
+            {
+                return _active as Machine;
+            }
+
+            set
+            {
+                _active = value;
+
+                if (_active is Machine machine && machine.RequiresOpen)
+                {
+                    machine.Open();
+                }
+
+                OnPropertyChanged("ActiveItem");
+                OnPropertyChanged("ActiveMachine");
+            }
         }
 
         public void NewMachine(IFileSystem fileSystem, PromptForFileDelegate promptForFile)
@@ -34,7 +89,11 @@ namespace CPvC.UI
                 return;
             }
 
-            _mainViewModel.NewMachine(filepath, fileSystem);
+            Machine machine = _mainViewModel.NewMachine(filepath, fileSystem);
+            if (machine != null)
+            {
+                ActiveMachine = machine;
+            }
         }
 
         public void OpenMachine(string filepath, IFileSystem fileSystem, PromptForFileDelegate promptForFile)
@@ -48,7 +107,11 @@ namespace CPvC.UI
                 }
             }
 
-            _mainViewModel.OpenMachine(filepath, fileSystem);
+            Machine machine = _mainViewModel.OpenMachine(filepath, fileSystem);
+            if (machine != null)
+            {
+                ActiveMachine = machine;
+            }
         }
 
         public void LoadDisc(byte drive, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
@@ -56,7 +119,7 @@ namespace CPvC.UI
             byte[] image = PromptForMedia(FileTypes.Disc, fileSystem, promptForFile, selectItem);
             if (image != null)
             {
-                _mainViewModel.LoadDisc(drive, image);
+                _mainViewModel.LoadDisc(ActiveMachine, drive, image);
             }
         }
 
@@ -65,13 +128,13 @@ namespace CPvC.UI
             byte[] image = PromptForMedia(FileTypes.Tape, fileSystem, promptForFile, selectItem);
             if (image != null)
             {
-                _mainViewModel.LoadTape(image);
+                _mainViewModel.LoadTape(ActiveMachine, image);
             }
         }
 
         public void SelectBookmark(PromptForBookmarkDelegate promptForBookmark)
         {
-            Machine machine = _mainViewModel.ActiveMachine;
+            Machine machine = ActiveMachine;
             if (machine == null)
             {
                 return;
@@ -89,13 +152,12 @@ namespace CPvC.UI
 
         public void RenameMachine(PromptForNameDelegate promptForName)
         {
-            Machine machine = _mainViewModel.ActiveMachine;
-            using (machine.AutoPause())
+            using (ActiveMachine.AutoPause())
             {
-                string newName = promptForName(machine.Name);
+                string newName = promptForName(ActiveMachine.Name);
                 if (newName != null)
                 {
-                    machine.Name = newName;
+                    ActiveMachine.Name = newName;
                 }
             }
         }
@@ -166,6 +228,97 @@ namespace CPvC.UI
             }
 
             return buffer;
+        }
+
+        public void Key(byte key, bool down)
+        {
+            ActiveMachine?.Key(key, down);
+        }
+
+        public void Close()
+        {
+            _mainViewModel.Close(ActiveMachine);
+        }
+
+        public void Reset()
+        {
+            ActiveMachine?.Reset();
+        }
+
+        public void Pause()
+        {
+            ActiveMachine?.Stop();
+        }
+
+        public void Resume()
+        {
+            ActiveMachine?.Start();
+        }
+
+        public void LoadDisc(byte drive, byte[] image)
+        {
+            _mainViewModel.LoadDisc(ActiveMachine, drive, image);
+        }
+
+        public void LoadTape(byte[] image)
+        {
+            _mainViewModel.LoadTape(ActiveMachine, image);
+        }
+
+        public void CompactFile()
+        {
+            ActiveMachine?.RewriteMachineFile();
+        }
+
+        public void AddBookmark()
+        {
+            ActiveMachine?.AddBookmark(false);
+        }
+
+        public void SeekToLastBookmark()
+        {
+            ActiveMachine?.SeekToLastBookmark();
+        }
+
+        public void EnableTurbo(bool enabled)
+        {
+            if (ActiveMachine == null)
+            {
+                return;
+            }
+
+            using (ActiveMachine.AutoPause())
+            {
+                ActiveMachine.EnableTurbo(enabled);
+            }
+        }
+
+        public int ReadAudio(byte[] buffer, int offset, int samplesRequested)
+        {
+            lock (_mainViewModel.Machines)
+            {
+                int samplesWritten = 0;
+                foreach (Machine machine in _mainViewModel.Machines)
+                {
+                    // Play audio only from the currently active machine; for the rest, just
+                    // advance the audio playback position.
+                    if (machine == ActiveMachine)
+                    {
+                        samplesWritten = machine.ReadAudio(buffer, offset, samplesRequested);
+                    }
+                    else
+                    {
+                        machine.AdvancePlayback(samplesRequested);
+                    }
+                }
+
+                return samplesWritten;
+            }
+        }
+
+        protected void OnPropertyChanged(string name)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
     }
 }
