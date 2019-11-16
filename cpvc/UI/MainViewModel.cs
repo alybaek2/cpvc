@@ -89,11 +89,6 @@ namespace CPvC.UI
             return machine;
         }
 
-        public void Close(Machine machine)
-        {
-            machine.Close();
-        }
-
         public void Remove(Machine machine)
         {
             _model.Remove(machine);
@@ -104,7 +99,7 @@ namespace CPvC.UI
         {
             foreach (Machine machine in _model.Machines)
             {
-                Close(machine);
+                machine.Close();
             }
         }
 

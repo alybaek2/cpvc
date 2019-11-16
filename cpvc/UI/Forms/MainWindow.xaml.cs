@@ -473,7 +473,7 @@ namespace CPvC.UI.Forms
         {
             if (sender is FrameworkElement element && element.DataContext is Machine machine)
             {
-                _mainViewModel.Close(machine);
+                machine.Close();
             }
         }
 

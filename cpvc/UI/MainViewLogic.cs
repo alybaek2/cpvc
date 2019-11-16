@@ -248,7 +248,7 @@ namespace CPvC.UI
 
         public void Close()
         {
-            ViewModel.Close(ActiveMachine);
+            ActiveMachine?.Close();
         }
 
         public void Reset()
