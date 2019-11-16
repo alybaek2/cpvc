@@ -889,7 +889,6 @@ public:
                 CommonChecks(ticks, 7, addr + 0x11, 0x01);
             }
         }
-
     }
 
     void LDrrA(byte opcode, word& rr)
@@ -1516,14 +1515,18 @@ public:
                         continue;
                     }
 
+                    // Setup
                     _core.Init();
                     rr = nn;
                     hl = mm;
                     _core.F = f;
                     SetMemory(0x0000, opcode1, opcode2);
 
+                    // Act
                     qword ticks = Run(1);
 
+
+                    // Verify
                     dword addend = nn + ((carry & ((f & flagC) != 0)) ? 1 : 0);
 
                     bool halfCarry = false;
@@ -1559,8 +1562,8 @@ public:
                         expectedSZPV |
                         (subtraction ? flagN : 0);
 
-                    ASSERT_EQ(hl, (word) expectedHL) << mm << nn << (int)f;
-                    ASSERT_EQ(_core.F, expectedF) << mm << nn << (int)f;
+                    ASSERT_EQ(hl, (word) expectedHL);
+                    ASSERT_EQ(_core.F, expectedF);
                     CommonChecksPrefix(opcode1, ticks, 11, 0x0001, 0x01);
                 }
             }
@@ -2435,6 +2438,7 @@ TEST_F(Z80Tests, OTIDR)
                     {
                         for (byte n : testBytes)
                         {
+                            // Setup
                             byte port = 0xf4;
                             byte b = port + (inFlag ? 0 : 1);
                             word pc = hl + 0x100;
@@ -2450,25 +2454,30 @@ TEST_F(Z80Tests, OTIDR)
                             _core.C = n;
                             _bus._readByte = inFlag ? n : ~n;
 
+                            // Act
                             qword ticks = Run(1);
 
+                            // Verify
                             byte expectedB = b - 1;
                             word expectedPC = pc + 0x0002;
                             if (repeatFlag && b != 0)
                             {
                                 expectedPC = pc;
                             }
+
                             byte l = Low(hl) + (incFlag ? 1 : -1);
                             if (inFlag)
                             {
                                 l = n + (incFlag ? 1 : -1);
                             }
+
                             signed short k = n + l;
                             byte p = (k & 0x07) ^ expectedB;
                             byte expectedF = SZ35(expectedB) |
                                 (Bit(n, 7) ? flagN : 0) |
                                 ((k > 0xff) ? (flagH | flagC) : 0) |
                                 (Parity(p) ? flagPV : 0);
+
                             ASSERT_EQ(ticks, (repeatFlag ? 25 : 20) - (inFlag ? 1 : 0));
                             ASSERT_EQ(_core.F, expectedF);
                             ASSERT_EQ(_core.B, expectedB);

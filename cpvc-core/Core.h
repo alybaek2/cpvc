@@ -1350,7 +1350,6 @@ private:
         // M3
         dword add = dd + (Carry() ? 1 : 0);
         dword res = HL + add;
-        word halfRes = (HL & 0x0FFF) + (add & 0x0FFF);
         F = Carry16(res) |
             Half16(HL, add, res) |
             Flags35(High((word)res)) |
@@ -1370,7 +1369,6 @@ private:
         // M3
         dword sub = dd + (Carry()?1:0);
         dword res = HL - sub;
-        bool halfCarry = ((HL & 0x0FFF) < (((word)sub) & 0x0FFF));
         F = Carry16(res) |
             Half16(HL, sub, res) |
             Flags35(High((word)res)) |
