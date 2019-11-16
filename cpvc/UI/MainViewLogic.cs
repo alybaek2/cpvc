@@ -266,16 +266,6 @@ namespace CPvC.UI
             ActiveMachine?.Start();
         }
 
-        public void LoadDisc(byte drive, byte[] image)
-        {
-            ViewModel.LoadDisc(ActiveMachine, drive, image);
-        }
-
-        public void LoadTape(byte[] image)
-        {
-            ViewModel.LoadTape(ActiveMachine, image);
-        }
-
         public void CompactFile()
         {
             ActiveMachine?.RewriteMachineFile();

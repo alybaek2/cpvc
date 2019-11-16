@@ -1,4 +1,6 @@
-﻿namespace CPvC
+﻿using System;
+
+namespace CPvC
 {
     /// <summary>
     /// Encapsulates all application-wide configuration settings.
@@ -22,50 +24,45 @@
         }
 
         /// <summary>
-        /// Default folder for loading machines.
+        /// Gets the default folder for a file type.
         /// </summary>
-        public string MachinesFolder
+        /// <param name="fileType">The file type.</param>
+        /// <returns>The default folder for the given file type.</returns>
+        public string GetFolder(FileTypes fileType)
         {
-            get
+            switch (fileType)
             {
-                return GetStringSetting(_machinesFolderSettingName);
-            }
-
-            set
-            {
-                SetStringSetting(_machinesFolderSettingName, value);
+                case FileTypes.Disc:
+                    return GetStringSetting(_discsFolderSettingName);
+                case FileTypes.Tape:
+                    return GetStringSetting(_tapesFolderSettingName);
+                case FileTypes.Machine:
+                    return GetStringSetting(_machinesFolderSettingName);
+                default:
+                    throw new Exception(String.Format("Unknown FileTypes value {0}.", fileType));
             }
         }
 
         /// <summary>
-        /// Default folder for loading disc images.
+        /// Sets the default folder for a file type
         /// </summary>
-        public string DiscsFolder
+        /// <param name="fileType">The file type.</param>
+        /// <param name="folder">The value to set the default folder to.</param>
+        public void SetFolder(FileTypes fileType, string folder)
         {
-            get
+            switch (fileType)
             {
-                return GetStringSetting(_discsFolderSettingName);
-            }
-
-            set
-            {
-                SetStringSetting(_discsFolderSettingName, value);
-            }
-        }
-
-        /// <summary>
-        /// Default folder for loading tape images.
-        /// </summary>
-        public string TapesFolder
-        {
-            get
-            {
-                return GetStringSetting(_tapesFolderSettingName);
-            }
-
-            set
-            {
-                SetStringSetting(_tapesFolderSettingName, value);
+                case FileTypes.Disc:
+                    SetStringSetting(_discsFolderSettingName, folder);
+                    break;
+                case FileTypes.Tape:
+                    SetStringSetting(_tapesFolderSettingName, folder);
+                    break;
+                case FileTypes.Machine:
+                    SetStringSetting(_machinesFolderSettingName, folder);
+                    break;
+                default:
+                    throw new Exception(String.Format("Unknown FileTypes value {0}.", fileType));
             }
         }
 

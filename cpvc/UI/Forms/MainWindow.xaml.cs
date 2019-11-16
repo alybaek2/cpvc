@@ -276,81 +276,60 @@ namespace CPvC.UI.Forms
 
         private void DriveAMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            DriveAButton_Click(sender, e);
+            _mainViewLogic.LoadDisc(0, _fileSystem, PromptForFile, SelectItem);
         }
 
         private void DriveBMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            DriveBButton_Click(sender, e);
+            _mainViewLogic.LoadDisc(1, _fileSystem, PromptForFile, SelectItem);
         }
 
         private void TapeMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            TapeButton_Click(sender, e);
+            _mainViewLogic.LoadTape(_fileSystem, PromptForFile, SelectItem);
         }
 
         private string PromptForFile(FileTypes type, bool existing)
         {
-            string defaultExtension;
-            string fileFilter;
-            string initialFolder;
-
-            switch (type)
-            {
-                case FileTypes.Disc:
-                    defaultExtension = "zip";
-                    fileFilter = "Disc files (*.dsk;*.zip)|*.dsk;*.zip|All files (*.*)|*.*";
-                    initialFolder = _settings.DiscsFolder;
-                    break;
-                case FileTypes.Tape:
-                    defaultExtension = "zip";
-                    fileFilter = "Tape files (*.cdt;*.tzx;*.zip)|*.cdt;*.tzx;*.zip|All files (*.*)|*.*";
-                    initialFolder = _settings.TapesFolder;
-                    break;
-                case FileTypes.Machine:
-                    defaultExtension = "cpvc";
-                    fileFilter = "CPvC files (*.cpvc)|*.cpvc|All files (*.*)|*.*";
-                    initialFolder = _settings.MachinesFolder;
-                    break;
-                default:
-                    throw new Exception(String.Format("Unknown FileTypes value {0}.", type));
-            }
-
             using (System.Windows.Forms.FileDialog fileDialog = existing ? ((System.Windows.Forms.FileDialog)new System.Windows.Forms.OpenFileDialog()) : ((System.Windows.Forms.FileDialog)new System.Windows.Forms.SaveFileDialog()))
             {
-                fileDialog.DefaultExt = defaultExtension;
+                switch (type)
+                {
+                    case FileTypes.Disc:
+                        fileDialog.DefaultExt = "zip";
+                        fileDialog.Filter = "Disc files (*.dsk;*.zip)|*.dsk;*.zip|All files (*.*)|*.*";
+                        break;
+                    case FileTypes.Tape:
+                        fileDialog.DefaultExt = "zip";
+                        fileDialog.Filter = "Tape files (*.cdt;*.tzx;*.zip)|*.cdt;*.tzx;*.zip|All files (*.*)|*.*";
+                        break;
+                    case FileTypes.Machine:
+                        fileDialog.DefaultExt = "cpvc";
+                        fileDialog.Filter = "CPvC files (*.cpvc)|*.cpvc|All files (*.*)|*.*";
+                        break;
+                    default:
+                        throw new Exception(String.Format("Unknown FileTypes value {0}.", type));
+                }
+
                 fileDialog.AddExtension = true;
 
+                string initialFolder = _settings.GetFolder(type);
                 if (initialFolder != null)
                 {
                     fileDialog.InitialDirectory = initialFolder;
                 }
 
-                fileDialog.Filter = fileFilter;
-
-                System.Windows.Forms.DialogResult r = fileDialog.ShowDialog();
-                if (r != System.Windows.Forms.DialogResult.OK)
+                System.Windows.Forms.DialogResult result = fileDialog.ShowDialog();
+                if (result != System.Windows.Forms.DialogResult.OK)
                 {
                     return null;
                 }
 
                 // Remember the last folder for the selected filetype.
-                string filename = fileDialog.FileName;
-                string folder = System.IO.Path.GetDirectoryName(filename);
-                switch (type)
-                {
-                    case FileTypes.Disc:
-                        _settings.DiscsFolder = folder;
-                        break;
-                    case FileTypes.Tape:
-                        _settings.TapesFolder = folder;
-                        break;
-                    case FileTypes.Machine:
-                        _settings.MachinesFolder = folder;
-                        break;
-                }
+                string folder = System.IO.Path.GetDirectoryName(fileDialog.FileName);
+                _settings.SetFolder(type, folder);
 
-                return filename;
+                return fileDialog.FileName;
             }
         }
 

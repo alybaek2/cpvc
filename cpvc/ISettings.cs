@@ -5,9 +5,9 @@
     /// </summary>
     public interface ISettings
     {
-        string MachinesFolder { get; set; }
-        string DiscsFolder { get; set; }
-        string TapesFolder { get; set; }
         string RecentlyOpened { get; set; }
+
+        string GetFolder(FileTypes fileType);
+        void SetFolder(FileTypes fileType, string folder);
     }
 }
