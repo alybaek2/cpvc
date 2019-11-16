@@ -156,6 +156,11 @@
                         <Image Source="../Resources/bookmarkprev16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
+                <Button x:Name="_browseBookmarksButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Click="BrowseBookmarksButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="../Resources/bookmark16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
+                    </StackPanel>
+                </Button>
             </ToolBar>
         </ToolBarTray>
         <TabControl x:Name="_machineTabControl" Margin="5,5,5,5" Grid.Row="2" Height="576" Width="768" SelectedItem="{Binding ActiveItem, Mode=TwoWay}">
@@ -218,7 +223,6 @@
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
-                                            <Separator />
                                         </StackPanel>
                                     </Grid>
                                 </ScrollViewer>

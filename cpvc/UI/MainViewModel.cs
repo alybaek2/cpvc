@@ -111,28 +111,12 @@ namespace CPvC.UI
 
         public void LoadDisc(Machine machine, byte drive, byte[] image)
         {
-            if (machine == null)
-            {
-                return;
-            }
-
-            using (machine.AutoPause())
-            {
-                machine.LoadDisc(drive, image);
-            }
+            machine?.LoadDisc(drive, image);
         }
 
         public void LoadTape(Machine machine, byte[] image)
         {
-            if (machine == null)
-            {
-                return;
-            }
-
-            using (machine.AutoPause())
-            {
-                machine.LoadTape(image);
-            }
+            machine?.LoadTape(image);
         }
 
         public void ToggleRunning(Machine machine)

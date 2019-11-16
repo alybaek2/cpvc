@@ -21,22 +21,15 @@ namespace CPvC.UI
         public delegate string PromptForNameDelegate(string existingName);
 
         private object _active;
-        private readonly MainViewModel _mainViewModel;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         public MainViewLogic(MainViewModel mainViewModel)
         {
-            _mainViewModel = mainViewModel;
+            ViewModel = mainViewModel;
         }
 
-        public MainViewModel ViewModel
-        {
-            get
-            {
-                return _mainViewModel;
-            }
-        }
+        public MainViewModel ViewModel { get; }
 
         /// <summary>
         /// Represents the currently active item in the main window. Corresponds to the DataContext associated with the currently
@@ -89,7 +82,7 @@ namespace CPvC.UI
                 return;
             }
 
-            Machine machine = _mainViewModel.NewMachine(filepath, fileSystem);
+            Machine machine = ViewModel.NewMachine(filepath, fileSystem);
             if (machine != null)
             {
                 ActiveMachine = machine;
@@ -107,7 +100,7 @@ namespace CPvC.UI
                 }
             }
 
-            Machine machine = _mainViewModel.OpenMachine(filepath, fileSystem);
+            Machine machine = ViewModel.OpenMachine(filepath, fileSystem);
             if (machine != null)
             {
                 ActiveMachine = machine;
@@ -116,19 +109,37 @@ namespace CPvC.UI
 
         public void LoadDisc(byte drive, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
         {
-            byte[] image = PromptForMedia(FileTypes.Disc, fileSystem, promptForFile, selectItem);
-            if (image != null)
+            Machine machine = ActiveMachine;
+            if (machine == null)
             {
-                _mainViewModel.LoadDisc(ActiveMachine, drive, image);
+                return;
+            }
+
+            using (machine.AutoPause())
+            {
+                byte[] image = PromptForMedia(FileTypes.Disc, fileSystem, promptForFile, selectItem);
+                if (image != null)
+                {
+                    ViewModel.LoadDisc(ActiveMachine, drive, image);
+                }
             }
         }
 
         public void LoadTape(IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
         {
-            byte[] image = PromptForMedia(FileTypes.Tape, fileSystem, promptForFile, selectItem);
-            if (image != null)
+            Machine machine = ActiveMachine;
+            if (machine == null)
             {
-                _mainViewModel.LoadTape(ActiveMachine, image);
+                return;
+            }
+
+            using (machine.AutoPause())
+            {
+                byte[] image = PromptForMedia(FileTypes.Tape, fileSystem, promptForFile, selectItem);
+                if (image != null)
+                {
+                    ViewModel.LoadTape(ActiveMachine, image);
+                }
             }
         }
 
@@ -237,7 +248,7 @@ namespace CPvC.UI
 
         public void Close()
         {
-            _mainViewModel.Close(ActiveMachine);
+            ViewModel.Close(ActiveMachine);
         }
 
         public void Reset()
@@ -257,12 +268,12 @@ namespace CPvC.UI
 
         public void LoadDisc(byte drive, byte[] image)
         {
-            _mainViewModel.LoadDisc(ActiveMachine, drive, image);
+            ViewModel.LoadDisc(ActiveMachine, drive, image);
         }
 
         public void LoadTape(byte[] image)
         {
-            _mainViewModel.LoadTape(ActiveMachine, image);
+            ViewModel.LoadTape(ActiveMachine, image);
         }
 
         public void CompactFile()
@@ -295,10 +306,10 @@ namespace CPvC.UI
 
         public int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
-            lock (_mainViewModel.Machines)
+            lock (ViewModel.Machines)
             {
                 int samplesWritten = 0;
-                foreach (Machine machine in _mainViewModel.Machines)
+                foreach (Machine machine in ViewModel.Machines)
                 {
                     // Play audio only from the currently active machine; for the rest, just
                     // advance the audio playback position.

@@ -292,7 +292,7 @@ namespace CPvC.UI.Forms
             TapeButton_Click(sender, e);
         }
 
-        public string PromptForFile(FileTypes type, bool existing)
+        private string PromptForFile(FileTypes type, bool existing)
         {
             string defaultExtension;
             string fileFilter;
@@ -357,7 +357,7 @@ namespace CPvC.UI.Forms
             }
         }
 
-        public string SelectItem(List<string> items)
+        private string SelectItem(List<string> items)
         {
             SelectItemWindow dialog = new SelectItemWindow
             {
@@ -375,7 +375,7 @@ namespace CPvC.UI.Forms
             return null;
         }
 
-        public HistoryEvent PromptForBookmark()
+        private HistoryEvent PromptForBookmark()
         {
             Machine machine = _mainViewLogic.ActiveMachine;
 
@@ -395,7 +395,7 @@ namespace CPvC.UI.Forms
             }
         }
 
-        public string PromptForName(string existingName)
+        private string PromptForName(string existingName)
         {
             RenameWindow dialog = new RenameWindow(this, existingName);
             bool? result = dialog.ShowDialog();
@@ -407,7 +407,7 @@ namespace CPvC.UI.Forms
             return null;
         }
 
-        public void ReportError(string message)
+        private void ReportError(string message)
         {
             // Need to replace this with a messagebox that is centred over its parent. This option
             // doesn't seem to be available with MessageBox.Show().
@@ -527,6 +527,11 @@ namespace CPvC.UI.Forms
             {
                 e.Accepted = false;
             }
+        }
+
+        private void BrowseBookmarksButton_Click(object sender, RoutedEventArgs e)
+        {
+            _mainViewLogic.SelectBookmark(PromptForBookmark);
         }
     }
 }
