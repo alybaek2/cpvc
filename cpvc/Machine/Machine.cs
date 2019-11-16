@@ -178,7 +178,7 @@ namespace CPvC
 
                 CurrentEvent = bookmarkEvent;
 
-                Display.ConvertToColour();
+                Display.EnableGreyscale(false);
                 Display.GetFromBookmark(bookmarkEvent?.Bookmark);
                 Core = core;
             }
@@ -261,7 +261,7 @@ namespace CPvC
 
             _nextEventId = 0;
 
-            Display.ConvertToGreyscale();
+            Display.EnableGreyscale(true);
         }
 
         /// <summary>

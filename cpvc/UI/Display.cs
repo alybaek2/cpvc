@@ -119,6 +119,16 @@ namespace CPvC
 
         private WriteableBitmap _bitmap;
 
+        public Display()
+        {
+            _drawRect = new Int32Rect(0, 0, Width, Height);
+
+            Buffer = new UnmanagedMemory(Height * Pitch, CPCColour.Black._hwColourNumber);
+            Bitmap = new WriteableBitmap(Width, Height, 0, 0, PixelFormats.Indexed8, _colourPalette);
+
+            CopyFromBuffer();
+        }
+        
         public WriteableBitmap Bitmap
         {
             get
@@ -143,14 +153,13 @@ namespace CPvC
             }
         }
 
-        public Display()
+        /// <summary>
+        /// Enables or disables greyscale for the bitmap.
+        /// </summary>
+        /// <param name="enabled">Indicates if greyscale should be enabled or disabled.</param>
+        public void EnableGreyscale(bool enabled)
         {
-            _drawRect = new Int32Rect(0, 0, Width, Height);
-
-            Buffer = new UnmanagedMemory(Height * Pitch, CPCColour.Black._hwColourNumber);
-            Bitmap = new WriteableBitmap(Width, Height, 0, 0, PixelFormats.Indexed8, _colourPalette);
-
-            CopyFromBuffer();
+            Bitmap = new WriteableBitmap(Width, Height, 0, 0, PixelFormats.Indexed8, enabled ? _greyPalette : _colourPalette);
         }
 
         /// <summary>
@@ -197,16 +206,6 @@ namespace CPvC
             }
 
             CopyFromBuffer();
-        }
-
-        public void ConvertToColour()
-        {
-            Bitmap = new WriteableBitmap(Width, Height, 0, 0, PixelFormats.Indexed8, _colourPalette);
-        }
-
-        public void ConvertToGreyscale()
-        {
-            Bitmap = new WriteableBitmap(Width, Height, 0, 0, PixelFormats.Indexed8, _greyPalette);
         }
 
         public void Dispose()
