@@ -151,7 +151,12 @@ namespace cpvc_test
                 entries.Add(String.Format("test{0}.{1}", e, (drive == 2) ? "cdt" : "dsk"));
             }
 
-            mockFileSystem.Setup(GetZipFileEntryNames(zipFilename)).Returns(entries);
+            // Throw in a file with a different extension in order to verify it isn't shown
+            // in the Select Item window.
+            List<string> entriesWithExtraneousFile = new List<string>(entries);
+            entriesWithExtraneousFile.Add("test.txt");
+
+            mockFileSystem.Setup(GetZipFileEntryNames(zipFilename)).Returns(entriesWithExtraneousFile);
 
             Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = new Mock<MainViewLogic.PromptForFileDelegate>();
             mockPrompt.Setup(x => x(fileType, true)).Returns(zipFilename);
@@ -198,7 +203,7 @@ namespace cpvc_test
             else if (entryCount > 1)
             {
                 mockFileSystem.Verify(GetZipFileEntry(zipFilename, entries[0]), selectFile ? Times.Once() : Times.Never());
-                mockSelect.Verify(x => x(It.IsAny<List<string>>()), Times.Once());
+                mockSelect.Verify(x => x(entries), Times.Once());
             }
 
             mockFileSystem.Verify(GetZipFileEntryNames(zipFilename), Times.Once());

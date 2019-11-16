@@ -221,7 +221,7 @@ namespace CPvC.UI
                 }
                 else
                 {
-                    entry = selectItem(entries);
+                    entry = selectItem(extEntries);
                     if (entry == null)
                     {
                         // Action was cancelled by the user.
