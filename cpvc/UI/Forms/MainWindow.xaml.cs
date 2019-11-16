@@ -156,8 +156,6 @@ namespace CPvC.UI.Forms
 
         private void ExitMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.CloseAll();
-
             Close();
         }
 
