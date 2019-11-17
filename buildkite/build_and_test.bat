@@ -14,3 +14,4 @@ fsutil file createnew roms\basic6128.rom 16384
 x64\Release\cpvc-core-test.exe
 
 OpenCppCoverage.exe --modules cpvc-core-test --export_type html:cpvc-core-coverage --sources cpvc "x64\Debug\cpvc-core-test.exe"
+"C:\Program Files\WinRAR\Rar.exe" a -ep1 -r -y "cpvc-core-coverage.rar" ".\cpvc-core-coverage\"
