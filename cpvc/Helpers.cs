@@ -131,9 +131,8 @@ namespace CPvC
                 }
                 else
                 {
-                    currentStr += str[i];
-                    currentStr += str[i + 1];
                     i++;
+                    currentStr += str[i];
                 }
             }
 
@@ -151,7 +150,7 @@ namespace CPvC
         static public string JoinWithEscape(char delim, IEnumerable<string> strs)
         {
             string delimStr = delim.ToString();
-            return String.Join(delimStr, strs.Select(x => x.Replace(delimStr, String.Format("\\{0}", delim))));
+            return String.Join(delimStr, strs.Select(x => x.Replace("\\", "\\\\").Replace(delimStr, String.Format("\\{0}", delim))));
         }
     }
 }
