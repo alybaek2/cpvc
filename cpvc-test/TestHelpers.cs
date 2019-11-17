@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Moq;
+using System;
 using System.Linq.Expressions;
-using Moq;
 
 namespace CPvC.Test
 {

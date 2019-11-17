@@ -1,8 +1,8 @@
-﻿using static CPvC.Test.TestHelpers;
-using CPvC.UI;
+﻿using CPvC.UI;
 using Moq;
 using NUnit.Framework;
 using System;
+using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
 {

@@ -1,7 +1,7 @@
-﻿using static CPvC.Test.TestHelpers;
-using Moq;
+﻿using Moq;
 using NUnit.Framework;
 using System;
+using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
 {

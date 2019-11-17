@@ -1,10 +1,10 @@
-﻿using static CPvC.Test.TestHelpers;
-using CPvC.UI;
+﻿using CPvC.UI;
 using Moq;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
 {

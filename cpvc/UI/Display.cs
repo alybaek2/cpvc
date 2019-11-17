@@ -128,7 +128,7 @@ namespace CPvC
 
             CopyFromBuffer();
         }
-        
+
         public WriteableBitmap Bitmap
         {
             get
