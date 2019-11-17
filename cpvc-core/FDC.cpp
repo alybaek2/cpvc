@@ -74,6 +74,41 @@ constexpr byte st3UnitSelect0 = 0x01;
 constexpr byte fdcReadTimeoutFM = 27;
 constexpr byte fdcReadTimeoutMFM = 13;
 
+constexpr byte commandLengths[32] = {
+    1,
+    1,
+    9, // 2 - Read Track
+    3, // 3 - Specify
+    2, // 4 - Sense Drive Status
+    9, // 5 - Write Data
+    9, // 6 - Read Data
+    2, // 7 - Recalibrate
+    1, // 8 - Sense Interrupt Status
+    9, // 9 - Write Deleted Data
+    2, // 10 - Read Id
+    1,
+    9, // 12 - Read Deleted Data
+    6, // 13 - Format Track
+    1,
+    3, // 15 - Seek
+    1,
+    9, // 17 - Scan Low
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    9, // 25 - Scan Low or Equal
+    1,
+    1,
+    1,
+    9, // 29 - Scan High or Equal
+    1,
+    1
+};
+
 FDC::FDC()
 {
 }
@@ -150,7 +185,6 @@ byte FDC::Read(const word& addr)
         {
             // Main status register
             ret = GetStatus();
-
         }
     }
 
@@ -366,7 +400,6 @@ void FDC::SetPhase(FDC::Phase p)
         _mainStatus &= ~statusExecutionMode;
         break;
     }
-
 }
 
 void FDC::SelectDrive(byte dsByte)
@@ -443,31 +476,7 @@ void FDC::SetStatus(byte pins, byte values)
 
 byte FDC::CommandLength(byte command)
 {
-    byte len = 0;
-
-    switch (command & 0x1f)
-    {
-    case cmdSpecify:               len = 3;    break;
-    case cmdSenseDriveStatus:      len = 2;    break;
-    case cmdRecalibrate:           len = 2;    break;
-    case cmdSenseInterruptStatus:  len = 1;    break;
-    case cmdSeek:                  len = 3;    break;
-    case cmdReadTrack:             len = 9;    break;
-    case cmdWriteData:             len = 9;    break;
-    case cmdReadData:              len = 9;    break;
-    case cmdWriteDeletedData:      len = 9;    break;
-    case cmdReadId:                len = 2;    break;
-    case cmdReadDeletedData:       len = 9;    break;
-    case cmdFormatTrack:           len = 6;    break;
-    case cmdScanLow:               len = 9;    break;
-    case cmdScanLowOrEqual:        len = 9;    break;
-    case cmdScanHighOrEqual:       len = 9;    break;
-    default:
-        len = 1;
-        break;
-    }
-
-    return len;
+    return commandLengths[command & 0x1f];
 }
 
 // Emulates one microsecond of time for the FDC.

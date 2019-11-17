@@ -158,7 +158,6 @@ void CRTC::HSyncEnd()
     {
         _requestInterrupt = true;
     }
-
 }
 
 void CRTC::Tick()

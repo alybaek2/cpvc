@@ -1381,7 +1381,6 @@ private:
 
         // M3 (not sure what parts are done in M2 vs M3. Not that it really matters...)
         Tick(3);
-
     }
 
     // ADD xy,BC

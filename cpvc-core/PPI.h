@@ -31,7 +31,6 @@ private:
     bool& _tapeLevel;
 
 public:
-
     bool _printerReady;
     bool _exp;
     bool _refreshRate;

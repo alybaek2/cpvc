@@ -218,7 +218,7 @@ namespace CPvC
         /// </summary>
         public void WaitForRequestQueueEmpty()
         {
-            while (_coreThread.IsAlive && !_requestQueueEmpty.WaitOne(10)) ;
+            while (_coreThread.IsAlive && !_requestQueueEmpty.WaitOne(10)) { }
         }
 
         /// <summary>
@@ -375,8 +375,8 @@ namespace CPvC
                 for (int s = 0; s < samplesReturned; s++)
                 {
                     // Treat Channel A as "Left", Channel B as "Centre", and Channel C as "Right".
-                    UInt32 left = (UInt32)((2 * _amplitudes[_audioChannelA[s]] + _amplitudes[_audioChannelB[s]]) * volumeFactor) / 3;
-                    UInt32 right = (UInt32)((2 * _amplitudes[_audioChannelC[s]] + _amplitudes[_audioChannelB[s]]) * volumeFactor) / 3;
+                    UInt32 left = (UInt32)(((2 * _amplitudes[_audioChannelA[s]]) + _amplitudes[_audioChannelB[s]]) * volumeFactor) / 3;
+                    UInt32 right = (UInt32)(((2 * _amplitudes[_audioChannelC[s]]) + _amplitudes[_audioChannelB[s]]) * volumeFactor) / 3;
 
                     // Divide by two to deal with the fact NAudio requires signed 16-bit samples.
                     left = (UInt16)(left / 2);

@@ -1,6 +1,7 @@
 # CPvC
 
 [![Build status](https://badge.buildkite.com/d5ba19b44c23f47b75db350b462738bf1dc048311058e34b16.svg)](https://buildkite.com/cpvc/build-and-test)
+[![CodeFactor](https://www.codefactor.io/repository/github/alybaek2/cpvc/badge/master)](https://www.codefactor.io/repository/github/alybaek2/cpvc/overview/master)
 
 An Amstrad CPC emulator written in C++ and C# for Windows.
 

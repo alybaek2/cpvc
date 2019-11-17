@@ -1525,27 +1525,19 @@ public:
                     // Act
                     qword ticks = Run(1);
 
-
                     // Verify
                     dword addend = nn + ((carry & ((f & flagC) != 0)) ? 1 : 0);
 
                     bool halfCarry = false;
-                    if (subtraction)
-                    {
-                        halfCarry = (((dword)(mm & 0xFFF)) < (addend & 0xFFF));
-                    }
-                    else
-                    {
-                        halfCarry = (((mm & 0xFFF) + (addend & 0xFFF)) >= 0x1000);
-                    }
-
                     signed int sRes = ((signed short)mm);
                     if (subtraction)
                     {
+                        halfCarry = (((dword)(mm & 0xFFF)) < (addend & 0xFFF));
                         sRes = sRes - ((signed short)nn) - ((carry && ((f & flagC) != 0)) ? 1 : 0);
                     }
                     else
                     {
+                        halfCarry = (((mm & 0xFFF) + (addend & 0xFFF)) >= 0x1000);
                         sRes = sRes + ((signed short)nn) + ((carry && ((f & flagC) != 0)) ? 1 : 0);
                     }
 

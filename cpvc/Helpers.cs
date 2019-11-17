@@ -50,7 +50,7 @@ namespace CPvC
                 hiNibble += ((hiNibble < 10) ? ((byte)'0') : ((byte)'7'));
 
                 buffer[c * 2] = (char)hiNibble;
-                buffer[c * 2 + 1] = (char)loNibble;
+                buffer[(c * 2) + 1] = (char)loNibble;
             }
 
             return new string(buffer);

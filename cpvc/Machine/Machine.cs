@@ -238,7 +238,7 @@ namespace CPvC
                     // Create a system bookmark so the machine can resume from where it left off the next time it's loaded, but don't
                     // create one if we already have a system bookmark at the current event, or we're at the root event.
                     if ((CurrentEvent != RootEvent) &&
-                        (Core != null && CurrentEvent.Ticks != Core.Ticks || CurrentEvent.Bookmark == null || !CurrentEvent.Bookmark.System))
+                        ((Core != null && CurrentEvent.Ticks != Core.Ticks) || CurrentEvent.Bookmark == null || !CurrentEvent.Bookmark.System))
                     {
                         Bookmark bookmark = GetBookmark(true);
                         HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(NextEventId(), bookmark.Ticks, DateTime.UtcNow, bookmark);

@@ -78,7 +78,6 @@ public:
     byte GetTrack();
 
 private:
-
     friend StreamWriter& operator<<(StreamWriter& s, const FDD& fdd);
     friend StreamReader& operator>>(StreamReader& s, FDD& fdd);
 };
