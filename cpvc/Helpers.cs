@@ -63,6 +63,11 @@ namespace CPvC
         /// <returns>A byte array based on the hexadecimal string.</returns>
         static public byte[] Bytes(string hexString)
         {
+            if ((hexString.Length % 2) == 1)
+            {
+                throw new ArgumentException(String.Format("Hex string length should be an even number."));
+            }
+
             int count = hexString.Length / 2;
             byte[] bytes = new byte[count];
 

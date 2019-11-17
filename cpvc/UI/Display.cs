@@ -167,10 +167,7 @@ namespace CPvC
         /// </summary>
         public void CopyFromBufferAsync()
         {
-            Bitmap.Dispatcher.BeginInvoke(new Action(() =>
-            {
-                CopyFromBuffer();
-            }), null);
+            Bitmap.Dispatcher.BeginInvoke(new Action(() => CopyFromBuffer()), null);
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-﻿using CPvC;
+﻿using static CPvC.Test.TestHelpers;
 using CPvC.UI;
 using Moq;
 using NUnit.Framework;
@@ -6,30 +6,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 
-namespace cpvc_test
+namespace CPvC.Test
 {
     public class MainViewLogicTests
     {
-        static private string AnyString()
-        {
-            return It.IsAny<string>();
-        }
-
-        static private Expression<Func<IFileSystem, byte[]>> ReadBytes()
-        {
-            return fileSystem => fileSystem.ReadBytes(AnyString());
-        }
-
-        static private Expression<Func<IFileSystem, byte[]>> ReadBytes(string filename)
-        {
-            return fileSystem => fileSystem.ReadBytes(filename);
-        }
-
-        static private Expression<Action<IFileSystem>> DeleteFile(string filename)
-        {
-            return fileSystem => fileSystem.DeleteFile(filename);
-        }
-
         static private Mock<IFileSystem> GetFileSystem(IFile file, string filename)
         {
             Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);

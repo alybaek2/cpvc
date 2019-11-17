@@ -9,7 +9,7 @@
     <ProjectGuid>{6228B360-F971-45D0-8F19-03BF1E01CC82}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>cpvc_test</RootNamespace>
+    <RootNamespace>CPvC.Test</RootNamespace>
     <AssemblyName>cpvc-test</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -99,10 +99,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CoreTests.cs" />
+    <Compile Include="HelpersTests.cs" />
     <Compile Include="MachineTests.cs" />
     <Compile Include="MainViewLogicTests.cs" />
     <Compile Include="MainViewModelTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestHelpers.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

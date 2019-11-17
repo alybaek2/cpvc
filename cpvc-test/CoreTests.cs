@@ -1,25 +1,12 @@
-﻿using CPvC;
+﻿using static CPvC.Test.TestHelpers;
 using Moq;
 using NUnit.Framework;
+using System;
 
-namespace cpvc_test
+namespace CPvC.Test
 {
     public class CoreTests
     {
-        /// <summary>
-        /// Effectively a Times value representing 0 or more times.
-        /// </summary>
-        /// <returns>A Times value representing 0 or more times.</returns>
-        static private Times TimesAny()
-        {
-            return Times.AtMost(int.MaxValue);
-        }
-
-        static private string AnyString()
-        {
-            return It.IsAny<string>();
-        }
-
         static private Mock<IFileSystem> GetFileSystem(int size)
         {
             Mock<IFileSystem> mock = new Mock<IFileSystem>(MockBehavior.Strict);
@@ -75,10 +62,7 @@ namespace cpvc_test
             Mock<IFileSystem> mock = GetFileSystem(0x4000);
 
             // Act and Verify
-            Assert.Throws<System.ArgumentException>(() =>
-            {
-                Core.Create((Core.Type)99);
-            });
+            Assert.Throws<ArgumentException>(() => Core.Create((Core.Type)99));
 
             mock.VerifyNoOtherCalls();
         }

@@ -1,29 +1,13 @@
-﻿using CPvC;
+﻿using static CPvC.Test.TestHelpers;
 using CPvC.UI;
 using Moq;
 using NUnit.Framework;
 using System;
-using System.Linq.Expressions;
 
-namespace cpvc_test
+namespace CPvC.Test
 {
     public class MainViewModelTests
     {
-        static private string AnyString()
-        {
-            return It.IsAny<string>();
-        }
-
-        static private Expression<Func<IFileSystem, byte[]>> ReadBytes()
-        {
-            return fileSystem => fileSystem.ReadBytes(AnyString());
-        }
-
-        static private Expression<Action<IFileSystem>> DeleteFile(string filename)
-        {
-            return fileSystem => fileSystem.DeleteFile(filename);
-        }
-
         [Test]
         public void ThrowsWhenNewMachineFails()
         {

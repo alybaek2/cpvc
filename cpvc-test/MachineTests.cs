@@ -1,21 +1,16 @@
-﻿using CPvC;
+﻿using static CPvC.Test.TestHelpers;
 using Moq;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 
-namespace cpvc_test
+namespace CPvC.Test
 {
     [TestFixture]
     public class MachineTests
     {
         private List<string> _lines;
         private Mock<IFileSystem> _mockFileSystem;
-
-        private static string AnyString()
-        {
-            return It.IsAny<string>();
-        }
 
         private void RunForAWhile(Machine machine)
         {
