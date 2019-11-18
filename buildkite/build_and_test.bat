@@ -35,4 +35,4 @@ dir /b /s /a:-D coverage-report-xml\*.xml > files.txt
 "C:\Tools\CorrectCase\CorrectCase.exe" files.txt tokens.txt
 
 REM Upload to Coveralls!
-"C:\Tools\Coveralls.NET\csmacnz.Coveralls.exe" -i coverage-report-xml --reportgenerator --useRelativePaths --jobId=%BUILDKITE_JOB_ID%
+"C:\Tools\Coveralls.NET\csmacnz.Coveralls.exe" -i coverage-report-xml --reportgenerator --useRelativePaths --commitAuthor=%BUILDKITE_BUILD_CREATOR% --commitId %BUILDKITE_COMMIT% --commitBranch %BUILDKITE_BRANCH% --commitEmail %BUILDKITE_BUILD_CREATOR_EMAIL% --jobId=%BUILDKITE_JOB_ID%
