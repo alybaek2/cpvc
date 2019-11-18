@@ -15,3 +15,5 @@ x64\Release\cpvc-core-test.exe
 
 OpenCppCoverage.exe --modules cpvc-core-test --export_type html:cpvc-core-coverage --sources cpvc "x64\Debug\cpvc-core-test.exe"
 "C:\Program Files\WinRAR\Rar.exe" a -ep1 -r -y "cpvc-core-coverage.rar" ".\cpvc-core-coverage\"
+
+"C:\Tools\OpenCover\OpenCover.Console.exe" -target:"c:\Program Files (x86)\NUnit.org\nunit-console\nunit3-console.exe" -targetargs:"cpvc-test\bin\x64\Debug\cpvc-test.dll" -filter:"+[cpvc]* -[cpvc-test]*" -register:user -output:cpvc-coverage.xml
