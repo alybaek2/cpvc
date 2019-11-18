@@ -14,7 +14,7 @@ fsutil file createnew roms\basic6128.rom 16384
 x64\Release\cpvc-core-test.exe
 
 "C:\Program Files\OpenCppCoverage\OpenCppCoverage.exe" --modules cpvc-core-test --export_type cobertura:cpvc-core-coverage.xml --sources cpvc "x64\Debug\cpvc-core-test.exe"
-"C:\Tools\OpenCover\OpenCover.Console.exe" -target:"c:\Program Files (x86)\NUnit.org\nunit-console\nunit3-console.exe" -targetargs:"cpvc-test\bin\x64\Debug\cpvc-test.dll" -filter:"+[cpvc-core-clr]* -[cpvc-test]*" -excludebyfile:"d:\agent\*";"c:\program files*";"*App.g.cs" -hideskipped:All -register:user -output:cpvc-coverage.xml
+"C:\Tools\OpenCover\OpenCover.Console.exe" -target:"c:\Program Files (x86)\NUnit.org\nunit-console\nunit3-console.exe" -targetargs:"cpvc-test\bin\x64\Debug\cpvc-test.dll" -filter:"+[cpvc]* +[cpvc-core-clr]* -[cpvc-test]*" -excludebyfile:"d:\agent\*";"c:\program files*";"*App.g.cs" -hideskipped:All -register:user -output:cpvc-coverage.xml
 
 ".\packages\ReportGenerator.4.3.6\tools\net47\ReportGenerator.exe" -targetdir:coverage-report -reporttypes:Html -sourcedirs:. -reports:cpvc-coverage.xml;cpvc-core-coverage.xml
 
