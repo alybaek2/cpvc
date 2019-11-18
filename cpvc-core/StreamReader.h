@@ -88,17 +88,6 @@ public:
         return (*this);
     }
 
-    template<class T, int S>
-    StreamReader& operator>>(std::array<T, S>& arr)
-    {
-        for (size_t x = 0; x < S; x++)
-        {
-            (*this) >> arr.at(x);
-        }
-
-        return (*this);
-    }
-
     template<class K, class V>
     StreamReader& operator>>(std::map<K, V>& map)
     {
@@ -136,7 +125,7 @@ private:
         int count = sizeof(data);
         if ((_bufferIndex + count) > _buffer.size())
         {
-            throw -1;
+            throw std::out_of_range("No more data in the buffer");
         }
 
         memcpy((byte*)& data, _buffer.data() + _bufferIndex, count);
