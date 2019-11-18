@@ -20,5 +20,5 @@ x64\Release\cpvc-core-test.exe
 
 "C:\Program Files\WinRAR\Rar.exe" a -ep1 -r -y "coverage-report.rar" ".\coverage-report\"
 
-"C:\Tools\Coveralls.NET\csmacnz.Coveralls.exe" -i cpvc-coverage.xml --opencover --useRelativePaths --commitId %BUILDKITE_COMMIT% --commitBranch %BUILDKITE_BRANCH% --commitEmail %BUILDKITE_BUILD_CREATOR_EMAIL% --jobId=%BUILDKITE_JOB_ID%
+"C:\Tools\Coveralls.NET\csmacnz.Coveralls.exe" -i cpvc-coverage.xml --opencover --useRelativePaths --commitAuthor=%BUILDKITE_BUILD_CREATOR% --commitId %BUILDKITE_COMMIT% --commitBranch %BUILDKITE_BRANCH% --commitEmail %BUILDKITE_BUILD_CREATOR_EMAIL% --jobId=%BUILDKITE_JOB_ID%
 
