@@ -56,7 +56,7 @@ namespace CPvC
         /// <summary>
         /// Opens an existing machine.
         /// </summary>
-        /// <param name="name">The name of the name. Not required if <c>lazy</c> is false.</param>
+        /// <param name="name">The name of the machine. Not required if <c>lazy</c> is false.</param>
         /// <param name="machineFilepath">Filepath to the machine file.</param>
         /// <param name="fileSystem">File system interface.</param>
         /// <param name="lazy">If true, executes a minimal "lazy" load of the machine - only the <c>Name</c>, <c>Filepath</c>, and <c>Display.Bitmap</c> properties will be populated. A subsequent call to <c>Open</c> will be required to fully load the machine.</param>

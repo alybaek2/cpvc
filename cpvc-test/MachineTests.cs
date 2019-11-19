@@ -168,5 +168,78 @@ namespace CPvC.Test
                 Assert.AreEqual(state, machine.Core.GetState());
             }
         }
+
+        /// <summary>
+        /// Ensures that a machine opened "lazily" sets the appropriate RequiresOpen property.
+        /// </summary>
+        public void OpenLazy()
+        {
+            // Setup and Act
+            using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, true))
+            {
+                // Verify
+                Assert.IsTrue(machine.RequiresOpen);
+                Assert.AreEqual(machine.Filepath, "test.cpvc");
+                Assert.AreEqual(machine.Name, "test");
+            }
+        }
+
+        /// <summary>
+        /// Ensures an existing machine is opened with the expected state.
+        /// </summary>
+        [Test]
+        public void Open()
+        {
+            // Setup
+            using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
+            {
+                RunForAWhile(machine);
+                machine.Key(Keys.A, true);
+                RunForAWhile(machine);
+                machine.Key(Keys.A, false);
+                RunForAWhile(machine);
+                machine.AddBookmark(false);
+                RunForAWhile(machine);
+                machine.SeekToLastBookmark();
+            }
+
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(_lines.ToArray());
+            using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
+            {
+                // Verify
+                Assert.IsFalse(machine.RequiresOpen);
+                Assert.AreEqual(machine.Filepath, "test.cpvc");
+                Assert.AreEqual(machine.Name, "test");
+
+                Assert.AreEqual(machine.RootEvent.Type, HistoryEvent.Types.Checkpoint);
+                Assert.AreEqual(machine.RootEvent.Children.Count, 1);
+
+                HistoryEvent historyEvent = machine.RootEvent.Children[0];
+                Assert.AreEqual(historyEvent.Type, HistoryEvent.Types.CoreAction);
+                Assert.AreEqual(historyEvent.CoreAction.Type, CoreActionBase.Types.KeyPress);
+                Assert.AreEqual(historyEvent.CoreAction.KeyCode, Keys.A);
+                Assert.AreEqual(historyEvent.CoreAction.KeyDown, true);
+                Assert.AreEqual(historyEvent.Children.Count, 1);
+
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(historyEvent.Type, HistoryEvent.Types.CoreAction);
+                Assert.AreEqual(historyEvent.CoreAction.Type, CoreActionBase.Types.KeyPress);
+                Assert.AreEqual(historyEvent.CoreAction.KeyCode, Keys.A);
+                Assert.AreEqual(historyEvent.CoreAction.KeyDown, false);
+                Assert.AreEqual(historyEvent.Children.Count, 1);
+
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(historyEvent.Type, HistoryEvent.Types.Checkpoint);
+                Assert.AreEqual(historyEvent.Bookmark.System, false);
+                Assert.AreEqual(historyEvent.Children.Count, 2);
+
+                Assert.AreEqual(historyEvent.Children[0].Type, HistoryEvent.Types.Checkpoint);
+                Assert.AreEqual(historyEvent.Children[0].Bookmark, null);
+                Assert.AreEqual(historyEvent.Children[1].Type, HistoryEvent.Types.Checkpoint);
+                Assert.AreEqual(historyEvent.Children[1].Bookmark.System, true);
+
+                Assert.AreEqual(machine.CurrentEvent, historyEvent.Children[1]);
+            }
+        }
     }
 }
