@@ -2,6 +2,15 @@
 #include "../cpvc-core/StreamReader.h"
 #include "helpers.h"
 
+template<int BUFSIZE>
+void LoadReader(StreamReader& reader, byte (&data)[BUFSIZE])
+{
+    for (byte d : data)
+    {
+        reader.Push(d);
+    }
+}
+
 TEST(StreamReaderTests, Read) {
     // Setup
     byte data[] = {
@@ -45,10 +54,7 @@ TEST(StreamReaderTests, Read) {
     std::map<byte, byte> map;
 
     StreamReader reader;
-    for (byte d : data)
-    {
-        reader.Push(d);
-    }
+    LoadReader(reader, data);
 
     // Act
     reader >> f;
@@ -85,14 +91,10 @@ TEST(StreamReaderTests, Read) {
 TEST(StreamReaderTests, ReadEndOfData) {
     // Setup
     byte data[] = { 0x01 };
-
     byte b;
 
     StreamReader reader;
-    for (byte d : data)
-    {
-        reader.Push(d);
-    }
+    LoadReader(reader, data);
 
     // Act
     reader >> b;
@@ -116,10 +118,7 @@ TEST(StreamReaderTests, ReadArray) {
     byte b[3] = { 0x00, 0x00, 0x00 };
 
     StreamReader reader;
-    for (byte d : data)
-    {
-        reader.Push(d);
-    }
+    LoadReader(reader, data);
 
     // Act
     reader.ReadArray((byte*)b, 3);
@@ -136,10 +135,7 @@ TEST(StreamReaderTests, ReadArrayZeroSize) {
     byte b[3] = { 0x00, 0x00, 0x00 };
 
     StreamReader reader;
-    for (byte d : data)
-    {
-        reader.Push(d);
-    }
+    LoadReader(reader, data);
 
     // Act
     reader.ReadArray((byte*)b, 0);
