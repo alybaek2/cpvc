@@ -99,6 +99,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConvertersTests.cs" />
     <Compile Include="CoreTests.cs" />
     <Compile Include="HelpersTests.cs" />
     <Compile Include="MachineTests.cs" />
