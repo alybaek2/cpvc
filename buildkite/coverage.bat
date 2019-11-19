@@ -3,7 +3,7 @@ call .\buildkite\restore.bat x64
 
 REM Generate code coverage files for cpvc-core (C++) and cpvc (C#).
 "C:\Program Files\OpenCppCoverage\OpenCppCoverage.exe" --modules cpvc-core-test --sources=cpvc-core --excluded_sources=cpvc-core-test --export_type cobertura:cpvc-core-coverage.xml "x64\Debug\cpvc-core-test.exe"
-"C:\Tools\OpenCover\OpenCover.Console.exe" -target:"c:\Program Files (x86)\NUnit.org\nunit-console\nunit3-console.exe" -targetargs:"cpvc-test\bin\x64\Debug\cpvc-test.dll" -filter:"+[cpvc]* +[cpvc-core-clr]* -[cpvc-test]*" -excludebyfile:"d:\agent\*";"c:\program files*";"*App.g.cs" -hideskipped:All -register:user -output:cpvc-coverage.xml
+"C:\Tools\OpenCover\OpenCover.Console.exe" -target:"c:\Program Files (x86)\NUnit.org\nunit-console\nunit3-console.exe" -targetargs:"cpvc-test\bin\x64\Debug\cpvc-test.dll" -filter:"+[cpvc]* +[cpvc-core-clr]* -[cpvc-test]*" -excludebyfile:"d:\agent\*";"c:\program files*";"*App.g.cs";"*.xaml.cs";"*.xaml";"*.Designer.cs" -hideskipped:All -register:user -output:cpvc-coverage.xml
 
 REM Generate ReportGenerator reports from the original Cobertura files.
 "C:\Tools\NuGet\nuget.exe" restore
