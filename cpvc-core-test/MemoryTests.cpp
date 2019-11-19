@@ -79,9 +79,9 @@ TEST(MemoryTests, SelectROM)
     Mem16k testRom;
     testRom.Fill(0xFE);
 
-    for (byte selectedRom : allBytes)
+    for (byte selectedRom : testBytes)
     {
-        for (byte rom : allBytes)
+        for (byte rom : testBytes)
         {
             Memory memory;
             memory.Reset();

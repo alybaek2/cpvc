@@ -99,17 +99,6 @@ public:
         return (*this);
     }
 
-    template<class T, int S>
-    StreamWriter& operator<<(const std::array<T, S>& arr)
-    {
-        for (size_t x = 0; x < S; x++)
-        {
-            (*this) << arr.at(x);
-        }
-
-        return (*this);
-    }
-
     template<class K, class V>
     StreamWriter& operator<<(const std::map<K, V>& map)
     {
