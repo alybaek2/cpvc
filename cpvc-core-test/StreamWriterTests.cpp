@@ -101,3 +101,30 @@ TEST(StreamWriterTests, WriteArrayZeroSize) {
     ASSERT_EQ(writer.Size(), 0);
 }
 
+TEST(StreamWriterTests, CopyToZeroLengthBuffer) {
+    // Setup
+    StreamWriter writer;
+    byte buffer[1] = { 0 };
+
+    // Act
+    writer << (dword)0xffffffff;
+    writer.CopyTo(buffer, 0);
+
+    // Verify
+    ASSERT_EQ(buffer[0], 0);
+}
+
+TEST(StreamWriterTests, CopyToSmallerBuffer) {
+    // Setup
+    StreamWriter writer;
+    byte buffer[3] = { 0, 0, 0 };
+
+    // Act
+    writer << (dword)0xffffffff;
+    writer.CopyTo(buffer, 3);
+
+    // Verify
+    ASSERT_EQ(buffer[0], 0xff);
+    ASSERT_EQ(buffer[1], 0xff);
+    ASSERT_EQ(buffer[2], 0xff);
+}
