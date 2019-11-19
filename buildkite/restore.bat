@@ -1,4 +1,4 @@
-set BUILDTMP=%NASTMP%\BuildKite\%BUILDKITE_JOB_ID%
+set BUILDTMP=%NASTMP%\BuildKite\%BUILDKITE_BUILD_ID%
 echo Restoring %BUILDTMP% to %1...
 
 mkdir .\%1
