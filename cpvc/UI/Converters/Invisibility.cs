@@ -10,6 +10,11 @@ namespace CPvC.UI.Converters
         public object Convert(object value, Type targetType,
             object parameter, CultureInfo culture)
         {
+            if (value == null || !(value is bool))
+            {
+                return Visibility.Visible;
+            }
+
             return ((bool)value) ? Visibility.Hidden : Visibility.Visible;
         }
 
