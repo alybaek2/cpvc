@@ -56,6 +56,7 @@ public:
         _lowerRomEnabled = true;
         _upperRomEnabled = true;
         _selectedUpperRom = 0;
+        _upperRom.Fill(0);
 
         SetRAMConfig(0);
     }
@@ -91,6 +92,10 @@ public:
     void AddUpperRom(byte slot, const Mem16k& rom)
     {
         _roms[slot] = rom;
+        if (_selectedUpperRom == slot)
+        {
+            _upperRom = _roms[_selectedUpperRom];
+        }
     }
 
     void RemoveUpperRom(byte slot)
