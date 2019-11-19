@@ -6,6 +6,7 @@ REM Generate code coverage files for cpvc-core (C++) and cpvc (C#).
 "C:\Tools\OpenCover\OpenCover.Console.exe" -target:"c:\Program Files (x86)\NUnit.org\nunit-console\nunit3-console.exe" -targetargs:"cpvc-test\bin\x64\Debug\cpvc-test.dll" -filter:"+[cpvc]* +[cpvc-core-clr]* -[cpvc-test]*" -excludebyfile:"d:\agent\*";"c:\program files*";"*App.g.cs" -hideskipped:All -register:user -output:cpvc-coverage.xml
 
 REM Generate ReportGenerator reports from the original Cobertura files.
+"C:\Tools\NuGet\nuget.exe" restore
 ".\packages\ReportGenerator.4.3.6\tools\net47\ReportGenerator.exe" -targetdir:coverage-report-xml -reporttypes:Xml -sourcedirs:. -reports:cpvc-coverage.xml;cpvc-core-coverage.xml
 
 REM Get rid of this file as it seems to cause duplicates in Coveralls.
