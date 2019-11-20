@@ -88,7 +88,7 @@ byte Core::RunUntil(qword stopTicks, byte stopReason)
         }
 
         bool vSyncBefore = _crtc._inVSync;
-        StepOne(stopReason);
+        Step(stopReason);
 
         if ((stopReason & stopVSync) != 0 && !vSyncBefore && _crtc._inVSync)
         {
@@ -302,7 +302,7 @@ void Core::LoadDisc(byte drive, const byte* pBuffer, int size)
     _fdc._drives[drive].Load(disk);
 }
 
-void Core::StepOne(byte stopReason)
+void Core::Step(byte stopReason)
 {
     if (_eiDelay > 0)
     {

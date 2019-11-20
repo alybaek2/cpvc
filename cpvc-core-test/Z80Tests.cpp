@@ -571,12 +571,12 @@ public:
         {
             for (byte a : testBytes)
             {
-                for (RegInfo reg : _regs)
+                for (RegInfo reg : _regsWithPrefixes )
                 {
                     for (byte n : testBytes)
                     {
                         _core.Init();
-                        SetMemory(0x0000, 0xA0 | (o << 3) | reg._code);
+                        SetInstruction(0x0000, reg._prefix, 0xA0 | (o << 3) | reg._code);
                         _core.F = f;
                         *reg._pReg = n;
                         _core.A = a;
@@ -586,8 +586,14 @@ public:
                         qword ticks = Run(1);
 
                         ASSERT_EQ(expected, _core.A);
-                        ASSERT_EQ(_core.F, (expected & (flag3 | flag5)) | ((o == 0) ? flagH : 0) | (Parity(expected) ? flagPV : 0) | ((expected == 0) ? flagZ : 0) | ((expected & 0x80) ? flagS : 0));
-                        CommonChecks(ticks, 4, 0x0001, 0x01);
+                        byte expectedF =
+                            (expected & (flag3 | flag5)) |
+                            ((o == 0) ? flagH : 0) |
+                            (Parity(expected) ? flagPV : 0) |
+                            ((expected == 0) ? flagZ : 0) |
+                            ((expected & 0x80) ? flagS : 0);
+                        ASSERT_EQ(_core.F, expectedF);
+                        CommonChecksPrefix(reg._prefix, ticks, 4, 0x0001, 0x01);
                     }
                 }
             }
@@ -1399,18 +1405,18 @@ public:
             {
                 for (byte a : testBytes)
                 {
-                    for (RegInfo reg : _regs)
+                    for (RegInfo reg : _regsWithPrefixes)
                     {
-                        byte opcode = 0x80 | reg._code | (carry ? 0x08 : 0x00) | (subtraction  ? 0x10 : 0x00);
+                        byte opcode = 0x80 | reg._code | (carry ? 0x08 : 0x00) | (subtraction ? 0x10 : 0x00);
 
                         _core.Init();
-                        SetMemory(0x0000, opcode);
+                        SetInstruction(0x0000, reg._prefix, opcode);
                         _core.F = f;
                         *reg._pReg = n;
                         _core.A = a;
                         byte s = *reg._pReg;
                         bool applyCarry = (carry && ((f & flagC) != 0));
-                        word subtrahend = (short) (char) s + (applyCarry ? 1 : 0);
+                        word subtrahend = (short)(char)s + (applyCarry ? 1 : 0);
                         byte expectedA = _core.A + (subtraction ? -subtrahend : subtrahend);
                         byte originalA = _core.A;
                         byte expectedF = subtraction ? SUBExpectedFlags(_core.A, s, applyCarry) : ADDExpectedFlags(_core.A, s, applyCarry);
@@ -1419,7 +1425,7 @@ public:
 
                         ASSERT_EQ(_core.F, expectedF);
                         ASSERT_EQ(_core.A, expectedA);
-                        CommonChecks(ticks, 4, 0x0001, 0x01);
+                        CommonChecksPrefix(reg._prefix, ticks, 4, 0x0001, 0x01);
                     }
                 }
             }
@@ -1647,37 +1653,45 @@ public:
             {
                 for (IndexRegInfo indexInfo : _idxRegs)
                 {
-                    for (offset o : testOffsets)
+                    for (RegInfo reg : _regsWith0)
                     {
-                        for (byte n : testBytes)
+                        for (offset o : testOffsets)
                         {
-                            word pc = hl + 0x100;
-                            _core.Init();
-                            byte opcode = 0x26 | (logical ? 0x10 : 0x00) | (left ? 0x00 : 0x08);
-                            SetMemory(pc, indexInfo._prefix, 0xCB, o, opcode);
-                            SetMemory(hl + o, n);
-                            _core.PC = pc;
-                            *indexInfo._pReg = hl;
-                            _core.F = f;
-
-                            qword ticks = Run(1);
-
-                            byte expected = 0;
-                            byte expectedF = 0;
-                            if (left)
+                            for (byte n : testBytes)
                             {
-                                expected = (n << 1) | (logical ? 0x01 : 0x00);
-                                expectedF = SZP35(expected) | (Bit(n, 7) ? flagC : 0);
-                            }
-                            else
-                            {
-                                expected = (n >> 1) | (logical ? 0x00 : (n & 0x80));
-                                expectedF = SZP35(expected) | (Bit(n, 0) ? flagC : 0);
-                            }
+                                word pc = hl + 0x100;
+                                _core.Init();
+                                byte opcode = 0x20 | reg._code | (logical ? 0x10 : 0x00) | (left ? 0x00 : 0x08);
+                                SetMemory(pc, indexInfo._prefix, 0xCB, o, opcode);
+                                SetMemory(hl + o, n);
+                                _core.PC = pc;
+                                *indexInfo._pReg = hl;
+                                _core.F = f;
 
-                            ASSERT_EQ(_core.ReadRAM(hl + o), expected);
-                            ASSERT_EQ(_core.F, expectedF);
-                            CommonChecks(ticks, 27, pc + 4, 0x02);
+                                qword ticks = Run(1);
+
+                                byte expected = 0;
+                                byte expectedF = 0;
+                                if (left)
+                                {
+                                    expected = (n << 1) | (logical ? 0x01 : 0x00);
+                                    expectedF = SZP35(expected) | (Bit(n, 7) ? flagC : 0);
+                                }
+                                else
+                                {
+                                    expected = (n >> 1) | (logical ? 0x00 : (n & 0x80));
+                                    expectedF = SZP35(expected) | (Bit(n, 0) ? flagC : 0);
+                                }
+
+                                if (reg._pReg != nullptr)
+                                {
+                                    ASSERT_EQ(*reg._pReg, expected);
+                                }
+
+                                ASSERT_EQ(_core.ReadRAM(hl + o), expected);
+                                ASSERT_EQ(_core.F, expectedF);
+                                CommonChecks(ticks, 27, pc + 4, 0x02);
+                            }
                         }
                     }
                 }
@@ -1694,7 +1708,7 @@ public:
                 for (byte n : testBytes)
                 {
                     _core.Init();
-                    byte opcode = (rotateWithCarry?0x10:0x00) | reg._code | (left?0x00:0x08);
+                    byte opcode = (rotateWithCarry ? 0x10 : 0x00) | reg._code | (left ? 0x00 : 0x08);
                     SetMemory(0x0000, 0xCB, opcode);
                     *reg._pReg = n;
                     _core.F = f;
@@ -1717,7 +1731,7 @@ public:
                         bool highbit = rotateWithCarry ? previousCarryFlag : newCarryFlag;
                         expected = (n >> 1) | (highbit ? 0x80 : 0);
                     }
-                     
+
                     expectedF = SZP35(expected) | (newCarryFlag ? flagC : 0);
 
                     ASSERT_EQ(*reg._pReg, expected);
@@ -1768,7 +1782,7 @@ public:
         }
     }
 
-    void RotateHLInd(bool left)
+    void RotateHLInd(bool left, bool includeCarry)
     {
         for (byte f : flagBytes)
         {
@@ -1777,7 +1791,7 @@ public:
                 for (byte n : testBytes)
                 {
                     _core.Init();
-                    byte opcode = 0x16 | (left ? 0x00 : 0x08);
+                    byte opcode = 0x06 | (includeCarry ? 0x10 : 0x00) | (left ? 0x00 : 0x08);
                     word pc = hl + 0x100;
                     SetMemory(pc, 0xCB, opcode);
                     SetMemory(hl, n);
@@ -1791,12 +1805,14 @@ public:
                     byte expectedF = 0;
                     if (left)
                     {
-                        expected = (n << 1) | (((f & flagC) != 0) ? 0x01 : 0);
+                        byte newbit0 = includeCarry ? (f & flagC) : Bit(n, 7);
+                        expected = (n << 1) | ((newbit0 != 0) ? 0x01 : 0x00);
                         expectedF = SZP35(expected) | (Bit(n, 7) ? flagC : 0);
                     }
                     else
                     {
-                        expected = (n >> 1) | (((f & flagC) != 0) ? 0x80 : 0);
+                        byte newbit7 = includeCarry ? (f & flagC) : Bit(n, 0);
+                        expected = (n >> 1) | (newbit7 ? 0x80 : 0x00);
                         expectedF = SZP35(expected) | (Bit(n, 0) ? flagC : 0);
                     }
 
@@ -1816,39 +1832,50 @@ public:
             {
                 for (word hl : testAddresses)
                 {
-                    for (offset o : testOffsets)
+                    for (RegInfo reg : _regsWith0)
                     {
-                        for (byte n : testBytes)
+                        for (offset o : testOffsets)
                         {
-                            _core.Init();
-                            byte opcode = 0x06 | (left ? 0x00 : 0x08) | (rotateWithCarry ? 0x00 : 0x10);
-                            word pc = hl + 0x100;
-                            SetMemory(pc, indexInfo._prefix, 0xCB, o, opcode);
-                            SetMemory(hl + o, n);
-                            *indexInfo._pReg = hl;
-                            _core.F = f;
-                            _core.PC = pc;
-
-                            qword ticks = Run(1);
-
-                            byte expected = 0;
-                            byte expectedF = 0;
-                            bool previousCarryFlag = ((f & flagC) != 0);
-                            bool newCarryFlag = ((n & (left ? 0x80 : 0x01)) != 0);
-                            bool wrappedBit = rotateWithCarry ? newCarryFlag : previousCarryFlag;
-                            if (left)
+                            for (byte n : testBytes)
                             {
-                                expected = (n << 1) | (wrappedBit ? 0x01 : 0);
-                            }
-                            else
-                            {
-                                expected = (n >> 1) | (wrappedBit ? 0x80 : 0);
-                            }
-                            expectedF = SZP35(expected) | (newCarryFlag ? flagC : 0);
+                                // Setup
+                                _core.Init();
+                                byte opcode = reg._code | (left ? 0x00 : 0x08) | (rotateWithCarry ? 0x00 : 0x10);
+                                word pc = hl + 0x100;
+                                SetMemory(pc, indexInfo._prefix, 0xCB, o, opcode);
+                                SetMemory(hl + o, n);
+                                *indexInfo._pReg = hl;
+                                _core.F = f;
+                                _core.PC = pc;
 
-                            ASSERT_EQ(_core.ReadRAM(hl + o), expected);
-                            ASSERT_EQ(_core.F, expectedF);
-                            CommonChecks(ticks, 27, pc + 4, 0x02);
+                                // Act
+                                qword ticks = Run(1);
+
+                                // Verify
+                                byte expected = 0;
+                                byte expectedF = 0;
+                                bool previousCarryFlag = ((f & flagC) != 0);
+                                bool newCarryFlag = ((n & (left ? 0x80 : 0x01)) != 0);
+                                bool wrappedBit = rotateWithCarry ? newCarryFlag : previousCarryFlag;
+                                if (left)
+                                {
+                                    expected = (n << 1) | (wrappedBit ? 0x01 : 0);
+                                }
+                                else
+                                {
+                                    expected = (n >> 1) | (wrappedBit ? 0x80 : 0);
+                                }
+                                expectedF = SZP35(expected) | (newCarryFlag ? flagC : 0);
+
+                                if (reg._pReg != nullptr)
+                                {
+                                    ASSERT_EQ(*reg._pReg, expected);
+                                }
+
+                                ASSERT_EQ(_core.ReadRAM(hl + o), expected);
+                                ASSERT_EQ(_core.F, expectedF);
+                                CommonChecks(ticks, 27, pc + 4, 0x02);
+                            }
                         }
                     }
                 }
@@ -3710,7 +3737,7 @@ TEST_F(Z80Tests, RLCr)
 
 TEST_F(Z80Tests, RLCHLInd)
 {
-    RotateHLInd(true);
+    RotateHLInd(true, false);
 }
 
 TEST_F(Z80Tests, RLCIndex)
@@ -3721,6 +3748,11 @@ TEST_F(Z80Tests, RLCIndex)
 TEST_F(Z80Tests, RRCr)
 {
     Rotate(false, false);
+}
+
+TEST_F(Z80Tests, RRCHLInd)
+{
+    RotateHLInd(false, false);
 }
 
 TEST_F(Z80Tests, RRCIndex)
@@ -3750,12 +3782,12 @@ TEST_F(Z80Tests, RRCA)
 
 TEST_F(Z80Tests, RLHLInd)
 {
-    RotateHLInd(true);
+    RotateHLInd(true, true);
 }
 
 TEST_F(Z80Tests, RRHLInd)
 {
-    RotateHLInd(false);
+    RotateHLInd(false, true);
 }
 
 TEST_F(Z80Tests, RLIndex)
