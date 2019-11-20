@@ -1,13 +1,14 @@
 #pragma once
 
 #include "common.h"
+#include "IBus.h"
 #include "FDD.h"
 #include "Disk.h"
 
 constexpr byte readBufferSize = 4;
 
 // Class representing the floppy drive controller.
-class FDC
+class FDC : public IBus
 {
 public:
     FDC();
@@ -28,8 +29,8 @@ public:
 
     void Init();
 
-    byte Read(const word& addr);
-    void Write(const word& addr, byte b);
+    byte Read(word addr);
+    void Write(word addr, byte b);
 
 private:
     signed char _readTimeout;

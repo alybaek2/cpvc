@@ -1,6 +1,6 @@
 #include "Bus.h"
 
-Bus::Bus(Memory& memory, IBusNoAddress& gateArray, IBus& ppi, IBus& crtc, FDC& fdc) : _memory(memory), _gateArray(gateArray), _ppi(ppi), _crtc(crtc), _fdc(fdc)
+Bus::Bus(Memory& memory, IBusNoAddress& gateArray, IBus& ppi, IBus& crtc, IBus& fdc) : _memory(memory), _gateArray(gateArray), _ppi(ppi), _crtc(crtc), _fdc(fdc)
 {
 }
 

@@ -11,7 +11,7 @@
 class Bus : public IBus
 {
 public:
-    Bus(Memory& memory, IBusNoAddress& gateArray, IBus& ppi, IBus& crtc, FDC& fdc);
+    Bus(Memory& memory, IBusNoAddress& gateArray, IBus& ppi, IBus& crtc, IBus& fdc);
     ~Bus();
 
     Memory& _memory;
@@ -19,7 +19,7 @@ public:
     IBusNoAddress& _gateArray;
     IBus& _crtc;
 
-    FDC& _fdc;
+    IBus& _fdc;
 
     byte Read(word addr);
     void Write(word addr, byte b);

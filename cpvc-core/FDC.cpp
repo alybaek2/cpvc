@@ -168,7 +168,7 @@ void FDC::Reset()
     _readTimeout = 0;
 }
 
-byte FDC::Read(const word& addr)
+byte FDC::Read(word addr)
 {
     byte ret = 0x00;
 
@@ -199,7 +199,7 @@ void FDC::SetMotor(bool motor)
     _statusChanged[1] = true;
 }
 
-void FDC::Write(const word& addr, byte b)
+void FDC::Write(word addr, byte b)
 {
     byte retval = 0;
 
