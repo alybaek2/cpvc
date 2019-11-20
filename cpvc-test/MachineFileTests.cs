@@ -69,7 +69,44 @@ namespace CPvC.Test
             IFile mockWriter = MockFileWriter(lines);
             MachineFile file = new MachineFile(mockWriter);
             DateTime timestamp = Helpers.NumberToDateTime("1234");
-            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, new Bookmark(100, false, new byte[] { 0x01, 0x02 }));
+            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, null);
+            Bookmark bookmark = new Bookmark(false, new byte[] { 0x01, 0x02 });
+
+            // Act
+            file.WriteBookmark(historyEvent, bookmark);
+
+            // Verify
+            Assert.AreEqual(lines.Count, 1);
+            Assert.AreEqual(lines[0], "bookmark:25:2:0102");
+        }
+
+        [Test]
+        public void WriteNullBookmark()
+        {
+            // Setup
+            List<string> lines = new List<string>();
+            IFile mockWriter = MockFileWriter(lines);
+            MachineFile file = new MachineFile(mockWriter);
+            DateTime timestamp = Helpers.NumberToDateTime("1234");
+            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, null);
+
+            // Act
+            file.WriteBookmark(historyEvent, null);
+
+            // Verify
+            Assert.AreEqual(lines.Count, 1);
+            Assert.AreEqual(lines[0], "bookmark:25:0");
+        }
+
+        [Test]
+        public void WriteCheckpointWithBookmark()
+        {
+            // Setup
+            List<string> lines = new List<string>();
+            IFile mockWriter = MockFileWriter(lines);
+            MachineFile file = new MachineFile(mockWriter);
+            DateTime timestamp = Helpers.NumberToDateTime("1234");
+            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, new Bookmark(false, new byte[] { 0x01, 0x02 }));
 
             // Act
             file.WriteHistoryEvent(historyEvent);

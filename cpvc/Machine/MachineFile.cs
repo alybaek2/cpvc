@@ -81,12 +81,11 @@ namespace CPvC
                 return String.Format("{0}:{1}:0", _bookmarkToken, historyEvent.Id);
             }
 
-            return String.Format("{0}:{1}:{2}:{3}::{4}",
+            return String.Format("{0}:{1}:{2}:{3}",
                 _bookmarkToken,
                 historyEvent.Id,
                 bookmark.System ? "1" : "2",
-                bookmark.Ticks,
-                Helpers.HexString(historyEvent.Bookmark.State));
+                Helpers.HexString(bookmark.State));
         }
 
         static private string HistoryEventLine(HistoryEvent historyEvent)
@@ -163,7 +162,7 @@ namespace CPvC
                         bool system = (bookmarkType == "1");
                         byte[] state = Helpers.Bytes(tokens[5]);
 
-                        Bookmark bookmark = new Bookmark(ticks, system, state);
+                        Bookmark bookmark = new Bookmark(system, state);
                         HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(id, ticks, createdDate, bookmark);
 
                         return historyEvent;
@@ -220,10 +219,9 @@ namespace CPvC
             if (tokens[2] != "0")
             {
                 bool system = (tokens[2] != "2");
-                UInt64 ticks = Convert.ToUInt64(tokens[3]);
-                byte[] state = Helpers.Bytes(tokens[5]);
+                byte[] state = Helpers.Bytes(tokens[3]);
 
-                bookmark = new Bookmark(ticks, system, state);
+                bookmark = new Bookmark(system, state);
             }
 
             return bookmark;

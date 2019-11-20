@@ -241,7 +241,7 @@ namespace CPvC
                         ((Core != null && CurrentEvent.Ticks != Core.Ticks) || CurrentEvent.Bookmark == null || !CurrentEvent.Bookmark.System))
                     {
                         Bookmark bookmark = GetBookmark(true);
-                        HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(NextEventId(), bookmark.Ticks, DateTime.UtcNow, bookmark);
+                        HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark);
                         AddEvent(historyEvent, true);
                     }
                 }
@@ -424,9 +424,9 @@ namespace CPvC
             using (AutoPause())
             {
                 Bookmark bookmark = GetBookmark(system);
-                AddEvent(HistoryEvent.CreateCheckpoint(NextEventId(), bookmark.Ticks, DateTime.UtcNow, bookmark), true);
+                AddEvent(HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark), true);
 
-                Diagnostics.Trace("Created bookmark at tick {0}", bookmark.Ticks);
+                Diagnostics.Trace("Created bookmark at tick {0}", _core.Ticks);
             }
         }
 
@@ -655,7 +655,7 @@ namespace CPvC
         {
             using (AutoPause())
             {
-                return new Bookmark(_core.Ticks, system, _core.GetState());
+                return new Bookmark(system, _core.GetState());
             }
         }
 
