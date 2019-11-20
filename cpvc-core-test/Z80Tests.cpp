@@ -2013,6 +2013,19 @@ public:
     }
 };
 
+TEST_F(Z80Tests, HALT)
+{
+    // Setup
+    _core.Init();
+    SetMemory(0x0000, 0x76);
+
+    // Act
+    qword ticks = Run(1);
+
+    // Verify
+    CommonChecks(ticks, 0x04, 0x0000, 0x01);
+}
+
 TEST_F(Z80Tests, LDrrnn)
 {
     LDrrnn(0x01, _core.BC);

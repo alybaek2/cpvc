@@ -111,3 +111,34 @@ TEST(CoreTests, SetSmallHeightScreen) {
     delete pCore;
     delete[] pScreen;
 }
+
+// Ensure that after running a core for a while, calls to RunUntil should eventually return
+// with stopAudioOverrun.
+TEST(CoreTests, StopAudioOverrun) {
+    // Setup
+    Core* pCore = new Core();
+
+    // Act
+    byte stopReason = pCore->RunUntil(4000000, stopAudioOverrun);
+
+    // Verify
+    ASSERT_EQ(stopReason, stopAudioOverrun);
+}
+
+// Ensures that if a core can no longer run due to audio overrun, running can be resumed by
+// reading data from the audio buffers.
+TEST(CoreTests, ResumeAfterAudioOverrun) {
+    // Setup
+    Core* pCore = new Core();
+    pCore->RunUntil(4000000, stopAudioOverrun);
+    byte buffers[3][4000];
+    byte* pBuffers[3] = { buffers[0], buffers[1], buffers[2] };
+    qword beforeTicks = pCore->Ticks();
+
+    // Act
+    pCore->GetAudioBuffers(4000, pBuffers);
+    pCore->RunUntil(4000000, stopAudioOverrun);
+
+    // Verify
+    ASSERT_GT(pCore->Ticks(), beforeTicks);
+}
