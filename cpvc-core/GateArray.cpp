@@ -143,8 +143,7 @@ void GateArray::Write(byte b)
 
         _mode = b & 0x03;
         _memory.EnableLowerROM((b & 0x04) == 0);
-        _memory.EnableUpperRom((b & 0x08) == 0);
-        _memory.ConfigureRAM();
+        _memory.EnableUpperROM((b & 0x08) == 0);
         break;
     }
 }

@@ -103,7 +103,6 @@ byte Core::RunUntil(qword stopTicks, byte stopReason)
 void Core::EnableLowerRom(bool enabled)
 {
     _memory.EnableLowerROM(enabled);
-    _memory.ConfigureRAM();
 }
 
 void Core::SetLowerRom(Mem16k& lowerRom)
@@ -113,13 +112,12 @@ void Core::SetLowerRom(Mem16k& lowerRom)
 
 void Core::EnableUpperRom(bool enabled)
 {
-    _memory.EnableUpperRom(enabled);
-    _memory.ConfigureRAM();
+    _memory.EnableUpperROM(enabled);
 }
 
 void Core::SetUpperRom(byte slot, Mem16k& rom)
 {
-    _memory.AddUpperRom(slot, rom);
+    _memory.SetUpperROM(slot, rom);
 }
 
 // RAM methods

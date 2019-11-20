@@ -20,10 +20,10 @@ TEST(BusTests, Write)
             Memory memory;
             memory.Reset();
             byte originalSelectedRom = ~b;
-            memory.AddUpperRom(originalSelectedRom, originalRom);
+            memory.SetUpperROM(originalSelectedRom, originalRom);
             memory.SelectROM(originalSelectedRom);
-            memory.AddUpperRom(b, testRom);
-            memory.EnableUpperRom(true);
+            memory.SetUpperROM(b, testRom);
+            memory.EnableUpperROM(true);
             
             FDC fdc;
             MockDevice ppi;

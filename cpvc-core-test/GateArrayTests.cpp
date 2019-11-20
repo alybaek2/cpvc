@@ -22,7 +22,7 @@ TEST(GateArrayTests, SelectModeAndLowerAndUpperRoms) {
         memory.Write(0xC000, ramByte2);
         Mem16k upperRom;
         upperRom.Fill(0xFF);
-        memory.AddUpperRom(0x00, upperRom);
+        memory.SetUpperROM(0x00, upperRom);
         memory.SelectROM(0x00);
         memory.SetLowerROM(lowerRom);
 
