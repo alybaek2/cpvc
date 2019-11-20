@@ -61,7 +61,7 @@ namespace CPvC {
 
         void SetScreen(IntPtr pBuffer, UInt16 pitch, UInt16 height, UInt16 width)
         {
-            _pCore->SetScreen((dword*)pBuffer.ToPointer(), pitch, height, width);
+            _pCore->SetScreen((byte*)pBuffer.ToPointer(), pitch, height, width);
         }
 
         bool KeyPress(byte keycode, bool down)

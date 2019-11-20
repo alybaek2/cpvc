@@ -113,8 +113,8 @@ public:
 
     qword Run(int instructionCount)
     {
-        _core.EnableLowerRom(false);
-        _core.EnableUpperRom(false);
+        _core.EnableLowerROM(false);
+        _core.EnableUpperROM(false);
 
         qword ticksBefore = _core.Ticks();
 

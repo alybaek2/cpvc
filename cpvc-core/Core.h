@@ -43,14 +43,14 @@ public:
     void LoadTape(const byte* pBuffer, int size);
     void LoadDisc(byte drive, const byte* pBuffer, int size);
 
-    void SetScreen(dword* pBuffer, word pitch, word height, word width);
+    void SetScreen(byte* pBuffer, word pitch, word height, word width);
 
     int GetAudioBuffers(int numSamples, byte* (&pChannels)[3]);
     void SetFrequency(dword frequency);
 
-    void EnableLowerRom(bool enabled);
+    void EnableLowerROM(bool enabled);
     void SetLowerRom(Mem16k& lowerRom);
-    void EnableUpperRom(bool enabled);
+    void EnableUpperROM(bool enabled);
     void SetUpperRom(byte slot, Mem16k& rom);
 
     byte RunUntil(qword stopTicks, byte stopReason);
@@ -143,7 +143,7 @@ private:
     bool HandleInterrupt();
 
     // Screen buffer.
-    dword* _pScreen;
+    byte* _pScreen;
     word _scrPitch;
     word _scrHeight;
     word _scrWidth;

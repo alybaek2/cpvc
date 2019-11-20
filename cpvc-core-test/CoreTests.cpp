@@ -11,10 +11,10 @@ TEST(CoreTests, SetLowerRom) {
     pCore->SetLowerRom(lowerRom);
 
     // Act
-    pCore->EnableLowerRom(true);
+    pCore->EnableLowerROM(true);
     byte enabledByte = pCore->ReadRAM(0x0000);
 
-    pCore->EnableLowerRom(false);
+    pCore->EnableLowerROM(false);
     byte disabledByte = pCore->ReadRAM(0x0000);
 
     delete pCore;
@@ -33,10 +33,10 @@ TEST(CoreTests, SetUpperRom) {
     pCore->SetUpperRom(0, upperRom); // Default selected upper rom slot is 0.
 
     // Act
-    pCore->EnableUpperRom(true);
+    pCore->EnableUpperROM(true);
     byte enabledByte = pCore->ReadRAM(0xc000);
 
-    pCore->EnableUpperRom(false);
+    pCore->EnableUpperROM(false);
     byte disabledByte = pCore->ReadRAM(0xc000);
 
     delete pCore;
@@ -45,3 +45,69 @@ TEST(CoreTests, SetUpperRom) {
     ASSERT_EQ(enabledByte, 0xff);
     ASSERT_EQ(disabledByte, 0x00);
 };
+
+// Ensures that when writing to the screen buffer, the core stops once it hits the
+// right-hand edge of the screen.
+TEST(CoreTests, SetSmallWidthScreen) {
+    // Setup
+    Core* pCore = new Core();
+
+    // Create a screen buffer with a normal height, but small width.
+    constexpr word widthChars = 10;
+    constexpr word widthPixels = widthChars * 16;  // 16 pixels per CRTC char.
+    constexpr word height = 300;
+    constexpr int bufsize = widthPixels * height;
+
+    byte* pScreen = new byte[bufsize];
+    memset(pScreen, 1, bufsize);
+    pCore->SetScreen(pScreen, widthPixels, height, widthPixels);
+
+    // Act - since one CRTC "char" is written every 4 ticks, run the core for the full width
+    //       of the screen plus one, and ensure this one extra char does not get written to
+    //       the screen buffer.
+    pCore->RunUntil((widthChars + 1) * 4, 0);
+
+    // Verify
+    for (word i = 0; i < bufsize; i++)
+    {
+        // The core should have written a single line of zero pixels in the screen buffer, and
+        // the original ones in the second line should remain.
+        ASSERT_EQ(pScreen[i], (i < widthPixels) ? 0 : 1);
+    }
+
+    delete pCore;
+    delete[] pScreen;
+}
+
+// Ensures that when writing to the screen buffer, the core stops once it hits the
+// bottom edge of the screen.
+TEST(CoreTests, SetSmallHeightScreen) {
+    // Setup
+    Core* pCore = new Core();
+
+    // Create a screen buffer with a normal width, but small height.
+    constexpr word widthChars = 40;
+    constexpr word widthPixels = widthChars * 16;  // 16 pixels per CRTC char.
+    constexpr word height = 2;
+    constexpr int bufsize = widthPixels * height;
+
+    // Allocate enough space for two lines, but tell the core the buffer height is one less than that.
+    byte* pScreen = new byte[bufsize];
+    memset(pScreen, 1, bufsize);
+    pCore->SetScreen(pScreen, widthPixels, height - 1, widthPixels);
+
+    // Act - run the core for at least two lines. The default total width is 0x40 chars, so
+    //       double this for two lines. Note that one CRTC "char" is written every 4 ticks.
+    pCore->RunUntil((0x40 * 2) * 4, 0);
+
+    // Verify - ensure that only a single line was written.
+    for (word i = 0; i < bufsize; i++)
+    {
+        // The core should have written a single line of zero pixels in the screen buffer, and
+        // the original ones in the second line should remain.
+        ASSERT_EQ(pScreen[i], (i < widthPixels) ? 0 : 1);
+    }
+
+    delete pCore;
+    delete[] pScreen;
+}

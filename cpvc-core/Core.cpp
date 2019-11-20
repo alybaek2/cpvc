@@ -60,7 +60,7 @@ bool Core::KeyPress(byte keycode, bool down)
 }
 
 // Screen methods
-void Core::SetScreen(dword* pBuffer, word pitch, word height, word width)
+void Core::SetScreen(byte* pBuffer, word pitch, word height, word width)
 {
     _scrPitch = pitch;
     _scrWidth = width / 16;  // _scrWidth is in CRTC chars (16 pixels per char).
@@ -100,7 +100,7 @@ byte Core::RunUntil(qword stopTicks, byte stopReason)
 }
 
 // Rom methods
-void Core::EnableLowerRom(bool enabled)
+void Core::EnableLowerROM(bool enabled)
 {
     _memory.EnableLowerROM(enabled);
 }
@@ -110,7 +110,7 @@ void Core::SetLowerRom(Mem16k& lowerRom)
     _memory.SetLowerROM(lowerRom);
 }
 
-void Core::EnableUpperRom(bool enabled)
+void Core::EnableUpperROM(bool enabled)
 {
     _memory.EnableUpperROM(enabled);
 }
@@ -180,7 +180,7 @@ void Core::VideoRender()
     bool inBorder = !inScreen && !inSync;
 
     dword offset = (_scrPitch * _crtc._y) + _crtc._x * 16;
-    byte* pPixel = ((byte*)_pScreen) + offset;
+    byte* pPixel = _pScreen + offset;
 
     if (inSync)
     {
