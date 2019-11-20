@@ -1147,7 +1147,7 @@ public:
     {
         for (byte f : flagBytes)
         {
-            for (RegInfo reg : _regs)
+            for (RegInfo reg : _regsWithPrefixes)
             {
                 for (byte n : testBytes)
                 {
@@ -1155,7 +1155,7 @@ public:
                     {
                         _core.Init();
                         byte opcode = 0xB8 | reg._code;
-                        SetMemory(0x0000, opcode);
+                        SetInstruction(0x0000, reg._prefix, opcode);
                         *reg._pReg = n;
                         _core.A = a;
                         _core.F = f;
@@ -1167,7 +1167,7 @@ public:
                         qword ticks = Run(1);
 
                         ASSERT_EQ(_core.F, expectedF);
-                        CommonChecks(ticks, 4, 0x0001, 0x01);
+                        CommonChecksPrefix(reg._prefix, ticks, 4, 0x0001, 0x01);
                     }
                 }
             }

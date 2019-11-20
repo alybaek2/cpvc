@@ -261,7 +261,7 @@ namespace CPvC
 
             _nextEventId = 0;
 
-            Display.EnableGreyscale(true);
+            Display?.EnableGreyscale(true);
         }
 
         /// <summary>
@@ -655,7 +655,7 @@ namespace CPvC
         {
             using (AutoPause())
             {
-                return new Bookmark(_core.Ticks, system, DateTime.UtcNow, _core.GetState());
+                return new Bookmark(_core.Ticks, system, _core.GetState());
             }
         }
 

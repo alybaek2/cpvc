@@ -21,20 +21,14 @@ namespace CPvC
         public bool System { get; }
 
         /// <summary>
-        /// The date and time when the bookmark was created.
-        /// </summary>
-        public DateTime CreatedDate { get; }
-
-        /// <summary>
         /// The state of the CPvC instance as created by <c>Core.GetState</c>.
         /// </summary>
         public byte[] State { get; }
 
-        public Bookmark(UInt64 ticks, bool system, DateTime createdDate, byte[] state)
+        public Bookmark(UInt64 ticks, bool system, byte[] state)
         {
             Ticks = ticks;
             System = system;
-            CreatedDate = createdDate;
             State = state;
         }
     }

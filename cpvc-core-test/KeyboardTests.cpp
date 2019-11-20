@@ -2,6 +2,30 @@
 #include "../cpvc-core/Keyboard.h"
 #include "helpers.h"
 
+TEST(KeyboardTests, InvalidLine) {
+    // Setup
+    Keyboard keyboard;
+    keyboard.SelectLine(11);
+
+    // Act
+    bool b = keyboard.KeyPress(11, 0, true);
+
+    // Verify
+    ASSERT_EQ(b, false);
+}
+
+TEST(KeyboardTests, InvalidBit) {
+    // Setup
+    Keyboard keyboard;
+    keyboard.SelectLine(0);
+
+    // Act
+    bool b = keyboard.KeyPress(0, 8, true);
+
+    // Verify
+    ASSERT_EQ(b, false);
+}
+
 TEST(KeyboardTests, OneKey) {
     for (byte line : Range<byte>(0, 9))
     {

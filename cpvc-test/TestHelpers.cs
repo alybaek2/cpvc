@@ -1,5 +1,6 @@
 ﻿using Moq;
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 
 namespace CPvC.Test
@@ -42,6 +43,20 @@ namespace CPvC.Test
         static public Expression<Action<IFileSystem>> DeleteFile(string filename)
         {
             return fileSystem => fileSystem.DeleteFile(filename);
+        }
+
+        /// <summary>
+        /// Returns a mock IFile which writes to a list of strings.
+        /// </summary>
+        /// <param name="lines">A list of strings the mock will write too.</param>
+        /// <returns>A mock IFile which writes to the given list of strings.</returns>
+        static public IFile MockFileWriter(List<string> lines)
+        {
+            Mock<IFile> mockWriter = new Mock<IFile>(MockBehavior.Strict);
+            mockWriter.Setup(s => s.WriteLine(AnyString())).Callback<string>(line => lines.Add(line));
+            mockWriter.Setup(s => s.Close());
+
+            return mockWriter.Object;
         }
     }
 }

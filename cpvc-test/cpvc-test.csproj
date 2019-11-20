@@ -103,6 +103,7 @@
     <Compile Include="ConvertersTests.cs" />
     <Compile Include="CoreTests.cs" />
     <Compile Include="HelpersTests.cs" />
+    <Compile Include="MachineFileTests.cs" />
     <Compile Include="MachineTests.cs" />
     <Compile Include="MainViewLogicTests.cs" />
     <Compile Include="MainViewModelTests.cs" />
