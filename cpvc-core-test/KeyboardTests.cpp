@@ -26,6 +26,20 @@ TEST(KeyboardTests, InvalidBit) {
     ASSERT_EQ(b, false);
 }
 
+TEST(KeyboardTests, ReadInvalidLine)
+{
+    // Setup
+    Keyboard keyboard;
+    keyboard.SelectLine(10);
+
+    // Act
+    byte result = keyboard.ReadSelectedLine();
+
+    // Verify
+    ASSERT_EQ(result, 0xff);
+
+}
+
 TEST(KeyboardTests, OneKey) {
     for (byte line : Range<byte>(0, 9))
     {
