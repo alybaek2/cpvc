@@ -172,16 +172,32 @@ namespace CPvC.Test
         /// <summary>
         /// Ensures that a machine opened "lazily" sets the appropriate RequiresOpen property.
         /// </summary>
+        [Test]
         public void OpenLazy()
         {
-            // Setup and Act
+            // Setup
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(new string[] { "name:Test", "checkpoint:0:0:0:0" });
+
+            // Act
             using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, true))
             {
                 // Verify
                 Assert.IsTrue(machine.RequiresOpen);
                 Assert.AreEqual(machine.Filepath, "test.cpvc");
-                Assert.AreEqual(machine.Name, "test");
+                Assert.AreEqual(machine.Name, "Test");
             }
+        }
+
+        [Test]
+        public void OpenNoCurrentEvent()
+        {
+            // Setup
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(new string[] { "name:Test" });
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => {
+                using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false)) { }
+            });
         }
 
         /// <summary>

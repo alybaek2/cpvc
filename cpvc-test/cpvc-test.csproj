@@ -115,6 +115,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\cpvc-core-clr\cpvc-core-clr.vcxproj">
+      <Project>{b8cb8856-640d-4fde-ad40-c4b409720ed1}</Project>
+      <Name>cpvc-core-clr</Name>
+    </ProjectReference>
     <ProjectReference Include="..\cpvc\cpvc.csproj">
       <Project>{b5258e5f-96d2-4d7b-b92c-61414be3f4c5}</Project>
       <Name>cpvc</Name>

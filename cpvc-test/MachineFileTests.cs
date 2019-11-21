@@ -280,6 +280,40 @@ namespace CPvC.Test
 
         [TestCase(false)]
         [TestCase(true)]
+        public void ReadCheckpointWithBookmark(bool system)
+        {
+            // Setup
+            string[] tokens = { "checkpoint", "25", "100", system ? "1" : "2", "1234", "0102" };
+
+            // Act
+            HistoryEvent historyEvent = MachineFile.ParseCheckpointLine(tokens);
+
+            // Verify
+            Assert.IsNotNull(historyEvent);
+            Assert.AreEqual(historyEvent.Id, 25);
+            Assert.AreEqual(historyEvent.Ticks, 100);
+            Assert.IsNotNull(historyEvent.Bookmark);
+            Assert.AreEqual(historyEvent.Bookmark.System, system);
+            Assert.AreEqual(historyEvent.Bookmark.State, new byte[] { 0x01, 0x02 });
+        }
+
+        public void ReadCheckpointWithoutBookmark()
+        {
+            // Setup
+            string[] tokens = { "checkpoint", "25", "100", "0" };
+
+            // Act
+            HistoryEvent historyEvent = MachineFile.ParseCheckpointLine(tokens);
+
+            // Verify
+            Assert.IsNotNull(historyEvent);
+            Assert.AreEqual(historyEvent.Id, 25);
+            Assert.AreEqual(historyEvent.Ticks, 100);
+            Assert.IsNull(historyEvent.Bookmark);
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
         public void ReadBookmark(bool system)
         {
             // Setup
@@ -311,7 +345,7 @@ namespace CPvC.Test
         [TestCase("-1")]
         [TestCase("3")]
         [TestCase("abcdef")]
-        public void RealInvalidBookmarkType(string bookmarkType)
+        public void ReadInvalidBookmarkType(string bookmarkType)
         {
             // Setup
             string[] tokens = { "bookmark", "25", bookmarkType };

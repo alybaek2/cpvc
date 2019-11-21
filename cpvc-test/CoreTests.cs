@@ -1,6 +1,7 @@
 ﻿using Moq;
 using NUnit.Framework;
 using System;
+using System.ComponentModel;
 using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
@@ -118,6 +119,66 @@ namespace CPvC.Test
                 mockRequestProcessed.Verify();
                 mockRequestProcessed.Verify(x => x(core, RunUntilRequest(), RunUntilAction()), TimesAny());
                 mockRequestProcessed.VerifyNoOtherCalls();
+            }
+        }
+
+        [TestCase(0, 1, true)]
+        [TestCase(100, 101, true)]
+        [TestCase(255, 0, true)]
+        [TestCase(255, 255, false)]
+        public void SetVolume(byte volume1, byte volume2, bool notified)
+        {
+            // Setup
+            using (Core core = Core.Create(Core.Type.CPC6128))
+            {
+                core.Volume = volume1;
+                object sender = null;
+                PropertyChangedEventArgs args = null;
+                core.PropertyChanged += ((object changedSender, PropertyChangedEventArgs changedArgs) => { sender = changedSender; args = changedArgs; });
+
+                // Act
+                core.Volume = volume2;
+
+                // Verify
+                Assert.AreEqual(core.Volume, volume2);
+                if (notified)
+                {
+                    Assert.AreEqual(sender, core);
+                    Assert.IsNotNull(args);
+                    Assert.AreEqual(args.PropertyName, "Volume");
+                }
+                else
+                {
+                    Assert.IsNull(sender);
+                    Assert.IsNull(args);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Ensures the correct number of audio samples are generated after running the core.
+        /// </summary>
+        /// <param name="ticks">The number of ticks to run the core for.</param>
+        /// <param name="expectedSamples">The number of audio samples that should be written.</param>
+        [TestCase(4UL, 1)]
+        [TestCase(250UL, 4)]
+        [TestCase(504UL, 7)]
+        public void GetAudio(UInt64 ticks, int expectedSamples)
+        {
+            // Setup
+            using (Core core = Core.Create(Core.Type.CPC6128))
+            {
+                int bufferSize = 1000;
+                byte[] channelA = new byte[bufferSize];
+                byte[] channelB = new byte[bufferSize];
+                byte[] channelC = new byte[bufferSize];
+
+                // Act
+                core.RunUntil(ticks, StopReasons.AudioOverrun);
+                int samples = core.GetAudioBuffers(bufferSize, channelA, channelB, channelC);
+
+                // Verify
+                Assert.AreEqual(expectedSamples, samples);
             }
         }
     }
