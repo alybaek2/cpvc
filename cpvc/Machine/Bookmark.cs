@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace CPvC
+﻿namespace CPvC
 {
     /// <summary>
     /// Represents a snapshot of a CPvC instance.

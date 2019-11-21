@@ -1,10 +1,6 @@
-﻿using Moq;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
@@ -295,6 +291,16 @@ namespace CPvC.Test
             Assert.IsNotNull(historyEvent.Bookmark);
             Assert.AreEqual(historyEvent.Bookmark.System, system);
             Assert.AreEqual(historyEvent.Bookmark.State, new byte[] { 0x01, 0x02 });
+        }
+
+        [Test]
+        public void ReadCheckpointWithInvalidBookmarkType()
+        {
+            // Setup
+            string[] tokens = { "checkpoint", "25", "100", "999", "1234", "0102" };
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => MachineFile.ParseCheckpointLine(tokens));
         }
 
         public void ReadCheckpointWithoutBookmark()

@@ -21,7 +21,7 @@ namespace CPvC.Test
             // Act
             object value = conv.Convert((UInt64)ticks, null, null, null);
             object original = conv.ConvertBack(value, null, null, null);
-        
+
             // Verify
             Assert.True(value is TimeSpan);
             Assert.AreEqual((TimeSpan)value, new TimeSpan(5 * ticks / 2));
