@@ -99,21 +99,75 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void WriteCheckpointWithBookmark()
+        public void WriteCheckpointWithoutBookmark()
         {
             // Setup
             List<string> lines = new List<string>();
             IFile mockWriter = MockFileWriter(lines);
             MachineFile file = new MachineFile(mockWriter);
             DateTime timestamp = Helpers.NumberToDateTime("1234");
-            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, new Bookmark(false, new byte[] { 0x01, 0x02 }));
+            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, null);
 
             // Act
             file.WriteHistoryEvent(historyEvent);
 
             // Verify
             Assert.AreEqual(lines.Count, 1);
-            Assert.AreEqual(lines[0], "checkpoint:25:100:2:1234:0102");
+            Assert.AreEqual(lines[0], "checkpoint:25:100:0:1234");
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void WriteCheckpointWithBookmark(bool system)
+        {
+            // Setup
+            List<string> lines = new List<string>();
+            IFile mockWriter = MockFileWriter(lines);
+            MachineFile file = new MachineFile(mockWriter);
+            DateTime timestamp = Helpers.NumberToDateTime("1234");
+            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, new Bookmark(system, new byte[] { 0x01, 0x02 }));
+
+            // Act
+            file.WriteHistoryEvent(historyEvent);
+
+            // Verify
+            Assert.AreEqual(lines.Count, 1);
+            Assert.AreEqual(lines[0], String.Format("checkpoint:25:100:{0}:1234:0102", system ? "1" : "2"));
+        }
+
+        [Test]
+        public void WriteCoreReset()
+        {
+            // Setup
+            List<string> lines = new List<string>();
+            IFile mockWriter = MockFileWriter(lines);
+            MachineFile file = new MachineFile(mockWriter);
+            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.Reset(100));
+
+            // Act
+            file.WriteHistoryEvent(historyEvent);
+
+            // Verify
+            Assert.AreEqual(lines.Count, 1);
+            Assert.AreEqual(lines[0], "reset:25:100");
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void WriteCoreKeyPress(bool down)
+        {
+            // Setup
+            List<string> lines = new List<string>();
+            IFile mockWriter = MockFileWriter(lines);
+            MachineFile file = new MachineFile(mockWriter);
+            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.KeyPress(100, Keys.A, down));
+
+            // Act
+            file.WriteHistoryEvent(historyEvent);
+
+            // Verify
+            Assert.AreEqual(lines.Count, 1);
+            Assert.AreEqual(lines[0], String.Format("key:25:100:58:{0}", down ? "1" : "0"));
         }
     }
 }
