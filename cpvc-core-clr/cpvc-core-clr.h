@@ -27,7 +27,7 @@ namespace CPvC {
             _pCore = nullptr;
         }
 
-        void LoadLowerRom(array<byte>^ lowerRom)
+        void LoadLowerROM(array<byte>^ lowerRom)
         {
             if (lowerRom->Length != 0x4000)
             {
@@ -38,7 +38,7 @@ namespace CPvC {
             _pCore->SetLowerRom(Mem16k(pBuffer));
         }
 
-        void LoadUpperRom(byte slotIndex, array<byte>^ rom)
+        void LoadUpperROM(byte slotIndex, array<byte>^ rom)
         {
             if (rom->Length != 0x4000)
             {

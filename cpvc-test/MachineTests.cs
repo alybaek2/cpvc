@@ -200,6 +200,18 @@ namespace CPvC.Test
             });
         }
 
+        [Test]
+        public void OpenInvalidToken()
+        {
+            // Setup
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(new string[] { "invalid:0" });
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => {
+                using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false)) { }
+            });
+        }
+
         /// <summary>
         /// Ensures an existing machine is opened with the expected state.
         /// </summary>
@@ -211,6 +223,10 @@ namespace CPvC.Test
             {
                 RunForAWhile(machine);
                 machine.Key(Keys.A, true);
+                RunForAWhile(machine);
+                machine.LoadDisc(0, null);
+                RunForAWhile(machine);
+                machine.LoadTape(null);
                 RunForAWhile(machine);
                 machine.Key(Keys.A, false);
                 RunForAWhile(machine);
@@ -240,6 +256,19 @@ namespace CPvC.Test
                 Assert.AreEqual(CoreActionBase.Types.KeyPress, historyEvent.CoreAction.Type);
                 Assert.AreEqual(Keys.A, historyEvent.CoreAction.KeyCode);
                 Assert.IsTrue(historyEvent.CoreAction.KeyDown);
+                Assert.AreEqual(1, historyEvent.Children.Count);
+
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
+                Assert.AreEqual(CoreActionBase.Types.LoadDisc, historyEvent.CoreAction.Type);
+                Assert.AreEqual(0, historyEvent.CoreAction.Drive);
+                Assert.IsNull(historyEvent.CoreAction.MediaBuffer);
+                Assert.AreEqual(1, historyEvent.Children.Count);
+
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
+                Assert.AreEqual(CoreActionBase.Types.LoadTape, historyEvent.CoreAction.Type);
+                Assert.IsNull(historyEvent.CoreAction.MediaBuffer);
                 Assert.AreEqual(1, historyEvent.Children.Count);
 
                 historyEvent = historyEvent.Children[0];

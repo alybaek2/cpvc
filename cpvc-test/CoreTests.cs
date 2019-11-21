@@ -172,15 +172,17 @@ namespace CPvC.Test
         /// </summary>
         /// <param name="ticks">The number of ticks to run the core for.</param>
         /// <param name="expectedSamples">The number of audio samples that should be written.</param>
-        [TestCase(4UL, 1)]
-        [TestCase(250UL, 4)]
-        [TestCase(504UL, 7)]
-        public void GetAudio(UInt64 ticks, int expectedSamples)
+        /// <param name="bufferSize">The size of the buffer to receive audio data.</param>
+        [TestCase(4UL, 1, 100)]
+        [TestCase(250UL, 1, 7)]
+        [TestCase(250UL, 4, 100)]
+        [TestCase(504UL, 7, 100)]
+        [TestCase(85416UL, 1026, 4104)]  // This test case ensures we do at least 2 iterations of the while loop in ReadAudio16BitStereo.
+        public void GetAudio(UInt64 ticks, int expectedSamples, int bufferSize)
         {
             // Setup
             using (Core core = Core.Create(Core.Type.CPC6128))
             {
-                int bufferSize = 1000;
                 byte[] buffer = new byte[bufferSize];
 
                 // Act
@@ -189,6 +191,34 @@ namespace CPvC.Test
 
                 // Verify
                 Assert.AreEqual(expectedSamples, samples);
+            }
+        }
+
+        [TestCase(false, 0x3FFF)]
+        [TestCase(false, 0x4000)]
+        [TestCase(false, 0x4001)]
+        [TestCase(true, 0x3FFF)]
+        [TestCase(true, 0x4000)]
+        [TestCase(true, 0x4001)]
+        public void LoadIncorrectSizeROM(bool lower, int size)
+        {
+            // Setup
+            byte[] rom = new byte[size];
+            using (Core core = Core.Create(Core.Type.CPC6128))
+            {
+                TestDelegate action = lower ?
+                    (TestDelegate)(() => core.SetLowerROM(rom)) :
+                    (TestDelegate)(() => core.SetUpperROM(0, rom));
+
+                // Act and Verify
+                if (size == 0x4000)
+                {
+                    Assert.DoesNotThrow(action);
+                }
+                else
+                {
+                    Assert.Throws<ArgumentException>(action);
+                }
             }
         }
     }

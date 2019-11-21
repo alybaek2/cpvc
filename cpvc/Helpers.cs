@@ -68,6 +68,11 @@ namespace CPvC
                 throw new ArgumentException(String.Format("Hex string length should be an even number."));
             }
 
+            if (hexString.Length == 0)
+            {
+                return null;
+            }
+
             int count = hexString.Length / 2;
             byte[] bytes = new byte[count];
 
