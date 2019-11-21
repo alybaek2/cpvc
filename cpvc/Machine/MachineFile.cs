@@ -104,12 +104,12 @@ namespace CPvC
                         case CoreAction.Types.LoadTape:
                             return String.Format("{0}:{1}:{2}:{3}", _tapeToken, historyEvent.Id, historyEvent.Ticks, Helpers.HexString(historyEvent.CoreAction.MediaBuffer));
                         default:
-                            throw new Exception(String.Format("Unknown CoreAction type {0}", historyEvent.CoreAction.Type));
+                            throw new Exception(String.Format("Unknown CoreAction type {0}.", historyEvent.CoreAction.Type));
                     }
                 case HistoryEvent.Types.Checkpoint:
                     return CheckpointLine(historyEvent);
                 default:
-                    throw new Exception("Unknown HistoryEvent type!");
+                    throw new Exception(String.Format("Unknown HistoryEvent type {0}.", historyEvent.Type));
             }
         }
 
@@ -215,16 +215,19 @@ namespace CPvC
 
         static public Bookmark ParseBookmarkLine(string[] tokens)
         {
-            Bookmark bookmark = null;
-            if (tokens[2] != "0")
+            switch (tokens[2])
             {
-                bool system = (tokens[2] != "2");
-                byte[] state = Helpers.Bytes(tokens[3]);
+                case "0":
+                    return null;
+                case "1":
+                case "2":
+                    bool system = (tokens[2] != "2");
+                    byte[] state = Helpers.Bytes(tokens[3]);
 
-                bookmark = new Bookmark(system, state);
+                    return new Bookmark(system, state);
+                default:
+                    throw new Exception(String.Format("Unknown bookmark type {0}", tokens[2]));
             }
-
-            return bookmark;
         }
     }
 }
