@@ -181,13 +181,11 @@ namespace CPvC.Test
             using (Core core = Core.Create(Core.Type.CPC6128))
             {
                 int bufferSize = 1000;
-                byte[] channelA = new byte[bufferSize];
-                byte[] channelB = new byte[bufferSize];
-                byte[] channelC = new byte[bufferSize];
+                byte[] buffer = new byte[bufferSize];
 
                 // Act
                 core.RunUntil(ticks, StopReasons.AudioOverrun);
-                int samples = core.GetAudioBuffers(bufferSize, channelA, channelB, channelC);
+                int samples = core.ReadAudio16BitStereo(buffer, 0, bufferSize);
 
                 // Verify
                 Assert.AreEqual(expectedSamples, samples);

@@ -215,8 +215,13 @@ namespace CPvC.Test
                 machine.Key(Keys.A, false);
                 RunForAWhile(machine);
                 machine.AddBookmark(false);
+                HistoryEvent bookmarkEvent = machine.CurrentEvent;
                 RunForAWhile(machine);
                 machine.SeekToLastBookmark();
+                HistoryEvent eventToDelete = bookmarkEvent.Children[0];
+                RunForAWhile(machine);
+                machine.SetBookmark(bookmarkEvent, null);
+                machine.TrimTimeline(eventToDelete);
             }
 
             _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(_lines.ToArray());
@@ -227,34 +232,38 @@ namespace CPvC.Test
                 Assert.AreEqual(machine.Filepath, "test.cpvc");
                 Assert.AreEqual(machine.Name, "test");
 
-                Assert.AreEqual(machine.RootEvent.Type, HistoryEvent.Types.Checkpoint);
-                Assert.AreEqual(machine.RootEvent.Children.Count, 1);
+                Assert.AreEqual(HistoryEvent.Types.Checkpoint, machine.RootEvent.Type);
+                Assert.AreEqual(1, machine.RootEvent.Children.Count);
 
                 HistoryEvent historyEvent = machine.RootEvent.Children[0];
-                Assert.AreEqual(historyEvent.Type, HistoryEvent.Types.CoreAction);
-                Assert.AreEqual(historyEvent.CoreAction.Type, CoreActionBase.Types.KeyPress);
-                Assert.AreEqual(historyEvent.CoreAction.KeyCode, Keys.A);
-                Assert.AreEqual(historyEvent.CoreAction.KeyDown, true);
-                Assert.AreEqual(historyEvent.Children.Count, 1);
+                Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
+                Assert.AreEqual(CoreActionBase.Types.KeyPress, historyEvent.CoreAction.Type);
+                Assert.AreEqual(Keys.A, historyEvent.CoreAction.KeyCode);
+                Assert.IsTrue(historyEvent.CoreAction.KeyDown);
+                Assert.AreEqual(1, historyEvent.Children.Count);
 
                 historyEvent = historyEvent.Children[0];
-                Assert.AreEqual(historyEvent.Type, HistoryEvent.Types.CoreAction);
-                Assert.AreEqual(historyEvent.CoreAction.Type, CoreActionBase.Types.KeyPress);
-                Assert.AreEqual(historyEvent.CoreAction.KeyCode, Keys.A);
-                Assert.AreEqual(historyEvent.CoreAction.KeyDown, false);
-                Assert.AreEqual(historyEvent.Children.Count, 1);
+                Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
+                Assert.AreEqual(CoreActionBase.Types.KeyPress, historyEvent.CoreAction.Type);
+                Assert.AreEqual(Keys.A, historyEvent.CoreAction.KeyCode);
+                Assert.IsFalse(historyEvent.CoreAction.KeyDown);
+                Assert.AreEqual(1, historyEvent.Children.Count);
 
                 historyEvent = historyEvent.Children[0];
-                Assert.AreEqual(historyEvent.Type, HistoryEvent.Types.Checkpoint);
-                Assert.AreEqual(historyEvent.Bookmark.System, false);
-                Assert.AreEqual(historyEvent.Children.Count, 2);
+                Assert.AreEqual(HistoryEvent.Types.Checkpoint, historyEvent.Type);
+                Assert.IsNull(historyEvent.Bookmark);
+                Assert.AreEqual(1, historyEvent.Children.Count);
 
-                Assert.AreEqual(historyEvent.Children[0].Type, HistoryEvent.Types.Checkpoint);
-                Assert.AreEqual(historyEvent.Children[0].Bookmark, null);
-                Assert.AreEqual(historyEvent.Children[1].Type, HistoryEvent.Types.Checkpoint);
-                Assert.AreEqual(historyEvent.Children[1].Bookmark.System, true);
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEvent.Types.Checkpoint, historyEvent.Type);
+                Assert.IsNull(historyEvent.Bookmark);
+                Assert.AreEqual(1, historyEvent.Children.Count);
 
-                Assert.AreEqual(machine.CurrentEvent, historyEvent.Children[1]);
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEvent.Types.Checkpoint, historyEvent.Type);
+                Assert.IsNotNull(historyEvent.Bookmark);
+
+                Assert.AreEqual(historyEvent, machine.CurrentEvent);
             }
         }
     }

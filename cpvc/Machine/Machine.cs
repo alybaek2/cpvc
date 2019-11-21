@@ -524,6 +524,13 @@ namespace CPvC
                 return;
             }
 
+            // Set a checkpoint. This is needed to ensure that walking up the tree stops at the correct node.
+            // For example, if CurrentEvent has one child, and the current ticks is greater than CurrentEvent.Ticks,
+            // then if TrimTimeline is called with that child, then we want to delete only that child. Without
+            // setting a checkpoint, the following code will walk all the way up the tree to the nearest event with
+            // more than one child, which isn't what we want.
+            SetCheckpoint();
+
             // Walk up the tree to find the node to be removed...
             HistoryEvent parent = historyEvent.Parent;
             HistoryEvent child = historyEvent;
