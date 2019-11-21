@@ -26,6 +26,16 @@ namespace CPvC.Test
             return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.KeyPress && r.KeyCode == keycode && r.KeyDown == down);
         }
 
+        static private CoreRequest DiscRequest()
+        {
+            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.LoadDisc);
+        }
+
+        static private CoreAction DiscAction()
+        {
+            return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.LoadDisc);
+        }
+
         static private CoreRequest TapeRequest()
         {
             return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.LoadTape);
@@ -104,11 +114,13 @@ namespace CPvC.Test
                 MockSequence sequence = new MockSequence();
                 mockRequestProcessed.InSequence(sequence).Setup(x => x(core, KeyRequest(Keys.Space, true), KeyAction(Keys.Space, true))).Verifiable();
                 mockRequestProcessed.InSequence(sequence).Setup(x => x(core, TapeRequest(), TapeAction())).Verifiable();
+                mockRequestProcessed.InSequence(sequence).Setup(x => x(core, DiscRequest(), DiscAction())).Verifiable();
                 mockRequestProcessed.InSequence(sequence).Setup(x => x(core, ResetRequest(), ResetAction())).Verifiable();
 
                 // Act
                 core.KeyPress(Keys.Space, true);
                 core.LoadTape(null);
+                core.LoadDisc(0, null);
                 core.Reset();
 
                 core.Start();

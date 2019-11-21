@@ -423,13 +423,6 @@ namespace CPvC
             }
         }
 
-        private void SetFrequency(UInt32 frequency)
-        {
-            _audioSamplingFrequency = frequency;
-
-            _coreCLR.AudioSampleFrequency(frequency);
-        }
-
         private void PushRequest(CoreRequest request)
         {
             lock (_requests)
@@ -517,9 +510,6 @@ namespace CPvC
                             OnPropertyChanged("Ticks");
                         }
                     }
-                    break;
-                default:
-                    action = null;
                     break;
             }
 
