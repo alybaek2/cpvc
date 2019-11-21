@@ -30,3 +30,6 @@ set COMMIT_MESSAGE=%COMMIT_MESSAGE:"=\"%
 
 REM Upload to Coveralls!
 "C:\Tools\Coveralls.NET\csmacnz.Coveralls.exe" -i coverage-report-xml --reportgenerator --useRelativePaths --commitMessage "%COMMIT_MESSAGE%" --commitAuthor=%BUILDKITE_BUILD_CREATOR% --commitId %BUILDKITE_COMMIT% --commitBranch %BUILDKITE_BRANCH% --commitEmail %BUILDKITE_BUILD_CREATOR_EMAIL% --jobId=%BUILDKITE_JOB_ID%
+
+REM Upload to Codecov
+"C:\Tools\Codecov\codecov-windows-x64.exe" --branch %BUILDKITE_BRANCH% --build %BUILDKITE_BUILD_NUMBER% --sha %BUILDKITE_COMMIT% --file "cpvc-core-coverage.xml cpvc-coverage.xml"

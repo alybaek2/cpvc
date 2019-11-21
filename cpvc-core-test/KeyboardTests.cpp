@@ -37,7 +37,6 @@ TEST(KeyboardTests, ReadInvalidLine)
 
     // Verify
     ASSERT_EQ(result, 0xff);
-
 }
 
 TEST(KeyboardTests, OneKey) {

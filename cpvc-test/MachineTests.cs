@@ -12,6 +12,19 @@ namespace CPvC.Test
         private List<string> _lines;
         private Mock<IFileSystem> _mockFileSystem;
 
+        private Machine CreateMachine()
+        {
+            Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
+
+            // For consistency with automated builds, use all zero ROMs.
+            byte[] zeroROM = new byte[0x4000];
+            machine.Core.SetLowerROM(zeroROM);
+            machine.Core.SetUpperROM(0, zeroROM);
+            machine.Core.SetUpperROM(7, zeroROM);
+
+            return machine;    
+        }
+
         private void RunForAWhile(Machine machine)
         {
             UInt64 startTicks = machine.Core.Ticks;
@@ -63,7 +76,7 @@ namespace CPvC.Test
         {
             // Act
             UInt64 ticks = 0;
-            using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
+            using (Machine machine = CreateMachine())
             {
                 machine.AddBookmark(true);
 
@@ -95,7 +108,7 @@ namespace CPvC.Test
         {
             // Act
             int linesCount = 0;
-            using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
+            using (Machine machine = CreateMachine())
             {
                 linesCount = _lines.Count;
             }
@@ -113,7 +126,7 @@ namespace CPvC.Test
         public void AutoPause()
         {
             // Act and Verify
-            using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
+            using (Machine machine = CreateMachine())
             {
                 machine.Start();
 
@@ -221,7 +234,7 @@ namespace CPvC.Test
         public void Open()
         {
             // Setup
-            using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
+            using (Machine machine = CreateMachine())
             {
                 RunForAWhile(machine);
                 machine.Key(Keys.A, true);
@@ -305,7 +318,7 @@ namespace CPvC.Test
         public void OpenWithMissingFinalBookmark()
         {
             // Setup
-            using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
+            using (Machine machine = CreateMachine())
             {
                 RunForAWhile(machine);
                 machine.AddBookmark(false);
@@ -335,12 +348,16 @@ namespace CPvC.Test
         [TestCase(250UL, 1, 7)]
         [TestCase(250UL, 4, 100)]
         [TestCase(504UL, 7, 100)]
-        [TestCase(85416UL, 1026, 4104)]  // This test case ensures we do at least 2 iterations of the while loop in ReadAudio16BitStereo.
+        [TestCase(85416UL, 1025, 4104)]  // This test case ensures we do at least 2 iterations of the while loop in ReadAudio16BitStereo.
         public void GetAudio(UInt64 ticks, int expectedSamples, int bufferSize)
         {
             // Setup
-            using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
+            using (Machine machine = CreateMachine())
             {
+                machine.Core.SetLowerROM(new byte[0x4000]);
+                machine.Core.SetUpperROM(0, new byte[0x4000]);
+                machine.Core.SetUpperROM(7, new byte[0x4000]);
+
                 byte[] buffer = new byte[bufferSize];
 
                 // Act
@@ -356,7 +373,7 @@ namespace CPvC.Test
         public void Toggle()
         {
             // Setup
-            using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
+            using (Machine machine = CreateMachine())
             {
                 machine.Start();
 
