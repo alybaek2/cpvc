@@ -54,6 +54,7 @@ namespace CPvC.Test
         {
             _mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
             _mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(AnyString()));
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
 
             Mock<IFile> mockWriter = new Mock<IFile>(MockBehavior.Strict);
             mockWriter.Setup(s => s.WriteLine(AnyString())).Callback<string>(line => _lines.Add(line));
@@ -387,6 +388,57 @@ namespace CPvC.Test
                 Assert.IsTrue(running1);
                 Assert.IsFalse(running2);
                 Assert.IsTrue(machine.Core.Running);
+            }
+        }
+
+        [Test]
+        public void RewriteFile()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                RunForAWhile(machine);
+                machine.LoadDisc(0, null);
+                RunForAWhile(machine);
+                machine.AddBookmark(false);
+                RunForAWhile(machine);
+
+                HistoryEvent bookmarkEvent = machine.CurrentEvent;
+
+                machine.LoadDisc(0, null);
+                RunForAWhile(machine);
+
+                HistoryEvent eventToDelete = machine.CurrentEvent;
+
+                machine.SeekToLastBookmark();
+                machine.LoadDisc(0, null);
+                RunForAWhile(machine);
+                machine.TrimTimeline(eventToDelete.Children[0]);
+                machine.SetBookmark(bookmarkEvent, null);
+            }
+
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(_lines.ToArray());
+            _lines.Clear();
+            using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
+            {
+                // Act
+                machine.RewriteMachineFile();
+            }
+
+            // Verify
+            string[] expectedLines = {
+                "name:test",
+                "checkpoint:0:",
+                "disc:1:",
+                "disc:5:",
+                "checkpoint:7:",
+                "current:7"
+            };
+
+            Assert.AreEqual(expectedLines.Length, _lines.Count);
+            for (int i = 0; i < expectedLines.Length; i++)
+            {
+                Assert.AreEqual(expectedLines[i], _lines[i].Substring(0, expectedLines[i].Length));
             }
         }
     }
