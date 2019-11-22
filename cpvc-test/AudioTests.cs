@@ -23,6 +23,5 @@ namespace CPvC.Test
             readAudio.Verify(x => x(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.AtLeastOnce());
             readAudio.VerifyNoOtherCalls();
         }
-
     }
 }

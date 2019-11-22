@@ -10,18 +10,27 @@ namespace CPvC.Test
 {
     public class MainViewLogicTests
     {
-        static private Mock<IFileSystem> GetFileSystem(IFile file, string filename)
+        static private Mock<IFileSystem> GetFileSystem(string filename, string name)
         {
+            Mock<IFile> mockFile = new Mock<IFile>();
             Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
             mockFileSystem.Setup(ReadBytes()).Returns(new byte[1]);
-            mockFileSystem.Setup(fileSystem => fileSystem.OpenFile(AnyString())).Returns(file);
+            mockFileSystem.Setup(fileSystem => fileSystem.OpenFile(AnyString())).Returns(mockFile.Object);
             mockFileSystem.Setup(DeleteFile(filename));
 
-            string[] lines = new string[] { String.Format("name:{0}", System.IO.Path.GetFileNameWithoutExtension(filename)), "checkpoint:0:0:0:0" };
+            string[] lines = new string[] { String.Format("name:{0}", name), "checkpoint:0:0:0:0" };
 
             mockFileSystem.Setup(fileSystem => fileSystem.ReadLines(filename)).Returns(lines);
 
             return mockFileSystem;
+        }
+
+        static private Mock<MainViewLogic.PromptForFileDelegate> GetPrompt(FileTypes fileType, bool existing, string filepath)
+        {
+            Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = new Mock<MainViewLogic.PromptForFileDelegate>();
+            mockPrompt.Setup(x => x(fileType, existing)).Returns(filepath);
+
+            return mockPrompt;
         }
 
         static private Expression<Func<IFileSystem, byte[]>> GetZipFileEntry(string filename)
@@ -44,10 +53,8 @@ namespace CPvC.Test
         public void NewMachine(string filepath, string expectedMachineName)
         {
             // Setup
-            Mock<IFile> mockFile = new Mock<IFile>();
-            Mock<IFileSystem> mockFileSystem = GetFileSystem(mockFile.Object, filepath);
-            Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = new Mock<MainViewLogic.PromptForFileDelegate>();
-            mockPrompt.Setup(x => x(FileTypes.Machine, false)).Returns(filepath);
+            Mock<IFileSystem> mockFileSystem = GetFileSystem(filepath, expectedMachineName);
+            Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = GetPrompt(FileTypes.Machine, false, filepath);
             Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Loose);
             MainViewModel mockViewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object);
 
@@ -70,19 +77,46 @@ namespace CPvC.Test
             }
         }
 
+        [TestCase(null, null, null)]
+        [TestCase(null, "test.cpvc", "test")]
+        [TestCase("test.cpvc", null, "test")]
+        public void OpenMachine(string filepath, string promptedFilePath, string expectedMachineName)
+        {
+            // Setup
+            Mock<IFileSystem> mockFileSystem = GetFileSystem(filepath ?? promptedFilePath, expectedMachineName);
+            Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = GetPrompt(FileTypes.Machine, true, promptedFilePath);
+            Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Loose);
+            MainViewModel mockViewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object);
+
+            // Act
+            MainViewLogic logic = new MainViewLogic(mockViewModel);
+            logic.OpenMachine(filepath, mockFileSystem.Object, mockPrompt.Object);
+
+            // Verify
+            mockPrompt.Verify(x => x(FileTypes.Machine, true), (filepath != null) ? Times.Never() : Times.Once());
+            mockPrompt.VerifyNoOtherCalls();
+
+            if (expectedMachineName != null)
+            {
+                Assert.AreEqual(mockViewModel.Machines.Count, 1);
+                Assert.AreEqual(mockViewModel.Machines[0].Name, expectedMachineName);
+            }
+            else
+            {
+                Assert.AreEqual(mockViewModel.Machines.Count, 0);
+            }
+        }
+
         [TestCase(0)]
         [TestCase(1)]
         [TestCase(2)]
         public void LoadNonZipMedia(byte drive)
         {
             // Setup
-            Mock<IFile> mockFile = new Mock<IFile>();
             string filename = (drive == 2) ? "test.cdt" : "test.dsk";
             FileTypes fileType = (drive == 2) ? FileTypes.Tape : FileTypes.Disc;
-            Mock<IFileSystem> mockFileSystem = GetFileSystem(mockFile.Object, "test.cpvc");
-            Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = new Mock<MainViewLogic.PromptForFileDelegate>();
-            mockPrompt.Setup(x => x(fileType, true)).Returns(filename);
-
+            Mock<IFileSystem> mockFileSystem = GetFileSystem("test.cpvc", "test");
+            Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = GetPrompt(fileType, true, filename);
             Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Loose);
             MainViewModel viewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object);
 
@@ -120,10 +154,9 @@ namespace CPvC.Test
         public void LoadZipMedia(byte drive, int entryCount, bool selectFile)
         {
             // Setup
-            Mock<IFile> mockFile = new Mock<IFile>();
             string zipFilename = "test.zip";
             FileTypes fileType = (drive == 2) ? FileTypes.Tape : FileTypes.Disc;
-            Mock<IFileSystem> mockFileSystem = GetFileSystem(mockFile.Object, "test.cpvc");
+            Mock<IFileSystem> mockFileSystem = GetFileSystem("test.cpvc", "test");
 
             List<string> entries = new List<string>();
             for (int e = 0; e < entryCount; e++)
@@ -138,9 +171,7 @@ namespace CPvC.Test
 
             mockFileSystem.Setup(GetZipFileEntryNames(zipFilename)).Returns(entriesWithExtraneousFile);
 
-            Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = new Mock<MainViewLogic.PromptForFileDelegate>();
-            mockPrompt.Setup(x => x(fileType, true)).Returns(zipFilename);
-
+            Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = GetPrompt(fileType, true, zipFilename);
             Mock<MainViewLogic.SelectItemDelegate> mockSelect = new Mock<MainViewLogic.SelectItemDelegate>();
 
             if (entryCount > 0)

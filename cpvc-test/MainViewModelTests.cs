@@ -27,7 +27,6 @@ namespace CPvC.Test
             _mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
             _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines(AnyString())).Returns(() => _lines);
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenFile(AnyString())).Returns(_mockFile.Object);
-
         }
 
         [Test]
