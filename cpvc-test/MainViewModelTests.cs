@@ -100,7 +100,7 @@ namespace CPvC.Test
         public void OpenInvalid()
         {
             // Setup
-            _settingGet = "";
+            _settingGet = "Test;test.cpvc";
             _lines = new string[] { "invalid" };
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
 
