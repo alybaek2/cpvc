@@ -7,10 +7,8 @@ namespace CPvC.UI
     /// <summary>
     /// View Model for the main window.
     /// </summary>
-    public class MainViewModel : INotifyPropertyChanged
+    public class MainViewModel
     {
-        public event PropertyChangedEventHandler PropertyChanged;
-
         /// <summary>
         /// The data model associated with this view model.
         /// </summary>
@@ -27,11 +25,6 @@ namespace CPvC.UI
             {
                 return _model.Machines;
             }
-        }
-
-        protected void OnPropertyChanged(string name)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
         public Machine NewMachine(string filepath, IFileSystem fileSystem)
