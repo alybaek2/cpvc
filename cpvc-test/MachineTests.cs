@@ -22,7 +22,7 @@ namespace CPvC.Test
             machine.Core.SetUpperROM(0, zeroROM);
             machine.Core.SetUpperROM(7, zeroROM);
 
-            return machine;    
+            return machine;
         }
 
         private void RunForAWhile(Machine machine)
