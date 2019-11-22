@@ -90,7 +90,10 @@ namespace CPvC
                     byte[] temp = new byte[count];
                     while ((count = zipStream.Read(temp, 0, temp.Length)) > 0)
                     {
-                        bytes.AddRange(temp);
+                        for (int i = 0; i < count; i++)
+                        {
+                            bytes.Add(temp[i]);
+                        }
                     }
 
                     return bytes.ToArray();

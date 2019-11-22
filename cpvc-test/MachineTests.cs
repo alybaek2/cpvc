@@ -324,6 +324,8 @@ namespace CPvC.Test
                 RunForAWhile(machine);
                 machine.AddBookmark(false);
                 RunForAWhile(machine);
+                machine.LoadDisc(0, null);
+                RunForAWhile(machine);
             }
 
             // Remove the final system bookmark that was added when the machine was closed.
