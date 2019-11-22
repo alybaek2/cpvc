@@ -52,18 +52,28 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void NewNull()
+        {
+            // Setup
+            _settingGet = "";
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
+
+            // Act
+            Machine machine = viewModel.NewMachine(null, _mockFileSystem.Object);
+
+            // Verify
+            Assert.IsNull(machine);
+        }
+
+        [Test]
         public void OpenNull()
         {
             // Setup
-            Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Strict);
-            mockSettings.Setup(x => x.RecentlyOpened).Returns("Test;test.cpvc");
-
-            Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
-            mockFileSystem.Setup(fileSystem => fileSystem.ReadLines(AnyString())).Returns(new string[] { });
-            MainViewModel viewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object);
+            _settingGet = "";
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
 
             // Act
-            Machine machine = viewModel.OpenMachine(null, mockFileSystem.Object);
+            Machine machine = viewModel.OpenMachine(null, _mockFileSystem.Object);
 
             // Verify
             Assert.IsNull(machine);
@@ -75,7 +85,6 @@ namespace CPvC.Test
             // Setup
             _settingGet = "";
             _lines = new string[] { "name:Test", "checkpoint:0:0:0:0" };
-
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
 
             // Act
@@ -93,7 +102,6 @@ namespace CPvC.Test
             // Setup
             _settingGet = "";
             _lines = new string[] { "invalid" };
-
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
 
             // Act and Verify
@@ -106,7 +114,6 @@ namespace CPvC.Test
             // Setup
             _settingGet = "Test;test.cpvc";
             _lines = new string[] { "name:Test", "checkpoint:0:0:0:0" };
-
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
             Machine machine = viewModel.Machines[0];
 
@@ -123,7 +130,6 @@ namespace CPvC.Test
             // Setup
             _settingGet = "Test;test.cpvc,Test2;test2.cpvc";
             _lines = new string[] { "name:Test", "checkpoint:0:0:0:0" };
-
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
             foreach (Machine machine in viewModel.Machines)
             {
@@ -145,7 +151,6 @@ namespace CPvC.Test
             // Setup
             _settingGet = "Test;test.cpvc";
             _lines = new string[] { "name:Test", "checkpoint:0:0:0:0" };
-
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
             Machine machine = viewModel.Machines[0];
             machine.Open();
@@ -168,7 +173,6 @@ namespace CPvC.Test
             // Setup
             _settingGet = "";
             _lines = null;
-
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
 
             // Act and Verify
