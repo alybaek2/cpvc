@@ -117,7 +117,7 @@ namespace CPvC.UI
 
             using (machine.AutoPause())
             {
-                byte[] image = PromptForMedia(FileTypes.Disc, fileSystem, promptForFile, selectItem);
+                byte[] image = PromptForMedia(true, fileSystem, promptForFile, selectItem);
                 if (image != null)
                 {
                     ViewModel.LoadDisc(ActiveMachine, drive, image);
@@ -135,7 +135,7 @@ namespace CPvC.UI
 
             using (machine.AutoPause())
             {
-                byte[] image = PromptForMedia(FileTypes.Tape, fileSystem, promptForFile, selectItem);
+                byte[] image = PromptForMedia(false, fileSystem, promptForFile, selectItem);
                 if (image != null)
                 {
                     ViewModel.LoadTape(ActiveMachine, image);
@@ -163,33 +163,26 @@ namespace CPvC.UI
 
         public void RenameMachine(PromptForNameDelegate promptForName)
         {
-            using (ActiveMachine.AutoPause())
+            Machine machine = ActiveMachine;
+            if (machine == null)
             {
-                string newName = promptForName(ActiveMachine.Name);
+                return;
+            }
+
+            using (machine.AutoPause())
+            {
+                string newName = promptForName(machine.Name);
                 if (newName != null)
                 {
-                    ActiveMachine.Name = newName;
+                    machine.Name = newName;
                 }
             }
         }
 
-        private byte[] PromptForMedia(FileTypes type, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
+        private byte[] PromptForMedia(bool disc, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
         {
-            string expectedExt;
-            switch (type)
-            {
-                case FileTypes.Disc:
-                    expectedExt = ".dsk";
-                    break;
-                case FileTypes.Tape:
-                    expectedExt = ".cdt";
-                    break;
-                case FileTypes.Machine:
-                    expectedExt = ".cpvc";
-                    break;
-                default:
-                    throw new Exception(String.Format("Unknown FileTypes value {0}.", type));
-            }
+            string expectedExt = disc ? ".dsk" : ".cdt";
+            FileTypes type = disc ? FileTypes.Disc : FileTypes.Tape;
 
             string filename = promptForFile(type, true);
             if (filename == null)
@@ -203,9 +196,7 @@ namespace CPvC.UI
             if (ext.ToLower() == ".zip")
             {
                 string entry = null;
-
                 List<string> entries = fileSystem.GetZipFileEntryNames(filename);
-
                 List<string> extEntries = entries.Where(x => System.IO.Path.GetExtension(x).ToLower() == expectedExt).ToList();
                 if (extEntries.Count == 0)
                 {

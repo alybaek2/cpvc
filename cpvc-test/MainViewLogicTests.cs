@@ -8,24 +8,33 @@ using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
 {
+    [TestFixture]
     public class MainViewLogicTests
     {
-        static private Mock<IFileSystem> GetFileSystem(string filename, string name)
+        private Mock<ISettings> _mockSettings;
+
+        [SetUp]
+        public void Setup()
+        {
+            _mockSettings = new Mock<ISettings>(MockBehavior.Loose);
+        }
+
+        static private Mock<IFileSystem> SetupFileSystem(string machineFilepath, string machineName)
         {
             Mock<IFile> mockFile = new Mock<IFile>();
+
             Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
             mockFileSystem.Setup(ReadBytes()).Returns(new byte[1]);
             mockFileSystem.Setup(fileSystem => fileSystem.OpenFile(AnyString())).Returns(mockFile.Object);
-            mockFileSystem.Setup(DeleteFile(filename));
+            mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(machineFilepath));
 
-            string[] lines = new string[] { String.Format("name:{0}", name), "checkpoint:0:0:0:0" };
-
-            mockFileSystem.Setup(fileSystem => fileSystem.ReadLines(filename)).Returns(lines);
+            string[] lines = new string[] { String.Format("name:{0}", machineName), "checkpoint:0:0:0:0" };
+            mockFileSystem.Setup(fileSystem => fileSystem.ReadLines(machineFilepath)).Returns(lines);
 
             return mockFileSystem;
         }
 
-        static private Mock<MainViewLogic.PromptForFileDelegate> GetPrompt(FileTypes fileType, bool existing, string filepath)
+        static private Mock<MainViewLogic.PromptForFileDelegate> SetupPrompt(FileTypes fileType, bool existing, string filepath)
         {
             Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = new Mock<MainViewLogic.PromptForFileDelegate>();
             mockPrompt.Setup(x => x(fileType, existing)).Returns(filepath);
@@ -33,19 +42,19 @@ namespace CPvC.Test
             return mockPrompt;
         }
 
-        static private Expression<Func<IFileSystem, byte[]>> GetZipFileEntry(string filename)
+        static private Expression<Func<IFileSystem, byte[]>> GetZipFileEntry(string filepath)
         {
-            return fileSystem => fileSystem.GetZipFileEntry(filename, AnyString());
+            return fileSystem => fileSystem.GetZipFileEntry(filepath, AnyString());
         }
 
-        static private Expression<Func<IFileSystem, byte[]>> GetZipFileEntry(string filename, string entryName)
+        static private Expression<Func<IFileSystem, byte[]>> GetZipFileEntry(string filepath, string entryName)
         {
-            return fileSystem => fileSystem.GetZipFileEntry(filename, entryName);
+            return fileSystem => fileSystem.GetZipFileEntry(filepath, entryName);
         }
 
-        static private Expression<Func<IFileSystem, List<string>>> GetZipFileEntryNames(string filename)
+        static private Expression<Func<IFileSystem, List<string>>> GetZipFileEntryNames(string filepath)
         {
-            return fileSystem => fileSystem.GetZipFileEntryNames(filename);
+            return fileSystem => fileSystem.GetZipFileEntryNames(filepath);
         }
 
         [TestCase(null, null)]
@@ -53,18 +62,17 @@ namespace CPvC.Test
         public void NewMachine(string filepath, string expectedMachineName)
         {
             // Setup
-            Mock<IFileSystem> mockFileSystem = GetFileSystem(filepath, expectedMachineName);
-            Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = GetPrompt(FileTypes.Machine, false, filepath);
-            Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Loose);
-            MainViewModel mockViewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object);
+            Mock<IFileSystem> fileSystem = SetupFileSystem(filepath, null);
+            Mock<MainViewLogic.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, filepath);
+            MainViewModel mockViewModel = new MainViewModel(_mockSettings.Object, fileSystem.Object);
+            MainViewLogic logic = new MainViewLogic(mockViewModel);
 
             // Act
-            MainViewLogic logic = new MainViewLogic(mockViewModel);
-            logic.NewMachine(mockFileSystem.Object, mockPrompt.Object);
+            logic.NewMachine(fileSystem.Object, prompt.Object);
 
             // Verify
-            mockPrompt.Verify(x => x(FileTypes.Machine, false), Times.Once());
-            mockPrompt.VerifyNoOtherCalls();
+            prompt.Verify(x => x(FileTypes.Machine, false), Times.Once());
+            prompt.VerifyNoOtherCalls();
 
             if (expectedMachineName != null)
             {
@@ -80,30 +88,62 @@ namespace CPvC.Test
         [TestCase(null, null, null)]
         [TestCase(null, "test.cpvc", "test")]
         [TestCase("test.cpvc", null, "test")]
-        public void OpenMachine(string filepath, string promptedFilePath, string expectedMachineName)
+        public void OpenMachine(string filepath, string promptedFilepath, string expectedMachineName)
         {
             // Setup
-            Mock<IFileSystem> mockFileSystem = GetFileSystem(filepath ?? promptedFilePath, expectedMachineName);
-            Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = GetPrompt(FileTypes.Machine, true, promptedFilePath);
-            Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Loose);
-            MainViewModel mockViewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object);
+            Mock<MainViewLogic.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, true, promptedFilepath);
+            Mock<IFileSystem> fileSystem = SetupFileSystem(filepath ?? promptedFilepath, expectedMachineName);
+            MainViewModel mockViewModel = new MainViewModel(_mockSettings.Object, fileSystem.Object);
 
             // Act
             MainViewLogic logic = new MainViewLogic(mockViewModel);
-            logic.OpenMachine(filepath, mockFileSystem.Object, mockPrompt.Object);
+            logic.OpenMachine(filepath, fileSystem.Object, prompt.Object);
 
             // Verify
-            mockPrompt.Verify(x => x(FileTypes.Machine, true), (filepath != null) ? Times.Never() : Times.Once());
-            mockPrompt.VerifyNoOtherCalls();
+            prompt.Verify(x => x(FileTypes.Machine, true), (filepath != null) ? Times.Never() : Times.Once());
+            prompt.VerifyNoOtherCalls();
 
             if (expectedMachineName != null)
             {
                 Assert.AreEqual(mockViewModel.Machines.Count, 1);
-                Assert.AreEqual(mockViewModel.Machines[0].Name, expectedMachineName);
+                Assert.AreEqual(expectedMachineName, mockViewModel.Machines[0].Name);
             }
             else
             {
                 Assert.AreEqual(mockViewModel.Machines.Count, 0);
+            }
+        }
+
+        [TestCase(false, null)]
+        [TestCase(true, null)]
+        [TestCase(true, "test2")]
+        public void RenameMachine(bool active, string newName)
+        {
+            // Setup
+            string oldName = "test";
+            Mock<IFileSystem> mockFileSystem = SetupFileSystem("test.cpvc", oldName);
+            MainViewModel mockViewModel = new MainViewModel(_mockSettings.Object, mockFileSystem.Object);
+            MainViewLogic logic = new MainViewLogic(mockViewModel);
+            Mock<MainViewLogic.PromptForNameDelegate> mockPrompt = new Mock<MainViewLogic.PromptForNameDelegate>(MockBehavior.Loose);
+            mockPrompt.Setup(x => x(oldName)).Returns(newName);
+
+            Machine machine = mockViewModel.OpenMachine("test.cpvc", mockFileSystem.Object);
+            if (active)
+            {
+                logic.ActiveMachine = machine;
+            }
+
+            // Act
+            logic.RenameMachine(mockPrompt.Object);
+
+            // Verify
+            if (active && newName != null)
+            {
+                Assert.AreEqual(newName, machine.Name);
+            }
+            else
+            {
+                Assert.AreEqual(oldName, machine.Name);
             }
         }
 
@@ -115,15 +155,14 @@ namespace CPvC.Test
             // Setup
             string filename = (drive == 2) ? "test.cdt" : "test.dsk";
             FileTypes fileType = (drive == 2) ? FileTypes.Tape : FileTypes.Disc;
-            Mock<IFileSystem> mockFileSystem = GetFileSystem("test.cpvc", "test");
-            Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = GetPrompt(fileType, true, filename);
-            Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Loose);
-            MainViewModel viewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object);
-
-            // Act
+            Mock<IFileSystem> mockFileSystem = SetupFileSystem("test.cpvc", "test");
+            Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = SetupPrompt(fileType, true, filename);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, mockFileSystem.Object);
             MainViewLogic logic = new MainViewLogic(viewModel);
             Machine machine = Machine.New("test", "test.cpvc", mockFileSystem.Object);
             logic.ActiveMachine = machine;
+
+            // Act
             if (fileType == FileTypes.Tape)
             {
                 logic.LoadTape(mockFileSystem.Object, mockPrompt.Object, null);
@@ -148,6 +187,9 @@ namespace CPvC.Test
         [TestCase(0, 2, false)]
         [TestCase(1, 2, false)]
         [TestCase(2, 2, false)]
+        [TestCase(0, 2, false)]
+        [TestCase(1, 2, false)]
+        [TestCase(2, 2, false)]
         [TestCase(0, 2, true)]
         [TestCase(1, 2, true)]
         [TestCase(2, 2, true)]
@@ -156,7 +198,7 @@ namespace CPvC.Test
             // Setup
             string zipFilename = "test.zip";
             FileTypes fileType = (drive == 2) ? FileTypes.Tape : FileTypes.Disc;
-            Mock<IFileSystem> mockFileSystem = GetFileSystem("test.cpvc", "test");
+            Mock<IFileSystem> mockFileSystem = SetupFileSystem("test.cpvc", "test");
 
             List<string> entries = new List<string>();
             for (int e = 0; e < entryCount; e++)
@@ -171,7 +213,7 @@ namespace CPvC.Test
 
             mockFileSystem.Setup(GetZipFileEntryNames(zipFilename)).Returns(entriesWithExtraneousFile);
 
-            Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = GetPrompt(fileType, true, zipFilename);
+            Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = SetupPrompt(fileType, true, zipFilename);
             Mock<MainViewLogic.SelectItemDelegate> mockSelect = new Mock<MainViewLogic.SelectItemDelegate>();
 
             if (entryCount > 0)
@@ -187,10 +229,10 @@ namespace CPvC.Test
             Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Loose);
             MainViewModel viewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object);
             MainViewLogic logic = new MainViewLogic(viewModel);
-
-            // Act
             Machine machine = Machine.New("test", "test.cpvc", mockFileSystem.Object);
             logic.ActiveMachine = machine;
+
+            // Act
             if (drive == 2)
             {
                 logic.LoadTape(mockFileSystem.Object, mockPrompt.Object, mockSelect.Object);
