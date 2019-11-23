@@ -36,6 +36,19 @@ namespace CPvC.Test
             return mockFileSystem;
         }
 
+        static private MainViewLogic SetupViewLogic()
+        {
+            // Setup
+            Mock<ISettings> settings = new Mock<ISettings>(MockBehavior.Loose);
+            Mock<IFileSystem> fileSystem = SetupFileSystem("test.cpvc", "test");
+            MainViewModel viewModel = new MainViewModel(settings.Object, fileSystem.Object);
+
+            MainViewLogic logic = new MainViewLogic(viewModel);
+            logic.OpenMachine("test.cpvc", fileSystem.Object, null);
+
+            return logic;
+        }
+
         static private Mock<MainViewLogic.PromptForFileDelegate> SetupPrompt(FileTypes fileType, bool existing, string filepath)
         {
             Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = new Mock<MainViewLogic.PromptForFileDelegate>();
@@ -272,17 +285,15 @@ namespace CPvC.Test
         {
             // Setup
             Mock<IFileSystem> fileSystem = SetupFileSystem("test.cpvc", "test");
-            MainViewModel ViewModel = new MainViewModel(_mockSettings.Object, fileSystem.Object);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, fileSystem.Object);
+            Mock<MainViewLogic.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, true, null);
 
             // Act
-            MainViewLogic logic = new MainViewLogic(ViewModel);
+            MainViewLogic logic = new MainViewLogic(viewModel);
             logic.OpenMachine("test.cpvc", fileSystem.Object, null);
-            Machine machine = ViewModel.Machines[0];
+            Machine machine = viewModel.Machines[0];
 
-            if (active)
-            {
-                logic.ActiveMachine = machine;
-            }
+            logic.ActiveMachine = active ? machine : null;
 
             // Act and Verify
             Assert.DoesNotThrow(() =>
@@ -291,6 +302,8 @@ namespace CPvC.Test
                 logic.Reset();
                 logic.Pause();
                 logic.Resume();
+                logic.LoadDisc(0, fileSystem.Object, prompt.Object, null);
+                logic.LoadTape(fileSystem.Object, prompt.Object, null);
                 logic.AddBookmark();
                 logic.SeekToLastBookmark();
                 logic.EnableTurbo(true);
@@ -314,10 +327,7 @@ namespace CPvC.Test
             // Act
             MainViewLogic logic = new MainViewLogic(viewModel);
             logic.OpenMachine("test.cpvc", fileSystem.Object, null);
-            if (!active)
-            {
-                logic.ActiveMachine = null;
-            }
+            logic.ActiveMachine = active ? viewModel.Machines[0] : null;
 
             // Act
             logic.SelectBookmark(prompt.Object);
@@ -372,6 +382,43 @@ namespace CPvC.Test
             // audio buffer won't be full and the machine can be run.
             UInt64 ticks = Run(machine, 1, true);
             Assert.AreNotEqual(0, ticks);
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SetActiveMachine(bool closed)
+        {
+            // Setup
+            MainViewLogic logic = SetupViewLogic();
+            Machine machine = logic.ViewModel.Machines[0];
+
+            if (closed)
+            {
+                machine.Close();
+            }
+
+            // Act
+            logic.ActiveMachine = machine;
+
+            // Verify
+            Assert.IsFalse(machine.RequiresOpen);
+            Assert.AreEqual(machine, logic.ActiveMachine);
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SetActiveNonMachine(bool closed)
+        {
+            // Setup
+            MainViewLogic logic = SetupViewLogic();
+            object nonMachine = new object();
+
+            // Act
+            logic.ActiveItem = nonMachine;
+
+            // Verify
+            Assert.IsNull(logic.ActiveMachine);
+            Assert.AreEqual(nonMachine, logic.ActiveItem);
         }
     }
 }
