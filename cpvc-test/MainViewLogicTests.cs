@@ -31,6 +31,8 @@ namespace CPvC.Test
             string[] lines = new string[] { String.Format("name:{0}", machineName), "checkpoint:0:0:0:0" };
             mockFileSystem.Setup(fileSystem => fileSystem.ReadLines(machineFilepath)).Returns(lines);
 
+            mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
+
             return mockFileSystem;
         }
 
@@ -178,25 +180,22 @@ namespace CPvC.Test
             mockFileSystem.Verify(ReadBytes(filename), Times.Once());
         }
 
-        [TestCase(0, 0, false)]
-        [TestCase(1, 0, false)]
-        [TestCase(2, 0, false)]
-        [TestCase(0, 1, false)]
-        [TestCase(1, 1, false)]
-        [TestCase(2, 1, false)]
-        [TestCase(0, 2, false)]
-        [TestCase(1, 2, false)]
-        [TestCase(2, 2, false)]
-        [TestCase(0, 2, false)]
-        [TestCase(1, 2, false)]
-        [TestCase(2, 2, false)]
-        [TestCase(0, 2, true)]
-        [TestCase(1, 2, true)]
-        [TestCase(2, 2, true)]
-        public void LoadZipMedia(byte drive, int entryCount, bool selectFile)
+        [TestCase(null, 0, 0, false)]
+        [TestCase("test.zip", 0, 0, false)]
+        [TestCase("test.zip", 1, 0, false)]
+        [TestCase("test.zip", 2, 0, false)]
+        [TestCase("test.zip", 0, 1, false)]
+        [TestCase("test.zip", 1, 1, false)]
+        [TestCase("test.zip", 2, 1, false)]
+        [TestCase("test.zip", 0, 2, false)]
+        [TestCase("test.zip", 1, 2, false)]
+        [TestCase("test.zip", 2, 2, false)]
+        [TestCase("test.zip", 0, 2, true)]
+        [TestCase("test.zip", 1, 2, true)]
+        [TestCase("test.zip", 2, 2, true)]
+        public void LoadZipMedia(string zipFilename, byte drive, int entryCount, bool selectFile)
         {
             // Setup
-            string zipFilename = "test.zip";
             FileTypes fileType = (drive == 2) ? FileTypes.Tape : FileTypes.Disc;
             Mock<IFileSystem> mockFileSystem = SetupFileSystem("test.cpvc", "test");
 
@@ -259,8 +258,120 @@ namespace CPvC.Test
                 mockSelect.Verify(x => x(entries), Times.Once());
             }
 
-            mockFileSystem.Verify(GetZipFileEntryNames(zipFilename), Times.Once());
+            if (zipFilename != null)
+            {
+                mockFileSystem.Verify(GetZipFileEntryNames(zipFilename), Times.Once());
+            }
+
             mockSelect.VerifyNoOtherCalls();
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void NullActiveMachine(bool active)
+        {
+            // Setup
+            Mock<IFileSystem> fileSystem = SetupFileSystem("test.cpvc", "test");
+            MainViewModel ViewModel = new MainViewModel(_mockSettings.Object, fileSystem.Object);
+
+            // Act
+            MainViewLogic logic = new MainViewLogic(ViewModel);
+            logic.OpenMachine("test.cpvc", fileSystem.Object, null);
+            Machine machine = ViewModel.Machines[0];
+
+            if (active)
+            {
+                logic.ActiveMachine = machine;
+            }
+
+            // Act and Verify
+            Assert.DoesNotThrow(() =>
+            {
+                logic.Key(Keys.A, true);
+                logic.Reset();
+                logic.Pause();
+                logic.Resume();
+                logic.AddBookmark();
+                logic.SeekToLastBookmark();
+                logic.EnableTurbo(true);
+                logic.CompactFile();
+                logic.Close();
+            });
+        }
+
+        [TestCase(false, true)]
+        [TestCase(true, false)]
+        [TestCase(true, true)]
+        public void SelectBookmark(bool active, bool selectEvent)
+        {
+            // Setup
+            Mock<MainViewLogic.PromptForBookmarkDelegate> prompt = new Mock<MainViewLogic.PromptForBookmarkDelegate>(MockBehavior.Strict);
+            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(0, 0, DateTime.Now, null);
+            prompt.Setup(p => p()).Returns(selectEvent ? historyEvent : null);
+            Mock<IFileSystem> fileSystem = SetupFileSystem("test.cpvc", "test");
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, fileSystem.Object);
+
+            // Act
+            MainViewLogic logic = new MainViewLogic(viewModel);
+            logic.OpenMachine("test.cpvc", fileSystem.Object, null);
+            if (!active)
+            {
+                logic.ActiveMachine = null;
+            }
+
+            // Act
+            logic.SelectBookmark(prompt.Object);
+
+            // Verify
+            if (active)
+            {
+                prompt.Verify(p => p(), Times.Once());
+                if (selectEvent)
+                {
+                    Assert.AreEqual(historyEvent, logic.ActiveMachine.CurrentEvent);
+                }
+                else
+                {
+                    Assert.AreNotEqual(historyEvent, logic.ActiveMachine.CurrentEvent);
+                }
+            }
+            else
+            {
+                prompt.Verify(p => p(), Times.Never());
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ReadAudio(bool active)
+        {
+            // Setup
+            Mock<IFileSystem> fileSystem = SetupFileSystem("test.cpvc", "test");
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, fileSystem.Object);
+
+            MainViewLogic logic = new MainViewLogic(viewModel);
+            logic.OpenMachine("test.cpvc", fileSystem.Object, null);
+            Machine machine = viewModel.Machines[0];
+            if (!active)
+            {
+                logic.ActiveMachine = null;
+            }
+
+            // Run the machine enough to fill up the audio buffer.
+            Run(machine, 4000000, true);
+
+            // Act
+            byte[] buffer = new byte[4];
+            int samples = logic.ReadAudio(buffer, 0, 1);
+
+            // Verify
+            Assert.AreEqual(active ? 1 : 0, samples);
+
+            // Since the machine's audio buffer was been filled up, it should not be runnable when calling RunUntil
+            // with StopReasons.AudioOverrun. If the call to ReadAudio above has been successful, then the machine's
+            // audio buffer won't be full and the machine can be run.
+            UInt64 ticks = Run(machine, 1, true);
+            Assert.AreNotEqual(0, ticks);
         }
     }
 }

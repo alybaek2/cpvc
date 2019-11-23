@@ -25,30 +25,6 @@ namespace CPvC.Test
             return machine;
         }
 
-        private void RunForAWhile(Machine machine)
-        {
-            UInt64 startTicks = machine.Core.Ticks;
-
-            int timeWaited = 0;
-            int sleepTime = 10;
-            machine.Start();
-            while (machine.Core.Ticks == startTicks)
-            {
-                if (timeWaited > 1000)
-                {
-                    throw new Exception(String.Format("Waited too long for Machine to run! {0} {1}", machine.Core.Ticks, machine.Core.Running));
-                }
-
-                System.Threading.Thread.Sleep(sleepTime);
-                timeWaited += sleepTime;
-
-                // Empty out the audio buffer to prevent the machine from stalling...
-                machine.AdvancePlayback(48000);
-            }
-
-            machine.Stop();
-        }
-
         [SetUp]
         public void Setup()
         {
