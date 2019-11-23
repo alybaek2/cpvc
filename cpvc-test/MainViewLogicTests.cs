@@ -170,12 +170,11 @@ namespace CPvC.Test
             // Setup
             string filename = (drive == 2) ? "test.cdt" : "test.dsk";
             FileTypes fileType = (drive == 2) ? FileTypes.Tape : FileTypes.Disc;
-            Mock<IFileSystem> mockFileSystem = SetupFileSystem("test.cpvc", "test");
             Mock<MainViewLogic.PromptForFileDelegate> mockPrompt = SetupPrompt(fileType, true, filename);
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, mockFileSystem.Object);
-            MainViewLogic logic = new MainViewLogic(viewModel);
-            Machine machine = Machine.New("test", "test.cpvc", mockFileSystem.Object);
-            logic.ActiveMachine = machine;
+
+            Mock<IFileSystem> mockFileSystem = SetupFileSystem("test.cpvc", "test");
+            MainViewLogic logic = SetupViewLogic();
+            logic.ActiveMachine = logic.ViewModel.Machines[0];
 
             // Act
             if (fileType == FileTypes.Tape)
@@ -285,13 +284,9 @@ namespace CPvC.Test
         {
             // Setup
             Mock<IFileSystem> fileSystem = SetupFileSystem("test.cpvc", "test");
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, fileSystem.Object);
             Mock<MainViewLogic.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, true, null);
-
-            // Act
-            MainViewLogic logic = new MainViewLogic(viewModel);
-            logic.OpenMachine("test.cpvc", fileSystem.Object, null);
-            Machine machine = viewModel.Machines[0];
+            MainViewLogic logic = SetupViewLogic();
+            Machine machine = logic.ViewModel.Machines[0];
 
             logic.ActiveMachine = active ? machine : null;
 
@@ -356,12 +351,8 @@ namespace CPvC.Test
         public void ReadAudio(bool active)
         {
             // Setup
-            Mock<IFileSystem> fileSystem = SetupFileSystem("test.cpvc", "test");
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, fileSystem.Object);
-
-            MainViewLogic logic = new MainViewLogic(viewModel);
-            logic.OpenMachine("test.cpvc", fileSystem.Object, null);
-            Machine machine = viewModel.Machines[0];
+            MainViewLogic logic = SetupViewLogic();
+            Machine machine = logic.ViewModel.Machines[0];
             if (!active)
             {
                 logic.ActiveMachine = null;
@@ -391,7 +382,6 @@ namespace CPvC.Test
             // Setup
             MainViewLogic logic = SetupViewLogic();
             Machine machine = logic.ViewModel.Machines[0];
-
             if (closed)
             {
                 machine.Close();
