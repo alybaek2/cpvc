@@ -14,7 +14,8 @@ TEST(KeyboardTests, InvalidLine) {
     ASSERT_EQ(b, false);
 }
 
-TEST(KeyboardTests, InvalidBit) {
+TEST(KeyboardTests, InvalidBit)
+{
     // Setup
     Keyboard keyboard;
     keyboard.SelectLine(0);
@@ -39,16 +40,19 @@ TEST(KeyboardTests, ReadInvalidLine)
     ASSERT_EQ(result, 0xff);
 }
 
-TEST(KeyboardTests, OneKey) {
+TEST(KeyboardTests, OneKey)
+{
     for (byte line : Range<byte>(0, 9))
     {
         for (byte bit : Range<byte>(0, 7))
         {
+            // Setup
             Keyboard keyboard;
 
-            // Test keys "down"
+            // Act - Test keys "down"
             keyboard.KeyPress(line, bit, true);
 
+            // Verify
             for (byte checkLineDown : Range<byte>(0, 9))
             {
                 keyboard.SelectLine(checkLineDown);
@@ -63,9 +67,10 @@ TEST(KeyboardTests, OneKey) {
                 }
             }
 
-            // Test keys "up"
+            // Act - Test keys "up"
             keyboard.KeyPress(line, bit, false);
 
+            // Verify
             for (byte checkLineUp : Range<byte>(0, 9))
             {
                 keyboard.SelectLine(checkLineUp);
@@ -75,7 +80,8 @@ TEST(KeyboardTests, OneKey) {
     }
 }
 
-TEST(KeyboardTests, TwoKeys) {
+TEST(KeyboardTests, TwoKeys)
+{
     for (byte line0 : Range<byte>(0, 9))
     {
         for (byte line1 : Range<byte>(0, 9))
@@ -84,6 +90,7 @@ TEST(KeyboardTests, TwoKeys) {
             {
                 for (byte bit1 : Range<byte>(0, 7))
                 {
+                    // Setup
                     byte expectedMatrix[10];
                     for (int i = 0; i < 10; i++)
                     {
@@ -95,20 +102,22 @@ TEST(KeyboardTests, TwoKeys) {
 
                     Keyboard keyboard;
 
-                    // Test keys "down"
+                    // Act - Test keys "down"
                     keyboard.KeyPress(line0, bit0, true);
                     keyboard.KeyPress(line1, bit1, true);
 
+                    // Verify
                     for (int i = 0; i < 10; i++)
                     {
                         keyboard.SelectLine(i);
                         ASSERT_EQ(expectedMatrix[i], keyboard.ReadSelectedLine());
                     }
 
-                    // Test keys "up"
+                    // Act - Test keys "up"
                     keyboard.KeyPress(line0, bit0, false);
                     keyboard.KeyPress(line1, bit1, false);
 
+                    // Verify
                     for (byte checkLineUp : Range<byte>(0, 9))
                     {
                         keyboard.SelectLine(checkLineUp);
@@ -120,7 +129,8 @@ TEST(KeyboardTests, TwoKeys) {
     }
 };
 
-TEST(KeyboardTests, ThreeKeysClash) {
+TEST(KeyboardTests, ThreeKeysClash)
+{
     for (byte line0 : Range<byte>(0, 9))
     {
         for (byte line1 : Range<byte>(0, 9))
@@ -139,13 +149,15 @@ TEST(KeyboardTests, ThreeKeysClash) {
                         continue;
                     }
 
+                    // Setup
                     Keyboard keyboard;
 
-                    // Test that three keys down causes keyboard clash
+                    // Act - Test that three keys down causes keyboard clash
                     keyboard.KeyPress(line0, bit0, true);
                     keyboard.KeyPress(line0, bit1, true);
                     keyboard.KeyPress(line1, bit0, true);
 
+                    // Verify
                     byte expected = 0xFF & (~(1 << bit0)) & (~(1 << bit1));
 
                     for (byte checkLine : Range<byte>(0, 9))
@@ -162,9 +174,10 @@ TEST(KeyboardTests, ThreeKeysClash) {
                         }
                     }
 
-                    // Test that one of the three keys going back up removes the clash
+                    // Act - Test that one of the three keys going back up removes the clash
                     keyboard.KeyPress(line0, bit0, false);
 
+                    // Verify
                     for (byte checkLineUp : Range<byte>(0, 9))
                     {
                         keyboard.SelectLine(checkLineUp);
@@ -189,3 +202,34 @@ TEST(KeyboardTests, ThreeKeysClash) {
         }
     }
 };
+
+TEST(KeyboardTests, Serialize)
+{
+    // Setup
+    byte downKeys[] = { 0, 5, 11, 12, 21, 29, 34, 48, 53, 66, 72 };
+    Keyboard keyboard;
+    for (byte key : downKeys)
+    {
+        keyboard.KeyPress(key / 10, key % 10, true);
+    }
+
+    keyboard.SelectLine(8);
+
+    // Act
+    StreamWriter writer;
+    writer << keyboard;
+
+    // Verify
+    StreamReader reader(writer);
+    Keyboard keyboard2;
+    reader >> keyboard2;
+
+    ASSERT_EQ(keyboard.SelectedLine(), keyboard2.SelectedLine());
+
+    for (byte i = 0; i < 9; i++)
+    {
+        keyboard.SelectLine(i);
+        keyboard2.SelectLine(i);
+        ASSERT_EQ(keyboard.ReadSelectedLine(), keyboard2.ReadSelectedLine());
+    }
+}
