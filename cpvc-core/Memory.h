@@ -116,13 +116,17 @@ public:
     {
         if (_roms.find(rom) == _roms.end())
         {
-            rom = 0;
+            _selectedUpperRom = 0;
+            if (_roms.find(0) == _roms.end())
+            {
+                _upperRom.Fill(0);
+            }
         }
-
-        _selectedUpperRom = rom;
-        _upperRom = _roms[rom];
-
-        ConfigureRAM();
+        else
+        {
+            _selectedUpperRom = rom;
+            _upperRom = _roms[rom];
+        }
     }
 
     void SetRAMConfig(byte config)
