@@ -16,6 +16,9 @@ public:
     Memory()
     {
         Reset();
+
+        _lowerRom.Fill(0);
+        _upperRom.Fill(0);
     };
 
     ~Memory() {};
@@ -55,9 +58,7 @@ public:
 
         _lowerRomEnabled = true;
         _upperRomEnabled = true;
-        _selectedUpperRom = 0;
-        _lowerRom.Fill(0);
-        _upperRom.Fill(0);
+        SelectROM(0);
 
         SetRAMConfig(0);
     }

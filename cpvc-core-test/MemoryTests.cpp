@@ -196,3 +196,34 @@ TEST(MemoryTests, SerializeLowerUpperEnabed)
     ASSERT_EQ(memory2.Read(0x0000), 0x00);
     ASSERT_EQ(memory2.Read(0xc000), 0x00);
 }
+
+// Tests that a call to Reset behaves as expected; upper and lower roms should be enabled
+// and the selected upper rom should be set to 0.
+TEST(MemoryTests, Reset)
+{
+    // Setup
+    Memory memory;
+
+    Mem16k lowerROM;
+    lowerROM.Fill(0x01);
+    Mem16k upperROM0;
+    upperROM0.Fill(0x02);
+    Mem16k upperROM1;
+    upperROM1.Fill(0x03);
+
+    memory.EnableLowerROM(false);
+    memory.EnableUpperROM(false);
+    memory.SetLowerROM(lowerROM);
+    memory.SetUpperROM(0, upperROM0);
+    memory.SetUpperROM(1, upperROM1);
+    memory.SelectROM(1);
+
+    // Act
+    memory.Reset();
+
+    // Verify
+    ASSERT_EQ(0x01, memory.Read(0x0000));
+    ASSERT_EQ(0x00, memory.Read(0x4000));
+    ASSERT_EQ(0x00, memory.Read(0x8000));
+    ASSERT_EQ(0x02, memory.Read(0xc000));
+}
