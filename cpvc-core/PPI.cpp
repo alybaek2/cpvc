@@ -8,22 +8,6 @@ PPI::~PPI()
 {
 }
 
-PPI::Mode PPI::GroupAMode()
-{
-    switch (_control & 0x60)
-    {
-    case 0x00:
-        return Mode0;
-    case 0x20:
-        return Mode1;
-    case 0x40:
-    case 0x60:
-        return Mode2;
-    }
-
-    throw;
-}
-
 void PPI::Reset()
 {
     _tapeLevel = false;
