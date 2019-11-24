@@ -2,7 +2,8 @@
 #include "../cpvc-core/Core.h"
 #include "helpers.h"
 
-TEST(CoreTests, SetLowerRom) {
+TEST(CoreTests, SetLowerRom)
+{
     // Setup
     Mem16k lowerRom;
     lowerRom.Fill(0xff);
@@ -24,7 +25,8 @@ TEST(CoreTests, SetLowerRom) {
     ASSERT_EQ(disabledByte, 0x00);
 };
 
-TEST(CoreTests, SetUpperRom) {
+TEST(CoreTests, SetUpperRom)
+{
     // Setup
     Mem16k upperRom;
     upperRom.Fill(0xff);
@@ -48,7 +50,8 @@ TEST(CoreTests, SetUpperRom) {
 
 // Ensures that when writing to the screen buffer, the core stops once it hits the
 // right-hand edge of the screen.
-TEST(CoreTests, SetSmallWidthScreen) {
+TEST(CoreTests, SetSmallWidthScreen)
+{
     // Setup
     Core* pCore = new Core();
 
@@ -81,7 +84,8 @@ TEST(CoreTests, SetSmallWidthScreen) {
 
 // Ensures that when writing to the screen buffer, the core stops once it hits the
 // bottom edge of the screen.
-TEST(CoreTests, SetSmallHeightScreen) {
+TEST(CoreTests, SetSmallHeightScreen)
+{
     // Setup
     Core* pCore = new Core();
 
@@ -114,7 +118,8 @@ TEST(CoreTests, SetSmallHeightScreen) {
 
 // Ensure that after running a core for a while, calls to RunUntil should eventually return
 // with stopAudioOverrun.
-TEST(CoreTests, StopAudioOverrun) {
+TEST(CoreTests, StopAudioOverrun)
+{
     // Setup
     Core* pCore = new Core();
 
@@ -123,11 +128,13 @@ TEST(CoreTests, StopAudioOverrun) {
 
     // Verify
     ASSERT_EQ(stopReason, stopAudioOverrun);
+    delete pCore;
 }
 
 // Ensures that if a core can no longer run due to audio overrun, running can be resumed by
 // reading data from the audio buffers.
-TEST(CoreTests, ResumeAfterAudioOverrun) {
+TEST(CoreTests, ResumeAfterAudioOverrun)
+{
     // Setup
     Core* pCore = new Core();
     pCore->RunUntil(4000000, stopAudioOverrun);
@@ -141,4 +148,58 @@ TEST(CoreTests, ResumeAfterAudioOverrun) {
 
     // Verify
     ASSERT_GT(pCore->Ticks(), beforeTicks);
+    delete pCore;
+}
+
+// Tests that a core can be serialized and deserialized back to the same state. Note this test could probably be improved to
+// ensure the core is initially in a state where registers, memory, etc. aren't all zeros and thus more likely to catch errors
+// when serialized then deserialized.
+TEST(CoreTests, SerializeDeserialize)
+{
+    // Setup
+    Core* pCore = new Core();
+    StreamWriter writer;
+    writer << (*pCore);
+    bytevector state1;
+    writer.CopyTo(state1);
+    StreamReader reader(writer);
+
+    // Act
+    Core* pCore2 = new Core();
+    reader >> (*pCore2);
+    StreamWriter writer2;
+    writer2 << (*pCore2);
+    bytevector state2;
+    writer2.CopyTo(state2);
+
+    // Verify
+    ASSERT_EQ(state1.size(), state2.size());
+
+    for (size_t i = 0; i < state1.size(); i++)
+    {
+        ASSERT_EQ(state1[i], state2[i]);
+    }
+
+    delete pCore;
+    delete pCore2;
+}
+
+TEST(CoreTests, RunUntilVSync)
+{
+    // Setup
+    Core* pCore = new Core();
+    qword ticksEnd = pCore->Ticks() + 4000000;
+    int vSyncCount = 0;
+
+    // Act
+    while (pCore->Ticks() < ticksEnd)
+    {
+        pCore->RunUntil(ticksEnd, stopVSync);
+        vSyncCount++;
+    }
+
+    // Verify - in one second, we should have 50 or 51 VSync's, roughly in line with a 50Hz refresh rate.
+    ASSERT_GE(vSyncCount, 50);
+    ASSERT_LE(vSyncCount, 51);
+    delete pCore;
 }

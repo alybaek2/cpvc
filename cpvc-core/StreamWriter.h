@@ -34,6 +34,13 @@ public:
         return bytesToCopy;
     }
 
+    size_t CopyTo(bytevector& bv) const
+    {
+        bv.resize(Size());
+
+        return CopyTo(bv.data(), bv.size());
+    }
+
     StreamWriter& operator<<(byte data)
     {
         return Write<byte>(data);
