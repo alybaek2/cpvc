@@ -41,7 +41,7 @@ TEST(BusTests, Read)
         MockDevice ppi;
         ppi._readByte = ppiReadByte;
         MockDevice crtc;
-        MockDeviceNoAddress gateArray;
+        MockDevice gateArray;
         Bus bus(memory, gateArray, ppi, crtc, fdc);
 
         // Act
@@ -88,7 +88,6 @@ TEST(BusTests, Read)
         }
 
         ASSERT_EQ(crtc._readCalled, false);
-        ASSERT_EQ(gateArray._readCalled, false);
     }
 }
 
@@ -116,7 +115,7 @@ TEST(BusTests, Write)
             MockDevice fdc;
             MockDevice ppi;
             MockDevice crtc;
-            MockDeviceNoAddress gateArray;
+            MockDevice gateArray;
             Bus bus(memory, gateArray, ppi, crtc, fdc);
 
             // Act

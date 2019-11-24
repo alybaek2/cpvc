@@ -175,15 +175,7 @@ TEST(MemoryTests, SerializeLowerUpperEnabed)
     writer << memory;
 
     // Verify
-    bytevector blob;
-    blob.resize(writer.Size());
-    writer.CopyTo(blob.data(), blob.size());
-    StreamReader reader;
-    for (byte b : blob)
-    {
-        reader.Push(b);
-    }
-
+    StreamReader reader(writer);
     Memory memory2;
     reader >> memory2;
 

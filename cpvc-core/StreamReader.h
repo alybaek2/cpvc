@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.h"
+#include "StreamWriter.h"
 #include <map>
 #include <vector>
 
@@ -11,6 +12,17 @@ public:
     {
         _bufferIndex = 0;
         _buffer.clear();
+    }
+
+    StreamReader(const StreamWriter& writer) : StreamReader()
+    {
+        bytevector blob;
+        blob.resize(writer.Size());
+        writer.CopyTo(blob.data(), blob.size());
+        for (byte b : blob)
+        {
+            Push(b);
+        }
     }
 
     ~StreamReader()

@@ -11,12 +11,12 @@
 class Bus : public IBus
 {
 public:
-    Bus(Memory& memory, IBusNoAddress& gateArray, IBus& ppi, IBus& crtc, IBus& fdc);
+    Bus(Memory& memory, IBusNoAddressWriteOnly& gateArray, IBus& ppi, IBus& crtc, IBus& fdc);
     ~Bus();
 
     Memory& _memory;
     IBus& _ppi;
-    IBusNoAddress& _gateArray;
+    IBusNoAddressWriteOnly& _gateArray;
     IBus& _crtc;
 
     IBus& _fdc;

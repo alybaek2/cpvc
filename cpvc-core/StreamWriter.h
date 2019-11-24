@@ -16,12 +16,12 @@ public:
     {
     };
 
-    size_t Size()
+    size_t Size() const
     {
         return _buffer.size();
     }
 
-    size_t CopyTo(byte* pBuffer, size_t bufferSize)
+    size_t CopyTo(byte* pBuffer, size_t bufferSize) const
     {
         size_t bytesToCopy = Size();
         if (bytesToCopy > bufferSize)
