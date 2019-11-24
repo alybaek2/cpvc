@@ -10,16 +10,17 @@ namespace CPvC.Test
         public void OpenFile()
         {
             // Setup
-            System.IO.File.Delete("opentest.txt");
+            string filepath = TestHelpers.GetTempFilepath("opentest.txt");
+            System.IO.File.Delete(filepath);
             FileSystem fs = new FileSystem();
-            IFile file = fs.OpenFile("opentest.txt");
+            IFile file = fs.OpenFile(filepath);
 
             // Act
             file.WriteLine("abc");
             file.Close();
 
             // Verify
-            string contents = System.IO.File.ReadAllText("opentest.txt");
+            string contents = System.IO.File.ReadAllText(filepath);
             Assert.AreEqual("abc\r\n", contents);
         }
 
@@ -27,17 +28,19 @@ namespace CPvC.Test
         public void RenameFile()
         {
             // Setup
-            System.IO.File.Delete("renametest.txt");
+            string filepath = TestHelpers.GetTempFilepath("renametest.txt");
+            string filepath2 = TestHelpers.GetTempFilepath("renametest2.txt");
+            System.IO.File.Delete(filepath);
             FileSystem fs = new FileSystem();
-            System.IO.File.WriteAllText("renametest.txt", "abc");
-            System.IO.File.Delete("renametest2.txt");
+            System.IO.File.WriteAllText(filepath, "abc");
+            System.IO.File.Delete(filepath2);
 
             // Act
-            fs.RenameFile("renametest.txt", "renametest2.txt");
+            fs.RenameFile(filepath, filepath2);
 
             // Verify
-            Assert.IsFalse(System.IO.File.Exists("renametest.txt"));
-            Assert.IsTrue(System.IO.File.Exists("renametest2.txt"));
+            Assert.IsFalse(System.IO.File.Exists(filepath));
+            Assert.IsTrue(System.IO.File.Exists(filepath2));
         }
 
         [TestCase(false)]
@@ -45,47 +48,51 @@ namespace CPvC.Test
         public void ReplaceFile(bool exists)
         {
             // Setup
+            string filepath = TestHelpers.GetTempFilepath("replacetest.txt");
+            string filepath2 = TestHelpers.GetTempFilepath("replacetest2.txt");
             FileSystem fs = new FileSystem();
-            System.IO.File.Delete("replacetest2.txt");
-            System.IO.File.WriteAllText("replacetest2.txt", "new");
-            System.IO.File.Delete("replacetest.txt");
+            System.IO.File.Delete(filepath2);
+            System.IO.File.WriteAllText(filepath2, "new");
+            System.IO.File.Delete(filepath);
             if (exists)
             {
-                System.IO.File.WriteAllText("replacetest.txt", "old");
+                System.IO.File.WriteAllText(filepath, "old");
             }
 
             // Act
-            fs.ReplaceFile("replacetest.txt", "replacetest2.txt");
+            fs.ReplaceFile(filepath, filepath2);
 
             // Verify
-            Assert.IsTrue(System.IO.File.Exists("replacetest.txt"));
-            Assert.IsFalse(System.IO.File.Exists("replacetest2.txt"));
-            Assert.AreEqual("new", System.IO.File.ReadAllText("replacetest.txt"));
+            Assert.IsTrue(System.IO.File.Exists(filepath));
+            Assert.IsFalse(System.IO.File.Exists(filepath2));
+            Assert.AreEqual("new", System.IO.File.ReadAllText(filepath));
         }
 
         [Test]
         public void DeleteFile()
         {
             // Setup
+            string filepath = TestHelpers.GetTempFilepath("deletetest.txt");
             FileSystem fs = new FileSystem();
-            System.IO.File.WriteAllText("replacetest.txt", "abc");
+            System.IO.File.WriteAllText(filepath, "abc");
 
             // Act
-            fs.DeleteFile("replacetest.txt");
+            fs.DeleteFile(filepath);
 
             // Verify
-            Assert.IsFalse(System.IO.File.Exists("replacetest.txt"));
+            Assert.IsFalse(System.IO.File.Exists(filepath));
         }
 
         [Test]
         public void ReadLines()
         {
             // Setup
+            string filepath = TestHelpers.GetTempFilepath("linestest.txt");
             FileSystem fs = new FileSystem();
-            System.IO.File.WriteAllLines("linestest.txt", new string[] { "abc" });
+            System.IO.File.WriteAllLines(filepath, new string[] { "abc" });
 
             // Act
-            string[] lines = fs.ReadLines("linestest.txt");
+            string[] lines = fs.ReadLines(filepath);
 
             // Verify
             Assert.AreEqual(new string[] { "abc" }, lines);
@@ -95,11 +102,12 @@ namespace CPvC.Test
         public void ReadBytes()
         {
             // Setup
+            string filepath = TestHelpers.GetTempFilepath("bytestest.txt");
             FileSystem fs = new FileSystem();
-            System.IO.File.WriteAllBytes("bytestest.txt", new byte[] { 0x01, 0x02 });
+            System.IO.File.WriteAllBytes(filepath, new byte[] { 0x01, 0x02 });
 
             // Act
-            byte[] bytes = fs.ReadBytes("bytestest.txt");
+            byte[] bytes = fs.ReadBytes(filepath);
             System.IO.File.Delete("test.zip");
 
             // Verify
@@ -110,12 +118,13 @@ namespace CPvC.Test
         public void GetZipFileEntryNames()
         {
             // Setup
+            string filepath = TestHelpers.GetTempFilepath("test.zip");
             FileSystem fs = new FileSystem();
-            System.IO.File.WriteAllBytes("test.zip", Resources.test);
+            System.IO.File.WriteAllBytes(filepath, Resources.test);
 
             // Act
-            List<string> entryNames = fs.GetZipFileEntryNames("test.zip");
-            System.IO.File.Delete("test.zip");
+            List<string> entryNames = fs.GetZipFileEntryNames(filepath);
+            System.IO.File.Delete(filepath);
 
             // Verify
             Assert.AreEqual(2, entryNames.Count);
@@ -129,12 +138,13 @@ namespace CPvC.Test
         public void GetZipFileEntry(string entryName, string expectedContents)
         {
             // Setup
+            string filepath = TestHelpers.GetTempFilepath("test.zip");
             FileSystem fs = new FileSystem();
-            System.IO.File.WriteAllBytes("test.zip", Resources.test);
+            System.IO.File.WriteAllBytes(filepath, Resources.test);
 
             // Act
-            byte[] contents = fs.GetZipFileEntry("test.zip", entryName);
-            System.IO.File.Delete("test.zip");
+            byte[] contents = fs.GetZipFileEntry(filepath, entryName);
+            System.IO.File.Delete(filepath);
 
             // Verify
             byte[] expectedBytes = (expectedContents != null) ? Encoding.ASCII.GetBytes(expectedContents) : null;

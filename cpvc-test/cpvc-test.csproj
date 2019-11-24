@@ -102,6 +102,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AudioTests.cs" />
@@ -111,6 +112,7 @@
     <Compile Include="FileTests.cs" />
     <Compile Include="HelpersTests.cs" />
     <Compile Include="HistoryEventTests.cs" />
+    <Compile Include="KeyboardMappingTests.cs" />
     <Compile Include="MachineFileTests.cs" />
     <Compile Include="MachineTests.cs" />
     <Compile Include="MainViewLogicTests.cs" />

@@ -38,5 +38,29 @@ namespace CPvC.Test
             Assert.AreEqual(0, parent.Children.Count);
             Assert.AreEqual(parent2, child.Parent);
         }
+
+        [Test]
+        public void CheckAncestry()
+        {
+            // Setup
+            HistoryEvent grandparent = HistoryEvent.CreateCheckpoint(1, 100, DateTime.Now, null);
+            HistoryEvent parent = HistoryEvent.CreateCheckpoint(2, 100, DateTime.Now, null);
+            HistoryEvent child = HistoryEvent.CreateCheckpoint(3, 100, DateTime.Now, null);
+            HistoryEvent child2 = HistoryEvent.CreateCheckpoint(4, 100, DateTime.Now, null);
+            parent.AddChild(child);
+            parent.AddChild(child2);
+            grandparent.AddChild(parent);
+
+            // Verify
+            Assert.IsFalse(child.IsEqualToOrAncestorOf(parent));
+            Assert.IsFalse(child.IsEqualToOrAncestorOf(grandparent));
+            Assert.IsFalse(parent.IsEqualToOrAncestorOf(grandparent));
+            Assert.IsTrue(parent.IsEqualToOrAncestorOf(child));
+            Assert.IsTrue(grandparent.IsEqualToOrAncestorOf(parent));
+            Assert.IsTrue(grandparent.IsEqualToOrAncestorOf(child));
+            Assert.IsTrue(parent.IsEqualToOrAncestorOf(parent));
+            Assert.IsFalse(parent.IsEqualToOrAncestorOf(null));
+            Assert.IsFalse(child.IsEqualToOrAncestorOf(child2));
+        }
     }
 }

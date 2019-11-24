@@ -101,5 +101,10 @@ namespace CPvC.Test
 
             machine.Stop();
         }
+
+        static public string GetTempFilepath(string filename)
+        {
+            return String.Format("{0}\\{1}", System.IO.Path.GetTempPath(), filename);
+        }
     }
 }
