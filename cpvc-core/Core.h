@@ -43,14 +43,14 @@ public:
     void LoadTape(const byte* pBuffer, int size);
     void LoadDisc(byte drive, const byte* pBuffer, int size);
 
-    void SetScreen(dword* pBuffer, word pitch, word height, word width);
+    void SetScreen(byte* pBuffer, word pitch, word height, word width);
 
     int GetAudioBuffers(int numSamples, byte* (&pChannels)[3]);
     void SetFrequency(dword frequency);
 
-    void EnableLowerRom(bool enabled);
+    void EnableLowerROM(bool enabled);
     void SetLowerRom(Mem16k& lowerRom);
-    void EnableUpperRom(bool enabled);
+    void EnableUpperROM(bool enabled);
     void SetUpperRom(byte slot, Mem16k& rom);
 
     byte RunUntil(qword stopTicks, byte stopReason);
@@ -134,7 +134,7 @@ private:
     void BusWriteRequest(word addr, byte b);
 
     // Z80 execution methods.
-    void StepOne(byte stopReason);
+    void Step(byte stopReason);
     void Execute(byte op);
     void ExecuteCB();
     void ExecuteED();
@@ -143,7 +143,7 @@ private:
     bool HandleInterrupt();
 
     // Screen buffer.
-    dword* _pScreen;
+    byte* _pScreen;
     word _scrPitch;
     word _scrHeight;
     word _scrWidth;
@@ -1510,6 +1510,7 @@ private:
         byte result = n << 1;
         result |= (Bit(n, 7) ? 0x01 : 0x00);
         F = SZP35(result) | (Bit(n, 7) ? flagC : 0);
+        n = result;
         Tick(4);
 
         // M6
@@ -1553,6 +1554,7 @@ private:
         byte result = n << 1;
         result |= (Carry() ? 0x01 : 0x00);
         F = SZP35(result) | (Bit(n, 7) ? flagC : 0);
+        n = result;
         Tick(4);
 
         // M6
@@ -1596,6 +1598,7 @@ private:
         byte result = n >> 1;
         result |= (Bit(n, 0) ? 0x80 : 0x00);
         F = SZP35(result) | (Bit(n, 0) ? flagC : 0);
+        n = result;
         Tick(4);
 
         // M6
@@ -1639,6 +1642,7 @@ private:
         byte result = n >> 1;
         result |= (Carry() ? 0x80 : 0x00);
         F = SZP35(result) | (Bit(n, 0) ? flagC : 0);
+        n = result;
         Tick(4);
 
         // M6
@@ -1680,6 +1684,7 @@ private:
         // M6
         byte result = (n << 1);
         F = SZP35(result) | (Bit(n, 7) ? flagC : 0);
+        n = result;
         MemWriteRequest(addr, result);
         Tick(3);
     }
@@ -1718,6 +1723,7 @@ private:
         // M6
         byte result = (n << 1) | 0x01;
         F = SZP35(result) | (Bit(n, 7) ? flagC : 0);
+        n = result;
         MemWriteRequest(addr, result);
         Tick(3);
     }
@@ -1757,6 +1763,7 @@ private:
         byte result = (n >> 1) | (n & 0x80);
 
         F = SZP35(result) | (Bit(n, 0) ? flagC : 0);
+        n = result;
         MemWriteRequest(addr, result);
         Tick(3);
     }
@@ -1795,6 +1802,7 @@ private:
         // M6
         byte result = (n >> 1);
         F = SZP35(result) | (Bit(n, 0) ? flagC : 0);
+        n = result;
         MemWriteRequest(addr, result);
         Tick(3);
     }

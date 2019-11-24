@@ -52,7 +52,7 @@ namespace CPvC.Test
             Assert.Throws<System.ArgumentException>(() => Helpers.Bytes(hexString));
         }
 
-        [TestCase("", new byte[] { })]
+        [TestCase("", null)]
         [TestCase("01", new byte[] { 0x01 })]
         [TestCase("01AF735B", new byte[] { 0x01, 0xaf, 0x73, 0x5b })]
         public void ShouldConvertHexString(string hexString, byte[] expectedByteArray)

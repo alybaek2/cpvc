@@ -60,7 +60,7 @@ bool Core::KeyPress(byte keycode, bool down)
 }
 
 // Screen methods
-void Core::SetScreen(dword* pBuffer, word pitch, word height, word width)
+void Core::SetScreen(byte* pBuffer, word pitch, word height, word width)
 {
     _scrPitch = pitch;
     _scrWidth = width / 16;  // _scrWidth is in CRTC chars (16 pixels per char).
@@ -88,7 +88,7 @@ byte Core::RunUntil(qword stopTicks, byte stopReason)
         }
 
         bool vSyncBefore = _crtc._inVSync;
-        StepOne(stopReason);
+        Step(stopReason);
 
         if ((stopReason & stopVSync) != 0 && !vSyncBefore && _crtc._inVSync)
         {
@@ -100,10 +100,9 @@ byte Core::RunUntil(qword stopTicks, byte stopReason)
 }
 
 // Rom methods
-void Core::EnableLowerRom(bool enabled)
+void Core::EnableLowerROM(bool enabled)
 {
     _memory.EnableLowerROM(enabled);
-    _memory.ConfigureRAM();
 }
 
 void Core::SetLowerRom(Mem16k& lowerRom)
@@ -111,15 +110,14 @@ void Core::SetLowerRom(Mem16k& lowerRom)
     _memory.SetLowerROM(lowerRom);
 }
 
-void Core::EnableUpperRom(bool enabled)
+void Core::EnableUpperROM(bool enabled)
 {
-    _memory.EnableUpperRom(enabled);
-    _memory.ConfigureRAM();
+    _memory.EnableUpperROM(enabled);
 }
 
 void Core::SetUpperRom(byte slot, Mem16k& rom)
 {
-    _memory.AddUpperRom(slot, rom);
+    _memory.SetUpperROM(slot, rom);
 }
 
 // RAM methods
@@ -182,7 +180,7 @@ void Core::VideoRender()
     bool inBorder = !inScreen && !inSync;
 
     dword offset = (_scrPitch * _crtc._y) + _crtc._x * 16;
-    byte* pPixel = ((byte*)_pScreen) + offset;
+    byte* pPixel = _pScreen + offset;
 
     if (inSync)
     {
@@ -304,7 +302,7 @@ void Core::LoadDisc(byte drive, const byte* pBuffer, int size)
     _fdc._drives[drive].Load(disk);
 }
 
-void Core::StepOne(byte stopReason)
+void Core::Step(byte stopReason)
 {
     if (_eiDelay > 0)
     {

@@ -96,8 +96,15 @@ namespace CPvC.UI
                         continue;
                     }
 
-                    Machine machine = Machine.Open(tokens[0], tokens[1], fileSystem, true);
-                    Machines.Add(machine);
+                    try
+                    {
+                        Machine machine = Machine.Open(tokens[0], tokens[1], fileSystem, true);
+                        Machines.Add(machine);
+                    }
+                    catch
+                    {
+                        Diagnostics.Trace("Unable to load \"{0}\".", tokens[1]);
+                    }
                 }
             }
         }

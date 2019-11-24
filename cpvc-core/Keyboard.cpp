@@ -70,12 +70,6 @@ void Keyboard::Clash()
 
 byte Keyboard::SetLineState(byte(&matrix)[_lineCount], byte line, byte bit, bool state)
 {
-    if (line >= _lineCount)
-    {
-        // Invalid keyboard line
-        return 0;
-    }
-
     byte mask = 1 << bit;
     byte before = matrix[line];
     if (state)

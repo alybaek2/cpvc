@@ -56,7 +56,7 @@ namespace CPvC
         /// <summary>
         /// Opens an existing machine.
         /// </summary>
-        /// <param name="name">The name of the name. Not required if <c>lazy</c> is false.</param>
+        /// <param name="name">The name of the machine. Not required if <c>lazy</c> is false.</param>
         /// <param name="machineFilepath">Filepath to the machine file.</param>
         /// <param name="fileSystem">File system interface.</param>
         /// <param name="lazy">If true, executes a minimal "lazy" load of the machine - only the <c>Name</c>, <c>Filepath</c>, and <c>Display.Bitmap</c> properties will be populated. A subsequent call to <c>Open</c> will be required to fully load the machine.</param>
@@ -241,7 +241,7 @@ namespace CPvC
                         ((Core != null && CurrentEvent.Ticks != Core.Ticks) || CurrentEvent.Bookmark == null || !CurrentEvent.Bookmark.System))
                     {
                         Bookmark bookmark = GetBookmark(true);
-                        HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(NextEventId(), bookmark.Ticks, DateTime.UtcNow, bookmark);
+                        HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark);
                         AddEvent(historyEvent, true);
                     }
                 }
@@ -261,7 +261,7 @@ namespace CPvC
 
             _nextEventId = 0;
 
-            Display.EnableGreyscale(true);
+            Display?.EnableGreyscale(true);
         }
 
         /// <summary>
@@ -424,9 +424,9 @@ namespace CPvC
             using (AutoPause())
             {
                 Bookmark bookmark = GetBookmark(system);
-                AddEvent(HistoryEvent.CreateCheckpoint(NextEventId(), bookmark.Ticks, DateTime.UtcNow, bookmark), true);
+                AddEvent(HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark), true);
 
-                Diagnostics.Trace("Created bookmark at tick {0}", bookmark.Ticks);
+                Diagnostics.Trace("Created bookmark at tick {0}", _core.Ticks);
             }
         }
 
@@ -523,6 +523,13 @@ namespace CPvC
             {
                 return;
             }
+
+            // Set a checkpoint. This is needed to ensure that walking up the tree stops at the correct node.
+            // For example, if CurrentEvent has one child, and the current ticks is greater than CurrentEvent.Ticks,
+            // then if TrimTimeline is called with that child, then we want to delete only that child. Without
+            // setting a checkpoint, the following code will walk all the way up the tree to the nearest event with
+            // more than one child, which isn't what we want.
+            SetCheckpoint();
 
             // Walk up the tree to find the node to be removed...
             HistoryEvent parent = historyEvent.Parent;
@@ -655,7 +662,7 @@ namespace CPvC
         {
             using (AutoPause())
             {
-                return new Bookmark(_core.Ticks, system, DateTime.UtcNow, _core.GetState());
+                return new Bookmark(system, _core.GetState());
             }
         }
 

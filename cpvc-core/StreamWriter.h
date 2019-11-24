@@ -16,12 +16,12 @@ public:
     {
     };
 
-    size_t Size()
+    size_t Size() const
     {
         return _buffer.size();
     }
 
-    size_t CopyTo(byte* pBuffer, size_t bufferSize)
+    size_t CopyTo(byte* pBuffer, size_t bufferSize) const
     {
         size_t bytesToCopy = Size();
         if (bytesToCopy > bufferSize)
@@ -32,6 +32,13 @@ public:
         memcpy(pBuffer, _buffer.data(), bytesToCopy);
 
         return bytesToCopy;
+    }
+
+    size_t CopyTo(bytevector& bv) const
+    {
+        bv.resize(Size());
+
+        return CopyTo(bv.data(), bv.size());
     }
 
     StreamWriter& operator<<(byte data)
@@ -94,17 +101,6 @@ public:
         for (size_t x = 0; x < size; x++)
         {
             (*this) << vector.at(x);
-        }
-
-        return (*this);
-    }
-
-    template<class T, int S>
-    StreamWriter& operator<<(const std::array<T, S>& arr)
-    {
-        for (size_t x = 0; x < S; x++)
-        {
-            (*this) << arr.at(x);
         }
 
         return (*this);

@@ -14,7 +14,7 @@ namespace CPvC
 
         static private string GetStringSetting(string name)
         {
-            return Properties.Settings.Default[name].ToString();
+            return Properties.Settings.Default[name] as string;
         }
 
         static private void SetStringSetting(string name, string value)

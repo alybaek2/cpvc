@@ -6,7 +6,7 @@
 #include "IBus.h"
 
 
-class GateArray : public IBusNoAddress
+class GateArray : public IBusNoAddressWriteOnly
 {
 public:
     GateArray(Memory& memory, bool& interruptRequested, byte& scanLineCount);
@@ -25,7 +25,6 @@ public:
 
     void Reset();
 
-    byte Read();
     void Write(byte b);
 
     void RenderPens();

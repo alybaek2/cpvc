@@ -270,9 +270,9 @@ namespace CPvC
             switch (type)
             {
                 case Type.CPC6128:
-                    core._coreCLR.LoadLowerRom(Resources.OS6128);
-                    core._coreCLR.LoadUpperRom(0, Resources.Basic6128);
-                    core._coreCLR.LoadUpperRom(7, Resources.Amsdos6128);
+                    core.SetLowerROM(Resources.OS6128);
+                    core.SetUpperROM(0, Resources.Basic6128);
+                    core.SetUpperROM(7, Resources.Amsdos6128);
                     break;
                 default:
                     throw new ArgumentException(String.Format("Unknown core type {0}", type));
@@ -289,6 +289,16 @@ namespace CPvC
         public void Stop()
         {
             SetRunning(false);
+        }
+
+        public void SetLowerROM(byte[] lowerROM)
+        {
+            _coreCLR.LoadLowerROM(lowerROM);
+        }
+
+        public void SetUpperROM(byte slot, byte[] upperROM)
+        {
+            _coreCLR.LoadUpperROM(slot, upperROM);
         }
 
         /// <summary>
@@ -363,6 +373,10 @@ namespace CPvC
         /// <returns>The number of samples that were copied in the buffer. Note this can be less than <c>samplesRequested</c>.</returns>
         public int ReadAudio16BitStereo(byte[] buffer, int offset, int samplesRequested)
         {
+            // Each sample requires four bytes, so take the size of the buffer to be the largest multiple
+            // of 4 less than or equal to the length of the buffer.
+            int bufferSize = 4 * (buffer.Length / 4);
+
             // Skew the volume factor so the volume control presents a more balanced range of volumes.
             double volumeFactor = Math.Pow(_volume / 255.0, 3);
 
@@ -372,7 +386,7 @@ namespace CPvC
                 int samplesToGet = Math.Min(samplesRequested - samplesWritten, _audioBufferSize);
                 int samplesReturned = GetAudioBuffers(samplesToGet, _audioChannelA, _audioChannelB, _audioChannelC);
 
-                for (int s = 0; s < samplesReturned; s++)
+                for (int s = 0; s < samplesReturned && offset < bufferSize; s++)
                 {
                     // Treat Channel A as "Left", Channel B as "Centre", and Channel C as "Right".
                     UInt32 left = (UInt32)(((2 * _amplitudes[_audioChannelA[s]]) + _amplitudes[_audioChannelB[s]]) * volumeFactor) / 3;
@@ -421,13 +435,6 @@ namespace CPvC
             {
                 _coreCLR.AudioSampleFrequency(frequency);
             }
-        }
-
-        private void SetFrequency(UInt32 frequency)
-        {
-            _audioSamplingFrequency = frequency;
-
-            _coreCLR.AudioSampleFrequency(frequency);
         }
 
         private void PushRequest(CoreRequest request)
@@ -517,9 +524,6 @@ namespace CPvC
                             OnPropertyChanged("Ticks");
                         }
                     }
-                    break;
-                default:
-                    action = null;
                     break;
             }
 

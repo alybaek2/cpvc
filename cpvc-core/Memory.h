@@ -16,6 +16,9 @@ public:
     Memory()
     {
         Reset();
+
+        _lowerRom.Fill(0);
+        _upperRom.Fill(0);
     };
 
     ~Memory() {};
@@ -55,7 +58,7 @@ public:
 
         _lowerRomEnabled = true;
         _upperRomEnabled = true;
-        _selectedUpperRom = 0;
+        SelectROM(0);
 
         SetRAMConfig(0);
     }
@@ -86,34 +89,44 @@ public:
     void EnableLowerROM(bool enable)
     {
         _lowerRomEnabled = enable;
+        ConfigureRAM();
     }
 
-    void AddUpperRom(byte slot, const Mem16k& rom)
+    void SetUpperROM(byte slot, const Mem16k& rom)
     {
         _roms[slot] = rom;
+        if (_selectedUpperRom == slot)
+        {
+            _upperRom = _roms[_selectedUpperRom];
+        }
     }
 
-    void RemoveUpperRom(byte slot)
+    void RemoveUpperROM(byte slot)
     {
         _roms.erase(slot);
     }
 
-    void EnableUpperRom(bool enable)
+    void EnableUpperROM(bool enable)
     {
         _upperRomEnabled = enable;
+        ConfigureRAM();
     }
 
     void SelectROM(byte rom)
     {
         if (_roms.find(rom) == _roms.end())
         {
-            rom = 0;
+            _selectedUpperRom = 0;
+            if (_roms.find(0) == _roms.end())
+            {
+                _upperRom.Fill(0);
+            }
         }
-
-        _selectedUpperRom = rom;
-        _upperRom = _roms[rom];
-
-        ConfigureRAM();
+        else
+        {
+            _selectedUpperRom = rom;
+            _upperRom = _roms[rom];
+        }
     }
 
     void SetRAMConfig(byte config)
@@ -161,7 +174,6 @@ public:
         s >> memory._upperRomEnabled;
         s >> memory._selectedUpperRom;
         s >> memory._lowerRom;
-
         s >> memory._roms;
 
         // Probably more consistent to serialize each read and write bank separately, as it's not

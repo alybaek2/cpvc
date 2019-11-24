@@ -2,7 +2,7 @@
 
 #include "..\cpvc-core\IBus.h"
 
-class MockDevice : public IBus
+class MockDevice : public IBus, public IBusNoAddressWriteOnly
 {
 public:
     MockDevice()
@@ -46,40 +46,6 @@ public:
         _writeAddress = addr;
         _writeByte = b;
     }
-};
-
-class MockDeviceNoAddress : public IBusNoAddress
-{
-public:
-    MockDeviceNoAddress()
-    {
-        Reset();
-    }
-
-    ~MockDeviceNoAddress()
-    {
-    }
-
-    bool _writeCalled;
-    byte _writeByte;
-
-    bool _readCalled;
-    byte _readByte;
-
-    void Reset()
-    {
-        _writeCalled = false;
-        _writeByte = 0x00;
-
-        _readCalled = false;
-        _readByte = 0x00;
-    }
-
-    byte Read()
-    {
-        _readCalled = true;
-        return _readByte;
-    }
 
     void Write(byte b)
     {
@@ -87,4 +53,3 @@ public:
         _writeByte = b;
     }
 };
-

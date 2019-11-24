@@ -9,9 +9,8 @@ public:
     virtual void Write(word address, byte data) = 0;
 };
 
-class IBusNoAddress
+class IBusNoAddressWriteOnly
 {
 public:
-    virtual byte Read() = 0;
     virtual void Write(byte data) = 0;
 };

@@ -12,28 +12,17 @@ namespace CPvC.Test
         private List<string> _lines;
         private Mock<IFileSystem> _mockFileSystem;
 
-        private void RunForAWhile(Machine machine)
+        private Machine CreateMachine()
         {
-            UInt64 startTicks = machine.Core.Ticks;
+            Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
 
-            int timeWaited = 0;
-            int sleepTime = 10;
-            machine.Start();
-            while (machine.Core.Ticks == startTicks)
-            {
-                if (timeWaited > 1000)
-                {
-                    throw new Exception(String.Format("Waited too long for Machine to run! {0} {1}", machine.Core.Ticks, machine.Core.Running));
-                }
+            // For consistency with automated builds, use all zero ROMs.
+            byte[] zeroROM = new byte[0x4000];
+            machine.Core.SetLowerROM(zeroROM);
+            machine.Core.SetUpperROM(0, zeroROM);
+            machine.Core.SetUpperROM(7, zeroROM);
 
-                System.Threading.Thread.Sleep(sleepTime);
-                timeWaited += sleepTime;
-
-                // Empty out the audio buffer to prevent the machine from stalling...
-                machine.AdvancePlayback(48000);
-            }
-
-            machine.Stop();
+            return machine;
         }
 
         [SetUp]
@@ -41,6 +30,7 @@ namespace CPvC.Test
         {
             _mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
             _mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(AnyString()));
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
 
             Mock<IFile> mockWriter = new Mock<IFile>(MockBehavior.Strict);
             mockWriter.Setup(s => s.WriteLine(AnyString())).Callback<string>(line => _lines.Add(line));
@@ -63,7 +53,7 @@ namespace CPvC.Test
         {
             // Act
             UInt64 ticks = 0;
-            using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
+            using (Machine machine = CreateMachine())
             {
                 machine.AddBookmark(true);
 
@@ -95,7 +85,7 @@ namespace CPvC.Test
         {
             // Act
             int linesCount = 0;
-            using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
+            using (Machine machine = CreateMachine())
             {
                 linesCount = _lines.Count;
             }
@@ -113,7 +103,7 @@ namespace CPvC.Test
         public void AutoPause()
         {
             // Act and Verify
-            using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
+            using (Machine machine = CreateMachine())
             {
                 machine.Start();
 
@@ -166,6 +156,267 @@ namespace CPvC.Test
                 Assert.AreEqual(machine.CurrentEvent.Id, bookmarkId);
                 Assert.AreEqual(machine.Core.Ticks, ticks);
                 Assert.AreEqual(state, machine.Core.GetState());
+            }
+        }
+
+        /// <summary>
+        /// Ensures that a machine opened "lazily" sets the appropriate RequiresOpen property.
+        /// </summary>
+        [Test]
+        public void OpenLazy()
+        {
+            // Setup
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(new string[] { "name:Test", "checkpoint:0:0:0:0" });
+
+            // Act
+            using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, true))
+            {
+                // Verify
+                Assert.IsTrue(machine.RequiresOpen);
+                Assert.AreEqual(machine.Filepath, "test.cpvc");
+                Assert.AreEqual(machine.Name, "Test");
+            }
+        }
+
+        [Test]
+        public void OpenNoCurrentEvent()
+        {
+            // Setup
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(new string[] { "name:Test" });
+
+            // Act and Verify
+            Assert.Throws<Exception>(() =>
+            {
+                using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false)) { }
+            });
+        }
+
+        [Test]
+        public void OpenInvalidToken()
+        {
+            // Setup
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(new string[] { "invalid:0" });
+
+            // Act and Verify
+            Assert.Throws<Exception>(() =>
+            {
+                using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false)) { }
+            });
+        }
+
+        /// <summary>
+        /// Ensures an existing machine is opened with the expected state.
+        /// </summary>
+        [Test]
+        public void Open()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                RunForAWhile(machine);
+                machine.Key(Keys.A, true);
+                RunForAWhile(machine);
+                machine.LoadDisc(0, null);
+                RunForAWhile(machine);
+                machine.LoadTape(null);
+                RunForAWhile(machine);
+                machine.Reset();
+                RunForAWhile(machine);
+                machine.AddBookmark(false);
+                HistoryEvent bookmarkEvent = machine.CurrentEvent;
+                RunForAWhile(machine);
+                machine.SeekToLastBookmark();
+                HistoryEvent eventToDelete = bookmarkEvent.Children[0];
+                RunForAWhile(machine);
+                machine.SetBookmark(bookmarkEvent, null);
+                machine.TrimTimeline(eventToDelete);
+            }
+
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(_lines.ToArray());
+            using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
+            {
+                // Verify
+                Assert.IsFalse(machine.RequiresOpen);
+                Assert.AreEqual(machine.Filepath, "test.cpvc");
+                Assert.AreEqual(machine.Name, "test");
+
+                Assert.AreEqual(HistoryEvent.Types.Checkpoint, machine.RootEvent.Type);
+                Assert.AreEqual(1, machine.RootEvent.Children.Count);
+
+                HistoryEvent historyEvent = machine.RootEvent.Children[0];
+                Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
+                Assert.AreEqual(CoreActionBase.Types.KeyPress, historyEvent.CoreAction.Type);
+                Assert.AreEqual(Keys.A, historyEvent.CoreAction.KeyCode);
+                Assert.IsTrue(historyEvent.CoreAction.KeyDown);
+                Assert.AreEqual(1, historyEvent.Children.Count);
+
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
+                Assert.AreEqual(CoreActionBase.Types.LoadDisc, historyEvent.CoreAction.Type);
+                Assert.AreEqual(0, historyEvent.CoreAction.Drive);
+                Assert.IsNull(historyEvent.CoreAction.MediaBuffer);
+                Assert.AreEqual(1, historyEvent.Children.Count);
+
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
+                Assert.AreEqual(CoreActionBase.Types.LoadTape, historyEvent.CoreAction.Type);
+                Assert.IsNull(historyEvent.CoreAction.MediaBuffer);
+                Assert.AreEqual(1, historyEvent.Children.Count);
+
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
+                Assert.AreEqual(CoreActionBase.Types.Reset, historyEvent.CoreAction.Type);
+                Assert.AreEqual(1, historyEvent.Children.Count);
+
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEvent.Types.Checkpoint, historyEvent.Type);
+                Assert.IsNull(historyEvent.Bookmark);
+                Assert.AreEqual(1, historyEvent.Children.Count);
+
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEvent.Types.Checkpoint, historyEvent.Type);
+                Assert.IsNull(historyEvent.Bookmark);
+                Assert.AreEqual(1, historyEvent.Children.Count);
+
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEvent.Types.Checkpoint, historyEvent.Type);
+                Assert.IsNotNull(historyEvent.Bookmark);
+
+                Assert.AreEqual(historyEvent, machine.CurrentEvent);
+            }
+        }
+
+        /// <summary>
+        /// Ensure that if a machine file is missing the final system bookmark that's written when
+        /// a machine is closed, the machine when opened should set the current event to the most
+        /// recent event that has a bookmark.
+        /// </summary>
+        [Test]
+        public void OpenWithMissingFinalBookmark()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                RunForAWhile(machine);
+                machine.AddBookmark(false);
+                RunForAWhile(machine);
+                machine.LoadDisc(0, null);
+                RunForAWhile(machine);
+            }
+
+            // Remove the final system bookmark that was added when the machine was closed.
+            _lines.RemoveAt(_lines.Count - 1);
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(_lines.ToArray());
+
+            // Act
+            using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
+            {
+                // Verify
+                HistoryEvent bookmarkEvent = machine.RootEvent.Children[0];
+                Assert.AreEqual(bookmarkEvent, machine.CurrentEvent);
+            }
+        }
+
+        /// <summary>
+        /// Ensures the correct number of audio samples are generated after running the core.
+        /// </summary>
+        /// <param name="ticks">The number of ticks to run the core for.</param>
+        /// <param name="expectedSamples">The number of audio samples that should be written.</param>
+        /// <param name="bufferSize">The size of the buffer to receive audio data.</param>
+        [TestCase(4UL, 1, 100)]
+        [TestCase(250UL, 1, 7)]
+        [TestCase(250UL, 4, 100)]
+        [TestCase(504UL, 7, 100)]
+        [TestCase(85416UL, 1025, 4104)]  // This test case ensures we do at least 2 iterations of the while loop in ReadAudio16BitStereo.
+        public void GetAudio(UInt64 ticks, int expectedSamples, int bufferSize)
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                machine.Core.SetLowerROM(new byte[0x4000]);
+                machine.Core.SetUpperROM(0, new byte[0x4000]);
+                machine.Core.SetUpperROM(7, new byte[0x4000]);
+
+                byte[] buffer = new byte[bufferSize];
+
+                // Act
+                machine.Core.RunUntil(ticks, StopReasons.AudioOverrun);
+                int samples = machine.ReadAudio(buffer, 0, bufferSize);
+
+                // Verify
+                Assert.AreEqual(expectedSamples, samples);
+            }
+        }
+
+        [Test]
+        public void Toggle()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                machine.Start();
+
+                // Act
+                bool running1 = machine.Core.Running;
+                machine.ToggleRunning();
+                bool running2 = machine.Core.Running;
+                machine.ToggleRunning();
+
+                // Verify
+                Assert.IsTrue(running1);
+                Assert.IsFalse(running2);
+                Assert.IsTrue(machine.Core.Running);
+            }
+        }
+
+        [Test]
+        public void RewriteFile()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                RunForAWhile(machine);
+                machine.LoadDisc(0, null);
+                RunForAWhile(machine);
+                machine.AddBookmark(false);
+                RunForAWhile(machine);
+
+                HistoryEvent bookmarkEvent = machine.CurrentEvent;
+
+                machine.LoadDisc(0, null);
+                RunForAWhile(machine);
+
+                HistoryEvent eventToDelete = machine.CurrentEvent;
+
+                machine.SeekToLastBookmark();
+                machine.LoadDisc(0, null);
+                RunForAWhile(machine);
+                machine.TrimTimeline(eventToDelete.Children[0]);
+                machine.SetBookmark(bookmarkEvent, null);
+            }
+
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(_lines.ToArray());
+            _lines.Clear();
+            using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
+            {
+                // Act
+                machine.RewriteMachineFile();
+            }
+
+            // Verify
+            string[] expectedLines = {
+                "name:test",
+                "checkpoint:0:",
+                "disc:1:",
+                "disc:5:",
+                "checkpoint:7:",
+                "current:7"
+            };
+
+            Assert.AreEqual(expectedLines.Length, _lines.Count);
+            for (int i = 0; i < expectedLines.Length; i++)
+            {
+                Assert.AreEqual(expectedLines[i], _lines[i].Substring(0, expectedLines[i].Length));
             }
         }
     }
