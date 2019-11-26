@@ -149,9 +149,11 @@ namespace CPvC.UI.Forms
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            _mainViewModel.CloseAll();
-
+            // Stop audio prior to closing machines to ensure no audio callbacks are triggered
+            // during Dispose calls.
             StopAudio();
+
+            _mainViewModel.CloseAll();
         }
 
         private void ExitMenuItem_Click(object sender, RoutedEventArgs e)

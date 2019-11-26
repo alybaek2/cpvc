@@ -2510,7 +2510,7 @@ TEST_F(Z80Tests, OTIDR)
                                 ((k > 0xff) ? (flagH | flagC) : 0) |
                                 (Parity(p) ? flagPV : 0);
 
-                            ASSERT_EQ(ticks, (repeatFlag ? 25 : 20) - (inFlag ? 1 : 0));
+                            ASSERT_EQ(repeatFlag ? 24 : 19, ticks);
                             ASSERT_EQ(_core.F, expectedF);
                             ASSERT_EQ(_core.B, expectedB);
                             ASSERT_EQ(_core.HL, (word)(hl + (incFlag ? 1 : -1)));
@@ -2560,7 +2560,7 @@ TEST_F(Z80Tests, INAn)
             ASSERT_EQ(_bus._readAddress, MakeWord(a, n));
             ASSERT_EQ(_bus._readByte, n);
             ASSERT_EQ(_core.F, f);
-            CommonChecks(ticks, 12, 0x0002, 0x01);
+            CommonChecks(ticks, 11, 0x0002, 0x01);
         }
     }
 }
@@ -2585,7 +2585,7 @@ TEST_F(Z80Tests, OUTnA)
             ASSERT_EQ(_bus._writeAddress, MakeWord(a, n));
             ASSERT_EQ(_bus._writeByte, a);
             ASSERT_EQ(_core.F, f);
-            CommonChecks(ticks, 12, 0x0002, 0x01);
+            CommonChecks(ticks, 11, 0x0002, 0x01);
         }
     }
 }

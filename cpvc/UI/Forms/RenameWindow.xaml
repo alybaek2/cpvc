@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CPvC.UI.Forms"
         mc:Ignorable="d"
-        Title="CPvC" Height="115" Width="230" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" SizeToContent="WidthAndHeight">
+        Title="Rename" Height="115" Width="230" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" SizeToContent="WidthAndHeight">
     <Grid>
         <Button x:Name="CancelButton" Content="Cancel" Margin="139,56,10,10" Click="CancelButton_Click"/>
         <Button x:Name="OkButton" Content="OK" Margin="59,56,90,10" Click="OkButton_Click"/>
