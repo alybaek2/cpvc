@@ -262,15 +262,11 @@ void Core::MemWriteRequest(word addr, byte b)
 
 byte Core::BusReadRequest(word addr)
 {
-    TickToNextMs();
-
     return BusRead(addr);
 }
 
 void Core::BusWriteRequest(word addr, byte b)
 {
-    TickToNextMs();
-
     BusWrite(addr, b);
 }
 

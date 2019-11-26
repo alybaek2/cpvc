@@ -223,7 +223,7 @@ void CRTC::Tick()
 
             _memoryAddress += _horizontalDisplayed;
 
-            if (_vCount == (_verticalSyncPosition + 0))
+            if (_vCount == _verticalSyncPosition)
             {
                 _inVSync = true;
                 _vSyncCount = 0;

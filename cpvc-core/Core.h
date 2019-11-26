@@ -2097,6 +2097,7 @@ private:
         Tick(4);
     }
 
+    // IN (C),r
     void INrC(byte& r)
     {
         // M1 (continued)
@@ -2180,7 +2181,7 @@ private:
 
         // M2
         byte n = MemReadRequest(HL);
-        HL += (inc?1:-1);
+        HL += (inc ? 1 : -1);
         Tick(3);
 
         // M3
