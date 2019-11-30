@@ -41,6 +41,13 @@ namespace CPvC.Test
             _lines = new List<string>();
         }
 
+        [TearDown]
+        public void Teardown()
+        {
+            _lines = null;
+            _mockFileSystem = null;
+        }
+
         /// <summary>
         /// Ensures that the machine writes a system bookmark when closing, except when the
         /// current event is already a system bookmark at the same point in time. This can

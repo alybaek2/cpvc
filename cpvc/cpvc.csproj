@@ -150,7 +150,6 @@
     <Compile Include="UI\HistoryViewItem.cs" />
     <Compile Include="UI\Converters\Invisibility.cs" />
     <Compile Include="UI\MainModel.cs" />
-    <Compile Include="UI\MainViewLogic.cs" />
     <Compile Include="UI\MainViewModel.cs" />
     <Compile Include="UnmanagedMemory.cs" />
     <Page Include="UI\Forms\MainWindow.xaml">

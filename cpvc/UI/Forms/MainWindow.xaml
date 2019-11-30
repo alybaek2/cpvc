@@ -28,8 +28,8 @@
             </Style.Resources>
             <Setter Property="IsEnabled" Value="{Binding ActiveMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
         </Style>
-        <CollectionViewSource x:Key="Machines" Source="{Binding ViewModel.Machines}"/>
-        <CollectionViewSource x:Key="OpenMachines" Source="{Binding ViewModel.Machines}" Filter="OpenMachines_Filter" IsLiveFilteringRequested="True">
+        <CollectionViewSource x:Key="Machines" Source="{Binding Machines}"/>
+        <CollectionViewSource x:Key="OpenMachines" Source="{Binding Machines}" Filter="OpenMachines_Filter" IsLiveFilteringRequested="True">
             <CollectionViewSource.LiveFilteringProperties>
                 <System:String>RequiresOpen</System:String>
             </CollectionViewSource.LiveFilteringProperties>

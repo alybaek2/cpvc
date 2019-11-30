@@ -20,6 +20,14 @@ namespace CPvC.Test
             _file = new MachineFile(_mockWriter);
         }
 
+        [TearDown]
+        public void Teardown()
+        {
+            _lines = null;
+            _mockWriter = null;
+            _file = null;
+        }
+
         [Test]
         public void WriteName()
         {

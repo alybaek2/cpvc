@@ -16,7 +16,6 @@ namespace CPvC.UI.Forms
 
         private readonly ISettings _settings;
 
-        private readonly MainViewLogic _mainViewLogic;
         private readonly MainViewModel _mainViewModel;
 
         public MainWindow()
@@ -24,8 +23,7 @@ namespace CPvC.UI.Forms
             _settings = new Settings();
             _fileSystem = new FileSystem();
             _mainViewModel = new MainViewModel(_settings, _fileSystem);
-            _mainViewLogic = new MainViewLogic(_mainViewModel);
-            _audio = new Audio(_mainViewLogic.ReadAudio);
+            _audio = new Audio(_mainViewModel.ReadAudio);
 
             InitializeComponent();
         }
@@ -142,7 +140,7 @@ namespace CPvC.UI.Forms
         {
             InitKeyboardMap();
 
-            DataContext = _mainViewLogic;
+            DataContext = _mainViewModel;
 
             StartAudio();
         }
@@ -163,45 +161,45 @@ namespace CPvC.UI.Forms
 
         private void DriveAButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.LoadDisc(0, _fileSystem, PromptForFile, SelectItem);
+            _mainViewModel.LoadDisc(0, _fileSystem, PromptForFile, SelectItem);
         }
 
         private void DriveBButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.LoadDisc(1, _fileSystem, PromptForFile, SelectItem);
+            _mainViewModel.LoadDisc(1, _fileSystem, PromptForFile, SelectItem);
         }
 
         private void TapeButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.LoadTape(_fileSystem, PromptForFile, SelectItem);
+            _mainViewModel.LoadTape(_fileSystem, PromptForFile, SelectItem);
         }
 
         private void PauseButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.Pause();
+            _mainViewModel.Pause(null);
         }
 
         private void ResumeButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.Resume();
+            _mainViewModel.Resume(null);
         }
 
         private void ResetButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.Reset();
+            _mainViewModel.Reset(null);
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.OemTilde)
             {
-                _mainViewLogic.EnableTurbo(true);
+                _mainViewModel.EnableTurbo(true);
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);
             if (cpcKey.HasValue)
             {
-                _mainViewLogic.Key(cpcKey.Value, true);
+                _mainViewModel.Key(cpcKey.Value, true);
             }
         }
 
@@ -209,36 +207,36 @@ namespace CPvC.UI.Forms
         {
             if (e.Key == Key.OemTilde)
             {
-                _mainViewLogic.EnableTurbo(false);
+                _mainViewModel.EnableTurbo(false);
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);
             if (cpcKey.HasValue)
             {
-                _mainViewLogic.Key(cpcKey.Value, false);
+                _mainViewModel.Key(cpcKey.Value, false);
             }
         }
 
         private void AddBookmarkButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.AddBookmark();
+            _mainViewModel.AddBookmark();
         }
 
         private void SeekToLastBookmarkButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.SeekToLastBookmark();
+            _mainViewModel.SeekToLastBookmark();
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.Close();
+            _mainViewModel.Close(null);
         }
 
         private void OpenMenuItem_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                _mainViewLogic.OpenMachine(null, _fileSystem, PromptForFile);
+                _mainViewModel.OpenMachine(PromptForFile, null, _fileSystem);
             }
             catch (Exception ex)
             {
@@ -248,47 +246,47 @@ namespace CPvC.UI.Forms
 
         private void CloseMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.Close();
+            _mainViewModel.Close(null);
         }
 
         private void PauseMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.Pause();
+            _mainViewModel.Pause(null);
         }
 
         private void ResumeMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.Resume();
+            _mainViewModel.Resume(null);
         }
 
         private void ResetMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.Reset();
+            _mainViewModel.Reset(null);
         }
 
         private void AddBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.AddBookmark();
+            _mainViewModel.AddBookmark();
         }
 
         private void PreviousBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.SeekToLastBookmark();
+            _mainViewModel.SeekToLastBookmark();
         }
 
         private void DriveAMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.LoadDisc(0, _fileSystem, PromptForFile, SelectItem);
+            _mainViewModel.LoadDisc(0, _fileSystem, PromptForFile, SelectItem);
         }
 
         private void DriveBMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.LoadDisc(1, _fileSystem, PromptForFile, SelectItem);
+            _mainViewModel.LoadDisc(1, _fileSystem, PromptForFile, SelectItem);
         }
 
         private void TapeMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.LoadTape(_fileSystem, PromptForFile, SelectItem);
+            _mainViewModel.LoadTape(_fileSystem, PromptForFile, SelectItem);
         }
 
         private string PromptForFile(FileTypes type, bool existing)
@@ -355,7 +353,7 @@ namespace CPvC.UI.Forms
 
         private HistoryEvent PromptForBookmark()
         {
-            Machine machine = _mainViewLogic.ActiveMachine;
+            Machine machine = _mainViewModel.ActiveMachine;
 
             using (BookmarkSelectWindow dialog = new BookmarkSelectWindow(this, machine))
             using (machine.AutoPause())
@@ -396,7 +394,7 @@ namespace CPvC.UI.Forms
         {
             try
             {
-                _mainViewLogic.NewMachine(_fileSystem, PromptForFile);
+                _mainViewModel.NewMachine(PromptForFile, _fileSystem);
             }
             catch (Exception ex)
             {
@@ -406,39 +404,39 @@ namespace CPvC.UI.Forms
 
         private void JumpToBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.SelectBookmark(PromptForBookmark);
+            _mainViewModel.SelectBookmark(PromptForBookmark);
         }
 
         private void DriveAEjectMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.LoadDisc(_mainViewLogic.ActiveMachine, 0, null);
+            _mainViewModel.LoadDisc(0, _fileSystem, PromptForFile, SelectItem);
         }
 
         private void DriveBEjectMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.LoadDisc(_mainViewLogic.ActiveMachine, 1, null);
+            _mainViewModel.LoadDisc(1, _fileSystem, PromptForFile, SelectItem);
         }
 
         private void TapeEjectMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.LoadTape(_mainViewLogic.ActiveMachine, null);
+            _mainViewModel.LoadTape(_fileSystem, PromptForFile, SelectItem);
         }
 
         private void CompactFileMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.CompactFile();
+            _mainViewModel.CompactFile();
         }
 
         private void RenameFileMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.RenameMachine(PromptForName);
+            _mainViewModel.RenameMachine(PromptForName);
         }
 
         private void MachinePreviewGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (sender is FrameworkElement element && element.DataContext is Machine machine)
             {
-                _mainViewLogic.ActiveMachine = machine;
+                _mainViewModel.ActiveMachine = machine;
             }
         }
 
@@ -509,7 +507,7 @@ namespace CPvC.UI.Forms
 
         private void BrowseBookmarksButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewLogic.SelectBookmark(PromptForBookmark);
+            _mainViewModel.SelectBookmark(PromptForBookmark);
         }
     }
 }
