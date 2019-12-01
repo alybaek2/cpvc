@@ -426,5 +426,37 @@ namespace CPvC.Test
                 Assert.AreEqual(expectedLines[i], _lines[i].Substring(0, expectedLines[i].Length));
             }
         }
+
+        [Test]
+        public void EnableTurbo()
+        {
+            // Setup
+            UInt64 turboDuration = 0;
+            UInt64 normalDuration = 0;
+            using (Machine machine = CreateMachine())
+            {
+                // Act
+                machine.EnableTurbo(true);
+
+                // Run long enough to fill the audio buffer.
+                Run(machine, 10000000, true);
+                turboDuration = machine.Core.Ticks;
+
+                // Empty out the audio buffer.
+                machine.AdvancePlayback(1000000);
+
+                machine.EnableTurbo(false);
+                Run(machine, 10000000, true);
+                normalDuration = machine.Core.Ticks - turboDuration;
+            }
+
+            // Verify
+            double expectedSpeedFactor = 10.0;
+            double actualSpeedFactor = ((double)turboDuration) / ((double)normalDuration);
+
+            // We can't expect the actual factor to be *precisely* 10 times greater than
+            // normal, so just make sure it's reasonably close.
+            Assert.Less(Math.Abs(1 - (actualSpeedFactor / expectedSpeedFactor)), 0.001);
+        }
     }
 }

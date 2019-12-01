@@ -76,6 +76,9 @@ int Core::GetAudioBuffers(int numSamples, byte* (&pChannels)[3])
 void Core::SetFrequency(dword frequency)
 {
     _frequency = frequency;
+    _audioSampleCount = 0;
+    _audioTickTotal = 0;
+    _audioTicksToNextSample = 0;
 }
 
 byte Core::RunUntil(qword stopTicks, byte stopReason)
