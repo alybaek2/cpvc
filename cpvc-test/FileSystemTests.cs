@@ -83,6 +83,22 @@ namespace CPvC.Test
             Assert.IsFalse(System.IO.File.Exists(filepath));
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void Exists(bool exists)
+        {
+            // Setup
+            string filepath = TestHelpers.GetTempFilepath("deletetest.txt");
+            FileSystem fs = new FileSystem();
+            if (exists)
+            {
+                System.IO.File.WriteAllText(filepath, "abc");
+            }
+
+            // Act and Verify
+            Assert.AreEqual(exists, fs.Exists(filepath));
+        }
+
         [Test]
         public void ReadLines()
         {
