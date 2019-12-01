@@ -88,6 +88,7 @@ namespace CPvC.Test
             mockFileSystem.Setup(fileSystem => fileSystem.OpenFile(filepath)).Throws(new Exception("File not found"));
             mockFileSystem.Setup(ReadBytes()).Throws(new Exception("File missing"));
             mockFileSystem.Setup(DeleteFile(filepath));
+            mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(false);
 
             Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, filepath);
 
@@ -138,6 +139,7 @@ namespace CPvC.Test
             // Setup
             Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, true, promptedFilepath);
             MainViewModel viewModel = SetupViewModel(0);
+            _mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(true);
 
             // Act
             Machine machine = viewModel.OpenMachine(prompt.Object, filepath, _mockFileSystem.Object);
@@ -169,6 +171,7 @@ namespace CPvC.Test
             _lines = new string[] { "invalid" };
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
             Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, "test.cpvc");
+            _mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(true);
 
             // Act and Verify
             Assert.Throws<Exception>(() => viewModel.OpenMachine(prompt.Object, "test.cpvc", _mockFileSystem.Object));
@@ -179,8 +182,9 @@ namespace CPvC.Test
         public void NewMachine(string filepath, string expectedMachineName)
         {
             // Setup
-            Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, filepath);
             MainViewModel viewModel = SetupViewModel(0);
+            Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, filepath);
+            _mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(false);
 
             // Act
             viewModel.NewMachine(prompt.Object, _mockFileSystem.Object);

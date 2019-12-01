@@ -13,6 +13,7 @@ namespace CPvC
         void DeleteFile(string filename);
         string[] ReadLines(string filename);
         byte[] ReadBytes(string filename);
+        bool Exists(string filepath);
 
         List<string> GetZipFileEntryNames(string filename);
         byte[] GetZipFileEntry(string filename, string entryName);
