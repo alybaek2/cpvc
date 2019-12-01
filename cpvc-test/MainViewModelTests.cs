@@ -549,5 +549,24 @@ namespace CPvC.Test
             // Act and Verify
             Assert.DoesNotThrow(() => viewModel.ToggleRunning(null));
         }
+
+        [Test]
+        public void EnableTurbo()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1);
+            Machine machine = viewModel.Machines[0];
+            machine.Open();
+
+            // Act - enable turbo mode and run for enough ticks that should cause 10 audio
+            //       samples to be written while in turbo mode.
+            machine.EnableTurbo(true);
+            Run(machine, 8300, true);
+
+            // Verify
+            byte[] buffer = new byte[100];
+            int samples = machine.ReadAudio(buffer, 0, buffer.Length);
+            Assert.AreEqual(10, samples);
+        }
     }
 }
