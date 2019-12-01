@@ -436,7 +436,14 @@ namespace CPvC.UI.Forms
         {
             if (sender is FrameworkElement element && element.DataContext is Machine machine)
             {
-                _mainViewModel.ActiveMachine = machine;
+                try
+                {
+                    _mainViewModel.ActiveMachine = machine;
+                }
+                catch (Exception ex)
+                {
+                    ReportError(String.Format("Unable to open {0}.\n\n{1}", machine.Name, ex.Message));
+                }
             }
         }
 

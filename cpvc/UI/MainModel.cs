@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
@@ -26,20 +27,55 @@ namespace CPvC.UI
         public ObservableCollection<Machine> Machines { get; }
 
         /// <summary>
-        /// Adds a machine to the model.
+        /// Adds a machine to the model if it doesn't already exist.
         /// </summary>
-        /// <param name="machine">The machine to add.</param>
-        public void Add(Machine machine)
+        /// <param name="filepath">The filepath of the machine to add.</param>
+        /// <param name="fileSystem">The IFileSystem interface to use to access <c>filepath</c>.</param>
+        /// <returns></returns>
+        public Machine Add(string filepath, IFileSystem fileSystem)
         {
-            lock (Machines)
+            if (filepath == null)
             {
-                if (!Machines.Contains(machine))
-                {
-                    Machines.Add(machine);
-                }
+                return null;
             }
 
-            UpdateSettings();
+            lock (Machines)
+            {
+                Machine machine = null;
+
+                // Check to see if we've already got a machine with the same filepath open. Note that the check here using GetFullPath
+                // isn't foolproof, as the same file could have different paths (e.g. "C:\test.cpvc" and "\\machine\c$\test.cpvc").
+                string fullFilepath = System.IO.Path.GetFullPath(filepath);
+                machine = Machines.FirstOrDefault(m => String.Compare(System.IO.Path.GetFullPath(m.Filepath), fullFilepath, true) == 0);
+                if (machine == null)
+                {
+                    try
+                    {
+                        if (System.IO.File.Exists(filepath))
+                        {
+                            machine = Machine.Open(null, filepath, fileSystem, false);
+                        }
+                        else
+                        {
+                            string name = System.IO.Path.GetFileNameWithoutExtension(filepath);
+                            machine = Machine.New(name, filepath, fileSystem);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Diagnostics.Trace("Exception caught while opening {0}: {1}", filepath, ex.Message);
+                        machine?.Dispose();
+
+                        throw;
+                    }
+
+                    Machines.Add(machine);
+
+                    UpdateSettings();
+                }
+
+                return machine;
+            }
         }
 
         /// <summary>

@@ -94,28 +94,12 @@ namespace CPvC.UI
                 return null;
             }
 
-            string machineName = System.IO.Path.GetFileNameWithoutExtension(filepath);
-
-            Machine machine = null;
-
-            try
-            {
-                machine = Machine.New(machineName, filepath, fileSystem);
-            }
-            catch (Exception ex)
-            {
-                Diagnostics.Trace("[MainViewModel.NewMachine] Exception caught: {0}", ex.Message);
-                machine?.Dispose();
-
-                throw;
-            }
-
-            _model.Add(machine);
+            Machine machine = _model.Add(filepath, fileSystem);
             if (machine != null)
             {
+                machine.Start();
                 ActiveMachine = machine;
             }
-            machine.Start();
 
             return machine;
         }
@@ -127,26 +111,7 @@ namespace CPvC.UI
                 filepath = promptForFile(FileTypes.Machine, true);
             }
 
-            if (filepath == null)
-            {
-                return null;
-            }
-
-            Machine machine = null;
-
-            try
-            {
-                machine = Machine.Open(null, filepath, fileSystem, false);
-            }
-            catch (Exception ex)
-            {
-                Diagnostics.Trace("[MainViewModel.OpenMachine] Exception caught: {0}", ex.Message);
-                machine?.Dispose();
-
-                throw;
-            }
-
-            _model.Add(machine);
+            Machine machine = _model.Add(filepath, fileSystem);
             if (machine != null)
             {
                 ActiveMachine = machine;
