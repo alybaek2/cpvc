@@ -399,6 +399,9 @@ namespace CPvC.Test
                 machine.SeekToLastBookmark();
                 machine.LoadDisc(0, null);
                 RunForAWhile(machine);
+                machine.SeekToLastBookmark();
+                machine.LoadTape(null);
+                RunForAWhile(machine);
                 machine.TrimTimeline(eventToDelete.Children[0]);
                 machine.SetBookmark(bookmarkEvent, null);
             }
@@ -416,9 +419,13 @@ namespace CPvC.Test
                 "name:test",
                 "checkpoint:0:",
                 "disc:1:",
+                "checkpoint:2:",
                 "disc:5:",
-                "checkpoint:7:",
-                "current:7"
+                "checkpoint:6:",
+                "current:2",
+                "tape:7:",
+                "checkpoint:9:",
+                "current:9"
             };
 
             Assert.AreEqual(expectedLines.Length, _lines.Count);
@@ -461,6 +468,26 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void SetBookmarkOnNonCheckpoint()
+        {
+            // Setup
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(new string[] { "name:Test", "checkpoint:0:0:0:0", "key:1:100:58:1" });
+
+            using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
+            {
+                // Act
+                _lines.Clear();
+                machine.SetBookmark(machine.RootEvent.Children[0], null);
+
+                // Verify
+                Assert.IsNotNull(machine.RootEvent);
+                Assert.AreEqual(1, machine.RootEvent.Children.Count);
+                Assert.IsEmpty(machine.RootEvent.Children[0].Children);
+                Assert.IsEmpty(_lines);
+            }
+        }
+
+        [Test]
         public void DeleteRootEvent()
         {
             // Setup
@@ -471,7 +498,7 @@ namespace CPvC.Test
             {
                 // Verify
                 Assert.IsNotNull(machine.RootEvent);
-                Assert.AreEqual(0, machine.RootEvent.Children.Count);
+                Assert.IsEmpty(machine.RootEvent.Children);
             }
         }
 
@@ -488,8 +515,8 @@ namespace CPvC.Test
 
                 // Verify
                 Assert.IsNotNull(machine.RootEvent);
-                Assert.AreEqual(0, machine.RootEvent.Children.Count);
-                Assert.AreEqual(0, _lines.Count);
+                Assert.IsEmpty(machine.RootEvent.Children);
+                Assert.IsEmpty(_lines);
             }
         }
     }

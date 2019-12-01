@@ -158,7 +158,7 @@ namespace CPvC.Test
             }
             else
             {
-                Assert.AreEqual(0, viewModel.Machines.Count);
+                Assert.IsEmpty(viewModel.Machines);
                 _mockFileSystem.Verify(fileSystem => fileSystem.ReadLines(AnyString()), Times.Never);
             }
         }
@@ -202,7 +202,7 @@ namespace CPvC.Test
             }
             else
             {
-                Assert.AreEqual(0, viewModel.Machines.Count);
+                Assert.IsEmpty(viewModel.Machines);
                 _mockFileSystem.VerifyNoOtherCalls();
             }
         }
@@ -497,7 +497,7 @@ namespace CPvC.Test
             viewModel.Remove(machine);
 
             // Verify
-            Assert.AreEqual(0, viewModel.Machines.Count);
+            Assert.IsEmpty(viewModel.Machines);
             _mockSettings.VerifySet(x => x.RecentlyOpened = "", Times.Once);
         }
 

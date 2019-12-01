@@ -35,7 +35,7 @@ namespace CPvC.Test
             parent.RemoveChild(child);
 
             // Verify - check removing the child the second time didn't affect the child's link to its new parent.
-            Assert.AreEqual(0, parent.Children.Count);
+            Assert.IsEmpty(parent.Children);
             Assert.AreEqual(parent2, child.Parent);
         }
 
