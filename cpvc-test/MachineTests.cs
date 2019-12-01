@@ -9,7 +9,7 @@ namespace CPvC.Test
     [TestFixture]
     public class MachineTests
     {
-        private List<string> _lines;
+        private List<string> _outputLines;
         private Mock<IFileSystem> _mockFileSystem;
         private Mock<IFile> _mockWriter;
 
@@ -34,18 +34,18 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
 
             _mockWriter = new Mock<IFile>(MockBehavior.Strict);
-            _mockWriter.Setup(s => s.WriteLine(AnyString())).Callback<string>(line => _lines.Add(line));
+            _mockWriter.Setup(s => s.WriteLine(AnyString())).Callback<string>(line => _outputLines.Add(line));
             _mockWriter.Setup(s => s.Close());
 
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenFile(AnyString())).Returns(_mockWriter.Object);
 
-            _lines = new List<string>();
+            _outputLines = new List<string>();
         }
 
         [TearDown]
         public void Teardown()
         {
-            _lines = null;
+            _outputLines = null;
             _mockFileSystem = null;
         }
 
@@ -76,12 +76,12 @@ namespace CPvC.Test
             // Verify
             if (startBeforeClosing)
             {
-                Assert.AreEqual(4, _lines.Count);
-                Assert.True(_lines[3].StartsWith(String.Format("checkpoint:2:{0}:1:", ticks)));
+                Assert.AreEqual(4, _outputLines.Count);
+                Assert.True(_outputLines[3].StartsWith(String.Format("checkpoint:2:{0}:1:", ticks)));
             }
             else
             {
-                Assert.AreEqual(3, _lines.Count);
+                Assert.AreEqual(3, _outputLines.Count);
             }
         }
 
@@ -95,11 +95,11 @@ namespace CPvC.Test
             int linesCount = 0;
             using (Machine machine = CreateMachine())
             {
-                linesCount = _lines.Count;
+                linesCount = _outputLines.Count;
             }
 
             // Verify
-            Assert.AreEqual(linesCount, _lines.Count);
+            Assert.AreEqual(linesCount, _outputLines.Count);
         }
 
         /// <summary>
@@ -240,7 +240,7 @@ namespace CPvC.Test
                 machine.TrimTimeline(eventToDelete);
             }
 
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(_lines.ToArray());
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(_outputLines.ToArray());
             using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
             {
                 // Verify
@@ -313,8 +313,8 @@ namespace CPvC.Test
             }
 
             // Remove the final system bookmark that was added when the machine was closed.
-            _lines.RemoveAt(_lines.Count - 1);
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(_lines.ToArray());
+            _outputLines.RemoveAt(_outputLines.Count - 1);
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(_outputLines.ToArray());
 
             // Act
             using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
@@ -406,8 +406,8 @@ namespace CPvC.Test
                 machine.SetBookmark(bookmarkEvent, null);
             }
 
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(_lines.ToArray());
-            _lines.Clear();
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(_outputLines.ToArray());
+            _outputLines.Clear();
             using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
             {
                 // Act
@@ -428,10 +428,10 @@ namespace CPvC.Test
                 "current:9"
             };
 
-            Assert.AreEqual(expectedLines.Length, _lines.Count);
+            Assert.AreEqual(expectedLines.Length, _outputLines.Count);
             for (int i = 0; i < expectedLines.Length; i++)
             {
-                Assert.AreEqual(expectedLines[i], _lines[i].Substring(0, expectedLines[i].Length));
+                Assert.AreEqual(expectedLines[i], _outputLines[i].Substring(0, expectedLines[i].Length));
             }
         }
 
@@ -468,6 +468,16 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void CorruptCheckpointBookmark()
+        {
+            // Setup
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(new string[] { "name:Test", "checkpoint:0:0:0:0", "checkpoint:1:100:1:0:010203" });
+
+            // Act and Verify
+            Assert.That(() => Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false), Throws.Exception);
+        }
+
+        [Test]
         public void SetBookmarkOnNonCheckpoint()
         {
             // Setup
@@ -476,14 +486,14 @@ namespace CPvC.Test
             using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
             {
                 // Act
-                _lines.Clear();
+                _outputLines.Clear();
                 machine.SetBookmark(machine.RootEvent.Children[0], null);
 
                 // Verify
                 Assert.IsNotNull(machine.RootEvent);
                 Assert.AreEqual(1, machine.RootEvent.Children.Count);
                 Assert.IsEmpty(machine.RootEvent.Children[0].Children);
-                Assert.IsEmpty(_lines);
+                Assert.IsEmpty(_outputLines);
             }
         }
 
@@ -508,7 +518,7 @@ namespace CPvC.Test
             // Setup
             using (Machine machine = CreateMachine())
             {
-                _lines.Clear();
+                _outputLines.Clear();
 
                 // Act
                 machine.TrimTimeline(machine.RootEvent);
@@ -516,7 +526,7 @@ namespace CPvC.Test
                 // Verify
                 Assert.IsNotNull(machine.RootEvent);
                 Assert.IsEmpty(machine.RootEvent.Children);
-                Assert.IsEmpty(_lines);
+                Assert.IsEmpty(_outputLines);
             }
         }
     }

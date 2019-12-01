@@ -728,10 +728,6 @@ namespace CPvC
                         core.KeyPress(keycode, false);
                     }
                 }
-                else
-                {
-                    return null;
-                }
 
                 return core;
             }
