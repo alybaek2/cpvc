@@ -97,7 +97,7 @@ namespace CPvC.Test
                 // Verify
                 mockRequestProcessed.Verify(x => x(core, KeyRequest(Keys.Space, true), KeyAction(Keys.Space, true)), Times.Once);
                 mockRequestProcessed.Verify(x => x(core, KeyRequest(Keys.Space, true), null), Times.Once);
-                mockRequestProcessed.Verify(x => x(core, RunUntilRequest(), RunUntilAction()), TimesAny());
+                mockRequestProcessed.Verify(x => x(core, RunUntilRequest(), RunUntilAction()), AnyTimes());
                 mockRequestProcessed.VerifyNoOtherCalls();
             }
         }
@@ -129,7 +129,7 @@ namespace CPvC.Test
 
                 // Verify
                 mockRequestProcessed.Verify();
-                mockRequestProcessed.Verify(x => x(core, RunUntilRequest(), RunUntilAction()), TimesAny());
+                mockRequestProcessed.Verify(x => x(core, RunUntilRequest(), RunUntilAction()), AnyTimes());
                 mockRequestProcessed.VerifyNoOtherCalls();
             }
         }

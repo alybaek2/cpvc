@@ -11,9 +11,9 @@ namespace CPvC.Test
         /// Effectively a Times value representing 0 or more times.
         /// </summary>
         /// <returns>A Times value representing 0 or more times.</returns>
-        static public Times TimesAny()
+        static public Times AnyTimes()
         {
-            return Times.AtMost(int.MaxValue);
+            return It.IsAny<Times>();
         }
 
         static public string AnyString()

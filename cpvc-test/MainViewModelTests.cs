@@ -350,6 +350,7 @@ namespace CPvC.Test
             mockSelect.VerifyNoOtherCalls();
         }
 
+        [Test]
         public void NullActiveMachine()
         {
             // Setup
@@ -465,6 +466,7 @@ namespace CPvC.Test
             Assert.AreEqual(machine, viewModel.ActiveMachine);
         }
 
+        [Test]
         public void SetActiveNonMachine()
         {
             // Setup
