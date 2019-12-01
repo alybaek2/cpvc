@@ -11,6 +11,7 @@ namespace CPvC.Test
     {
         private List<string> _lines;
         private Mock<IFileSystem> _mockFileSystem;
+        private Mock<IFile> _mockWriter;
 
         private Machine CreateMachine()
         {
@@ -32,11 +33,11 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(AnyString()));
             _mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
 
-            Mock<IFile> mockWriter = new Mock<IFile>(MockBehavior.Strict);
-            mockWriter.Setup(s => s.WriteLine(AnyString())).Callback<string>(line => _lines.Add(line));
-            mockWriter.Setup(s => s.Close());
+            _mockWriter = new Mock<IFile>(MockBehavior.Strict);
+            _mockWriter.Setup(s => s.WriteLine(AnyString())).Callback<string>(line => _lines.Add(line));
+            _mockWriter.Setup(s => s.Close());
 
-            _mockFileSystem.Setup(fileSystem => fileSystem.OpenFile(AnyString())).Returns(mockWriter.Object);
+            _mockFileSystem.Setup(fileSystem => fileSystem.OpenFile(AnyString())).Returns(_mockWriter.Object);
 
             _lines = new List<string>();
         }
@@ -457,6 +458,39 @@ namespace CPvC.Test
             // We can't expect the actual factor to be *precisely* 10 times greater than
             // normal, so just make sure it's reasonably close.
             Assert.Less(Math.Abs(1 - (actualSpeedFactor / expectedSpeedFactor)), 0.001);
+        }
+
+        [Test]
+        public void DeleteRootEvent()
+        {
+            // Setup
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(new string[] { "name:Test", "checkpoint:0:0:0:0", "delete:0" });
+
+            // Act
+            using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
+            {
+                // Verify
+                Assert.IsNotNull(machine.RootEvent);
+                Assert.AreEqual(0, machine.RootEvent.Children.Count);
+            }
+        }
+
+        [Test]
+        public void TrimTimelineRoot()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                _lines.Clear();
+
+                // Act
+                machine.TrimTimeline(machine.RootEvent);
+
+                // Verify
+                Assert.IsNotNull(machine.RootEvent);
+                Assert.AreEqual(0, machine.RootEvent.Children.Count);
+                Assert.AreEqual(0, _lines.Count);
+            }
         }
     }
 }
