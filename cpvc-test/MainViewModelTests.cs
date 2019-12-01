@@ -557,10 +557,11 @@ namespace CPvC.Test
             MainViewModel viewModel = SetupViewModel(1);
             Machine machine = viewModel.Machines[0];
             machine.Open();
+            viewModel.ActiveMachine = machine;
 
             // Act - enable turbo mode and run for enough ticks that should cause 10 audio
             //       samples to be written while in turbo mode.
-            machine.EnableTurbo(true);
+            viewModel.EnableTurbo(true);
             Run(machine, 8300, true);
 
             // Verify
