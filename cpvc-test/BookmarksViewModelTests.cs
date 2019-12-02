@@ -117,6 +117,8 @@ namespace CPvC.Test
                 Assert.AreEqual(2, viewModel.Items.Count);
                 Assert.AreEqual(machine.CurrentEvent, viewModel.Items[0].HistoryEvent);
                 Assert.AreEqual(machine.RootEvent, viewModel.Items[1].HistoryEvent);
+                Assert.IsNotNull(viewModel.Items[0].HistoryEvent.CreateDate);
+                Assert.IsNotNull(viewModel.Items[1].HistoryEvent.CreateDate);
             }
         }
 
@@ -127,26 +129,30 @@ namespace CPvC.Test
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
             Run(machine, 100, true);
             machine.AddBookmark(false);
-            HistoryEvent bookmarkEvent = machine.CurrentEvent;
-            Run(machine, 200, true);
-            machine.SeekToLastBookmark();
-            HistoryEvent branchEvent = machine.CurrentEvent.Children[0];
+            HistoryEvent event100 = machine.CurrentEvent;
             Run(machine, 300, true);
-            machine.AddBookmark(true);
-            HistoryEvent bookmarkEvent2 = machine.CurrentEvent;
+            machine.SeekToLastBookmark();
+            HistoryEvent event400 = machine.CurrentEvent.Children[0];
             Run(machine, 100, true);
+            machine.AddBookmark(false);
+            HistoryEvent event200 = machine.CurrentEvent;
+            Run(machine, 100, true);
+            machine.SeekToLastBookmark();
+            HistoryEvent event300 = machine.CurrentEvent.Children[0];
+            Run(machine, 300, true);
             machine.AddBookmark(true);
 
             // Act
             using (BookmarksViewModel viewModel = new BookmarksViewModel(machine))
             {
                 // Verify
-                Assert.AreEqual(5, viewModel.Items.Count);
+                Assert.AreEqual(6, viewModel.Items.Count);
                 Assert.AreEqual(machine.CurrentEvent, viewModel.Items[0].HistoryEvent);
-                Assert.AreEqual(bookmarkEvent2, viewModel.Items[1].HistoryEvent);
-                Assert.AreEqual(branchEvent, viewModel.Items[2].HistoryEvent);
-                Assert.AreEqual(bookmarkEvent, viewModel.Items[3].HistoryEvent);
-                Assert.AreEqual(machine.RootEvent, viewModel.Items[4].HistoryEvent);
+                Assert.AreEqual(event400, viewModel.Items[1].HistoryEvent);
+                Assert.AreEqual(event300, viewModel.Items[2].HistoryEvent);
+                Assert.AreEqual(event200, viewModel.Items[3].HistoryEvent);
+                Assert.AreEqual(event100, viewModel.Items[4].HistoryEvent);
+                Assert.AreEqual(machine.RootEvent, viewModel.Items[5].HistoryEvent);
             }
         }
     }
