@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CPvC
 {
@@ -90,6 +91,21 @@ namespace CPvC
             };
 
             return historyEvent;
+        }
+
+        /// <summary>
+        /// Returns the maximum ticks value of any given HistoryEvent's descendents. Used when sorting children in <c>AddEventToItem</c>.
+        /// </summary>
+        /// <param name="historyEvent">The HistoryEvent object.</param>
+        /// <returns></returns>
+        public UInt64 GetMaxDescendentTicks()
+        {
+            if (Children.Count == 0)
+            {
+                return Ticks;
+            }
+
+            return Children.Select(x => x.GetMaxDescendentTicks()).Max();
         }
     }
 }

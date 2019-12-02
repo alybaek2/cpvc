@@ -124,6 +124,7 @@
     <Compile Include="Machine\Bookmark.cs" />
     <Compile Include="Core\CoreAction.cs" />
     <Compile Include="Diagnostics.cs" />
+    <Compile Include="UI\BookmarksViewModel.cs" />
     <Compile Include="UI\Converters\BooleanInverter.cs" />
     <Compile Include="UI\FileTypes.cs" />
     <Compile Include="IO\FileSystem.cs" />

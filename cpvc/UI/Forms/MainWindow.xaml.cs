@@ -355,19 +355,21 @@ namespace CPvC.UI.Forms
         {
             Machine machine = _mainViewModel.ActiveMachine;
 
-            using (BookmarkSelectWindow dialog = new BookmarkSelectWindow(this, machine))
             using (machine.AutoPause())
             {
                 // Set a checkpoint here so the UI shows the current timeline position correctly.
                 machine.SetCheckpoint();
 
-                bool? result = dialog.ShowDialog();
-                if (result.HasValue && result.Value && dialog.SelectedEvent?.Bookmark != null)
+                using (BookmarkSelectWindow dialog = new BookmarkSelectWindow(this, machine))
                 {
-                    return dialog.SelectedEvent;
-                }
+                    bool? result = dialog.ShowDialog();
+                    if (result.HasValue && result.Value && dialog.SelectedEvent?.Bookmark != null)
+                    {
+                        return dialog.SelectedEvent;
+                    }
 
-                return null;
+                    return null;
+                }
             }
         }
 

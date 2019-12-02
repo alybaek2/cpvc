@@ -13,7 +13,6 @@ namespace CPvC.Test
     public class MainViewModelTests
     {
         private Mock<ISettings> _mockSettings;
-        private Mock<IFile> _mockFile;
         private Mock<IFileSystem> _mockFileSystem;
 
         private string[] _lines;
@@ -26,10 +25,10 @@ namespace CPvC.Test
             _mockSettings.SetupGet(x => x.RecentlyOpened).Returns(() => _settingGet);
             _mockSettings.SetupSet(x => x.RecentlyOpened = It.IsAny<string>());
 
-            _mockFile = new Mock<IFile>();
+            Mock<IFile> mockFile = new Mock<IFile>();
             _mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
             _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines(AnyString())).Returns(() => _lines);
-            _mockFileSystem.Setup(fileSystem => fileSystem.OpenFile(AnyString())).Returns(_mockFile.Object);
+            _mockFileSystem.Setup(fileSystem => fileSystem.OpenFile(AnyString())).Returns(mockFile.Object);
             _mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(AnyString()));
             _mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
             _mockFileSystem.Setup(ReadBytes()).Returns(new byte[1]);
@@ -39,7 +38,6 @@ namespace CPvC.Test
         public void Teardown()
         {
             _mockSettings = null;
-            _mockFile = null;
             _mockFileSystem = null;
 
             _lines = null;
