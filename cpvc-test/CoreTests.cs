@@ -144,9 +144,8 @@ namespace CPvC.Test
             using (Core core = Core.Create(Core.Type.CPC6128))
             {
                 core.Volume = volume1;
-                object sender = null;
-                PropertyChangedEventArgs args = null;
-                core.PropertyChanged += ((object changedSender, PropertyChangedEventArgs changedArgs) => { sender = changedSender; args = changedArgs; });
+                Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
+                core.PropertyChanged += propChanged.Object;
 
                 // Act
                 core.Volume = volume2;
@@ -155,15 +154,10 @@ namespace CPvC.Test
                 Assert.AreEqual(core.Volume, volume2);
                 if (notified)
                 {
-                    Assert.AreEqual(sender, core);
-                    Assert.IsNotNull(args);
-                    Assert.AreEqual(args.PropertyName, "Volume");
+                    propChanged.Verify(x => x(core, It.Is<PropertyChangedEventArgs>(a => a.PropertyName == "Volume")), Times.Once);
                 }
-                else
-                {
-                    Assert.IsNull(sender);
-                    Assert.IsNull(args);
-                }
+
+                propChanged.VerifyNoOtherCalls();
             }
         }
 

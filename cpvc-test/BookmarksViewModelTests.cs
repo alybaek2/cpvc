@@ -29,6 +29,76 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void SetSelectedItemNull()
+        {
+            // Setup
+            Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
+            RunForAWhile(machine, 100);
+            machine.AddBookmark(true);
+
+            // Act
+            using (BookmarksViewModel viewModel = new BookmarksViewModel(machine))
+            {
+                viewModel.SelectedItem = null;
+
+                // Verify
+                Assert.IsNull(viewModel.SelectedItem);
+                Assert.IsNull(viewModel.Bitmap);
+                Assert.IsFalse(viewModel.CanDeleteBookmark);
+                Assert.IsFalse(viewModel.CanJumpToBookmark);
+                Assert.IsFalse(viewModel.CanDeleteBranch);
+            }
+        }
+
+        [Test]
+        public void SetSelectedItemCurrent()
+        {
+            // Setup
+            Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
+            RunForAWhile(machine, 100);
+            machine.AddBookmark(true);
+
+            // Act
+            using (BookmarksViewModel viewModel = new BookmarksViewModel(machine))
+            {
+                // The first item is the current event.
+                viewModel.SelectedItem = viewModel.Items[0];
+
+                // Verify
+                Assert.AreEqual(machine.CurrentEvent, viewModel.SelectedItem.HistoryEvent);
+                Assert.AreEqual(viewModel.Items[0], viewModel.SelectedItem);
+                Assert.IsNotNull(viewModel.Bitmap);
+                Assert.IsTrue(viewModel.CanDeleteBookmark);
+                Assert.IsTrue(viewModel.CanJumpToBookmark);
+                Assert.IsTrue(viewModel.CanDeleteBranch);
+            }
+        }
+
+        [Test]
+        public void SetSelectedItemRoot()
+        {
+            // Setup
+            Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
+            RunForAWhile(machine, 100);
+            machine.AddBookmark(true);
+
+            // Act
+            using (BookmarksViewModel viewModel = new BookmarksViewModel(machine))
+            {
+                // The last item is the root event.
+                viewModel.SelectedItem = viewModel.Items[1];
+
+                // Verify
+                Assert.AreEqual(machine.RootEvent, viewModel.SelectedItem.HistoryEvent);
+                Assert.AreEqual(viewModel.Items[1], viewModel.SelectedItem);
+                Assert.IsNull(viewModel.Bitmap);
+                Assert.IsFalse(viewModel.CanDeleteBookmark);
+                Assert.IsFalse(viewModel.CanJumpToBookmark);
+                Assert.IsTrue(viewModel.CanDeleteBranch);
+            }
+        }
+
+        [Test]
         public void SimpleHistory()
         {
             // Setup
