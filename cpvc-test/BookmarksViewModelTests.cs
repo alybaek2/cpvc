@@ -75,6 +75,33 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void SetSelectedItemBookmark()
+        {
+            // Setup
+            Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
+            RunForAWhile(machine, 100);
+            machine.AddBookmark(true);
+            HistoryEvent bookmarkEvent = machine.CurrentEvent;
+            RunForAWhile(machine, 100);
+            machine.AddBookmark(true);
+
+            // Act
+            using (BookmarksViewModel viewModel = new BookmarksViewModel(machine))
+            {
+                // The second item is the bookmark event.
+                viewModel.SelectedItem = viewModel.Items[1];
+
+                // Verify
+                Assert.AreEqual(bookmarkEvent, viewModel.SelectedItem.HistoryEvent);
+                Assert.AreEqual(viewModel.Items[1], viewModel.SelectedItem);
+                Assert.IsNotNull(viewModel.Bitmap);
+                Assert.IsTrue(viewModel.CanDeleteBookmark);
+                Assert.IsTrue(viewModel.CanJumpToBookmark);
+                Assert.IsTrue(viewModel.CanDeleteBranch);
+            }
+        }
+
+        [Test]
         public void SetSelectedItemRoot()
         {
             // Setup
@@ -117,8 +144,8 @@ namespace CPvC.Test
                 Assert.AreEqual(2, viewModel.Items.Count);
                 Assert.AreEqual(machine.CurrentEvent, viewModel.Items[0].HistoryEvent);
                 Assert.AreEqual(machine.RootEvent, viewModel.Items[1].HistoryEvent);
-                Assert.IsNotNull(viewModel.Items[0].HistoryEvent.CreateDate);
-                Assert.IsNotNull(viewModel.Items[1].HistoryEvent.CreateDate);
+                Assert.IsNotNull(viewModel.Items[0].CreateDate);
+                Assert.IsNotNull(viewModel.Items[1].CreateDate);
             }
         }
 
