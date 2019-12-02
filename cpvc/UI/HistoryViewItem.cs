@@ -46,12 +46,7 @@ namespace CPvC
         {
             get
             {
-                if (HistoryEvent?.CreateDate != null)
-                {
-                    return HistoryEvent.CreateDate.ToLocalTime();
-                }
-
-                return null;
+                return HistoryEvent.CreateDate.ToLocalTime();
             }
         }
 

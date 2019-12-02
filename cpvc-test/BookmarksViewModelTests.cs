@@ -33,11 +33,11 @@ namespace CPvC.Test
         {
             // Setup
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
-            Run(machine, 100, true);
+            RunForAWhile(machine, 100);
             machine.Key(Keys.A, true);
-            Run(machine, 100, true);
+            RunForAWhile(machine, 100);
             machine.Key(Keys.A, false);
-            Run(machine, 100, true);
+            RunForAWhile(machine, 100);
             machine.AddBookmark(true);
 
             // Act
@@ -58,9 +58,12 @@ namespace CPvC.Test
             Run(machine, 100, true);
             machine.AddBookmark(false);
             HistoryEvent bookmarkEvent = machine.CurrentEvent;
-            Run(machine, 100, true);
+            Run(machine, 200, true);
             machine.SeekToLastBookmark();
             HistoryEvent branchEvent = machine.CurrentEvent.Children[0];
+            Run(machine, 300, true);
+            machine.AddBookmark(true);
+            HistoryEvent bookmarkEvent2 = machine.CurrentEvent;
             Run(machine, 100, true);
             machine.AddBookmark(true);
 
@@ -68,11 +71,12 @@ namespace CPvC.Test
             using (BookmarksViewModel viewModel = new BookmarksViewModel(machine))
             {
                 // Verify
-                Assert.AreEqual(4, viewModel.Items.Count);
+                Assert.AreEqual(5, viewModel.Items.Count);
                 Assert.AreEqual(machine.CurrentEvent, viewModel.Items[0].HistoryEvent);
-                Assert.AreEqual(branchEvent, viewModel.Items[1].HistoryEvent);
-                Assert.AreEqual(bookmarkEvent, viewModel.Items[2].HistoryEvent);
-                Assert.AreEqual(machine.RootEvent, viewModel.Items[3].HistoryEvent);
+                Assert.AreEqual(bookmarkEvent2, viewModel.Items[1].HistoryEvent);
+                Assert.AreEqual(branchEvent, viewModel.Items[2].HistoryEvent);
+                Assert.AreEqual(bookmarkEvent, viewModel.Items[3].HistoryEvent);
+                Assert.AreEqual(machine.RootEvent, viewModel.Items[4].HistoryEvent);
             }
         }
     }
