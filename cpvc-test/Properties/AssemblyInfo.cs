@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using NUnit.Framework;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following
@@ -20,6 +21,9 @@ using System.Runtime.InteropServices;
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("6228b360-f971-45d0-8f19-03bf1e01cc82")]
+
+// Nunit Parallelism - enables multiple concurrent test workers.
+[assembly: Parallelizable(ParallelScope.Fixtures)]
 
 // Version information for an assembly consists of the following four values:
 //
