@@ -158,8 +158,8 @@ bool Disk::LoadTrackV2(Track& track, const byte* pTrackInfo)
     track._fillerByte = pTrackInfo[0x17];
 
     // Extensions made for Extended DSK format...
-    track._dataRate = pTrackInfo[0x1c];
-    track._recordingMode = pTrackInfo[0x1d];
+    track._dataRate = pTrackInfo[0x12];
+    track._recordingMode = pTrackInfo[0x13];
 
     // Allocate space for sectors...
     track._sectors.resize(track._numSectors);
