@@ -179,7 +179,9 @@ namespace CPvC.UI
                     HistoryEvent parent = MostRecentShownAncestor(historyEvent);
                     if (parent != null)
                     {
-                        for (int i = itemIndex - 1; i >= 0 && items[i].HistoryEvent != parent; i--)
+                        // As the parent should have been added by now, we don't need to check for FindIndex returning -1.
+                        int parentIndex = items.FindIndex(x => x.HistoryEvent == parent);
+                        for (int i = parentIndex + 1; i < itemIndex; i++)
                         {
                             left = items[i].AddEvent(left, historyEvent);
                         }
