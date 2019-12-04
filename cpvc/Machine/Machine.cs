@@ -31,6 +31,22 @@ namespace CPvC
 
         public event PropertyChangedEventHandler PropertyChanged;
 
+        private string _status;
+
+        public string Status
+        {
+            get
+            {
+                return _status;
+            }
+
+            set
+            {
+                _status = value;
+                OnPropertyChanged("Status");
+            }
+        }
+
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
             _name = name;
@@ -275,6 +291,19 @@ namespace CPvC
             if (core == _core && action != null && action.Type != CoreAction.Types.RunUntil)
             {
                 AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
+
+                switch (action.Type)
+                {
+                    case CoreActionBase.Types.LoadDisc:
+                        Status = (action.MediaBuffer != null) ? "Loaded disc" : "Ejected disc";
+                        break;
+                    case CoreActionBase.Types.LoadTape:
+                        Status = (action.MediaBuffer != null) ? "Loaded tape" : "Ejected tape";
+                        break;
+                    case CoreActionBase.Types.Reset:
+                        Status = "Reset";
+                        break;
+                }
             }
         }
 
@@ -384,6 +413,8 @@ namespace CPvC
         public void Reset()
         {
             _core.Reset();
+            Status = "Reset";
+
         }
 
         public void Key(byte keycode, bool down)
@@ -395,18 +426,26 @@ namespace CPvC
         {
             _running = true;
             SetCoreRunning();
+            Status = "Resumed";
         }
 
         public void Stop()
         {
             _running = false;
             SetCoreRunning();
+            Status = "Paused";
         }
 
         public void ToggleRunning()
         {
-            _running = !_running;
-            SetCoreRunning();
+            if (_running)
+            {
+                Stop();
+            }
+            else
+            {
+                Start();
+            }
         }
 
         public void AdvancePlayback(int samples)
@@ -427,6 +466,7 @@ namespace CPvC
                 AddEvent(HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark), true);
 
                 Diagnostics.Trace("Created bookmark at tick {0}", _core.Ticks);
+                Status = String.Format("Created bookmark at tick {0}", Core.Ticks);
             }
         }
 
@@ -469,6 +509,8 @@ namespace CPvC
         public void EnableTurbo(bool enabled)
         {
             _core.EnableTurbo(enabled);
+
+            Status = enabled ? "Turbo enabled" : "Turbo disabled";
         }
 
         /// <summary>
@@ -488,6 +530,8 @@ namespace CPvC
             CurrentEvent = bookmarkEvent;
 
             SetCoreRunning();
+
+            Status = String.Format("Jumped to event id {0} at ticks {1}", CurrentEvent.Id, Core.Ticks);
         }
 
         /// <summary>
@@ -543,6 +587,7 @@ namespace CPvC
             if (parent != null)
             {
                 DeleteEvent(child, true);
+                Status = "Trimmed timeline";
             }
         }
 
@@ -588,6 +633,8 @@ namespace CPvC
 
                 file = _fileSystem.OpenFile(Filepath);
                 _file = new MachineFile(file);
+
+                Status = "Rewrote machine file";
             }
         }
 

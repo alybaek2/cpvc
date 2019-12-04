@@ -241,6 +241,20 @@ namespace CPvC.UI
             }
         }
 
+        public void EjectDisc(byte drive)
+        {
+            Machine machine = ActiveMachine;
+            if (machine == null)
+            {
+                return;
+            }
+
+            using (machine.AutoPause())
+            {
+                machine.LoadDisc(drive, null);
+            }
+        }
+
         public void LoadTape(IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
         {
             Machine machine = ActiveMachine;
@@ -256,6 +270,20 @@ namespace CPvC.UI
                 {
                     machine.LoadTape(image);
                 }
+            }
+        }
+
+        public void EjectTape()
+        {
+            Machine machine = ActiveMachine;
+            if (machine == null)
+            {
+                return;
+            }
+
+            using (machine.AutoPause())
+            {
+                machine.LoadTape(null);
             }
         }
 
