@@ -32,6 +32,7 @@ namespace CPvC.Test
             _mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
             _mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(AnyString()));
             _mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
+            _mockFileSystem.Setup(fileSystem => fileSystem.FileLength(AnyString())).Returns(100);
 
             _mockWriter = new Mock<IFile>(MockBehavior.Strict);
             _mockWriter.Setup(s => s.WriteLine(AnyString())).Callback<string>(line => _outputLines.Add(line));
@@ -412,26 +413,28 @@ namespace CPvC.Test
             {
                 // Act
                 machine.RewriteMachineFile();
-            }
 
-            // Verify
-            string[] expectedLines = {
-                "name:test",
-                "checkpoint:0:",
-                "disc:1:",
-                "checkpoint:2:",
-                "disc:5:",
-                "checkpoint:6:",
-                "current:2",
-                "tape:7:",
-                "checkpoint:9:",
-                "current:9"
-            };
+                // Verify
+                string[] expectedLines = {
+                    "name:test",
+                    "checkpoint:0:",
+                    "disc:1:",
+                    "checkpoint:2:",
+                    "disc:5:",
+                    "checkpoint:6:",
+                    "current:2",
+                    "tape:7:",
+                    "checkpoint:9:",
+                    "current:9"
+                };
 
-            Assert.AreEqual(expectedLines.Length, _outputLines.Count);
-            for (int i = 0; i < expectedLines.Length; i++)
-            {
-                Assert.AreEqual(expectedLines[i], _outputLines[i].Substring(0, expectedLines[i].Length));
+                Assert.AreEqual(expectedLines.Length, _outputLines.Count);
+                for (int i = 0; i < expectedLines.Length; i++)
+                {
+                    Assert.AreEqual(expectedLines[i], _outputLines[i].Substring(0, expectedLines[i].Length));
+                }
+
+                Assert.AreEqual("Compacted machine file by 0%", machine.Status);
             }
         }
 

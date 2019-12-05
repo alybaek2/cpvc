@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -165,6 +166,23 @@ namespace CPvC.Test
             // Verify
             byte[] expectedBytes = (expectedContents != null) ? Encoding.ASCII.GetBytes(expectedContents) : null;
             Assert.AreEqual(expectedBytes, contents);
+        }
+
+        [TestCase("")]
+        [TestCase("abc123")]
+        public void FileLength(string contents)
+        {
+            // Setup
+            string filepath = TestHelpers.GetTempFilepath("test.txt");
+            FileSystem fs = new FileSystem();
+            System.IO.File.WriteAllText(filepath, contents);
+
+            // Act
+            Int64 length = fs.FileLength(filepath);
+            System.IO.File.Delete(filepath);
+
+            // Verify
+            Assert.AreEqual(contents.Length, length);
         }
     }
 }
