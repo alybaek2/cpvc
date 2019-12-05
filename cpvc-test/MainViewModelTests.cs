@@ -372,6 +372,8 @@ namespace CPvC.Test
                 viewModel.Resume(null);
                 viewModel.LoadDisc(0, _mockFileSystem.Object, prompt.Object, null);
                 viewModel.LoadTape(_mockFileSystem.Object, prompt.Object, null);
+                viewModel.EjectDisc(0);
+                viewModel.EjectTape();
                 viewModel.AddBookmark();
                 viewModel.SeekToLastBookmark();
                 viewModel.EnableTurbo(true);
@@ -601,7 +603,7 @@ namespace CPvC.Test
             viewModel.EjectDisc(drive);
             machine.Core.WaitForRequestQueueEmpty();
 
-            // Verify - need a better way of checking this; perhaps play the tape and check no tones are generated.
+            // Verify - need a better way of checking this; perhaps query the FDC main status register.
             Assert.AreEqual("Ejected disc", machine.Status);
         }
     }
