@@ -567,5 +567,42 @@ namespace CPvC.Test
             int samples = machine.ReadAudio(buffer, 0, buffer.Length);
             Assert.AreEqual(10, samples);
         }
+
+        [Test]
+        public void EjectTape()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1);
+            Machine machine = viewModel.Machines[0];
+            machine.Open();
+            machine.Start();
+            viewModel.ActiveMachine = machine;
+
+            // Act
+            viewModel.EjectTape();
+            machine.Core.WaitForRequestQueueEmpty();
+
+            // Verify - need a better way of checking this; perhaps play the tape and check no tones are generated.
+            Assert.AreEqual("Ejected tape", machine.Status);
+        }
+
+        [TestCase(0)]
+        [TestCase(1)]
+        public void EjectDisc(byte drive)
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1);
+            Machine machine = viewModel.Machines[0];
+            machine.Open();
+            machine.Start();
+            viewModel.ActiveMachine = machine;
+
+            // Act
+            viewModel.EjectDisc(drive);
+            machine.Core.WaitForRequestQueueEmpty();
+
+            // Verify - need a better way of checking this; perhaps play the tape and check no tones are generated.
+            Assert.AreEqual("Ejected disc", machine.Status);
+        }
     }
 }
