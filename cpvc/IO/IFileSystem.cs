@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace CPvC
 {
@@ -14,6 +15,7 @@ namespace CPvC
         string[] ReadLines(string filename);
         byte[] ReadBytes(string filename);
         bool Exists(string filepath);
+        Int64 FileLength(string filepath);
 
         List<string> GetZipFileEntryNames(string filename);
         byte[] GetZipFileEntry(string filename, string entryName);

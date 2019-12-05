@@ -466,7 +466,7 @@ namespace CPvC
                 AddEvent(HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark), true);
 
                 Diagnostics.Trace("Created bookmark at tick {0}", _core.Ticks);
-                Status = String.Format("Created bookmark at tick {0}", Core.Ticks);
+                Status = String.Format("Bookmark added at {0}", Helpers.GetTimeSpanFromTicks(Core.Ticks).ToString(@"hh\:mm\:ss"));
             }
         }
 
@@ -480,7 +480,10 @@ namespace CPvC
             {
                 if (lastBookmarkEvent.Type == HistoryEvent.Types.Checkpoint && lastBookmarkEvent.Bookmark != null && !lastBookmarkEvent.Bookmark.System && lastBookmarkEvent.Ticks != Core.Ticks)
                 {
+                    TimeSpan before = Helpers.GetTimeSpanFromTicks(Core.Ticks);
                     SetCurrentEvent(lastBookmarkEvent);
+                    TimeSpan after = Helpers.GetTimeSpanFromTicks(Core.Ticks);
+                    Status = String.Format("Rewound to {0} (-{1})", after.ToString(@"hh\:mm\:ss"), (after - before).ToString(@"hh\:mm\:ss"));
                     return;
                 }
 
@@ -489,6 +492,7 @@ namespace CPvC
 
             // No bookmarks? Go all the way back to the root!
             SetCurrentEvent(RootEvent);
+            Status = "Rewound to start";
         }
 
         public void LoadDisc(byte drive, byte[] diskBuffer)
@@ -531,7 +535,7 @@ namespace CPvC
 
             SetCoreRunning();
 
-            Status = String.Format("Jumped to event id {0} at ticks {1}", CurrentEvent.Id, Core.Ticks);
+            Status = String.Format("Jumped to {1}", CurrentEvent.Id, Helpers.GetTimeSpanFromTicks(Core.Ticks).ToString(@"hh\:mm\:ss"));
         }
 
         /// <summary>
@@ -587,7 +591,6 @@ namespace CPvC
             if (parent != null)
             {
                 DeleteEvent(child, true);
-                Status = "Trimmed timeline";
             }
         }
 
@@ -629,12 +632,16 @@ namespace CPvC
 
                 _file.Close();
 
+                Int64 newLength = _fileSystem.FileLength(tempname);
+                Int64 oldLength = _fileSystem.FileLength(Filepath);
+
                 _fileSystem.ReplaceFile(Filepath, tempname);
 
+                
                 file = _fileSystem.OpenFile(Filepath);
                 _file = new MachineFile(file);
 
-                Status = "Rewrote machine file";
+                Status = String.Format("Compacted machine file by {0}%", (Int64) (100 * ((double)(oldLength - newLength))/((double)oldLength)));
             }
         }
 

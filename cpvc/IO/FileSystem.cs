@@ -62,6 +62,11 @@ namespace CPvC
             return System.IO.File.Exists(filepath);
         }
 
+        public Int64 FileLength(string filepath)
+        {
+            return new System.IO.FileInfo(filepath).Length;
+        }
+
         public List<string> GetZipFileEntryNames(string filename)
         {
             List<string> entries = new List<string>();
