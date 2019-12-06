@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -133,6 +134,7 @@ namespace CPvC.UI
                 if (historyEvent != null)
                 {
                     machine.SetCurrentEvent(historyEvent);
+                    machine.Status = String.Format("Jumped to {0}", Helpers.GetTimeSpanFromTicks(machine.Core.Ticks).ToString(@"hh\:mm\:ss"));
                 }
             }
         }

@@ -534,8 +534,6 @@ namespace CPvC
             CurrentEvent = bookmarkEvent;
 
             SetCoreRunning();
-
-            Status = String.Format("Jumped to {1}", CurrentEvent.Id, Helpers.GetTimeSpanFromTicks(Core.Ticks).ToString(@"hh\:mm\:ss"));
         }
 
         /// <summary>
