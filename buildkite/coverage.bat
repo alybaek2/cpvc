@@ -8,6 +8,7 @@ REM Generate code coverage files for cpvc-core (C++) and cpvc (C#).
 REM Generate ReportGenerator reports from the original Cobertura files.
 %BUILD_NUGET% restore
 ".\packages\ReportGenerator.4.3.6\tools\net47\ReportGenerator.exe" -targetdir:coverage-report-xml -reporttypes:Xml -sourcedirs:. -reports:cpvc-coverage.xml;cpvc-core-coverage.xml
+".\packages\ReportGenerator.4.3.6\tools\net47\ReportGenerator.exe" -targetdir:. -reporttypes:Cobertura -sourcedirs:. -reports:cpvc-coverage.xml;cpvc-core-coverage.xml
 
 REM Get rid of this file as it seems to cause duplicates in Coveralls.
 del coverage-report-xml\Summary.xml
@@ -32,4 +33,4 @@ REM Upload to Coveralls!
 %BUILD_COVERALLS% -i coverage-report-xml --reportgenerator --useRelativePaths --serviceName buildkite --serviceNumber %BUILDKITE_BUILD_NUMBER% --commitMessage "%COMMIT_MESSAGE%" --commitAuthor=%BUILDKITE_BUILD_CREATOR% --commitId %BUILDKITE_COMMIT% --commitBranch %BUILDKITE_BRANCH% --commitEmail %BUILDKITE_BUILD_CREATOR_EMAIL% --jobId=%BUILDKITE_JOB_ID%
 
 REM Upload to Codecov... only do the OpenCover output; Codecov doesn't seem to be able to handle the OpenCppCoverage output, despite the fact it's supposed to be cobertura format.
-%BUILD_CODECOV% --branch %BUILDKITE_BRANCH% --build %BUILDKITE_BUILD_NUMBER% --sha %BUILDKITE_COMMIT% --file "cpvc-coverage.xml"
+%BUILD_CODECOV% --branch %BUILDKITE_BRANCH% --build %BUILDKITE_BUILD_NUMBER% --sha %BUILDKITE_COMMIT% --file "Cobertura.xml"
