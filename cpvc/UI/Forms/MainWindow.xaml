@@ -178,7 +178,7 @@
                         <Rectangle Visibility="{Binding Core.Running, Converter={StaticResource invisibilityConverter}, Mode=OneWay}" Fill="#7F000000" Stroke="#7F000000" Width="768" Height="576" VerticalAlignment="Top" HorizontalAlignment="Left" Panel.ZIndex="1"/>
                         <Image Width="768" Height="576" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" Source="{Binding Display.Bitmap}" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill"/>
                         <Grid Margin="0,0,20,20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Panel.ZIndex="2" Opacity="1.0">
-                            <Grid Background="Black" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.7" Panel.ZIndex="0"/>
+                            <Rectangle HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.7" Panel.ZIndex="0" Fill="Black" RadiusX="8" RadiusY="8"/>
                             <Label Content="{Binding Status, NotifyOnTargetUpdated=True}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="24" Panel.ZIndex="1">
                                 <Label.Effect>
                                     <DropShadowEffect Direction="315" ShadowDepth="4" Color="Black" Opacity="1.0" BlurRadius="0.0"/>

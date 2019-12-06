@@ -414,7 +414,6 @@ namespace CPvC
         {
             _core.Reset();
             Status = "Reset";
-
         }
 
         public void Key(byte keycode, bool down)
@@ -635,7 +634,6 @@ namespace CPvC
 
                 _fileSystem.ReplaceFile(Filepath, tempname);
 
-                
                 file = _fileSystem.OpenFile(Filepath);
                 _file = new MachineFile(file);
 
