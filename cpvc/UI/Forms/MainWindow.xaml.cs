@@ -411,17 +411,17 @@ namespace CPvC.UI.Forms
 
         private void DriveAEjectMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.LoadDisc(0, _fileSystem, PromptForFile, SelectItem);
+            _mainViewModel.EjectDisc(0);
         }
 
         private void DriveBEjectMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.LoadDisc(1, _fileSystem, PromptForFile, SelectItem);
+            _mainViewModel.EjectDisc(1);
         }
 
         private void TapeEjectMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.LoadTape(_fileSystem, PromptForFile, SelectItem);
+            _mainViewModel.EjectTape();
         }
 
         private void CompactFileMenuItem_Click(object sender, RoutedEventArgs e)

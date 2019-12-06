@@ -372,6 +372,8 @@ namespace CPvC.Test
                 viewModel.Resume(null);
                 viewModel.LoadDisc(0, _mockFileSystem.Object, prompt.Object, null);
                 viewModel.LoadTape(_mockFileSystem.Object, prompt.Object, null);
+                viewModel.EjectDisc(0);
+                viewModel.EjectTape();
                 viewModel.AddBookmark();
                 viewModel.SeekToLastBookmark();
                 viewModel.EnableTurbo(true);
@@ -566,6 +568,43 @@ namespace CPvC.Test
             byte[] buffer = new byte[100];
             int samples = machine.ReadAudio(buffer, 0, buffer.Length);
             Assert.AreEqual(10, samples);
+        }
+
+        [Test]
+        public void EjectTape()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1);
+            Machine machine = viewModel.Machines[0];
+            machine.Open();
+            machine.Start();
+            viewModel.ActiveMachine = machine;
+
+            // Act
+            viewModel.EjectTape();
+            machine.Core.WaitForRequestQueueEmpty();
+
+            // Verify - need a better way of checking this; perhaps play the tape and check no tones are generated.
+            Assert.AreEqual("Ejected tape", machine.Status);
+        }
+
+        [TestCase(0)]
+        [TestCase(1)]
+        public void EjectDisc(byte drive)
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1);
+            Machine machine = viewModel.Machines[0];
+            machine.Open();
+            machine.Start();
+            viewModel.ActiveMachine = machine;
+
+            // Act
+            viewModel.EjectDisc(drive);
+            machine.Core.WaitForRequestQueueEmpty();
+
+            // Verify - need a better way of checking this; perhaps query the FDC main status register.
+            Assert.AreEqual("Ejected disc", machine.Status);
         }
     }
 }

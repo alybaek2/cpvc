@@ -162,5 +162,15 @@ namespace CPvC
             string delimStr = delim.ToString();
             return String.Join(delimStr, strs.Select(x => x.Replace("\\", "\\\\").Replace(delimStr, String.Format("\\{0}", delim))));
         }
+
+        /// <summary>
+        /// Converts a given number of ticks (of the CPC's internal 4MHz clock) to a TimeSpan object.
+        /// </summary>
+        /// <param name="ticks">The number of ticks to convert.</param>
+        /// <returns>A TimeSpan object corresponding to the amount of time <c>ticks</c> represents.</returns>
+        static public TimeSpan GetTimeSpanFromTicks(UInt64 ticks)
+        {
+            return new TimeSpan((long)(5 * ticks / 2));
+        }
     }
 }

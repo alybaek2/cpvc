@@ -12,7 +12,7 @@ namespace CPvC.UI.Converters
             // 2.5 "100-nanosecond" units in a single tick of a 4 MHz clock...
             UInt64 ticks = (UInt64)value;
 
-            return new TimeSpan((long)(5 * ticks / 2));
+            return Helpers.GetTimeSpanFromTicks(ticks);
         }
 
         public object ConvertBack(object value, Type targetType,

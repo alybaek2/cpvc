@@ -31,6 +31,22 @@ namespace CPvC
 
         public event PropertyChangedEventHandler PropertyChanged;
 
+        private string _status;
+
+        public string Status
+        {
+            get
+            {
+                return _status;
+            }
+
+            set
+            {
+                _status = value;
+                OnPropertyChanged("Status");
+            }
+        }
+
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
             _name = name;
@@ -275,6 +291,19 @@ namespace CPvC
             if (core == _core && action != null && action.Type != CoreAction.Types.RunUntil)
             {
                 AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
+
+                switch (action.Type)
+                {
+                    case CoreActionBase.Types.LoadDisc:
+                        Status = (action.MediaBuffer != null) ? "Loaded disc" : "Ejected disc";
+                        break;
+                    case CoreActionBase.Types.LoadTape:
+                        Status = (action.MediaBuffer != null) ? "Loaded tape" : "Ejected tape";
+                        break;
+                    case CoreActionBase.Types.Reset:
+                        Status = "Reset";
+                        break;
+                }
             }
         }
 
@@ -384,6 +413,7 @@ namespace CPvC
         public void Reset()
         {
             _core.Reset();
+            Status = "Reset";
         }
 
         public void Key(byte keycode, bool down)
@@ -395,18 +425,26 @@ namespace CPvC
         {
             _running = true;
             SetCoreRunning();
+            Status = "Resumed";
         }
 
         public void Stop()
         {
             _running = false;
             SetCoreRunning();
+            Status = "Paused";
         }
 
         public void ToggleRunning()
         {
-            _running = !_running;
-            SetCoreRunning();
+            if (_running)
+            {
+                Stop();
+            }
+            else
+            {
+                Start();
+            }
         }
 
         public void AdvancePlayback(int samples)
@@ -427,6 +465,7 @@ namespace CPvC
                 AddEvent(HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark), true);
 
                 Diagnostics.Trace("Created bookmark at tick {0}", _core.Ticks);
+                Status = String.Format("Bookmark added at {0}", Helpers.GetTimeSpanFromTicks(Core.Ticks).ToString(@"hh\:mm\:ss"));
             }
         }
 
@@ -440,7 +479,10 @@ namespace CPvC
             {
                 if (lastBookmarkEvent.Type == HistoryEvent.Types.Checkpoint && lastBookmarkEvent.Bookmark != null && !lastBookmarkEvent.Bookmark.System && lastBookmarkEvent.Ticks != Core.Ticks)
                 {
+                    TimeSpan before = Helpers.GetTimeSpanFromTicks(Core.Ticks);
                     SetCurrentEvent(lastBookmarkEvent);
+                    TimeSpan after = Helpers.GetTimeSpanFromTicks(Core.Ticks);
+                    Status = String.Format("Rewound to {0} (-{1})", after.ToString(@"hh\:mm\:ss"), (after - before).ToString(@"hh\:mm\:ss"));
                     return;
                 }
 
@@ -449,6 +491,7 @@ namespace CPvC
 
             // No bookmarks? Go all the way back to the root!
             SetCurrentEvent(RootEvent);
+            Status = "Rewound to start";
         }
 
         public void LoadDisc(byte drive, byte[] diskBuffer)
@@ -469,6 +512,8 @@ namespace CPvC
         public void EnableTurbo(bool enabled)
         {
             _core.EnableTurbo(enabled);
+
+            Status = enabled ? "Turbo enabled" : "Turbo disabled";
         }
 
         /// <summary>
@@ -584,10 +629,15 @@ namespace CPvC
 
                 _file.Close();
 
+                Int64 newLength = _fileSystem.FileLength(tempname);
+                Int64 oldLength = _fileSystem.FileLength(Filepath);
+
                 _fileSystem.ReplaceFile(Filepath, tempname);
 
                 file = _fileSystem.OpenFile(Filepath);
                 _file = new MachineFile(file);
+
+                Status = String.Format("Compacted machine file by {0}%", (Int64) (100 * ((double)(oldLength - newLength))/((double)oldLength)));
             }
         }
 
