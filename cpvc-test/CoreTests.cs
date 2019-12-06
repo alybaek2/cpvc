@@ -103,6 +103,47 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void VSyncDelegateCalled()
+        {
+            // Setup
+            Mock<BeginVSyncDelegate> mockVSync = new Mock<BeginVSyncDelegate>();
+            using (Core core = Core.Create(Core.Type.CPC6128))
+            {
+                core.BeginVSync += mockVSync.Object;
+
+                // Act - run for at least as long as two VSync's (one VSync would be about 4000000 / 50, or 80000 ticks).
+                core.Start();
+                while (core.Ticks < 2 * 80000)
+                {
+                    // Empty out the audio buffer just in case on an overrun.
+                    core.AdvancePlayback(10000);
+                }
+
+                core.Stop();
+
+                // Verify
+                mockVSync.Verify(beginVSync => beginVSync(core), Times.AtLeastOnce);
+                mockVSync.VerifyNoOtherCalls();
+            }
+        }
+
+        /// <summary>
+        /// Ensures a newly instantiated Core has no samples in the audio buffer.
+        /// </summary>
+        [Test]
+        public void ReadNoAudioSamples()
+        {
+            // Setup
+            using (Core core = Core.Create(Core.Type.CPC6128))
+            {
+                // Verify
+                byte[] buffer = new byte[100];
+                int samplesRead = core.ReadAudio16BitStereo(buffer, 0, buffer.Length);
+                Assert.AreEqual(0, samplesRead);
+            }
+        }
+
+        [Test]
         public void ProcessesActionsInCorrectOrder()
         {
             // Setup
@@ -187,6 +228,19 @@ namespace CPvC.Test
                     Assert.Throws<ArgumentException>(action);
                 }
             }
+        }
+
+        [Test]
+        public void DisposeTwice()
+        {
+            // Setup
+            Core core = Core.Create(Core.Type.CPC6128);
+
+            // Act
+            core.Dispose();
+
+            // Verify
+            Assert.DoesNotThrow(() => core.Dispose());
         }
     }
 }
