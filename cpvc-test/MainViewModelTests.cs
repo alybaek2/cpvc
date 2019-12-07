@@ -3,6 +3,7 @@ using Moq;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using static CPvC.Test.TestHelpers;
@@ -31,6 +32,7 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenFile(AnyString())).Returns(mockFile.Object);
             _mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(AnyString()));
             _mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
+            _mockFileSystem.Setup(fileSystem => fileSystem.FileLength(AnyString())).Returns(100);
             _mockFileSystem.Setup(ReadBytes()).Returns(new byte[1]);
         }
 
@@ -203,6 +205,26 @@ namespace CPvC.Test
                 Assert.IsEmpty(viewModel.Machines);
                 _mockFileSystem.VerifyNoOtherCalls();
             }
+        }
+
+        /// <summary>
+        /// Ensures that if we call MainViewModel.OpenMachine twice with the same filepath, the second call should return the same machine.
+        /// </summary>
+        [Test]
+        public void OpenMachineTwice()
+        {
+            // Setup
+            string filepath = "test.cpvc";
+            MainViewModel viewModel = SetupViewModel(0);
+            Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, filepath);
+            _mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(false);
+            Machine machine = viewModel.NewMachine(prompt.Object, _mockFileSystem.Object);
+
+            // Act
+            Machine machine2 = viewModel.NewMachine(prompt.Object, _mockFileSystem.Object);
+
+            // Verify
+            Assert.AreEqual(machine, machine2);
         }
 
         [TestCase(false, null)]
@@ -451,7 +473,9 @@ namespace CPvC.Test
         public void SetActiveMachine(bool closed)
         {
             // Setup
+            Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
             MainViewModel viewModel = SetupViewModel(1);
+            viewModel.PropertyChanged += propChanged.Object;
             Machine machine = viewModel.Machines[0];
             if (closed)
             {
@@ -468,13 +492,17 @@ namespace CPvC.Test
             // Verify
             Assert.IsFalse(machine.RequiresOpen);
             Assert.AreEqual(machine, viewModel.ActiveMachine);
+            propChanged.Verify(PropertyChanged(viewModel, "ActiveItem"), Times.Once);
+            propChanged.Verify(PropertyChanged(viewModel, "ActiveMachine"), Times.Once);
         }
 
         [Test]
         public void SetActiveNonMachine()
         {
             // Setup
+            Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
             MainViewModel viewModel = SetupViewModel(0);
+            viewModel.PropertyChanged += propChanged.Object;
             object nonMachine = new object();
 
             // Act
@@ -483,6 +511,8 @@ namespace CPvC.Test
             // Verify
             Assert.IsNull(viewModel.ActiveMachine);
             Assert.AreEqual(nonMachine, viewModel.ActiveItem);
+            propChanged.Verify(PropertyChanged(viewModel, "ActiveItem"), Times.Once);
+            propChanged.Verify(PropertyChanged(viewModel, "ActiveMachine"), Times.Once);
         }
 
         [Test]
@@ -605,6 +635,186 @@ namespace CPvC.Test
 
             // Verify - need a better way of checking this; perhaps query the FDC main status register.
             Assert.AreEqual("Ejected disc", machine.Status);
+        }
+
+        /// <summary>
+        /// Ensures that Pause and Resume calls are passed through from the view model to the machine.
+        /// </summary>
+        /// <param name="active">Indicates whether the machine should be set as the view model's active machine.</param>
+        /// <param name="nullMachine">Indicates whether Pause and Resume should be called with a null parameter instead of a machine.</param>
+        [TestCase(false, false)]
+        [TestCase(true, false)]
+        [TestCase(false, true)]
+        [TestCase(true, true)]
+        public void PauseAndResume(bool active, bool nullMachine)
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1);
+            Machine machine = viewModel.Machines[0];
+            machine.Open();
+            viewModel.ActiveMachine = active ? machine : null;
+
+            // Act
+            bool initialState = machine.Core.Running;
+            viewModel.Pause(nullMachine ? null : machine);
+            bool pausedState = machine.Core.Running;
+            viewModel.Resume(nullMachine ? null : machine);
+            bool runningState = machine.Core.Running;
+
+            // Verify
+            Assert.IsFalse(initialState);
+            Assert.AreEqual((active || !nullMachine), runningState);
+            Assert.IsFalse(pausedState);
+        }
+
+        /// <summary>
+        /// Ensures that a Reset call is passed through from the view model to the machine.
+        /// </summary>
+        /// <param name="active">Indicates whether the machine should be set as the view model's active machine.</param>
+        /// <param name="nullMachine">Indicates whether Reset should be called with a null parameter instead of a machine.</param>
+        [TestCase(false, false)]
+        [TestCase(true, false)]
+        [TestCase(false, true)]
+        [TestCase(true, true)]
+        public void Reset(bool active, bool nullMachine)
+        {
+            // Setup
+            Mock<RequestProcessedDelegate> mockAuditor = new Mock<RequestProcessedDelegate>();
+            MainViewModel viewModel = SetupViewModel(1);
+            Machine machine = viewModel.Machines[0];
+            machine.Open();
+            machine.Core.Auditors += mockAuditor.Object;
+            viewModel.ActiveMachine = active ? machine : null;
+
+            // Act
+            viewModel.Reset(nullMachine ? null : machine);
+            viewModel.Key(Keys.A, true);
+            machine.Start();
+            machine.Core.WaitForRequestQueueEmpty();
+            machine.Stop();
+
+            // Verify
+            Times expectedResetTimes = (active || !nullMachine) ? Times.Once() : Times.Never();
+            Times expectedKeyTimes = active ? Times.Once() : Times.Never();
+            mockAuditor.Verify(x => x(machine.Core, ResetRequest(), ResetAction()), expectedResetTimes);
+            mockAuditor.Verify(x => x(machine.Core, RunUntilRequest(), RunUntilAction()), AnyTimes());
+            mockAuditor.Verify(x => x(machine.Core, KeyRequest(Keys.A, true), KeyAction(Keys.A, true)), expectedKeyTimes);
+            mockAuditor.VerifyNoOtherCalls();
+        }
+
+        /// <summary>
+        /// Ensures that a AddBookmark call is passed through from the view model to the machine.
+        /// </summary>
+        /// <param name="active">Indicates whether the machine should be set as the view model's active machine.</param>
+        [TestCase(false)]
+        [TestCase(true)]
+        public void AddBookmark(bool active)
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1);
+            Machine machine = viewModel.Machines[0];
+            machine.Open();
+            viewModel.ActiveMachine = active ? machine : null;
+
+            // Act
+            viewModel.AddBookmark();
+
+            // Verify
+            if (active)
+            {
+                Assert.IsNotNull(machine.CurrentEvent.Bookmark);
+            }
+            else
+            {
+                Assert.IsNull(machine.CurrentEvent.Bookmark);
+            }
+        }
+
+        /// <summary>
+        /// Ensures that a SeekToLastBookmark call is passed through from the view model to the machine.
+        /// </summary>
+        /// <param name="active">Indicates whether the machine should be set as the view model's active machine.</param>
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SeekToLastBookmark(bool active)
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1);
+            Machine machine = viewModel.Machines[0];
+            machine.Open();
+            machine.AddBookmark(false);
+            HistoryEvent bookmarkEvent = machine.CurrentEvent;
+            RunForAWhile(machine);
+            HistoryEvent lastEvent = machine.CurrentEvent;
+            viewModel.ActiveMachine = active ? machine : null;
+
+            // Act
+            viewModel.SeekToLastBookmark();
+
+            // Verify
+            if (active)
+            {
+                Assert.AreEqual(bookmarkEvent, machine.CurrentEvent);
+            }
+            else
+            {
+                Assert.AreEqual(lastEvent, machine.CurrentEvent);
+            }
+        }
+
+        /// <summary>
+        /// Ensures that a CompactFile call is passed through from the view model to the machine.
+        /// </summary>
+        /// <param name="active">Indicates whether the machine should be set as the view model's active machine.</param>
+        [TestCase(false)]
+        [TestCase(true)]
+        public void CompactMachineFile(bool active)
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1);
+            Machine machine = viewModel.Machines[0];
+            machine.Open();
+            viewModel.ActiveMachine = active ? machine : null;
+
+            // Act
+            viewModel.CompactFile();
+
+            // Verify
+            string expectedStatus;
+            if (active)
+            {
+                expectedStatus = "Compacted";
+            }
+            else
+            {
+                expectedStatus = "Paused";
+            }
+
+            Assert.AreEqual(expectedStatus, machine.Status.Substring(0, expectedStatus.Length));
+        }
+
+        /// <summary>
+        /// Ensures that a Close call is passed through from the view model to the machine.
+        /// </summary>
+        /// <param name="active">Indicates whether the machine should be set as the view model's active machine.</param>
+        /// <param name="nullMachine">Indicates whether Close should be called with a null parameter instead of a machine.</param>
+        [TestCase(false, false)]
+        [TestCase(true, false)]
+        [TestCase(false, true)]
+        [TestCase(true, true)]
+        public void Close(bool active, bool nullMachine)
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1);
+            Machine machine = viewModel.Machines[0];
+            machine.Open();
+            viewModel.ActiveMachine = active ? machine : null;
+
+            // Act
+            viewModel.Close(nullMachine ? null : machine);
+
+            // Verify - a successfully closed machine should have its RequireOpen property set to true.
+            Assert.AreEqual(active || !nullMachine, machine.RequiresOpen);
         }
     }
 }

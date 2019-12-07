@@ -1,6 +1,7 @@
 ﻿using Moq;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq.Expressions;
 
 namespace CPvC.Test
@@ -13,12 +14,62 @@ namespace CPvC.Test
         /// <returns>A Times value representing 0 or more times.</returns>
         static public Times AnyTimes()
         {
-            return It.IsAny<Times>();
+            return Times.AtMost(int.MaxValue);
         }
 
         static public string AnyString()
         {
             return It.IsAny<string>();
+        }
+
+        static public CoreRequest KeyRequest(byte keycode, bool down)
+        {
+            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.KeyPress && r.KeyCode == keycode && r.KeyDown == down);
+        }
+
+        static public CoreAction KeyAction(byte keycode, bool down)
+        {
+            return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.KeyPress && r.KeyCode == keycode && r.KeyDown == down);
+        }
+
+        static public CoreRequest DiscRequest()
+        {
+            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.LoadDisc);
+        }
+
+        static public CoreAction DiscAction()
+        {
+            return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.LoadDisc);
+        }
+
+        static public CoreRequest TapeRequest()
+        {
+            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.LoadTape);
+        }
+
+        static public CoreAction TapeAction()
+        {
+            return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.LoadTape);
+        }
+
+        static public CoreRequest RunUntilRequest()
+        {
+            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.RunUntil);
+        }
+
+        static public CoreAction RunUntilAction()
+        {
+            return It.Is<CoreAction>(r => r == null || r.Type == CoreActionBase.Types.RunUntil);
+        }
+
+        static public CoreRequest ResetRequest()
+        {
+            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.Reset);
+        }
+
+        static public CoreAction ResetAction()
+        {
+            return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.Reset);
         }
 
         /// <summary>
@@ -57,6 +108,17 @@ namespace CPvC.Test
             mockWriter.Setup(s => s.Close());
 
             return mockWriter.Object;
+        }
+
+        /// <summary>
+        /// Returns a mock delegate for checking property change events.
+        /// </summary>
+        /// <param name="source">The expected source of the property changed event.</param>
+        /// <param name="name">The expected name of the property that was changed.</param>
+        /// <returns>A mock delegate for checking property change events.</returns>
+        static public Expression<Action<PropertyChangedEventHandler>> PropertyChanged(object source, string name)
+        {
+            return propChanged => propChanged(source, It.Is<PropertyChangedEventArgs>(args => args.PropertyName == name));
         }
 
         /// <summary>

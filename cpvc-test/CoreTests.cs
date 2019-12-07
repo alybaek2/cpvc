@@ -16,56 +16,6 @@ namespace CPvC.Test
             return mock;
         }
 
-        static private CoreRequest KeyRequest(byte keycode, bool down)
-        {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.KeyPress && r.KeyCode == keycode && r.KeyDown == down);
-        }
-
-        static private CoreAction KeyAction(byte keycode, bool down)
-        {
-            return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.KeyPress && r.KeyCode == keycode && r.KeyDown == down);
-        }
-
-        static private CoreRequest DiscRequest()
-        {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.LoadDisc);
-        }
-
-        static private CoreAction DiscAction()
-        {
-            return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.LoadDisc);
-        }
-
-        static private CoreRequest TapeRequest()
-        {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.LoadTape);
-        }
-
-        static private CoreAction TapeAction()
-        {
-            return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.LoadTape);
-        }
-
-        static private CoreRequest ResetRequest()
-        {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.Reset);
-        }
-
-        static private CoreAction ResetAction()
-        {
-            return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.Reset);
-        }
-
-        static private CoreRequest RunUntilRequest()
-        {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.RunUntil);
-        }
-
-        static private CoreAction RunUntilAction()
-        {
-            return It.Is<CoreAction>(r => r == null || r.Type == CoreActionBase.Types.RunUntil);
-        }
-
         [Test]
         public void ThrowsWhenCreatingUnknownType()
         {
@@ -195,7 +145,7 @@ namespace CPvC.Test
                 Assert.AreEqual(core.Volume, volume2);
                 if (notified)
                 {
-                    propChanged.Verify(x => x(core, It.Is<PropertyChangedEventArgs>(a => a.PropertyName == "Volume")), Times.Once);
+                    propChanged.Verify(PropertyChanged(core, "Volume"), Times.Once);
                 }
 
                 propChanged.VerifyNoOtherCalls();
