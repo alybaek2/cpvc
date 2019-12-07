@@ -89,10 +89,6 @@ namespace CPvC.UI
         public Machine NewMachine(PromptForFileDelegate promptForFile, IFileSystem fileSystem)
         {
             string filepath = promptForFile(FileTypes.Machine, false);
-            if (filepath == null)
-            {
-                return null;
-            }
 
             Machine machine = _model.Add(filepath, fileSystem);
             if (machine != null)
