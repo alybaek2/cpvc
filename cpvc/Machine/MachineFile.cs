@@ -143,6 +143,54 @@ namespace CPvC
             return line;
         }
 
+        /// <summary>
+        /// Checks to see if a given token is valid or not.
+        /// </summary>
+        /// <param name="token">The token to check.</param>
+        /// <returns>True if the token is valid, and false otherwise.</returns>
+        static public bool TokenValid(string token)
+        {
+            switch (token)
+            {
+                case _checkpointToken:
+                case _deleteToken:
+                case _currentToken:
+                case _bookmarkToken:
+                case _keyToken:
+                case _discToken:
+                case _tapeToken:
+                case _resetToken:
+                case _nameToken:
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Parses a line which translates to a HistoryEvent object.
+        /// </summary>
+        /// <param name="tokens">The machine file line split into tokens.</param>
+        /// <returns>A HistoryEvent object, or null if the tokens don't correspond to a HistoryEvent.</returns>
+        static public HistoryEvent ParseHistoryEventLine(string[] tokens)
+        {
+            switch (tokens[0])
+            {
+                case MachineFile._checkpointToken:
+                    return MachineFile.ParseCheckpointLine(tokens);
+                case MachineFile._keyToken:
+                    return MachineFile.ParseKeyPressLine(tokens);
+                case MachineFile._discToken:
+                    return MachineFile.ParseDiscLine(tokens);
+                case MachineFile._tapeToken:
+                    return MachineFile.ParseTapeLine(tokens);
+                case MachineFile._resetToken:
+                    return MachineFile.ParseResetLine(tokens);
+                default:
+                    return null;
+            }
+        }
+
         static public HistoryEvent ParseCheckpointLine(string[] tokens)
         {
             int id = Convert.ToInt32(tokens[1]);

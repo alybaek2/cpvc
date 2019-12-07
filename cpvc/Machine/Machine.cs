@@ -123,6 +123,10 @@ namespace CPvC
                 for (int i = 0; i < lines.Length; i++)
                 {
                     string[] tokens = lines[i].Split(':');
+                    if (!MachineFile.TokenValid(tokens[0]))
+                    {
+                        throw new Exception(String.Format("Unknown token {0}", tokens[0]));
+                    }
 
                     HistoryEvent historyEventToAdd = null;
                     switch (tokens[0])
@@ -149,23 +153,9 @@ namespace CPvC
                                 DeleteEvent(events[id], false);
                             }
                             break;
-                        case MachineFile._checkpointToken:
-                            historyEventToAdd = MachineFile.ParseCheckpointLine(tokens);
-                            break;
-                        case MachineFile._keyToken:
-                            historyEventToAdd = MachineFile.ParseKeyPressLine(tokens);
-                            break;
-                        case MachineFile._discToken:
-                            historyEventToAdd = MachineFile.ParseDiscLine(tokens);
-                            break;
-                        case MachineFile._tapeToken:
-                            historyEventToAdd = MachineFile.ParseTapeLine(tokens);
-                            break;
-                        case MachineFile._resetToken:
-                            historyEventToAdd = MachineFile.ParseResetLine(tokens);
-                            break;
                         default:
-                            throw new Exception(String.Format("Unknown token {0}", tokens[0]));
+                            historyEventToAdd = MachineFile.ParseHistoryEventLine(tokens);
+                            break;
                     }
 
                     if (historyEventToAdd != null)
