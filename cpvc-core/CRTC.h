@@ -19,6 +19,10 @@ public:
 
     void Reset();
 
+    // Set the top of the screen to be a little above the top of the screen buffer; this helps align the
+    // screen better and can be thought of as emulating CRT overscan.
+    constexpr static word _yTop = -16;
+
     byte _x;
     word _y;
     byte _hCount;

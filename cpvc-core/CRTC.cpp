@@ -15,7 +15,7 @@ CRTC::~CRTC()
 void CRTC::Reset()
 {
     _x = 0;
-    _y = 0;
+    _y = _yTop;
     _raster = 0;
 
     _hCount = 0;
@@ -203,13 +203,14 @@ void CRTC::Tick()
         }
         else if (_inVSync)
         {
+            // Note that Vertical Sync Width is in scanlines, not chars.
             _vSyncCount++;
 
-            _vSyncCount &= 0x0f;
-
-            if (_vSyncCount == (_horizontalAndVerticalSyncWidth >> 4))
+            // The documentation seems to indicate this width is fixed at 16 scan lines, regardless of
+            // what is actually set in the Sync Width register.
+            if (_vSyncCount == 16)
             {
-                _y = 0;
+                _y = _yTop;
                 _inVSync = false;
             }
         }
