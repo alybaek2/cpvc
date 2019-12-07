@@ -67,8 +67,10 @@ TEST(CoreTests, SetSmallWidthScreen)
 
     // Act - since one CRTC "char" is written every 4 ticks, run the core for the full width
     //       of the screen plus one, and ensure this one extra char does not get written to
-    //       the screen buffer.
-    pCore->RunUntil((widthChars + 1) * 4, 0);
+    //       the screen buffer. Note that we need to first run the core for 16 scanlines to
+    //       compensate for overscan, hence the 16 * 0x40 below (0x40 chars is the default
+    //       "Horizontal Total" for the CPC).
+    pCore->RunUntil(((16 * 0x40) + widthChars + 1) * 4, 0);
 
     // Verify
     for (word i = 0; i < bufsize; i++)
@@ -100,9 +102,10 @@ TEST(CoreTests, SetSmallHeightScreen)
     memset(pScreen, 1, bufsize);
     pCore->SetScreen(pScreen, widthPixels, height - 1, widthPixels);
 
-    // Act - run the core for at least two lines. The default total width is 0x40 chars, so
+    // Act - run the core for two lines plus the number of overscan lines. Adding overscan lines is necessary
+    //       to ensure we actually write into the screen buffer. The default total width is 0x40 chars, so
     //       double this for two lines. Note that one CRTC "char" is written every 4 ticks.
-    pCore->RunUntil((0x40 * 2) * 4, 0);
+    pCore->RunUntil((0x40 * (2 + 16)) * 4, 0);
 
     // Verify - ensure that only a single line was written.
     for (word i = 0; i < bufsize; i++)
