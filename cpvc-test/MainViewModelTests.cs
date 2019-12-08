@@ -29,10 +29,12 @@ namespace CPvC.Test
             Mock<IFile> mockFile = new Mock<IFile>();
             _mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
             _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines(AnyString())).Returns(() => _lines);
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLinesReverse(AnyString())).Returns(() => _lines.Reverse());
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenFile(AnyString())).Returns(mockFile.Object);
             _mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(AnyString()));
             _mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
             _mockFileSystem.Setup(fileSystem => fileSystem.FileLength(AnyString())).Returns(100);
+            _mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(true);
             _mockFileSystem.Setup(ReadBytes()).Returns(new byte[1]);
         }
 
@@ -49,7 +51,7 @@ namespace CPvC.Test
         private MainViewModel SetupViewModel(int machineCount)
         {
             _settingGet = String.Join(",", Enumerable.Range(0, machineCount).Select(x => String.Format("Test{0};test{0}.cpvc", x)));
-            _lines = new string[] { "name:test", "checkpoint:0:0:0:0" };
+            _lines = new string[] { "checkpoint:0:0:0:0" };
 
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
 
@@ -139,7 +141,7 @@ namespace CPvC.Test
             // Setup
             Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, true, promptedFilepath);
             MainViewModel viewModel = SetupViewModel(0);
-            _mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(true);
+            _lines = new string[] { String.Format("name:{0}", expectedMachineName), "checkpoint:0:0:0:0" };
 
             // Act
             Machine machine = viewModel.OpenMachine(prompt.Object, filepath, _mockFileSystem.Object);
@@ -233,9 +235,9 @@ namespace CPvC.Test
         public void RenameMachine(bool active, string newName)
         {
             // Setup
-            string oldName = "test";
             MainViewModel viewModel = SetupViewModel(1);
             Machine machine = viewModel.Machines[0];
+            string oldName = machine.Name;
             Mock<MainViewModel.PromptForNameDelegate> mockNamePrompt = new Mock<MainViewModel.PromptForNameDelegate>(MockBehavior.Loose);
             mockNamePrompt.Setup(x => x(oldName)).Returns(newName);
 
@@ -780,17 +782,15 @@ namespace CPvC.Test
             viewModel.CompactFile();
 
             // Verify
-            string expectedStatus;
             if (active)
             {
-                expectedStatus = "Compacted";
+                string expectedStatus = "Compacted";
+                Assert.AreEqual(expectedStatus, machine.Status.Substring(0, expectedStatus.Length));
             }
             else
             {
-                expectedStatus = "Paused";
+                Assert.IsNull(machine.Status);
             }
-
-            Assert.AreEqual(expectedStatus, machine.Status.Substring(0, expectedStatus.Length));
         }
 
         /// <summary>

@@ -53,7 +53,7 @@ namespace CPvC.UI
                     {
                         if (fileSystem.Exists(filepath))
                         {
-                            machine = Machine.Open(null, filepath, fileSystem, false);
+                            machine = Machine.Open("", filepath, fileSystem, false);
                         }
                         else
                         {

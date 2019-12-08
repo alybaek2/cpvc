@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 
 namespace CPvC
 {
@@ -91,8 +92,8 @@ namespace CPvC
                 }
                 else
                 {
-                    // This is a very inefficient way to populate the Display. Need to revisit this!
-                    machine.Open();
+                    HistoryEvent lastSystemBookmarkEvent = MachineFile.GetLastSystemBookmark(fileSystem, machineFilepath);
+                    machine.Display.GetFromBookmark(lastSystemBookmarkEvent?.Bookmark);
                     machine.Close();
                 }
             }
@@ -113,16 +114,13 @@ namespace CPvC
         {
             try
             {
-                string[] lines = _fileSystem.ReadLines(Filepath);
-
-                IFile file = _fileSystem.OpenFile(Filepath);
-                _file = new MachineFile(file);
+                IEnumerable<string> lines = _fileSystem.ReadLines(Filepath);
 
                 Dictionary<int, HistoryEvent> events = new Dictionary<int, HistoryEvent>();
 
-                for (int i = 0; i < lines.Length; i++)
+                foreach (string line in lines)
                 {
-                    string[] tokens = lines[i].Split(':');
+                    string[] tokens = line.Split(':');
                     if (!MachineFile.TokenValid(tokens[0]))
                     {
                         throw new Exception(String.Format("Unknown token {0}", tokens[0]));
@@ -172,6 +170,9 @@ namespace CPvC
                     // The machine file is either empty or has some other problem...
                     throw new Exception(String.Format("Unable to load file \"{0}\"; CurrentEvent is null!", Filepath));
                 }
+
+                IFile file = _fileSystem.OpenFile(Filepath);
+                _file = new MachineFile(file);
 
                 // Rewind from the current event to the most recent one with a bookmark...
                 HistoryEvent bookmarkEvent = CurrentEvent;

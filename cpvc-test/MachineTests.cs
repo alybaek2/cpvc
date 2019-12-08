@@ -175,10 +175,10 @@ namespace CPvC.Test
         public void OpenLazy()
         {
             // Setup
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(new string[] { "name:Test", "checkpoint:0:0:0:0" });
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLinesReverse("test.cpvc")).Returns(new string[] { "checkpoint:0:0:0:0", "name:Test" });
 
             // Act
-            using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, true))
+            using (Machine machine = Machine.Open("Test", "test.cpvc", _mockFileSystem.Object, true))
             {
                 // Verify
                 Assert.IsTrue(machine.RequiresOpen);

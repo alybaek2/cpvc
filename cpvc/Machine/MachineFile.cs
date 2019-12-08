@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 
 namespace CPvC
 {
@@ -276,6 +277,32 @@ namespace CPvC
                 default:
                     throw new Exception(String.Format("Unknown bookmark type {0}", tokens[2]));
             }
+        }
+
+        /// <summary>
+        /// Retreives the final system bookmark event written to a machine file.
+        /// </summary>
+        /// <remarks>
+        /// This is used when lazy loading a Machine to get the screen preview, without having to open the entire machine file.
+        /// </remarks>
+        /// <param name="fileSystem">The IFileSystem interface to use to access <c>filepath</c>.</param>
+        /// <param name="filepath">Filepath of the machine file.</param>
+        /// <returns>A HistoryEvent corresponding to the final system bookmark writtern to the file.</returns>
+        static public HistoryEvent GetLastSystemBookmark(IFileSystem fileSystem, string filepath)
+        {
+            IEnumerable reverseLines = fileSystem.ReadLinesReverse(filepath);
+
+            foreach (string line in reverseLines)
+            {
+                string[] tokens = line.Split(':');
+                HistoryEvent historyEvent = ParseHistoryEventLine(tokens);
+                if (historyEvent?.Bookmark != null && historyEvent.Bookmark.System)
+                {
+                    return historyEvent;
+                }
+            }
+
+            return null;
         }
     }
 }

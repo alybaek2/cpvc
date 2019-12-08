@@ -95,5 +95,17 @@ namespace CPvC.Test
             Assert.AreEqual(tokens.ToArray(), expectedTokens);
             Assert.AreEqual(str, str2);
         }
+
+        [TestCase("", "")]
+        [TestCase("abc", "cba")]
+        public void ReverseString(string str, string expectedStr)
+        {
+            // Act
+            string revstr = Helpers.ReverseString(str);
+
+            // Verify
+            Assert.AreEqual(expectedStr, revstr);
+        }
+
     }
 }

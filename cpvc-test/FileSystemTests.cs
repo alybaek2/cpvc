@@ -1,6 +1,7 @@
 ﻿using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace CPvC.Test
@@ -109,10 +110,31 @@ namespace CPvC.Test
             System.IO.File.WriteAllLines(filepath, new string[] { "abc" });
 
             // Act
-            string[] lines = fs.ReadLines(filepath);
+            IEnumerable<string> lines = fs.ReadLines(filepath);
 
             // Verify
-            Assert.AreEqual(new string[] { "abc" }, lines);
+            CollectionAssert.AreEqual(new string[] { "abc" }, lines);
+            System.IO.File.Delete(filepath);
+        }
+
+        [TestCase("", new object[] {})]
+        [TestCase("abc\r\ndef\r\nghi", new object[] { "ghi", "def", "abc" })]
+        [TestCase("abc\r\ndef\r\nghi\r\n", new object[] { "ghi", "def", "abc" })]
+        [TestCase("a\rbc\ndef\nghi\n", new object[] { "ghi", "def", "a\rbc" })]
+        [TestCase("\r\nabc\r\n\r\ndef\r\n\r\n", new object[] { "", "def", "", "abc", "" })]
+        public void ReadLinesReverse(string input, object[] expected)
+        {
+            // Setup
+            string filepath = TestHelpers.GetTempFilepath("linestest.txt");
+            FileSystem fs = new FileSystem();
+            System.IO.File.WriteAllText(filepath, input);
+
+            // Act
+            IEnumerable<string> lines = fs.ReadLinesReverse(filepath);
+
+            // Verify
+            CollectionAssert.AreEqual(expected, lines);
+            System.IO.File.Delete(filepath);
         }
 
         [Test]
