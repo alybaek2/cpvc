@@ -4,6 +4,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using static CPvC.Test.TestHelpers;
@@ -169,7 +170,6 @@ namespace CPvC.Test
         public void OpenInvalid()
         {
             // Setup
-            _settingGet = "Test;test.cpvc";
             _lines = new string[] { "invalid" };
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
             Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, "test.cpvc");
@@ -177,6 +177,20 @@ namespace CPvC.Test
 
             // Act and Verify
             Assert.Throws<Exception>(() => viewModel.OpenMachine(prompt.Object, "test.cpvc", _mockFileSystem.Object));
+        }
+
+        [Test]
+        public void OpenNonExistantFile()
+        {
+            // Setup
+            _settingGet = "Test;test.cpvc";
+            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLinesReverse("test.cpvc")).Throws<FileNotFoundException>();
+
+            // Act
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
+
+            // Verify
+            Assert.AreEqual(0, viewModel.Machines.Count);
         }
 
         [TestCase(null, null)]

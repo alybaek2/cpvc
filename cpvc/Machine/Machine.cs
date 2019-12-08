@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 
 namespace CPvC
 {
@@ -628,7 +627,7 @@ namespace CPvC
                 file = _fileSystem.OpenFile(Filepath);
                 _file = new MachineFile(file);
 
-                Status = String.Format("Compacted machine file by {0}%", (Int64) (100 * ((double)(oldLength - newLength))/((double)oldLength)));
+                Status = String.Format("Compacted machine file by {0}%", (Int64)(100 * ((double)(oldLength - newLength)) / ((double)oldLength)));
             }
         }
 

@@ -1,6 +1,8 @@
-﻿using NUnit.Framework;
+﻿using Moq;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
@@ -366,6 +368,35 @@ namespace CPvC.Test
 
             // Act and Verify
             Assert.Throws<Exception>(() => MachineFile.ParseBookmarkLine(tokens));
+        }
+
+        [TestCase(new object[] { }, null)]
+        [TestCase(new object[] { "" }, null)]
+        [TestCase(new object[] { "name:test" }, null)]
+        [TestCase(new object[] { "checkpoint:0:0:0:0", "name:test" }, null)]
+        [TestCase(new object[] { "checkpoint:1:100:2:0:0102", "checkpoint:0:0:0:0", "name:test" }, null)]
+        [TestCase(new object[] { "checkpoint:1:100:1:0:0102", "checkpoint:0:0:0:0", "name:test" }, new byte[] { 0x01, 0x02 })]
+        public void GetLastSystemBookmark(object[] lines, byte[] expectedBookmark)
+        {
+            // Setup
+            string filepath = "test.cpvc";
+            Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
+            mockFileSystem.Setup(fileSystem => fileSystem.ReadLinesReverse(filepath)).Returns(lines.Select(x => (string)x));
+
+            // Act
+            HistoryEvent bookmarkEvent = MachineFile.GetLastSystemBookmark(mockFileSystem.Object, filepath);
+
+            // Verify
+            if (expectedBookmark != null)
+            {
+                Assert.IsNotNull(bookmarkEvent?.Bookmark);
+                Assert.IsTrue(bookmarkEvent.Bookmark.System);
+                Assert.AreEqual(expectedBookmark, bookmarkEvent?.Bookmark.State);
+            }
+            else
+            {
+                Assert.IsNull(bookmarkEvent);
+            }
         }
     }
 }

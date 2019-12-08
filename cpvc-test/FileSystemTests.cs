@@ -1,7 +1,6 @@
 ﻿using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace CPvC.Test
@@ -117,7 +116,7 @@ namespace CPvC.Test
             System.IO.File.Delete(filepath);
         }
 
-        [TestCase("", new object[] {})]
+        [TestCase("", new object[] { })]
         [TestCase("abc\r\ndef\r\nghi", new object[] { "ghi", "def", "abc" })]
         [TestCase("abc\r\ndef\r\nghi\r\n", new object[] { "ghi", "def", "abc" })]
         [TestCase("a\rbc\ndef\nghi\n", new object[] { "ghi", "def", "a\rbc" })]
