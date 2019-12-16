@@ -115,6 +115,7 @@
     <Compile Include="IO\File.cs" />
     <Compile Include="IO\IFile.cs" />
     <Compile Include="ISettings.cs" />
+    <Compile Include="Machine\MachineFile2.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
