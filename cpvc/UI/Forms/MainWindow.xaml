@@ -50,7 +50,7 @@
                 <Separator/>
                 <MenuItem x:Name="_exitMenuItem" Header="Exit" Click="ExitMenuItem_Click"/>
             </MenuItem>
-            <MenuItem x:Name="_cpvcMenuItem" Header="CPvC" Style="{StaticResource MachineMenuItemStyle}">
+            <MenuItem x:Name="_machineMenuItem" Header="Machine" Style="{StaticResource MachineMenuItemStyle}">
                 <MenuItem Header="Drive A:">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
