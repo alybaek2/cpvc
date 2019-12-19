@@ -35,7 +35,7 @@
                         </Style>
                     </Image.Style>
                 </Image>
-                <Label x:Name="_noBookmarkSelectedLabel" Content="No bookmark selected" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Label Content="No preview available" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Label.Style>
                         <Style TargetType="Label">
                             <Setter Property="Visibility" Value="Visible"/>
