@@ -75,33 +75,6 @@ namespace CPvC.Test
         [TestCase(false)]
         [TestCase(true)]
         [TestCase(100)]
-        public void Invisibility(object value)
-        {
-            // Setup
-            CPvC.UI.Converters.Invisibility conv = new UI.Converters.Invisibility();
-
-            // Act
-            object converted = conv.Convert(value, null, null, null);
-            object original = conv.ConvertBack(converted, null, null, null);
-
-            // Verify
-            if (value == null || !(value is bool))
-            {
-                Assert.AreEqual(converted, Visibility.Visible);
-            }
-            else
-            {
-                Assert.AreEqual((Visibility)converted, ((value != null) && ((bool)value)) ? Visibility.Hidden : Visibility.Visible);
-                Assert.IsNull(original);
-            }
-
-            Assert.IsNull(original);
-        }
-
-        [TestCase(null)]
-        [TestCase(false)]
-        [TestCase(true)]
-        [TestCase(100)]
         public void RunningIcon(object value)
         {
             // Setup

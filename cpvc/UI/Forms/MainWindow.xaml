@@ -11,7 +11,6 @@
         <converters:Ticks x:Key="ticksConverter" />
         <converters:IsNotNull x:Key="isNotNullConverter" />
         <converters:RunningIcon x:Key="runningIconConverter" />
-        <converters:Invisibility x:Key="invisibilityConverter" />
         <converters:BooleanInverter x:Key="booleanInverterConverter" />
         <Style x:Key="MachineMenuItemStyle" TargetType="{x:Type MenuItem}">
             <Setter Property="IsEnabled" Value="{Binding ActiveMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
@@ -175,7 +174,18 @@
             <TabControl.ContentTemplate>
                 <DataTemplate>  
                     <Grid MouseLeftButtonUp="ScreenGrid_MouseLeftButtonUp">
-                        <Rectangle Visibility="{Binding Core.Running, Converter={StaticResource invisibilityConverter}, Mode=OneWay}" Fill="#7F000000" Stroke="#7F000000" Width="768" Height="576" VerticalAlignment="Top" HorizontalAlignment="Left" Panel.ZIndex="1"/>
+                        <Rectangle Fill="#7F000000" Stroke="#7F000000" Width="768" Height="576" VerticalAlignment="Top" HorizontalAlignment="Left" Panel.ZIndex="1">
+                            <Rectangle.Style>
+                                <Style TargetType="Rectangle">
+                                    <Setter Property="Visibility" Value="Hidden"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Core.Running}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Rectangle.Style>
+                        </Rectangle>
                         <Image Width="768" Height="576" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" Source="{Binding Display.Bitmap}" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill"/>
                         <Grid Margin="0,0,20,20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Panel.ZIndex="2" Opacity="1.0">
                             <Rectangle HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.7" Panel.ZIndex="0" Fill="Black" RadiusX="8" RadiusY="8"/>
