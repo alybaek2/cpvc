@@ -11,7 +11,7 @@ namespace CPvC
     /// The Machine class, in addition to encapsulating a running Core object, also maintains a file which contains the state of the machine.
     /// This allows a machine to be closed, and then resumed where it left off the next time it's opened.
     /// </remarks>
-    public sealed class Machine : INotifyPropertyChanged, IDisposable
+    public sealed class Machine : IMachineFileReader, INotifyPropertyChanged, IDisposable
     {
         private string _name;
         private Core _core;
@@ -21,6 +21,7 @@ namespace CPvC
         public Display Display { get; private set; }
         public HistoryEvent CurrentEvent { get; private set; }
         public HistoryEvent RootEvent { get; private set; }
+        private Dictionary<int, HistoryEvent> _historyEventById;
 
         public string Filepath { get; }
 
@@ -28,6 +29,7 @@ namespace CPvC
 
         private readonly IFileSystem _fileSystem;
         private MachineFile _file;
+        private MachineFile2 _file2;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -57,6 +59,7 @@ namespace CPvC
             Display = new Display();
 
             _nextEventId = 0;
+            _historyEventById = new Dictionary<int, HistoryEvent>();
 
             _fileSystem = fileSystem;
         }
@@ -113,65 +116,17 @@ namespace CPvC
         {
             try
             {
-                IEnumerable<string> lines = _fileSystem.ReadLines(Filepath);
+                _file2 = new MachineFile2(Filepath + "2");
+                _file2.ReadFile(this);
 
-                Dictionary<int, HistoryEvent> events = new Dictionary<int, HistoryEvent>();
-
-                foreach (string line in lines)
-                {
-                    string[] tokens = line.Split(':');
-                    if (!MachineFile.TokenValid(tokens[0]))
-                    {
-                        throw new Exception(String.Format("Unknown token {0}", tokens[0]));
-                    }
-
-                    HistoryEvent historyEventToAdd = null;
-                    switch (tokens[0])
-                    {
-                        case MachineFile._nameToken:
-                            _name = tokens[1];
-                            break;
-                        case MachineFile._bookmarkToken:
-                            {
-                                int id = Convert.ToInt32(tokens[1]);
-                                HistoryEvent historyEvent = events[id];
-                                historyEvent.Bookmark = MachineFile.ParseBookmarkLine(tokens);
-                            }
-                            break;
-                        case MachineFile._currentToken:
-                            {
-                                int id = Convert.ToInt32(tokens[1]);
-                                CurrentEvent = events[id];
-                            }
-                            break;
-                        case MachineFile._deleteToken:
-                            {
-                                int id = Convert.ToInt32(tokens[1]);
-                                DeleteEvent(events[id], false);
-                            }
-                            break;
-                        default:
-                            historyEventToAdd = MachineFile.ParseHistoryEventLine(tokens);
-                            break;
-                    }
-
-                    if (historyEventToAdd != null)
-                    {
-                        AddEvent(historyEventToAdd, false);
-                        events.Add(historyEventToAdd.Id, historyEventToAdd);
-
-                        _nextEventId = Math.Max(_nextEventId, historyEventToAdd.Id + 1);
-                    }
-                }
+                IFile file = _fileSystem.OpenFile(Filepath);
+                _file = new MachineFile(file);
 
                 if (CurrentEvent == null)
                 {
                     // The machine file is either empty or has some other problem...
                     throw new Exception(String.Format("Unable to load file \"{0}\"; CurrentEvent is null!", Filepath));
                 }
-
-                IFile file = _fileSystem.OpenFile(Filepath);
-                _file = new MachineFile(file);
 
                 // Rewind from the current event to the most recent one with a bookmark...
                 HistoryEvent bookmarkEvent = CurrentEvent;
@@ -213,10 +168,12 @@ namespace CPvC
 
                 IFile file = fileSystem.OpenFile(machine.Filepath);
                 machine._file = new MachineFile(file);
+                machine._file2 = new MachineFile2(machine.Filepath + "2");
                 machine.Name = name;
 
                 machine.RootEvent = HistoryEvent.CreateCheckpoint(machine.NextEventId(), 0, DateTime.UtcNow, null);
                 machine._file.WriteHistoryEvent(machine.RootEvent);
+                machine._file2.WriteHistoryEvent(machine.RootEvent);
 
                 machine.CurrentEvent = machine.RootEvent;
 
@@ -254,6 +211,7 @@ namespace CPvC
                 finally
                 {
                     _file.Close();
+                    _file2.Close();
                 }
             }
 
@@ -382,6 +340,7 @@ namespace CPvC
             {
                 _name = value;
                 _file?.WriteName(_name);
+                _file2?.WriteName(_name);
 
                 OnPropertyChanged("Name");
             }
@@ -520,6 +479,7 @@ namespace CPvC
             Core = Machine.GetCore(bookmarkEvent);
 
             _file.WriteCurrentEvent(bookmarkEvent);
+            _file2.WriteCurrent(bookmarkEvent);
             CurrentEvent = bookmarkEvent;
 
             SetCoreRunning();
@@ -541,9 +501,16 @@ namespace CPvC
             {
                 historyEvent.Parent.RemoveChild(historyEvent);
 
+                // Remoce the event and all its descendents from the lookup.
+                foreach (HistoryEvent e in historyEvent.GetSelfAndDescendents())
+                {
+                    _historyEventById.Remove(e.Id);
+                }
+
                 if (writeToFile)
                 {
                     _file.WriteDelete(historyEvent);
+                    _file2.WriteDelete(historyEvent);
                 }
             }
         }
@@ -646,6 +613,7 @@ namespace CPvC
             historyEvent.Bookmark = bookmark;
 
             _file.WriteBookmark(historyEvent, bookmark);
+            _file2.WriteBookmark(historyEvent.Id, bookmark);
         }
 
         /// <summary>
@@ -658,15 +626,18 @@ namespace CPvC
             if (RootEvent == null)
             {
                 RootEvent = historyEvent;
+                _historyEventById[historyEvent.Id] = historyEvent;
             }
             else
             {
                 CurrentEvent.AddChild(historyEvent);
+                _historyEventById[historyEvent.Id] = historyEvent;
             }
 
             if (writeToFile)
             {
                 _file.WriteHistoryEvent(historyEvent);
+                _file2.WriteHistoryEvent(historyEvent);
             }
 
             CurrentEvent = historyEvent;
@@ -702,7 +673,10 @@ namespace CPvC
         {
             using (AutoPause())
             {
-                return new Bookmark(system, _core.GetState());
+                byte[] screen = Display.Buffer.Clone();
+                byte[] core = _core.GetState();
+
+                return new Bookmark(system, core, screen);
             }
         }
 
@@ -760,7 +734,7 @@ namespace CPvC
                 }
                 else if (historyEvent.Bookmark != null)
                 {
-                    core = Core.Create(historyEvent.Bookmark.State);
+                    core = Core.Create(historyEvent.Bookmark.State.GetBytes());
 
                     // Ensure all keys are in an "up" state.
                     for (byte keycode = 0; keycode < 80; keycode++)
@@ -782,6 +756,45 @@ namespace CPvC
         private int NextEventId()
         {
             return _nextEventId++;
+        }
+        
+        // IMachineFileReader implementation.
+        public void SetName(string name)
+        {
+            _name = name;
+        }
+
+        public void DeleteEvent(int id)
+        {
+            HistoryEvent historyEvent = null;
+            if (_historyEventById.TryGetValue(id, out historyEvent) && historyEvent != null)
+            {
+                DeleteEvent(historyEvent, false);
+            }
+        }
+
+        public void SetBookmark(int id, Bookmark bookmark)
+        {
+            if (_historyEventById.TryGetValue(id, out HistoryEvent historyEvent) && historyEvent != null)
+            {
+                historyEvent.Bookmark = bookmark;
+            }
+        }
+
+        public void SetCurrentEvent(int id)
+        {
+            HistoryEvent historyEvent = null;
+            if (_historyEventById.TryGetValue(id, out historyEvent) && historyEvent != null)
+            {
+                CurrentEvent = historyEvent;
+            }
+        }
+
+        public void AddHistoryEvent(HistoryEvent historyEvent)
+        {
+            AddEvent(historyEvent, false);
+
+            _nextEventId = Math.Max(_nextEventId, historyEvent.Id + 1);
         }
     }
 }

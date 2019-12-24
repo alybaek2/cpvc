@@ -21,11 +21,21 @@ namespace CPvC
         /// <summary>
         /// Decodes a 64-bit integer encoded by <c>DateTimeToNumber</c> back to a DateTime object.
         /// </summary>
+        /// <param name="n">64-bit integer to be converted.</param>
+        /// <returns>A DateTime object.</returns>
+        static public DateTime NumberToDateTime(Int64 n)
+        {
+            return new DateTime(n);
+        }
+
+        /// <summary>
+        /// Decodes a 64-bit integer encoded by <c>DateTimeToNumber</c> back to a DateTime object.
+        /// </summary>
         /// <param name="n">Decimal string representation of the 64-bit integer to be converted.</param>
         /// <returns>A DateTime object.</returns>
         static public DateTime NumberToDateTime(string n)
         {
-            return new DateTime(Convert.ToInt64(n));
+            return NumberToDateTime(Convert.ToInt64(n));
         }
 
         /// <summary>

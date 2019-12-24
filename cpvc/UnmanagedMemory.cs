@@ -38,6 +38,14 @@ namespace CPvC
             }
         }
 
+        public byte[] Clone()
+        {
+            byte[] buffer = new byte[_size];
+            Marshal.Copy(_memory, buffer, 0, _size);
+
+            return buffer;
+        }
+
         ~UnmanagedMemory()
         {
             Dispose(false);

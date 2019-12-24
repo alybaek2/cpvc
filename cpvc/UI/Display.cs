@@ -187,22 +187,15 @@ namespace CPvC
         /// <param name="bookmark">Bookmark to populate the display from.</param>
         public void GetFromBookmark(Bookmark bookmark)
         {
-            if (bookmark == null)
+            if (bookmark?.Screen == null)
             {
                 // Assume a blank screen if no bookmark provided.
                 Buffer.Clear(CPCColour.Black._hwColourNumber);
             }
             else
             {
-                // Otherwise, use the bookmark to create a core, and run it for 2 VSync's in order to populate the screen buffer.
-                using (Core core = Core.Create(bookmark.State))
-                {
-                    core.SetScreenBuffer(Buffer);
-                    core.RunForVSync(2);
-                }
+                Bitmap.WritePixels(_drawRect, bookmark.Screen.GetBytes(), Pitch, 0);
             }
-
-            CopyFromBuffer();
         }
 
         public void Dispose()

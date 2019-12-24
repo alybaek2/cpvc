@@ -16,12 +16,22 @@
         /// <summary>
         /// The state of the CPvC instance as created by <c>Core.GetState</c>.
         /// </summary>
-        public byte[] State { get; }
+        public IBlob State { get; }
 
-        public Bookmark(bool system, byte[] state)
+        public IBlob Screen { get; }
+
+        public Bookmark(bool system, IBlob state, IBlob screen)
         {
             System = system;
             State = state;
+            Screen = screen;
+        }
+
+        public Bookmark(bool system, byte[] state, byte[] screen)
+        {
+            System = system;
+            State = new MemoryBlob(state);
+            Screen = new MemoryBlob(screen);
         }
     }
 }

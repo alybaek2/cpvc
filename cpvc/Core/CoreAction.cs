@@ -46,7 +46,7 @@ namespace CPvC
             return action;
         }
 
-        static public CoreAction LoadDisc(UInt64 ticks, byte drive, byte[] disc)
+        static public CoreAction LoadDisc(UInt64 ticks, byte drive, IBlob disc)
         {
             CoreAction action = new CoreAction(Types.LoadDisc, ticks)
             {
@@ -57,7 +57,12 @@ namespace CPvC
             return action;
         }
 
-        static public CoreAction LoadTape(UInt64 ticks, byte[] tape)
+        static public CoreAction LoadDisc(UInt64 ticks, byte drive, byte[] disc)
+        {
+            return LoadDisc(ticks, drive, new MemoryBlob(disc));
+        }
+
+        static public CoreAction LoadTape(UInt64 ticks, IBlob tape)
         {
             CoreAction action = new CoreAction(Types.LoadTape, ticks)
             {
@@ -65,6 +70,11 @@ namespace CPvC
             };
 
             return action;
+        }
+
+        static public CoreAction LoadTape(UInt64 ticks, byte[] tape)
+        {
+            return LoadTape(ticks, new MemoryBlob(tape));
         }
     }
 }

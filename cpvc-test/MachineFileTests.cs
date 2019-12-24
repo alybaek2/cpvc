@@ -75,14 +75,14 @@ namespace CPvC.Test
             // Setup
             DateTime timestamp = Helpers.NumberToDateTime("1234");
             HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, null);
-            Bookmark bookmark = new Bookmark(false, new byte[] { 0x01, 0x02 });
+            Bookmark bookmark = new Bookmark(false, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 });
 
             // Act
             _file.WriteBookmark(historyEvent, bookmark);
 
             // Verify
             Assert.AreEqual(_lines.Count, 1);
-            Assert.AreEqual(_lines[0], "bookmark:25:2:0102");
+            Assert.AreEqual(_lines[0], "bookmark:25:2:0102:0304");
         }
 
         [Test]
@@ -121,14 +121,14 @@ namespace CPvC.Test
         {
             // Setup
             DateTime timestamp = Helpers.NumberToDateTime("1234");
-            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, new Bookmark(system, new byte[] { 0x01, 0x02 }));
+            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, new Bookmark(system, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 }));
 
             // Act
             _file.WriteHistoryEvent(historyEvent);
 
             // Verify
             Assert.AreEqual(_lines.Count, 1);
-            Assert.AreEqual(_lines[0], String.Format("checkpoint:25:100:{0}:1234:0102", system ? "1" : "2"));
+            Assert.AreEqual(_lines[0], String.Format("checkpoint:25:100:{0}:1234:0102:0304", system ? "1" : "2"));
         }
 
         [Test]
@@ -289,7 +289,7 @@ namespace CPvC.Test
         public void ReadCheckpointWithBookmark(bool system)
         {
             // Setup
-            string[] tokens = { "checkpoint", "25", "100", system ? "1" : "2", "1234", "0102" };
+            string[] tokens = { "checkpoint", "25", "100", system ? "1" : "2", "1234", "0102", "0304" };
 
             // Act
             HistoryEvent historyEvent = MachineFile.ParseCheckpointLine(tokens);
@@ -301,6 +301,7 @@ namespace CPvC.Test
             Assert.IsNotNull(historyEvent.Bookmark);
             Assert.AreEqual(historyEvent.Bookmark.System, system);
             Assert.AreEqual(historyEvent.Bookmark.State, new byte[] { 0x01, 0x02 });
+            Assert.AreEqual(historyEvent.Bookmark.Screen, new byte[] { 0x03, 0x04 });
         }
 
         [Test]
@@ -333,7 +334,7 @@ namespace CPvC.Test
         public void ReadBookmark(bool system)
         {
             // Setup
-            string[] tokens = { "bookmark", "25", system ? "1" : "2", "0102" };
+            string[] tokens = { "bookmark", "25", system ? "1" : "2", "0102", "0304" };
 
             // Act
             Bookmark bookmark = MachineFile.ParseBookmarkLine(tokens);
@@ -342,6 +343,7 @@ namespace CPvC.Test
             Assert.IsNotNull(bookmark);
             Assert.AreEqual(bookmark.System, system);
             Assert.AreEqual(bookmark.State, new byte[] { 0x01, 0x02 });
+            Assert.AreEqual(bookmark.Screen, new byte[] { 0x03, 0x04 });
         }
 
         [Test]
@@ -374,8 +376,8 @@ namespace CPvC.Test
         [TestCase(new object[] { "" }, null)]
         [TestCase(new object[] { "name:test" }, null)]
         [TestCase(new object[] { "checkpoint:0:0:0:0", "name:test" }, null)]
-        [TestCase(new object[] { "checkpoint:1:100:2:0:0102", "checkpoint:0:0:0:0", "name:test" }, null)]
-        [TestCase(new object[] { "checkpoint:1:100:1:0:0102", "checkpoint:0:0:0:0", "name:test" }, new byte[] { 0x01, 0x02 })]
+        [TestCase(new object[] { "checkpoint:1:100:2:0:0102:0304", "checkpoint:0:0:0:0", "name:test" }, null)]
+        [TestCase(new object[] { "checkpoint:1:100:1:0:0102:0304", "checkpoint:0:0:0:0", "name:test" }, new byte[] { 0x01, 0x02 })]
         public void GetLastSystemBookmark(object[] lines, byte[] expectedBookmark)
         {
             // Setup

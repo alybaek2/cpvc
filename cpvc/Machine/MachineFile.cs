@@ -82,11 +82,12 @@ namespace CPvC
                 return String.Format("{0}:{1}:0", _bookmarkToken, historyEvent.Id);
             }
 
-            return String.Format("{0}:{1}:{2}:{3}",
+            return String.Format("{0}:{1}:{2}:{3}:{4}",
                 _bookmarkToken,
                 historyEvent.Id,
                 bookmark.System ? "1" : "2",
-                Helpers.HexString(bookmark.State));
+                Helpers.HexString(bookmark.State.GetBytes()),
+                Helpers.HexString(bookmark.Screen.GetBytes()));
         }
 
         static private string HistoryEventLine(HistoryEvent historyEvent)
@@ -101,9 +102,9 @@ namespace CPvC
                         case CoreAction.Types.Reset:
                             return String.Format("{0}:{1}:{2}", _resetToken, historyEvent.Id, historyEvent.Ticks);
                         case CoreAction.Types.LoadDisc:
-                            return String.Format("{0}:{1}:{2}:{3}:{4}", _discToken, historyEvent.Id, historyEvent.Ticks, historyEvent.CoreAction.Drive, Helpers.HexString(historyEvent.CoreAction.MediaBuffer));
+                            return String.Format("{0}:{1}:{2}:{3}:{4}", _discToken, historyEvent.Id, historyEvent.Ticks, historyEvent.CoreAction.Drive, Helpers.HexString(historyEvent.CoreAction.MediaBuffer.GetBytes()));
                         case CoreAction.Types.LoadTape:
-                            return String.Format("{0}:{1}:{2}:{3}", _tapeToken, historyEvent.Id, historyEvent.Ticks, Helpers.HexString(historyEvent.CoreAction.MediaBuffer));
+                            return String.Format("{0}:{1}:{2}:{3}", _tapeToken, historyEvent.Id, historyEvent.Ticks, Helpers.HexString(historyEvent.CoreAction.MediaBuffer.GetBytes()));
                         default:
                             throw new Exception(String.Format("Unknown CoreAction type {0}.", historyEvent.CoreAction.Type));
                     }
@@ -132,13 +133,14 @@ namespace CPvC
             }
             else
             {
-                line = String.Format("{0}:{1}:{2}:{3}:{4}:{5}",
+                line = String.Format("{0}:{1}:{2}:{3}:{4}:{5}:{6}",
                     _checkpointToken,
                     historyEvent.Id,
                     historyEvent.Ticks,
                     historyEvent.Bookmark.System ? "1" : "2",
                     Helpers.DateTimeToNumber(historyEvent.CreateDate),
-                    Helpers.HexString(historyEvent.Bookmark.State));
+                    Helpers.HexString(historyEvent.Bookmark.State.GetBytes()),
+                    Helpers.HexString(historyEvent.Bookmark.Screen.GetBytes()));
             }
 
             return line;
@@ -210,8 +212,9 @@ namespace CPvC
                     {
                         bool system = (bookmarkType == "1");
                         byte[] state = Helpers.Bytes(tokens[5]);
+                        byte[] screen = Helpers.Bytes(tokens[6]);
 
-                        Bookmark bookmark = new Bookmark(system, state);
+                        Bookmark bookmark = new Bookmark(system, state, screen);
                         HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(id, ticks, createdDate, bookmark);
 
                         return historyEvent;
@@ -237,8 +240,8 @@ namespace CPvC
             int id = Convert.ToInt32(tokens[1]);
             UInt64 ticks = Convert.ToUInt64(tokens[2]);
             byte drive = Convert.ToByte(tokens[3]);
-            byte[] media = Helpers.Bytes(tokens[4]);
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, CoreAction.LoadDisc(ticks, drive, media));
+            MemoryBlob mediaBlob = new MemoryBlob(Helpers.Bytes(tokens[4]));
+            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, CoreAction.LoadDisc(ticks, drive, mediaBlob));
 
             return historyEvent;
         }
@@ -247,8 +250,8 @@ namespace CPvC
         {
             int id = Convert.ToInt32(tokens[1]);
             UInt64 ticks = Convert.ToUInt64(tokens[2]);
-            byte[] media = Helpers.Bytes(tokens[3]);
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, CoreAction.LoadTape(ticks, media));
+            MemoryBlob mediaBlob = new MemoryBlob(Helpers.Bytes(tokens[3]));
+            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, CoreAction.LoadTape(ticks, mediaBlob));
 
             return historyEvent;
         }
@@ -272,8 +275,9 @@ namespace CPvC
                 case "2":
                     bool system = (tokens[2] != "2");
                     byte[] state = Helpers.Bytes(tokens[3]);
+                    byte[] screen = Helpers.Bytes(tokens[4]);
 
-                    return new Bookmark(system, state);
+                    return new Bookmark(system, state, screen);
                 default:
                     throw new Exception(String.Format("Unknown bookmark type {0}", tokens[2]));
             }

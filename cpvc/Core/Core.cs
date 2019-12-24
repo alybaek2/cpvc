@@ -508,11 +508,11 @@ namespace CPvC
                     action = CoreAction.Reset(ticks);
                     break;
                 case CoreActionBase.Types.LoadDisc:
-                    _coreCLR.LoadDisc(request.Drive, request.MediaBuffer);
+                    _coreCLR.LoadDisc(request.Drive, request.MediaBuffer.GetBytes());
                     action = CoreAction.LoadDisc(ticks, request.Drive, request.MediaBuffer);
                     break;
                 case CoreActionBase.Types.LoadTape:
-                    _coreCLR.LoadTape(request.MediaBuffer);
+                    _coreCLR.LoadTape(request.MediaBuffer.GetBytes());
                     action = CoreAction.LoadTape(ticks, request.MediaBuffer);
                     break;
                 case CoreActionBase.Types.RunUntil:
