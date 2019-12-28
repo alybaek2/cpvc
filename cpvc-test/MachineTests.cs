@@ -173,7 +173,6 @@ namespace CPvC.Test
         public void OpenLazy()
         {
             // Setup
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLinesReverse("test.cpvc")).Returns(new string[] { "checkpoint:0:0:0:0", "name:Test" });
             _mockBinaryWriter._inputBytes = new List<byte>
             {
                 0x00,

@@ -13,7 +13,6 @@ namespace CPvC
         void ReplaceFile(string filepath, string newFilepath);
         void DeleteFile(string filepath);
         IEnumerable<string> ReadLines(string filepath);
-        IEnumerable<string> ReadLinesReverse(string filepath);
         byte[] ReadBytes(string filepath);
         bool Exists(string filepath);
         Int64 FileLength(string filepath);

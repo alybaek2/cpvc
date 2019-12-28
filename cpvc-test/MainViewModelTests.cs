@@ -227,7 +227,6 @@ namespace CPvC.Test
         {
             // Setup
             _settingGet = "Test;test.cpvc";
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLinesReverse("test.cpvc")).Throws<FileNotFoundException>();
 
             // Act
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
