@@ -24,13 +24,11 @@ namespace CPvC
         public MachineFile2(string filepath)
         {
             _binaryFile = new BinaryFile(filepath);
-
         }
 
         public MachineFile2(IBinaryFile binaryFile)
         {
             _binaryFile = binaryFile;
-
         }
 
         public void Close()
