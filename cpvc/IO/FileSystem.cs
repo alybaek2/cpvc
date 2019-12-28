@@ -12,9 +12,9 @@ namespace CPvC
         {
         }
 
-        public IFile OpenFile(string filepath)
+        public IBinaryFile OpenBinaryFile(string filepath)
         {
-            return new File(filepath);
+            return new BinaryFile(filepath);
         }
 
         public void RenameFile(string oldFilename, string newFilename)

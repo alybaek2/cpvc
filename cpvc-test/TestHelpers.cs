@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace CPvC.Test
@@ -72,6 +73,70 @@ namespace CPvC.Test
             return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.Reset);
         }
 
+        static public HistoryEvent CoreActionEvent(int id, CoreActionBase.Types type)
+        {
+            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction.Type == type && h.Id == id);
+        }
+
+        static public HistoryEvent CoreActionEvent(int id, UInt64 ticks, CoreActionBase.Types type)
+        {
+            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction.Type == type && h.Ticks == ticks && h.Id == id);
+        }
+
+        static public HistoryEvent KeyPressEvent(int id, UInt64 ticks, byte keyCode, bool keyDown)
+        {
+            return It.Is<HistoryEvent>(h => h != null &&
+                                            h.Type == HistoryEvent.Types.CoreAction &&
+                                            h.CoreAction.Type == CoreActionBase.Types.KeyPress &&
+                                            h.CoreAction.KeyCode == keyCode &&
+                                            h.CoreAction.KeyDown == keyDown &&
+                                            h.Ticks == ticks &&
+                                            h.Id == id);
+        }
+
+        static public HistoryEvent LoadDiscEvent(int id, UInt64 ticks, byte drive, byte[] disc)
+        {
+            return It.Is<HistoryEvent>(h => h != null &&
+                                            h.Type == HistoryEvent.Types.CoreAction &&
+                                            h.CoreAction.Type == CoreActionBase.Types.LoadDisc &&
+                                            h.CoreAction.Drive == drive &&
+                                            h.CoreAction.MediaBuffer.GetBytes().SequenceEqual(disc) &&
+                                            h.Ticks == ticks &&
+                                            h.Id == id);
+        }
+
+        static public HistoryEvent LoadTapeEvent(int id, UInt64 ticks, byte[] tape)
+        {
+            return It.Is<HistoryEvent>(h => h != null &&
+                                            h.Type == HistoryEvent.Types.CoreAction &&
+                                            h.CoreAction.Type == CoreActionBase.Types.LoadTape &&
+                                            h.CoreAction.MediaBuffer.GetBytes().SequenceEqual(tape) &&
+                                            h.Ticks == ticks &&
+                                            h.Id == id);
+        }
+
+        static public HistoryEvent CheckpointEvent(int id)
+        {
+            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id);
+        }
+
+        static public HistoryEvent CheckpointWithBookmarkEvent(int id, UInt64 ticks, bool system, byte[] state, byte[] screen)
+        {
+            return It.Is<HistoryEvent>(h => h != null &&
+                                            h.Type == HistoryEvent.Types.Checkpoint &&
+                                            h.Id == id &&
+                                            h.Ticks == ticks &&
+                                            h.Bookmark != null &&
+                                            h.Bookmark.System == system &&
+                                            h.Bookmark.State.GetBytes().SequenceEqual(state) &&
+                                            h.Bookmark.Screen.GetBytes().SequenceEqual(screen));
+        }
+
+        static public HistoryEvent CheckpointWithoutBookmarkEvent(int id, UInt64 ticks)
+        {
+            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id && h.Ticks == ticks && h.Bookmark == null);
+        }
+
         /// <summary>
         /// Returns a lambda representing the invocation of the IFileSystem.ReadBytes method with a specific filename.
         /// </summary>
@@ -94,20 +159,6 @@ namespace CPvC.Test
         static public Expression<Action<IFileSystem>> DeleteFile(string filename)
         {
             return fileSystem => fileSystem.DeleteFile(filename);
-        }
-
-        /// <summary>
-        /// Returns a mock IFile which writes to a list of strings.
-        /// </summary>
-        /// <param name="lines">A list of strings the mock will write too.</param>
-        /// <returns>A mock IFile which writes to the given list of strings.</returns>
-        static public IFile MockFileWriter(List<string> lines)
-        {
-            Mock<IFile> mockWriter = new Mock<IFile>(MockBehavior.Strict);
-            mockWriter.Setup(s => s.WriteLine(AnyString())).Callback<string>(line => lines.Add(line));
-            mockWriter.Setup(s => s.Close());
-
-            return mockWriter.Object;
         }
 
         /// <summary>

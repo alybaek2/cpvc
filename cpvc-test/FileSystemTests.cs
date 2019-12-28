@@ -8,21 +8,21 @@ namespace CPvC.Test
     public class FileSystemTests
     {
         [Test]
-        public void OpenFile()
+        public void OpenBinaryFile()
         {
             // Setup
             string filepath = TestHelpers.GetTempFilepath("opentest.txt");
             System.IO.File.Delete(filepath);
             FileSystem fs = new FileSystem();
-            IFile file = fs.OpenFile(filepath);
+            IBinaryFile file = fs.OpenBinaryFile(filepath);
 
             // Act
-            file.WriteLine("abc");
+            file.WriteByte(0xfe);
             file.Close();
 
             // Verify
-            string contents = System.IO.File.ReadAllText(filepath);
-            Assert.AreEqual("abc\r\n", contents);
+            byte[] contents = System.IO.File.ReadAllBytes(filepath);
+            Assert.AreEqual(new byte[] { 0xfe }, contents);
         }
 
         [Test]

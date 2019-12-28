@@ -141,16 +141,21 @@ namespace CPvC
                 // If we already have a bitmap, copy its contents over to the new one.
                 if (_bitmap != null)
                 {
-                    byte[] pixels = new byte[_bitmap.PixelWidth * _bitmap.PixelHeight];
-                    Bitmap.CopyPixels(pixels, Pitch, 0);
-
-                    value.WritePixels(_drawRect, pixels, Pitch, 0);
+                    value.WritePixels(_drawRect, GetBitmapBytes(), Pitch, 0);
                 }
 
                 _bitmap = value;
 
                 OnPropertyChanged("Bitmap");
             }
+        }
+
+        public byte[] GetBitmapBytes()
+        {
+            byte[] pixels = new byte[_bitmap.PixelWidth * _bitmap.PixelHeight];
+            _bitmap.CopyPixels(pixels, Pitch, 0);
+
+            return pixels;
         }
 
         /// <summary>
