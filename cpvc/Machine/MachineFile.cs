@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public class MachineFile2
+    public class MachineFile
     {
         // Using bytes here limits us to 256 possible block types.... could reserve most significant bit and do some kind of variable length encoding if we really need to.
         public const byte _idName = 0;
@@ -21,12 +21,12 @@ namespace CPvC
 
         private IBinaryFile _binaryFile;
 
-        public MachineFile2(string filepath)
+        public MachineFile(string filepath)
         {
             _binaryFile = new BinaryFile(filepath);
         }
 
-        public MachineFile2(IBinaryFile binaryFile)
+        public MachineFile(IBinaryFile binaryFile)
         {
             _binaryFile = binaryFile;
         }
@@ -38,10 +38,10 @@ namespace CPvC
 
         public class MachineFileBlob : IBlob
         {
-            private MachineFile2 _file;
+            private MachineFile _file;
             private long _pos;
 
-            public MachineFileBlob(MachineFile2 file, long pos)
+            public MachineFileBlob(MachineFile file, long pos)
             {
                 _file = file;
                 _pos = pos;
@@ -154,7 +154,7 @@ namespace CPvC
             switch (historyEvent.Type)
             {
                 case HistoryEvent.Types.Checkpoint:
-                    WriteCheckpoint(historyEvent.Id, historyEvent.Ticks, historyEvent.CreateDate, historyEvent.Bookmark);
+                    WriteCheckpoint(historyEvent);
                     break;
                 case HistoryEvent.Types.CoreAction:
                     WriteCoreAction(historyEvent.Id, historyEvent.Ticks, historyEvent.CoreAction);
@@ -328,15 +328,17 @@ namespace CPvC
             }
         }
 
-        private void WriteCheckpoint(int id, UInt64 ticks, DateTime created, Bookmark bookmark)
+        private void WriteCheckpoint(HistoryEvent historyEvent)
         {
-            if (bookmark == null)
+            if (historyEvent.Bookmark == null)
             {
-                Write(_idCheckpoint, id, ticks, (UInt64)Helpers.DateTimeToNumber(created), false);
+                Write(_idCheckpoint, historyEvent.Id, historyEvent.Ticks, (UInt64)Helpers.DateTimeToNumber(historyEvent.CreateDate), false);
             }
             else
             {
-                Write(_idCheckpoint, id, ticks, (UInt64)Helpers.DateTimeToNumber(created), true, bookmark.System, bookmark.State, bookmark.Screen);
+                Write(_idCheckpoint, historyEvent.Id, historyEvent.Ticks, (UInt64)Helpers.DateTimeToNumber(historyEvent.CreateDate), true, historyEvent.Bookmark.System);
+                Write(historyEvent.Bookmark.State.GetBytes());
+                Write(historyEvent.Bookmark.Screen.GetBytes());
             }
         }
 
@@ -417,18 +419,24 @@ namespace CPvC
             }
         }
 
-        private void Write(byte[] b)
+        private MachineFileBlob Write(byte[] b)
         {
             lock (_binaryFile)
             {
                 if (b == null)
                 {
                     Write((int)-1);
+
+                    return null;
                 }
                 else
                 {
+                    MachineFileBlob blob = new MachineFileBlob(this, _binaryFile.Position);
+
                     Write(b.Length);
                     _binaryFile.Write(b);
+
+                    return blob;
                 }
             }
         }

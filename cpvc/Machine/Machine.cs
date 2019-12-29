@@ -28,7 +28,7 @@ namespace CPvC
         private int _nextEventId;
 
         private readonly IFileSystem _fileSystem;
-        private MachineFile2 _file2;
+        private MachineFile _file;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -111,9 +111,9 @@ namespace CPvC
             try
             {
                 IBinaryFile file2 = _fileSystem.OpenBinaryFile(Filepath);
-                _file2 = new MachineFile2(file2);
+                _file = new MachineFile(file2);
 
-                _file2.ReadFile(this);
+                _file.ReadFile(this);
 
                 if (CurrentEvent == null)
                 {
@@ -160,11 +160,11 @@ namespace CPvC
                 machine = new Machine(null, machineFilepath, fileSystem);
 
                 IBinaryFile file2 = fileSystem.OpenBinaryFile(machine.Filepath);
-                machine._file2 = new MachineFile2(file2);
+                machine._file = new MachineFile(file2);
                 machine.Name = name;
 
                 machine.RootEvent = HistoryEvent.CreateCheckpoint(machine.NextEventId(), 0, DateTime.UtcNow, null);
-                machine._file2.WriteHistoryEvent(machine.RootEvent);
+                machine._file.WriteHistoryEvent(machine.RootEvent);
 
                 machine.CurrentEvent = machine.RootEvent;
 
@@ -201,7 +201,7 @@ namespace CPvC
                 }
                 finally
                 {
-                    _file2.Close();
+                    _file.Close();
                 }
             }
 
@@ -331,7 +331,7 @@ namespace CPvC
             set
             {
                 _name = value;
-                _file2?.WriteName(_name);
+                _file?.WriteName(_name);
 
                 OnPropertyChanged("Name");
             }
@@ -469,7 +469,7 @@ namespace CPvC
             Display.GetFromBookmark(bookmarkEvent?.Bookmark);
             Core = Machine.GetCore(bookmarkEvent);
 
-            _file2.WriteCurrent(bookmarkEvent);
+            _file.WriteCurrent(bookmarkEvent);
             CurrentEvent = bookmarkEvent;
 
             SetCoreRunning();
@@ -499,7 +499,7 @@ namespace CPvC
 
                 if (writeToFile)
                 {
-                    _file2.WriteDelete(historyEvent);
+                    _file.WriteDelete(historyEvent);
                 }
             }
         }
@@ -554,33 +554,40 @@ namespace CPvC
         /// </remarks>
         public void RewriteMachineFile()
         {
+            //Stop();
+
             using (AutoPause())
             {
                 string tempname = Filepath + ".new";
+                IBinaryFile newFile = _fileSystem.OpenBinaryFile(tempname);
 
-                IBinaryFile file2 = _fileSystem.OpenBinaryFile(tempname);
-
-                MachineFile2 tempfile2 = null;
+                MachineFile tempfile = null;
                 try
                 {
-                    tempfile2 = new MachineFile2(file2);
+                    tempfile = new MachineFile(newFile);
 
-                    tempfile2.WriteName(_name);
-                    WriteEvent(tempfile2, RootEvent);
-                    tempfile2.WriteCurrent(CurrentEvent);
+                    tempfile.WriteName(_name);
+                    WriteEvent(tempfile, RootEvent);
+                    tempfile.WriteCurrent(CurrentEvent);
                 }
                 finally
                 {
-                    tempfile2?.Close();
+                    tempfile?.Close();
                 }
+
+                _file.Close();
 
                 Int64 newLength = _fileSystem.FileLength(tempname);
                 Int64 oldLength = _fileSystem.FileLength(Filepath);
 
                 _fileSystem.ReplaceFile(Filepath, tempname);
 
-                file2 = _fileSystem.OpenBinaryFile(Filepath);
-                _file2 = new MachineFile2(file2);
+                RootEvent = null;
+                CurrentEvent = null;
+                _historyEventById.Clear();
+
+                _file = new MachineFile(_fileSystem.OpenBinaryFile(Filepath));
+                _file.ReadFile(this);
 
                 Status = String.Format("Compacted machine file by {0}%", (Int64)(100 * ((double)(oldLength - newLength)) / ((double)oldLength)));
             }
@@ -600,7 +607,7 @@ namespace CPvC
 
             historyEvent.Bookmark = bookmark;
 
-            _file2.WriteBookmark(historyEvent.Id, bookmark);
+            _file.WriteBookmark(historyEvent.Id, bookmark);
         }
 
         /// <summary>
@@ -623,7 +630,7 @@ namespace CPvC
 
             if (writeToFile)
             {
-                _file2.WriteHistoryEvent(historyEvent);
+                _file.WriteHistoryEvent(historyEvent);
             }
 
             CurrentEvent = historyEvent;
@@ -671,7 +678,7 @@ namespace CPvC
         /// </summary>
         /// <param name="file">Machine file to write to.</param>
         /// <param name="historyEvent">History event to write.</param>
-        private void WriteEvent(MachineFile2 file2, HistoryEvent historyEvent)
+        private void WriteEvent(MachineFile file2, HistoryEvent historyEvent)
         {
             // As the history tree could be very deep, keep a "stack" of history events in order to avoid recursive calls.
             List<HistoryEvent> historyEvents = new List<HistoryEvent>

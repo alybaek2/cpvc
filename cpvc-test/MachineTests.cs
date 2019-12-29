@@ -438,7 +438,7 @@ namespace CPvC.Test
                 // Act
                 machine.RewriteMachineFile();
 
-                MachineFile2 file2 = new MachineFile2(rewriteTempFile.Object);
+                MachineFile file2 = new MachineFile(rewriteTempFile.Object);
                 file2.ReadFile(mockFileReader.Object);
 
                 // Verify

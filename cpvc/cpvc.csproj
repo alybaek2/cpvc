@@ -117,7 +117,7 @@
     <Compile Include="ISettings.cs" />
     <Compile Include="Machine\IBlob.cs" />
     <Compile Include="Machine\IMachineFileReader.cs" />
-    <Compile Include="Machine\MachineFile2.cs" />
+    <Compile Include="Machine\MachineFile.cs" />
     <Compile Include="Machine\MemoryBlob.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>

@@ -12,7 +12,7 @@ namespace CPvC.Test
     {
         private List<string> _lines;
         private MockBinaryFile _mockBinaryWriter;
-        private MachineFile2 _file2;
+        private MachineFile _file;
 
         private Bookmark BookmarkMatch(bool system, byte[] state, byte[] screen)
         {
@@ -29,7 +29,7 @@ namespace CPvC.Test
         {
             _lines = new List<string>();
             _mockBinaryWriter = new MockBinaryFile();
-            _file2 = new MachineFile2(_mockBinaryWriter.Object);
+            _file = new MachineFile(_mockBinaryWriter.Object);
         }
 
         [TearDown]
@@ -37,7 +37,7 @@ namespace CPvC.Test
         {
             _lines = null;
             _mockBinaryWriter = null;
-            _file2 = null;
+            _file = null;
         }
 
         [Test]
@@ -52,7 +52,7 @@ namespace CPvC.Test
             };
 
             // Act
-            _file2.WriteName("test");
+            _file.WriteName("test");
 
             // Verify
             Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
@@ -70,7 +70,7 @@ namespace CPvC.Test
             };
 
             // Act
-            _file2.WriteCurrent(historyEvent);
+            _file.WriteCurrent(historyEvent);
 
             // Verify
             Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
@@ -88,7 +88,7 @@ namespace CPvC.Test
             };
             
             // Act
-            _file2.WriteDelete(historyEvent);
+            _file.WriteDelete(historyEvent);
 
             // Verify
             Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
@@ -110,7 +110,7 @@ namespace CPvC.Test
             };
 
             // Act
-            _file2.WriteBookmark(0x19, bookmark);
+            _file.WriteBookmark(0x19, bookmark);
 
             // Verify
             Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
@@ -128,7 +128,7 @@ namespace CPvC.Test
             };
 
             // Act
-            _file2.WriteBookmark(0x19, null);
+            _file.WriteBookmark(0x19, null);
 
             // Verify
             Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
@@ -150,7 +150,7 @@ namespace CPvC.Test
             };
 
             // Act
-            _file2.WriteHistoryEvent(historyEvent);
+            _file.WriteHistoryEvent(historyEvent);
 
             // Verify
             Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
@@ -176,7 +176,7 @@ namespace CPvC.Test
             };
 
             // Act
-            _file2.WriteHistoryEvent(historyEvent);
+            _file.WriteHistoryEvent(historyEvent);
 
             // Verify
             Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
@@ -195,7 +195,7 @@ namespace CPvC.Test
             };
 
             // Act
-            _file2.WriteHistoryEvent(historyEvent);
+            _file.WriteHistoryEvent(historyEvent);
 
             // Verify
             Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
@@ -216,7 +216,7 @@ namespace CPvC.Test
             };
 
             // Act
-            _file2.WriteHistoryEvent(historyEvent);
+            _file.WriteHistoryEvent(historyEvent);
 
             // Verify
             Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
@@ -238,7 +238,7 @@ namespace CPvC.Test
             };
 
             // Act
-            _file2.WriteHistoryEvent(historyEvent);
+            _file.WriteHistoryEvent(historyEvent);
 
             // Verify
             Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
@@ -258,7 +258,7 @@ namespace CPvC.Test
             };
 
             // Act
-            _file2.WriteHistoryEvent(historyEvent);
+            _file.WriteHistoryEvent(historyEvent);
 
             // Verify
             Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
@@ -271,7 +271,7 @@ namespace CPvC.Test
             HistoryEvent historyEvent = new HistoryEvent(25, (HistoryEvent.Types)99, 100);
 
             // Act and Verify
-            Assert.Throws<Exception>(() => _file2.WriteHistoryEvent(historyEvent));
+            Assert.Throws<Exception>(() => _file.WriteHistoryEvent(historyEvent));
         }
 
         [Test]
@@ -281,7 +281,7 @@ namespace CPvC.Test
             HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, new CoreAction((CoreActionBase.Types)99, 100));
 
             // Act and Verify
-            Assert.Throws<Exception>(() => _file2.WriteHistoryEvent(historyEvent));
+            Assert.Throws<Exception>(() => _file.WriteHistoryEvent(historyEvent));
         }
 
         [Test]
@@ -295,10 +295,10 @@ namespace CPvC.Test
                       0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
             });
 
-            MachineFile2 file2 = new MachineFile2(binaryFile.Object);
+            MachineFile file = new MachineFile(binaryFile.Object);
 
             // Act
-            file2.ReadFile(mockFileReader.Object);
+            file.ReadFile(mockFileReader.Object);
 
             // Verify
             mockFileReader.Verify(reader => reader.AddHistoryEvent(CoreActionEvent(0x19, 100, CoreActionBase.Types.Reset)));
@@ -317,10 +317,10 @@ namespace CPvC.Test
                       (byte) ((down ? 0x80 : 0x00) + Keys.A)
             });
 
-            MachineFile2 file2 = new MachineFile2(binaryFile.Object);
+            MachineFile file = new MachineFile(binaryFile.Object);
 
             // Act
-            file2.ReadFile(mockFileReader.Object);
+            file.ReadFile(mockFileReader.Object);
 
             // Verify
             mockFileReader.Verify(reader => reader.AddHistoryEvent(KeyPressEvent(0x19, 100, Keys.A, down)));
@@ -340,10 +340,10 @@ namespace CPvC.Test
                       0x02, 0x00, 0x00, 0x00, 0x01, 0x02
             });
 
-            MachineFile2 file2 = new MachineFile2(binaryFile.Object);
+            MachineFile file = new MachineFile(binaryFile.Object);
 
             // Act
-            file2.ReadFile(mockFileReader.Object);
+            file.ReadFile(mockFileReader.Object);
 
             // Verify
             mockFileReader.Verify(reader => reader.AddHistoryEvent(LoadDiscEvent(0x19, 100, drive, new byte[] { 0x01, 0x02 })));
@@ -361,10 +361,10 @@ namespace CPvC.Test
                       0x02, 0x00, 0x00, 0x00, 0x01, 0x02
             });
 
-            MachineFile2 file2 = new MachineFile2(binaryFile.Object);
+            MachineFile file = new MachineFile(binaryFile.Object);
 
             // Act
-            file2.ReadFile(mockFileReader.Object);
+            file.ReadFile(mockFileReader.Object);
 
             // Verify
             mockFileReader.Verify(reader => reader.AddHistoryEvent(LoadTapeEvent(0x19, 100, new byte[] { 0x01, 0x02 })));
@@ -387,10 +387,10 @@ namespace CPvC.Test
                       0x02, 0x00, 0x00, 0x00, 0x03, 0x04
             });
 
-            MachineFile2 file2 = new MachineFile2(binaryFile.Object);
+            MachineFile file = new MachineFile(binaryFile.Object);
 
             // Act
-            file2.ReadFile(mockFileReader.Object);
+            file.ReadFile(mockFileReader.Object);
 
             // Verify
             mockFileReader.Verify(reader => reader.AddHistoryEvent(CheckpointWithBookmarkEvent(0x19, 100, system, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 })));
@@ -409,10 +409,10 @@ namespace CPvC.Test
                       0x00
             });
 
-            MachineFile2 file2 = new MachineFile2(binaryFile.Object);
+            MachineFile file = new MachineFile(binaryFile.Object);
 
             // Act
-            file2.ReadFile(mockFileReader.Object);
+            file.ReadFile(mockFileReader.Object);
 
             // Verify
             mockFileReader.Verify(reader => reader.AddHistoryEvent(CheckpointWithoutBookmarkEvent(0x19, 100)));
@@ -434,10 +434,10 @@ namespace CPvC.Test
                       0x02, 0x00, 0x00, 0x00, 0x03, 0x04
             });
 
-            MachineFile2 file2 = new MachineFile2(binaryFile.Object);
+            MachineFile file = new MachineFile(binaryFile.Object);
 
             // Act
-            file2.ReadFile(mockFileReader.Object);
+            file.ReadFile(mockFileReader.Object);
 
             // Verify
             mockFileReader.Verify(reader => reader.SetBookmark(0x19, BookmarkMatch(system, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 })));
@@ -456,10 +456,10 @@ namespace CPvC.Test
                       0x00
             });
 
-            MachineFile2 file2 = new MachineFile2(mockWriter.Object);
+            MachineFile file = new MachineFile(mockWriter.Object);
 
             // Act
-            file2.ReadFile(mockFileReader.Object);
+            file.ReadFile(mockFileReader.Object);
 
             // Verify
             mockFileReader.Verify(reader => reader.SetBookmark(0x19, null));
