@@ -16,13 +16,10 @@ namespace CPvC.Test
     {
         private Mock<ISettings> _mockSettings;
         private Mock<IFileSystem> _mockFileSystem;
-        private Mock<IBinaryFile> _mockBinaryWriter;
 
         private string _settingGet;
 
-        private List<byte> _outputBytes;
-        private List<byte> _inputBytes;
-        private long _readPos;
+        private MockBinaryFile _mockBinaryWriter;
 
         [SetUp]
         public void Setup()
@@ -38,23 +35,7 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(true);
             _mockFileSystem.Setup(ReadBytes()).Returns(new byte[1]);
 
-            _outputBytes = new List<byte>();
-            _inputBytes = new List<byte>();
-            _mockBinaryWriter = new Mock<IBinaryFile>(MockBehavior.Strict);
-            _mockBinaryWriter.Setup(s => s.WriteByte(It.IsAny<byte>())).Callback<byte>(b => _outputBytes.Add(b));
-            _mockBinaryWriter.Setup(s => s.Write(It.IsAny<byte[]>())).Callback<byte[]>(b => _outputBytes.AddRange(b));
-            _mockBinaryWriter.Setup(s => s.Seek(It.IsAny<long>())).Callback<long>(offset => _readPos = offset);
-            _mockBinaryWriter.Setup(s => s.ReadByte()).Returns(() => { return _inputBytes[(int)_readPos++]; });
-            _mockBinaryWriter.Setup(s => s.ReadBytes(It.IsAny<byte[]>(), It.IsAny<int>())).Returns((byte[] bytes, int count) => {
-                List<byte> b = _inputBytes.GetRange((int)_readPos, count);
-                b.CopyTo(bytes);
-                _readPos += count;
-                return count;
-            });
-            _mockBinaryWriter.SetupGet(s => s.Length).Returns(() => _inputBytes.Count);
-            _mockBinaryWriter.SetupGet(s => s.Position).Returns(() => _readPos);
-            _mockBinaryWriter.SetupSet(s => s.Position = It.IsAny<long>()).Callback<long>(offset => _readPos = offset);
-            _mockBinaryWriter.Setup(s => s.Close());
+            _mockBinaryWriter = new MockBinaryFile();
 
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenBinaryFile(AnyString())).Returns(_mockBinaryWriter.Object);
         }
@@ -71,7 +52,7 @@ namespace CPvC.Test
         private MainViewModel SetupViewModel(int machineCount)
         {
             _settingGet = String.Join(",", Enumerable.Range(0, machineCount).Select(x => String.Format("Test{0};test{0}.cpvc", x)));
-            _inputBytes = new List<byte>
+            _mockBinaryWriter.Content = new List<byte>
             {
                 0x05,
                       0x00, 0x00, 0x00, 0x00,
@@ -169,7 +150,7 @@ namespace CPvC.Test
             // Setup
             Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, true, promptedFilepath);
             MainViewModel viewModel = SetupViewModel(0);
-            _inputBytes = new List<byte>
+            _mockBinaryWriter.Content = new List<byte>
             {
                 0x00,
                       (byte)expectedMachineName.Length, 0x00, 0x00, 0x00
@@ -177,10 +158,10 @@ namespace CPvC.Test
 
             foreach (char c in expectedMachineName)
             {
-                _inputBytes.Add((byte)c);
+                _mockBinaryWriter.Content.Add((byte)c);
             }
 
-            _inputBytes.AddRange(new byte[] {
+            _mockBinaryWriter.Content.AddRange(new byte[] {
                 0x05,
                       0x00, 0x00, 0x00, 0x00,
                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

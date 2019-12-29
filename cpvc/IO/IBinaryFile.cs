@@ -8,7 +8,6 @@ namespace CPvC
 {
     public interface IBinaryFile
     {
-        void Seek(long offset);
         void WriteByte(byte b);
         void Write(byte[] b);
         int ReadByte();

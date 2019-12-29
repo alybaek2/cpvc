@@ -57,7 +57,7 @@ namespace CPvC
         {
             lock (_binaryFile)
             {
-                _binaryFile.Seek(0);
+                _binaryFile.Position = 0;
 
                 while (_binaryFile.Position < _binaryFile.Length)
                 {
@@ -496,7 +496,7 @@ namespace CPvC
                 return new MemoryBlob(null);
             }
 
-            _binaryFile.Seek(_binaryFile.Position + len);
+            _binaryFile.Position += len;
 
             return new MachineFileBlob(this, pos);
         }

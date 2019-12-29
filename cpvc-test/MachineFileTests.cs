@@ -55,7 +55,7 @@ namespace CPvC.Test
             _file2.WriteName("test");
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter._outputBytes));
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [Test]
@@ -73,7 +73,7 @@ namespace CPvC.Test
             _file2.WriteCurrent(historyEvent);
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter._outputBytes));
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [Test]
@@ -91,7 +91,7 @@ namespace CPvC.Test
             _file2.WriteDelete(historyEvent);
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter._outputBytes));
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [Test]
@@ -113,7 +113,7 @@ namespace CPvC.Test
             _file2.WriteBookmark(0x19, bookmark);
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter._outputBytes));
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [Test]
@@ -131,7 +131,7 @@ namespace CPvC.Test
             _file2.WriteBookmark(0x19, null);
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter._outputBytes));
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [Test]
@@ -153,7 +153,7 @@ namespace CPvC.Test
             _file2.WriteHistoryEvent(historyEvent);
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter._outputBytes));
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [TestCase(false)]
@@ -179,7 +179,7 @@ namespace CPvC.Test
             _file2.WriteHistoryEvent(historyEvent);
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter._outputBytes));
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [Test]
@@ -198,7 +198,7 @@ namespace CPvC.Test
             _file2.WriteHistoryEvent(historyEvent);
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter._outputBytes));
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [TestCase(false)]
@@ -219,7 +219,7 @@ namespace CPvC.Test
             _file2.WriteHistoryEvent(historyEvent);
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter._outputBytes));
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [TestCase(0)]
@@ -241,7 +241,7 @@ namespace CPvC.Test
             _file2.WriteHistoryEvent(historyEvent);
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter._outputBytes));
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [Test]
@@ -261,7 +261,7 @@ namespace CPvC.Test
             _file2.WriteHistoryEvent(historyEvent);
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter._outputBytes));
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [Test]

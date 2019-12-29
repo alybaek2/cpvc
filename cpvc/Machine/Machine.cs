@@ -557,9 +557,8 @@ namespace CPvC
             using (AutoPause())
             {
                 string tempname = Filepath + ".new";
-                string tempname2 = Filepath + "2.new";
 
-                IBinaryFile file2 = _fileSystem.OpenBinaryFile(tempname2);
+                IBinaryFile file2 = _fileSystem.OpenBinaryFile(tempname);
 
                 MachineFile2 tempfile2 = null;
                 try
