@@ -465,9 +465,11 @@ namespace CPvC
             // Add a checkpoint at the current position to properly mark the end of this branch...
             Core.Stop();
             SetCheckpoint();
+            byte volume = Core.Volume;
 
             Display.GetFromBookmark(bookmarkEvent?.Bookmark);
             Core = Machine.GetCore(bookmarkEvent);
+            Core.Volume = volume;
 
             _file.WriteCurrent(bookmarkEvent);
             CurrentEvent = bookmarkEvent;
@@ -554,8 +556,6 @@ namespace CPvC
         /// </remarks>
         public void RewriteMachineFile()
         {
-            //Stop();
-
             using (AutoPause())
             {
                 string tempname = Filepath + ".new";
