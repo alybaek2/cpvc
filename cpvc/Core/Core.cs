@@ -28,7 +28,7 @@ namespace CPvC
             CPC6128
         }
 
-        private CoreCLR _coreCLR;
+        private ICoreCLR _coreCLR;
         private readonly List<CoreRequest> _requests;
 
         private bool _quitThread;
@@ -81,9 +81,9 @@ namespace CPvC
             }
         }
 
-        private Core()
+        private Core(int version)
         {
-            _coreCLR = new CoreCLR();
+            _coreCLR = GetCoreCLR(version);
             _requests = new List<CoreRequest>();
 
             _quitThread = false;
@@ -106,6 +106,17 @@ namespace CPvC
         private void OnPropertyChanged(string name)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
+        private ICoreCLR GetCoreCLR(int version)
+        {
+            switch (version)
+            {
+                case 1:
+                    return new CPvC.v1.CoreCLR();
+            }
+
+            throw new Exception(String.Format("Unknown core version {0}", version));
         }
 
         public void Dispose()
@@ -252,7 +263,7 @@ namespace CPvC
         /// <returns>The newly created core.</returns>
         static public Core Create(byte[] state)
         {
-            Core core = new Core();
+            Core core = new Core(1);
             core.LoadState(state);
 
             return core;
@@ -265,7 +276,7 @@ namespace CPvC
         /// <returns>A core of the specified type.</returns>
         static public Core Create(Type type)
         {
-            Core core = new Core();
+            Core core = new Core(1);
 
             switch (type)
             {

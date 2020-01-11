@@ -24,6 +24,9 @@
     <ClInclude Include="StopReasons.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ICoreCLR.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cpvc-core-clr.cpp">

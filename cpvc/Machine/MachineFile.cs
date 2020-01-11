@@ -232,6 +232,8 @@ namespace CPvC
                 CoreAction action = CoreAction.KeyPress(ticks, keyCode, keyDown);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
+                Diagnostics.Trace("{0} {1}: Key {2} {3}", id, ticks, keyCode, keyDown?"down":"up");
+
                 reader.AddHistoryEvent(historyEvent);
             }
         }
@@ -252,6 +254,8 @@ namespace CPvC
                 UInt64 ticks = ReadUInt64();
                 CoreAction action = CoreAction.Reset(ticks);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
+
+                Diagnostics.Trace("{0} {1}: Reset", id, ticks);
 
                 reader.AddHistoryEvent(historyEvent);
             }
@@ -274,6 +278,8 @@ namespace CPvC
                 CoreAction action = CoreAction.LoadDisc(ticks, drive, mediaBlob);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
+                Diagnostics.Trace("{0} {1}: Load disc (drive {2}, {3} byte tape image)", id, ticks, (drive == 0)?"A:":"B:", mediaBlob.GetBytes().Length);
+
                 reader.AddHistoryEvent(historyEvent);
             }
         }
@@ -293,6 +299,8 @@ namespace CPvC
 
                 CoreAction action = CoreAction.LoadTape(ticks, mediaBlob);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
+
+                Diagnostics.Trace("{0} {1}: Load tape ({2} byte tape image)", id, ticks, mediaBlob.GetBytes().Length);
 
                 reader.AddHistoryEvent(historyEvent);
             }
@@ -324,6 +332,15 @@ namespace CPvC
 
                 HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(id, ticks, created, bookmark);
 
+                if (bookmark == null)
+                {
+                    Diagnostics.Trace("{0} {1}: Checkpoint (no bookmark)", id, ticks);
+                }
+                else
+                {
+                    Diagnostics.Trace("{0} {1}: Checkpoint (with {2} bookmark; {3} byte state binary, {4} byte screen binary)", id, ticks, bookmark.System?"system":"user", bookmark.State.GetBytes().Length, bookmark.Screen.GetBytes().Length);
+                }
+
                 reader.AddHistoryEvent(historyEvent);
             }
         }
@@ -345,6 +362,8 @@ namespace CPvC
         private void ReadDelete(IMachineFileReader reader)
         {
             int id = ReadInt32();
+
+            Diagnostics.Trace("{0}: Delete", id);
 
             reader.DeleteEvent(id);
         }
