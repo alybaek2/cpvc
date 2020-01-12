@@ -36,7 +36,7 @@ namespace CPvC
         /// <summary>
         /// A buffer representing an uncompressed tape or disc image.
         /// </summary>
-        public byte[] MediaBuffer { get; protected set; }
+        public IBlob MediaBuffer { get; protected set; }
 
         /// <summary>
         /// For a request, indicates the desired ticks to stop at. For an action represents the actual ticks value that the core stopped at.

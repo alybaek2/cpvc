@@ -11,48 +11,69 @@ namespace CPvC.Test
     public class MachineFileTests
     {
         private List<string> _lines;
-        private IFile _mockWriter;
+        private MockBinaryFile _mockBinaryWriter;
         private MachineFile _file;
+
+        private Bookmark BookmarkMatch(bool system, byte[] state, byte[] screen)
+        {
+            return It.Is<Bookmark>(
+                b => b != null &&
+                b.System == system &&
+                b.State.GetBytes().SequenceEqual(new byte[] { 0x01, 0x02 }) &&
+                b.Screen.GetBytes().SequenceEqual(new byte[] { 0x03, 0x04 })
+                );
+        }
 
         [SetUp]
         public void Setup()
         {
             _lines = new List<string>();
-            _mockWriter = MockFileWriter(_lines);
-            _file = new MachineFile(_mockWriter);
+            _mockBinaryWriter = new MockBinaryFile();
+            _file = new MachineFile(_mockBinaryWriter.Object);
         }
 
         [TearDown]
         public void Teardown()
         {
             _lines = null;
-            _mockWriter = null;
+            _mockBinaryWriter = null;
             _file = null;
         }
 
         [Test]
         public void WriteName()
         {
+            // Setup
+            byte[] expected = new byte[]
+            {
+                0x00,
+                      0x04, 0x00, 0x00, 0x00,
+                      (byte)'t', (byte)'e', (byte)'s', (byte)'t'
+            };
+
             // Act
             _file.WriteName("test");
 
             // Verify
-            Assert.AreEqual(_lines.Count, 1);
-            Assert.AreEqual(_lines[0], "name:test");
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [Test]
         public void WriteCurrentEvent()
         {
             // Setup
-            HistoryEvent historyEvent = new HistoryEvent(25, HistoryEvent.Types.Checkpoint, 100);
+            HistoryEvent historyEvent = new HistoryEvent(25, HistoryEvent.Types.Checkpoint, 0);
+            byte[] expected = new byte[]
+            {
+                0x07,
+                      0x19, 0x00, 0x00, 0x00
+            };
 
             // Act
-            _file.WriteCurrentEvent(historyEvent);
+            _file.WriteCurrent(historyEvent);
 
             // Verify
-            Assert.AreEqual(_lines.Count, 1);
-            Assert.AreEqual(_lines[0], "current:25");
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [Test]
@@ -60,59 +81,79 @@ namespace CPvC.Test
         {
             // Setup
             HistoryEvent historyEvent = new HistoryEvent(25, HistoryEvent.Types.Checkpoint, 100);
-
+            byte[] expected = new byte[]
+            {
+                0x06,
+                      0x19, 0x00, 0x00, 0x00
+            };
+            
             // Act
             _file.WriteDelete(historyEvent);
 
             // Verify
-            Assert.AreEqual(_lines.Count, 1);
-            Assert.AreEqual(_lines[0], "delete:25");
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [Test]
         public void WriteBookmark()
         {
             // Setup
-            DateTime timestamp = Helpers.NumberToDateTime("1234");
-            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, null);
-            Bookmark bookmark = new Bookmark(false, new byte[] { 0x01, 0x02 });
+            Bookmark bookmark = new Bookmark(false, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 });
+            byte[] expected = new byte[]
+            {
+                0x08,
+                      0x19, 0x00, 0x00, 0x00,
+                      0x01,
+                      0x00,
+                      0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
+                      0x02, 0x00, 0x00, 0x00, 0x03, 0x04
+            };
 
             // Act
-            _file.WriteBookmark(historyEvent, bookmark);
+            _file.WriteBookmark(0x19, bookmark);
 
             // Verify
-            Assert.AreEqual(_lines.Count, 1);
-            Assert.AreEqual(_lines[0], "bookmark:25:2:0102");
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [Test]
         public void WriteNullBookmark()
         {
             // Setup
-            DateTime timestamp = Helpers.NumberToDateTime("1234");
-            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, null);
+            byte[] expected = new byte[]
+            {
+                0x08,
+                      0x19, 0x00, 0x00, 0x00,
+                      0x00
+            };
 
             // Act
-            _file.WriteBookmark(historyEvent, null);
+            _file.WriteBookmark(0x19, null);
 
             // Verify
-            Assert.AreEqual(_lines.Count, 1);
-            Assert.AreEqual(_lines[0], "bookmark:25:0");
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [Test]
         public void WriteCheckpointWithoutBookmark()
         {
             // Setup
-            DateTime timestamp = Helpers.NumberToDateTime("1234");
+            DateTime timestamp = Helpers.NumberToDateTime(0);
             HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, null);
+            byte[] expected = new byte[]
+            {
+                0x05,
+                      0x19, 0x00, 0x00, 0x00,
+                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00
+            };
 
             // Act
             _file.WriteHistoryEvent(historyEvent);
 
             // Verify
-            Assert.AreEqual(_lines.Count, 1);
-            Assert.AreEqual(_lines[0], "checkpoint:25:100:0:1234");
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [TestCase(false)]
@@ -120,15 +161,25 @@ namespace CPvC.Test
         public void WriteCheckpointWithBookmark(bool system)
         {
             // Setup
-            DateTime timestamp = Helpers.NumberToDateTime("1234");
-            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, new Bookmark(system, new byte[] { 0x01, 0x02 }));
+            DateTime timestamp = Helpers.NumberToDateTime(0);
+            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, new Bookmark(system, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 }));
+            byte[] expected = new byte[]
+            {
+                0x05,
+                      0x19, 0x00, 0x00, 0x00,
+                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x01,
+                      (byte)(system ? 0x01 : 0x00),
+                      0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
+                      0x02, 0x00, 0x00, 0x00, 0x03, 0x04
+            };
 
             // Act
             _file.WriteHistoryEvent(historyEvent);
 
             // Verify
-            Assert.AreEqual(_lines.Count, 1);
-            Assert.AreEqual(_lines[0], String.Format("checkpoint:25:100:{0}:1234:0102", system ? "1" : "2"));
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [Test]
@@ -136,13 +187,18 @@ namespace CPvC.Test
         {
             // Setup
             HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.Reset(100));
+            byte[] expected = new byte[]
+            {
+                0x02,
+                      0x19, 0x00, 0x00, 0x00,
+                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+            };
 
             // Act
             _file.WriteHistoryEvent(historyEvent);
 
             // Verify
-            Assert.AreEqual(_lines.Count, 1);
-            Assert.AreEqual(_lines[0], "reset:25:100");
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [TestCase(false)]
@@ -151,13 +207,19 @@ namespace CPvC.Test
         {
             // Setup
             HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.KeyPress(100, Keys.A, down));
+            byte[] expected = new byte[]
+            {
+                0x01,
+                      0x19, 0x00, 0x00, 0x00,
+                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      (byte) ((down ? 0x80 : 0x00) + 58)
+            };
 
             // Act
             _file.WriteHistoryEvent(historyEvent);
 
             // Verify
-            Assert.AreEqual(_lines.Count, 1);
-            Assert.AreEqual(_lines[0], String.Format("key:25:100:58:{0}", down ? "1" : "0"));
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [TestCase(0)]
@@ -166,13 +228,20 @@ namespace CPvC.Test
         {
             // Setup
             HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.LoadDisc(100, drive, new byte[] { 0x01, 0x02 }));
+            byte[] expected = new byte[]
+            {
+                0x03,
+                      0x19, 0x00, 0x00, 0x00,
+                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      drive,
+                      0x02, 0x00, 0x00, 0x00, 0x01, 0x02
+            };
 
             // Act
             _file.WriteHistoryEvent(historyEvent);
 
             // Verify
-            Assert.AreEqual(_lines.Count, 1);
-            Assert.AreEqual(_lines[0], String.Format("disc:25:100:{0}:0102", drive));
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [Test]
@@ -180,13 +249,19 @@ namespace CPvC.Test
         {
             // Setup
             HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.LoadTape(100, new byte[] { 0x01, 0x02 }));
+            byte[] expected = new byte[]
+            {
+                0x04,
+                      0x19, 0x00, 0x00, 0x00,
+                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x02, 0x00, 0x00, 0x00, 0x01, 0x02
+            };
 
             // Act
             _file.WriteHistoryEvent(historyEvent);
 
             // Verify
-            Assert.AreEqual(_lines.Count, 1);
-            Assert.AreEqual(_lines[0], "tape:25:100:0102");
+            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
         [Test]
@@ -213,17 +288,20 @@ namespace CPvC.Test
         public void ReadReset()
         {
             // Setup
-            string[] tokens = { "reset", "25", "100" };
+            Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
+            MockBinaryFile binaryFile = new MockBinaryFile(new List<byte> {
+                0x02,
+                      0x19, 0x00, 0x00, 0x00,
+                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+            });
+
+            MachineFile file = new MachineFile(binaryFile.Object);
 
             // Act
-            HistoryEvent historyEvent = MachineFile.ParseResetLine(tokens);
+            file.ReadFile(mockFileReader.Object);
 
             // Verify
-            Assert.AreEqual(historyEvent.Id, 25);
-            Assert.AreEqual(historyEvent.Ticks, 100);
-            Assert.AreEqual(historyEvent.Type, HistoryEvent.Types.CoreAction);
-            Assert.IsNotNull(historyEvent.CoreAction);
-            Assert.AreEqual(historyEvent.CoreAction.Type, CoreActionBase.Types.Reset);
+            mockFileReader.Verify(reader => reader.AddHistoryEvent(CoreActionEvent(0x19, 100, CoreActionBase.Types.Reset)));
         }
 
         [TestCase(false)]
@@ -231,19 +309,21 @@ namespace CPvC.Test
         public void ReadKey(bool down)
         {
             // Setup
-            string[] tokens = { "key", "25", "100", Keys.A.ToString(), down ? "1" : "0" };
+            Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
+            MockBinaryFile binaryFile = new MockBinaryFile(new List<byte> {
+                0x01,
+                      0x19, 0x00, 0x00, 0x00,
+                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      (byte) ((down ? 0x80 : 0x00) + Keys.A)
+            });
+
+            MachineFile file = new MachineFile(binaryFile.Object);
 
             // Act
-            HistoryEvent historyEvent = MachineFile.ParseKeyPressLine(tokens);
+            file.ReadFile(mockFileReader.Object);
 
             // Verify
-            Assert.AreEqual(historyEvent.Id, 25);
-            Assert.AreEqual(historyEvent.Ticks, 100);
-            Assert.AreEqual(historyEvent.Type, HistoryEvent.Types.CoreAction);
-            Assert.IsNotNull(historyEvent.CoreAction);
-            Assert.AreEqual(historyEvent.CoreAction.Type, CoreActionBase.Types.KeyPress);
-            Assert.AreEqual(historyEvent.CoreAction.KeyCode, Keys.A);
-            Assert.AreEqual(historyEvent.CoreAction.KeyDown, down);
+            mockFileReader.Verify(reader => reader.AddHistoryEvent(KeyPressEvent(0x19, 100, Keys.A, down)));
         }
 
         [TestCase(0)]
@@ -251,37 +331,43 @@ namespace CPvC.Test
         public void ReadDisc(byte drive)
         {
             // Setup
-            string[] tokens = { "disc", "25", "100", drive.ToString(), "0102" };
+            Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
+            MockBinaryFile binaryFile = new MockBinaryFile(new List<byte> {
+                0x03,
+                      0x19, 0x00, 0x00, 0x00,
+                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      drive,
+                      0x02, 0x00, 0x00, 0x00, 0x01, 0x02
+            });
+
+            MachineFile file = new MachineFile(binaryFile.Object);
 
             // Act
-            HistoryEvent historyEvent = MachineFile.ParseDiscLine(tokens);
+            file.ReadFile(mockFileReader.Object);
 
             // Verify
-            Assert.AreEqual(historyEvent.Id, 25);
-            Assert.AreEqual(historyEvent.Ticks, 100);
-            Assert.AreEqual(historyEvent.Type, HistoryEvent.Types.CoreAction);
-            Assert.IsNotNull(historyEvent.CoreAction);
-            Assert.AreEqual(historyEvent.CoreAction.Type, CoreActionBase.Types.LoadDisc);
-            Assert.AreEqual(historyEvent.CoreAction.Drive, drive);
-            Assert.AreEqual(historyEvent.CoreAction.MediaBuffer, new byte[] { 0x01, 0x02 });
+            mockFileReader.Verify(reader => reader.AddHistoryEvent(LoadDiscEvent(0x19, 100, drive, new byte[] { 0x01, 0x02 })));
         }
 
         [Test]
         public void ReadTape()
         {
             // Setup
-            string[] tokens = { "disc", "25", "100", "0102" };
+            Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
+            MockBinaryFile binaryFile = new MockBinaryFile(new List<byte> {
+                0x04,
+                      0x19, 0x00, 0x00, 0x00,
+                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x02, 0x00, 0x00, 0x00, 0x01, 0x02
+            });
+
+            MachineFile file = new MachineFile(binaryFile.Object);
 
             // Act
-            HistoryEvent historyEvent = MachineFile.ParseTapeLine(tokens);
+            file.ReadFile(mockFileReader.Object);
 
             // Verify
-            Assert.AreEqual(historyEvent.Id, 25);
-            Assert.AreEqual(historyEvent.Ticks, 100);
-            Assert.AreEqual(historyEvent.Type, HistoryEvent.Types.CoreAction);
-            Assert.IsNotNull(historyEvent.CoreAction);
-            Assert.AreEqual(historyEvent.CoreAction.Type, CoreActionBase.Types.LoadTape);
-            Assert.AreEqual(historyEvent.CoreAction.MediaBuffer, new byte[] { 0x01, 0x02 });
+            mockFileReader.Verify(reader => reader.AddHistoryEvent(LoadTapeEvent(0x19, 100, new byte[] { 0x01, 0x02 })));
         }
 
         [TestCase(false)]
@@ -289,43 +375,47 @@ namespace CPvC.Test
         public void ReadCheckpointWithBookmark(bool system)
         {
             // Setup
-            string[] tokens = { "checkpoint", "25", "100", system ? "1" : "2", "1234", "0102" };
+            Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
+            MockBinaryFile binaryFile = new MockBinaryFile(new List<byte> {
+                0x05,
+                      0x19, 0x00, 0x00, 0x00,
+                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x01,
+                      (byte)(system ? 0x01 : 0x00),
+                      0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
+                      0x02, 0x00, 0x00, 0x00, 0x03, 0x04
+            });
+
+            MachineFile file = new MachineFile(binaryFile.Object);
 
             // Act
-            HistoryEvent historyEvent = MachineFile.ParseCheckpointLine(tokens);
+            file.ReadFile(mockFileReader.Object);
 
             // Verify
-            Assert.IsNotNull(historyEvent);
-            Assert.AreEqual(historyEvent.Id, 25);
-            Assert.AreEqual(historyEvent.Ticks, 100);
-            Assert.IsNotNull(historyEvent.Bookmark);
-            Assert.AreEqual(historyEvent.Bookmark.System, system);
-            Assert.AreEqual(historyEvent.Bookmark.State, new byte[] { 0x01, 0x02 });
+            mockFileReader.Verify(reader => reader.AddHistoryEvent(CheckpointWithBookmarkEvent(0x19, 100, system, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 })));
         }
 
         [Test]
-        public void ReadCheckpointWithInvalidBookmarkType()
-        {
-            // Setup
-            string[] tokens = { "checkpoint", "25", "100", "999", "1234", "0102" };
-
-            // Act and Verify
-            Assert.Throws<Exception>(() => MachineFile.ParseCheckpointLine(tokens));
-        }
-
         public void ReadCheckpointWithoutBookmark()
         {
             // Setup
-            string[] tokens = { "checkpoint", "25", "100", "0" };
+            Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
+            MockBinaryFile binaryFile = new MockBinaryFile(new List<byte> {
+                0x05,
+                      0x19, 0x00, 0x00, 0x00,
+                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00
+            });
+
+            MachineFile file = new MachineFile(binaryFile.Object);
 
             // Act
-            HistoryEvent historyEvent = MachineFile.ParseCheckpointLine(tokens);
+            file.ReadFile(mockFileReader.Object);
 
             // Verify
-            Assert.IsNotNull(historyEvent);
-            Assert.AreEqual(historyEvent.Id, 25);
-            Assert.AreEqual(historyEvent.Ticks, 100);
-            Assert.IsNull(historyEvent.Bookmark);
+            mockFileReader.Verify(reader => reader.AddHistoryEvent(CheckpointWithoutBookmarkEvent(0x19, 100)));
         }
 
         [TestCase(false)]
@@ -333,70 +423,48 @@ namespace CPvC.Test
         public void ReadBookmark(bool system)
         {
             // Setup
-            string[] tokens = { "bookmark", "25", system ? "1" : "2", "0102" };
+            Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
+            MockBinaryFile binaryFile = new MockBinaryFile(new List<byte>
+            {
+                0x08,
+                      0x19, 0x00, 0x00, 0x00,
+                      0x01,
+                      (byte) (system ? 0x01 : 0x00),
+                      0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
+                      0x02, 0x00, 0x00, 0x00, 0x03, 0x04
+            });
+
+            MachineFile file = new MachineFile(binaryFile.Object);
 
             // Act
-            Bookmark bookmark = MachineFile.ParseBookmarkLine(tokens);
+            file.ReadFile(mockFileReader.Object);
 
             // Verify
-            Assert.IsNotNull(bookmark);
-            Assert.AreEqual(bookmark.System, system);
-            Assert.AreEqual(bookmark.State, new byte[] { 0x01, 0x02 });
+            mockFileReader.Verify(reader => reader.SetBookmark(0x19, BookmarkMatch(system, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 })));
         }
 
         [Test]
         public void ReadNullBookmark()
         {
             // Setup
-            string[] tokens = { "bookmark", "25", "0" };
+            Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
+
+            MockBinaryFile mockWriter = new MockBinaryFile(new List<byte>
+            {
+                0x08,
+                      0x19, 0x00, 0x00, 0x00,
+                      0x00
+            });
+
+            MachineFile file = new MachineFile(mockWriter.Object);
 
             // Act
-            Bookmark bookmark = MachineFile.ParseBookmarkLine(tokens);
+            file.ReadFile(mockFileReader.Object);
 
             // Verify
-            Assert.IsNull(bookmark);
-        }
+            mockFileReader.Verify(reader => reader.SetBookmark(0x19, null));
+            mockFileReader.VerifyNoOtherCalls();
 
-        [TestCase("")]
-        [TestCase("-1")]
-        [TestCase("3")]
-        [TestCase("abcdef")]
-        public void ReadInvalidBookmarkType(string bookmarkType)
-        {
-            // Setup
-            string[] tokens = { "bookmark", "25", bookmarkType };
-
-            // Act and Verify
-            Assert.Throws<Exception>(() => MachineFile.ParseBookmarkLine(tokens));
-        }
-
-        [TestCase(new object[] { }, null)]
-        [TestCase(new object[] { "" }, null)]
-        [TestCase(new object[] { "name:test" }, null)]
-        [TestCase(new object[] { "checkpoint:0:0:0:0", "name:test" }, null)]
-        [TestCase(new object[] { "checkpoint:1:100:2:0:0102", "checkpoint:0:0:0:0", "name:test" }, null)]
-        [TestCase(new object[] { "checkpoint:1:100:1:0:0102", "checkpoint:0:0:0:0", "name:test" }, new byte[] { 0x01, 0x02 })]
-        public void GetLastSystemBookmark(object[] lines, byte[] expectedBookmark)
-        {
-            // Setup
-            string filepath = "test.cpvc";
-            Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
-            mockFileSystem.Setup(fileSystem => fileSystem.ReadLinesReverse(filepath)).Returns(lines.Select(x => (string)x));
-
-            // Act
-            HistoryEvent bookmarkEvent = MachineFile.GetLastSystemBookmark(mockFileSystem.Object, filepath);
-
-            // Verify
-            if (expectedBookmark != null)
-            {
-                Assert.IsNotNull(bookmarkEvent?.Bookmark);
-                Assert.IsTrue(bookmarkEvent.Bookmark.System);
-                Assert.AreEqual(expectedBookmark, bookmarkEvent?.Bookmark.State);
-            }
-            else
-            {
-                Assert.IsNull(bookmarkEvent);
-            }
         }
     }
 }

@@ -72,6 +72,20 @@ namespace CPvC
             return false;
         }
 
+        public List<HistoryEvent> GetSelfAndDescendents()
+        {
+            List<HistoryEvent> descendents = new List<HistoryEvent>();
+            descendents.Add(this);
+
+            for (int i = 0; i < descendents.Count; i++)
+            {
+                HistoryEvent historyEvent = descendents[i];
+                descendents.AddRange(historyEvent.Children);
+            }
+
+            return descendents;
+        }
+
         static public HistoryEvent CreateCoreAction(int id, CoreAction coreAction)
         {
             HistoryEvent historyEvent = new HistoryEvent(id, Types.CoreAction, coreAction.Ticks)

@@ -8,21 +8,21 @@ namespace CPvC.Test
     public class FileSystemTests
     {
         [Test]
-        public void OpenFile()
+        public void OpenBinaryFile()
         {
             // Setup
             string filepath = TestHelpers.GetTempFilepath("opentest.txt");
             System.IO.File.Delete(filepath);
             FileSystem fs = new FileSystem();
-            IFile file = fs.OpenFile(filepath);
+            IBinaryFile file = fs.OpenBinaryFile(filepath);
 
             // Act
-            file.WriteLine("abc");
+            file.WriteByte(0xfe);
             file.Close();
 
             // Verify
-            string contents = System.IO.File.ReadAllText(filepath);
-            Assert.AreEqual("abc\r\n", contents);
+            byte[] contents = System.IO.File.ReadAllBytes(filepath);
+            Assert.AreEqual(new byte[] { 0xfe }, contents);
         }
 
         [Test]
@@ -113,26 +113,6 @@ namespace CPvC.Test
 
             // Verify
             CollectionAssert.AreEqual(new string[] { "abc" }, lines);
-            System.IO.File.Delete(filepath);
-        }
-
-        [TestCase("", new object[] { })]
-        [TestCase("abc\r\ndef\r\nghi", new object[] { "ghi", "def", "abc" })]
-        [TestCase("abc\r\ndef\r\nghi\r\n", new object[] { "ghi", "def", "abc" })]
-        [TestCase("a\rbc\ndef\nghi\n", new object[] { "ghi", "def", "a\rbc" })]
-        [TestCase("\r\nabc\r\n\r\ndef\r\n\r\n", new object[] { "", "def", "", "abc", "" })]
-        public void ReadLinesReverse(string input, object[] expected)
-        {
-            // Setup
-            string filepath = TestHelpers.GetTempFilepath("linestest.txt");
-            FileSystem fs = new FileSystem();
-            System.IO.File.WriteAllText(filepath, input);
-
-            // Act
-            IEnumerable<string> lines = fs.ReadLinesReverse(filepath);
-
-            // Verify
-            CollectionAssert.AreEqual(expected, lines);
             System.IO.File.Delete(filepath);
         }
 

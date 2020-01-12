@@ -9,9 +9,8 @@ namespace CPvC.Test
     [TestFixture]
     public class MachineTests
     {
-        private List<string> _outputLines;
         private Mock<IFileSystem> _mockFileSystem;
-        private Mock<IFile> _mockWriter;
+        private MockBinaryFile _mockBinaryWriter;
 
         private Machine CreateMachine()
         {
@@ -34,19 +33,14 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
             _mockFileSystem.Setup(fileSystem => fileSystem.FileLength(AnyString())).Returns(100);
 
-            _mockWriter = new Mock<IFile>(MockBehavior.Strict);
-            _mockWriter.Setup(s => s.WriteLine(AnyString())).Callback<string>(line => _outputLines.Add(line));
-            _mockWriter.Setup(s => s.Close());
+            _mockBinaryWriter = new MockBinaryFile();
 
-            _mockFileSystem.Setup(fileSystem => fileSystem.OpenFile(AnyString())).Returns(_mockWriter.Object);
-
-            _outputLines = new List<string>();
+            _mockFileSystem.Setup(fileSystem => fileSystem.OpenBinaryFile("test.cpvc")).Returns(_mockBinaryWriter.Object);
         }
 
         [TearDown]
         public void Teardown()
         {
-            _outputLines = null;
             _mockFileSystem = null;
         }
 
@@ -62,6 +56,7 @@ namespace CPvC.Test
         {
             // Act
             UInt64 ticks = 0;
+            int endpos = 0;
             using (Machine machine = CreateMachine())
             {
                 machine.AddBookmark(true);
@@ -72,17 +67,20 @@ namespace CPvC.Test
                 }
 
                 ticks = machine.Core.Ticks;
+                endpos = _mockBinaryWriter.Content.Count;
             }
 
             // Verify
             if (startBeforeClosing)
             {
-                Assert.AreEqual(4, _outputLines.Count);
-                Assert.True(_outputLines[3].StartsWith(String.Format("checkpoint:2:{0}:1:", ticks)));
+                byte[] expectedBinary = new byte[] { 0x05, 0x02, 0x00, 0x00, 0x00 };
+                Assert.AreEqual(expectedBinary, _mockBinaryWriter.Content.GetRange(endpos, expectedBinary.Length));
+                Assert.AreEqual(0x01, _mockBinaryWriter.Content[endpos + 21]);
+                Assert.AreEqual(0x01, _mockBinaryWriter.Content[endpos + 22]);
             }
             else
             {
-                Assert.AreEqual(3, _outputLines.Count);
+                Assert.AreEqual(endpos, _mockBinaryWriter.Content.Count);
             }
         }
 
@@ -93,14 +91,14 @@ namespace CPvC.Test
         public void NoSystemBookmarksOnClose()
         {
             // Act
-            int linesCount = 0;
+            int pos = 0;
             using (Machine machine = CreateMachine())
             {
-                linesCount = _outputLines.Count;
+                pos = _mockBinaryWriter.Content.Count;
             }
 
             // Verify
-            Assert.AreEqual(linesCount, _outputLines.Count);
+            Assert.AreEqual(pos, _mockBinaryWriter.Content.Count);
         }
 
         /// <summary>
@@ -175,7 +173,17 @@ namespace CPvC.Test
         public void OpenLazy()
         {
             // Setup
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLinesReverse("test.cpvc")).Returns(new string[] { "checkpoint:0:0:0:0", "name:Test" });
+            _mockBinaryWriter.Content = new List<byte>
+            {
+                0x00,
+                      0x04, 0x00, 0x00, 0x00,
+                      (byte)'T', (byte)'e', (byte)'s', (byte)'t',
+                0x05,
+                      0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00
+            };
 
             // Act
             using (Machine machine = Machine.Open("Test", "test.cpvc", _mockFileSystem.Object, true))
@@ -241,7 +249,6 @@ namespace CPvC.Test
                 machine.TrimTimeline(eventToDelete);
             }
 
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(_outputLines.ToArray());
             using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
             {
                 // Verify
@@ -263,13 +270,13 @@ namespace CPvC.Test
                 Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
                 Assert.AreEqual(CoreActionBase.Types.LoadDisc, historyEvent.CoreAction.Type);
                 Assert.AreEqual(0, historyEvent.CoreAction.Drive);
-                Assert.IsNull(historyEvent.CoreAction.MediaBuffer);
+                Assert.IsNull(historyEvent.CoreAction.MediaBuffer.GetBytes());
                 Assert.AreEqual(1, historyEvent.Children.Count);
 
                 historyEvent = historyEvent.Children[0];
                 Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
                 Assert.AreEqual(CoreActionBase.Types.LoadTape, historyEvent.CoreAction.Type);
-                Assert.IsNull(historyEvent.CoreAction.MediaBuffer);
+                Assert.IsNull(historyEvent.CoreAction.MediaBuffer.GetBytes());
                 Assert.AreEqual(1, historyEvent.Children.Count);
 
                 historyEvent = historyEvent.Children[0];
@@ -304,6 +311,7 @@ namespace CPvC.Test
         public void OpenWithMissingFinalBookmark()
         {
             // Setup
+            int endpos = 0;
             using (Machine machine = CreateMachine())
             {
                 RunForAWhile(machine);
@@ -311,11 +319,12 @@ namespace CPvC.Test
                 RunForAWhile(machine);
                 machine.LoadDisc(0, null);
                 RunForAWhile(machine);
+
+                endpos = _mockBinaryWriter.Content.Count;
             }
 
             // Remove the final system bookmark that was added when the machine was closed.
-            _outputLines.RemoveAt(_outputLines.Count - 1);
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(_outputLines.ToArray());
+            _mockBinaryWriter.Content.RemoveRange(endpos, _mockBinaryWriter.Content.Count - endpos);
 
             // Act
             using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
@@ -407,32 +416,34 @@ namespace CPvC.Test
                 machine.SetBookmark(bookmarkEvent, null);
             }
 
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(_outputLines.ToArray());
-            _outputLines.Clear();
             using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
             {
+                Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
+
+                MockBinaryFile rewriteTempFile = new MockBinaryFile();
+                _mockFileSystem.Setup(fileSystem => fileSystem.OpenBinaryFile("test.cpvc.new")).Returns(rewriteTempFile.Object);
+
+                MockSequence sequence = new MockSequence();
+                mockFileReader.InSequence(sequence).Setup(x => x.SetName("test")).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CheckpointEvent(0))).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(1, CoreActionBase.Types.LoadDisc))).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CheckpointEvent(2))).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(5, CoreActionBase.Types.LoadDisc))).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CheckpointEvent(6))).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.SetCurrentEvent(2)).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(7, CoreActionBase.Types.LoadTape))).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CheckpointEvent(9))).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.SetCurrentEvent(9)).Verifiable();
+
                 // Act
                 machine.RewriteMachineFile();
 
-                // Verify
-                string[] expectedLines = {
-                    "name:test",
-                    "checkpoint:0:",
-                    "disc:1:",
-                    "checkpoint:2:",
-                    "disc:5:",
-                    "checkpoint:6:",
-                    "current:2",
-                    "tape:7:",
-                    "checkpoint:9:",
-                    "current:9"
-                };
+                MachineFile file2 = new MachineFile(rewriteTempFile.Object);
+                file2.ReadFile(mockFileReader.Object);
 
-                Assert.AreEqual(expectedLines.Length, _outputLines.Count);
-                for (int i = 0; i < expectedLines.Length; i++)
-                {
-                    Assert.AreEqual(expectedLines[i], _outputLines[i].Substring(0, expectedLines[i].Length));
-                }
+                // Verify
+                mockFileReader.Verify();
+                mockFileReader.VerifyNoOtherCalls();
 
                 Assert.AreEqual("Compacted machine file by 0%", machine.Status);
             }
@@ -484,19 +495,34 @@ namespace CPvC.Test
         public void SetBookmarkOnNonCheckpoint()
         {
             // Setup
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(new string[] { "name:Test", "checkpoint:0:0:0:0", "key:1:100:58:1" });
+            _mockBinaryWriter.Content = new List<byte>
+            {
+                0x00,
+                      0x04, 0x00, 0x00, 0x00,
+                      (byte)'T', (byte)'e', (byte)'s', (byte)'t',
+                0x05,
+                      0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00,
+                0x01,
+                      0x01, 0x00, 0x00, 0x00,
+                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0xba
+            };
 
             using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
             {
+                int pos = _mockBinaryWriter.Content.Count;
+
                 // Act
-                _outputLines.Clear();
                 machine.SetBookmark(machine.RootEvent.Children[0], null);
 
                 // Verify
                 Assert.IsNotNull(machine.RootEvent);
                 Assert.AreEqual(1, machine.RootEvent.Children.Count);
                 Assert.IsEmpty(machine.RootEvent.Children[0].Children);
-                Assert.IsEmpty(_outputLines);
+                Assert.AreEqual(pos, _mockBinaryWriter.Content.Count);
             }
         }
 
@@ -505,6 +531,19 @@ namespace CPvC.Test
         {
             // Setup
             _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(new string[] { "name:Test", "checkpoint:0:0:0:0", "delete:0" });
+            _mockBinaryWriter.Content = new List<byte>
+            {
+                0x00,
+                      0x04, 0x00, 0x00, 0x00,
+                      (byte)'T', (byte)'e', (byte)'s', (byte)'t',
+                0x05,
+                      0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00,
+                0x06,
+                      0x00, 0x00, 0x00, 0x00
+            };
 
             // Act
             using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
@@ -521,7 +560,7 @@ namespace CPvC.Test
             // Setup
             using (Machine machine = CreateMachine())
             {
-                _outputLines.Clear();
+                int pos = _mockBinaryWriter.Content.Count;
 
                 // Act
                 machine.TrimTimeline(machine.RootEvent);
@@ -529,7 +568,7 @@ namespace CPvC.Test
                 // Verify
                 Assert.IsNotNull(machine.RootEvent);
                 Assert.IsEmpty(machine.RootEvent.Children);
-                Assert.IsEmpty(_outputLines);
+                Assert.AreEqual(pos, _mockBinaryWriter.Content.Count);
             }
         }
     }

@@ -17,8 +17,9 @@ namespace CPvC.Test
         private Mock<ISettings> _mockSettings;
         private Mock<IFileSystem> _mockFileSystem;
 
-        private string[] _lines;
         private string _settingGet;
+
+        private MockBinaryFile _mockBinaryWriter;
 
         [SetUp]
         public void Setup()
@@ -27,16 +28,16 @@ namespace CPvC.Test
             _mockSettings.SetupGet(x => x.RecentlyOpened).Returns(() => _settingGet);
             _mockSettings.SetupSet(x => x.RecentlyOpened = It.IsAny<string>());
 
-            Mock<IFile> mockFile = new Mock<IFile>();
             _mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines(AnyString())).Returns(() => _lines);
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLinesReverse(AnyString())).Returns(() => _lines.Reverse());
-            _mockFileSystem.Setup(fileSystem => fileSystem.OpenFile(AnyString())).Returns(mockFile.Object);
             _mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(AnyString()));
             _mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
             _mockFileSystem.Setup(fileSystem => fileSystem.FileLength(AnyString())).Returns(100);
             _mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(true);
             _mockFileSystem.Setup(ReadBytes()).Returns(new byte[1]);
+
+            _mockBinaryWriter = new MockBinaryFile();
+
+            _mockFileSystem.Setup(fileSystem => fileSystem.OpenBinaryFile(AnyString())).Returns(_mockBinaryWriter.Object);
         }
 
         [TearDown]
@@ -45,14 +46,21 @@ namespace CPvC.Test
             _mockSettings = null;
             _mockFileSystem = null;
 
-            _lines = null;
             _settingGet = null;
         }
 
         private MainViewModel SetupViewModel(int machineCount)
         {
             _settingGet = String.Join(",", Enumerable.Range(0, machineCount).Select(x => String.Format("Test{0};test{0}.cpvc", x)));
-            _lines = new string[] { "checkpoint:0:0:0:0" };
+            _mockBinaryWriter.Content = new List<byte>
+            {
+                0x05,
+                      0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00
+            };
+
 
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
 
@@ -88,7 +96,7 @@ namespace CPvC.Test
             // Setup
             string filepath = "test.cpvc";
             Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
-            mockFileSystem.Setup(fileSystem => fileSystem.OpenFile(filepath)).Throws(new Exception("File not found"));
+            mockFileSystem.Setup(fileSystem => fileSystem.OpenBinaryFile(filepath)).Throws(new Exception("File not found"));
             mockFileSystem.Setup(ReadBytes()).Throws(new Exception("File missing"));
             mockFileSystem.Setup(DeleteFile(filepath));
             mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(false);
@@ -134,7 +142,7 @@ namespace CPvC.Test
             Assert.IsNull(machine);
         }
 
-        [TestCase(null, null, null)]
+        [TestCase(null, null, "")]
         [TestCase(null, "test.cpvc", "test")]
         [TestCase("test.cpvc", null, "test")]
         public void OpenMachine(string filepath, string promptedFilepath, string expectedMachineName)
@@ -142,7 +150,24 @@ namespace CPvC.Test
             // Setup
             Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, true, promptedFilepath);
             MainViewModel viewModel = SetupViewModel(0);
-            _lines = new string[] { String.Format("name:{0}", expectedMachineName), "checkpoint:0:0:0:0" };
+            _mockBinaryWriter.Content = new List<byte>
+            {
+                0x00,
+                      (byte)expectedMachineName.Length, 0x00, 0x00, 0x00
+            };
+
+            foreach (char c in expectedMachineName)
+            {
+                _mockBinaryWriter.Content.Add((byte)c);
+            }
+
+            _mockBinaryWriter.Content.AddRange(new byte[] {
+                0x05,
+                      0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00
+            });
 
             // Act
             Machine machine = viewModel.OpenMachine(prompt.Object, filepath, _mockFileSystem.Object);
@@ -151,7 +176,7 @@ namespace CPvC.Test
             prompt.Verify(x => x(FileTypes.Machine, true), (filepath != null) ? Times.Never() : Times.Once());
             prompt.VerifyNoOtherCalls();
 
-            if (expectedMachineName != null)
+            if (expectedMachineName != "")
             {
                 Assert.AreEqual(1, viewModel.Machines.Count);
                 Assert.AreEqual(expectedMachineName, viewModel.Machines[0].Name);
@@ -170,7 +195,6 @@ namespace CPvC.Test
         public void OpenInvalid()
         {
             // Setup
-            _lines = new string[] { "invalid" };
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
             Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, "test.cpvc");
             _mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(true);
@@ -184,7 +208,6 @@ namespace CPvC.Test
         {
             // Setup
             _settingGet = "Test;test.cpvc";
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLinesReverse("test.cpvc")).Throws<FileNotFoundException>();
 
             // Act
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
@@ -211,10 +234,13 @@ namespace CPvC.Test
 
             if (expectedMachineName != null)
             {
+                // Stop the machine as a newly created machine will be in a running state.
+                viewModel.Machines[0].Stop();
+
                 Assert.AreEqual(1, viewModel.Machines.Count);
                 Assert.AreEqual(expectedMachineName, viewModel.Machines[0].Name);
                 _mockFileSystem.Verify(fileSystem => fileSystem.DeleteFile(filepath), Times.Once());
-                _mockFileSystem.Verify(fileSystem => fileSystem.OpenFile(filepath), Times.Once());
+                _mockFileSystem.Verify(fileSystem => fileSystem.OpenBinaryFile(filepath), Times.Once());
             }
             else
             {

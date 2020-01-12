@@ -11,7 +11,7 @@ namespace CPvC
     /// The Machine class, in addition to encapsulating a running Core object, also maintains a file which contains the state of the machine.
     /// This allows a machine to be closed, and then resumed where it left off the next time it's opened.
     /// </remarks>
-    public sealed class Machine : INotifyPropertyChanged, IDisposable
+    public sealed class Machine : IMachineFileReader, INotifyPropertyChanged, IDisposable
     {
         private string _name;
         private Core _core;
@@ -21,6 +21,7 @@ namespace CPvC
         public Display Display { get; private set; }
         public HistoryEvent CurrentEvent { get; private set; }
         public HistoryEvent RootEvent { get; private set; }
+        private Dictionary<int, HistoryEvent> _historyEventById;
 
         public string Filepath { get; }
 
@@ -57,6 +58,7 @@ namespace CPvC
             Display = new Display();
 
             _nextEventId = 0;
+            _historyEventById = new Dictionary<int, HistoryEvent>();
 
             _fileSystem = fileSystem;
         }
@@ -85,14 +87,9 @@ namespace CPvC
             {
                 machine = new Machine(name, machineFilepath, fileSystem);
 
-                if (!lazy)
+                machine.Open();
+                if (lazy)
                 {
-                    machine.Open();
-                }
-                else
-                {
-                    HistoryEvent lastSystemBookmarkEvent = MachineFile.GetLastSystemBookmark(fileSystem, machineFilepath);
-                    machine.Display.GetFromBookmark(lastSystemBookmarkEvent?.Bookmark);
                     machine.Close();
                 }
             }
@@ -113,65 +110,16 @@ namespace CPvC
         {
             try
             {
-                IEnumerable<string> lines = _fileSystem.ReadLines(Filepath);
+                IBinaryFile file2 = _fileSystem.OpenBinaryFile(Filepath);
+                _file = new MachineFile(file2);
 
-                Dictionary<int, HistoryEvent> events = new Dictionary<int, HistoryEvent>();
-
-                foreach (string line in lines)
-                {
-                    string[] tokens = line.Split(':');
-                    if (!MachineFile.TokenValid(tokens[0]))
-                    {
-                        throw new Exception(String.Format("Unknown token {0}", tokens[0]));
-                    }
-
-                    HistoryEvent historyEventToAdd = null;
-                    switch (tokens[0])
-                    {
-                        case MachineFile._nameToken:
-                            _name = tokens[1];
-                            break;
-                        case MachineFile._bookmarkToken:
-                            {
-                                int id = Convert.ToInt32(tokens[1]);
-                                HistoryEvent historyEvent = events[id];
-                                historyEvent.Bookmark = MachineFile.ParseBookmarkLine(tokens);
-                            }
-                            break;
-                        case MachineFile._currentToken:
-                            {
-                                int id = Convert.ToInt32(tokens[1]);
-                                CurrentEvent = events[id];
-                            }
-                            break;
-                        case MachineFile._deleteToken:
-                            {
-                                int id = Convert.ToInt32(tokens[1]);
-                                DeleteEvent(events[id], false);
-                            }
-                            break;
-                        default:
-                            historyEventToAdd = MachineFile.ParseHistoryEventLine(tokens);
-                            break;
-                    }
-
-                    if (historyEventToAdd != null)
-                    {
-                        AddEvent(historyEventToAdd, false);
-                        events.Add(historyEventToAdd.Id, historyEventToAdd);
-
-                        _nextEventId = Math.Max(_nextEventId, historyEventToAdd.Id + 1);
-                    }
-                }
+                _file.ReadFile(this);
 
                 if (CurrentEvent == null)
                 {
                     // The machine file is either empty or has some other problem...
                     throw new Exception(String.Format("Unable to load file \"{0}\"; CurrentEvent is null!", Filepath));
                 }
-
-                IFile file = _fileSystem.OpenFile(Filepath);
-                _file = new MachineFile(file);
 
                 // Rewind from the current event to the most recent one with a bookmark...
                 HistoryEvent bookmarkEvent = CurrentEvent;
@@ -211,8 +159,8 @@ namespace CPvC
                 fileSystem.DeleteFile(machineFilepath);
                 machine = new Machine(null, machineFilepath, fileSystem);
 
-                IFile file = fileSystem.OpenFile(machine.Filepath);
-                machine._file = new MachineFile(file);
+                IBinaryFile file2 = fileSystem.OpenBinaryFile(machine.Filepath);
+                machine._file = new MachineFile(file2);
                 machine.Name = name;
 
                 machine.RootEvent = HistoryEvent.CreateCheckpoint(machine.NextEventId(), 0, DateTime.UtcNow, null);
@@ -243,8 +191,8 @@ namespace CPvC
                 {
                     // Create a system bookmark so the machine can resume from where it left off the next time it's loaded, but don't
                     // create one if we already have a system bookmark at the current event, or we're at the root event.
-                    if ((CurrentEvent != RootEvent) &&
-                        ((Core != null && CurrentEvent.Ticks != Core.Ticks) || CurrentEvent.Bookmark == null || !CurrentEvent.Bookmark.System))
+                    bool ticksDifferent = (Core != null && CurrentEvent.Ticks != Core.Ticks);
+                    if (ticksDifferent || (CurrentEvent.Bookmark == null && CurrentEvent != RootEvent) || (CurrentEvent.Bookmark != null && !CurrentEvent.Bookmark.System))
                     {
                         Bookmark bookmark = GetBookmark(true);
                         HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark);
@@ -264,6 +212,8 @@ namespace CPvC
 
             CurrentEvent = null;
             RootEvent = null;
+
+            Status = null;
 
             _nextEventId = 0;
 
@@ -285,10 +235,10 @@ namespace CPvC
                 switch (action.Type)
                 {
                     case CoreActionBase.Types.LoadDisc:
-                        Status = (action.MediaBuffer != null) ? "Loaded disc" : "Ejected disc";
+                        Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded disc" : "Ejected disc";
                         break;
                     case CoreActionBase.Types.LoadTape:
-                        Status = (action.MediaBuffer != null) ? "Loaded tape" : "Ejected tape";
+                        Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded tape" : "Ejected tape";
                         break;
                     case CoreActionBase.Types.Reset:
                         Status = "Reset";
@@ -515,11 +465,13 @@ namespace CPvC
             // Add a checkpoint at the current position to properly mark the end of this branch...
             Core.Stop();
             SetCheckpoint();
+            byte volume = Core.Volume;
 
             Display.GetFromBookmark(bookmarkEvent?.Bookmark);
             Core = Machine.GetCore(bookmarkEvent);
+            Core.Volume = volume;
 
-            _file.WriteCurrentEvent(bookmarkEvent);
+            _file.WriteCurrent(bookmarkEvent);
             CurrentEvent = bookmarkEvent;
 
             SetCoreRunning();
@@ -540,6 +492,12 @@ namespace CPvC
             using (AutoPause())
             {
                 historyEvent.Parent.RemoveChild(historyEvent);
+
+                // Remove the event and all its descendents from the lookup.
+                foreach (HistoryEvent e in historyEvent.GetSelfAndDescendents())
+                {
+                    _historyEventById.Remove(e.Id);
+                }
 
                 if (writeToFile)
                 {
@@ -601,16 +559,16 @@ namespace CPvC
             using (AutoPause())
             {
                 string tempname = Filepath + ".new";
-
-                IFile file = _fileSystem.OpenFile(tempname);
+                IBinaryFile newFile = _fileSystem.OpenBinaryFile(tempname);
 
                 MachineFile tempfile = null;
                 try
                 {
-                    tempfile = new MachineFile(file);
+                    tempfile = new MachineFile(newFile);
+
                     tempfile.WriteName(_name);
                     WriteEvent(tempfile, RootEvent);
-                    tempfile.WriteCurrentEvent(CurrentEvent);
+                    tempfile.WriteCurrent(CurrentEvent);
                 }
                 finally
                 {
@@ -624,8 +582,12 @@ namespace CPvC
 
                 _fileSystem.ReplaceFile(Filepath, tempname);
 
-                file = _fileSystem.OpenFile(Filepath);
-                _file = new MachineFile(file);
+                RootEvent = null;
+                CurrentEvent = null;
+                _historyEventById.Clear();
+
+                _file = new MachineFile(_fileSystem.OpenBinaryFile(Filepath));
+                _file.ReadFile(this);
 
                 Status = String.Format("Compacted machine file by {0}%", (Int64)(100 * ((double)(oldLength - newLength)) / ((double)oldLength)));
             }
@@ -645,7 +607,7 @@ namespace CPvC
 
             historyEvent.Bookmark = bookmark;
 
-            _file.WriteBookmark(historyEvent, bookmark);
+            _file.WriteBookmark(historyEvent.Id, bookmark);
         }
 
         /// <summary>
@@ -658,10 +620,12 @@ namespace CPvC
             if (RootEvent == null)
             {
                 RootEvent = historyEvent;
+                _historyEventById[historyEvent.Id] = historyEvent;
             }
             else
             {
                 CurrentEvent.AddChild(historyEvent);
+                _historyEventById[historyEvent.Id] = historyEvent;
             }
 
             if (writeToFile)
@@ -702,7 +666,10 @@ namespace CPvC
         {
             using (AutoPause())
             {
-                return new Bookmark(system, _core.GetState());
+                byte[] screen = Display.GetBitmapBytes();
+                byte[] core = _core.GetState();
+
+                return new Bookmark(system, core, screen);
             }
         }
 
@@ -711,7 +678,7 @@ namespace CPvC
         /// </summary>
         /// <param name="file">Machine file to write to.</param>
         /// <param name="historyEvent">History event to write.</param>
-        private void WriteEvent(MachineFile file, HistoryEvent historyEvent)
+        private void WriteEvent(MachineFile file2, HistoryEvent historyEvent)
         {
             // As the history tree could be very deep, keep a "stack" of history events in order to avoid recursive calls.
             List<HistoryEvent> historyEvents = new List<HistoryEvent>
@@ -726,13 +693,13 @@ namespace CPvC
 
                 if (previousEvent != currentEvent.Parent && previousEvent != null)
                 {
-                    file.WriteCurrentEvent(currentEvent.Parent);
+                    file2.WriteCurrent(currentEvent.Parent);
                 }
 
                 // Don't write out non-root checkpoint nodes which have only one child and no bookmark.
                 if (currentEvent == RootEvent || currentEvent.Children.Count != 1 || currentEvent.Type != HistoryEvent.Types.Checkpoint || currentEvent.Bookmark != null)
                 {
-                    file.WriteHistoryEvent(currentEvent);
+                    file2.WriteHistoryEvent(currentEvent);
                 }
 
                 historyEvents.RemoveAt(0);
@@ -760,7 +727,7 @@ namespace CPvC
                 }
                 else if (historyEvent.Bookmark != null)
                 {
-                    core = Core.Create(historyEvent.Bookmark.State);
+                    core = Core.Create(historyEvent.Bookmark.State.GetBytes());
 
                     // Ensure all keys are in an "up" state.
                     for (byte keycode = 0; keycode < 80; keycode++)
@@ -782,6 +749,43 @@ namespace CPvC
         private int NextEventId()
         {
             return _nextEventId++;
+        }
+        
+        // IMachineFileReader implementation.
+        public void SetName(string name)
+        {
+            _name = name;
+        }
+
+        public void DeleteEvent(int id)
+        {
+            if (_historyEventById.TryGetValue(id, out HistoryEvent historyEvent) && historyEvent != null)
+            {
+                DeleteEvent(historyEvent, false);
+            }
+        }
+
+        public void SetBookmark(int id, Bookmark bookmark)
+        {
+            if (_historyEventById.TryGetValue(id, out HistoryEvent historyEvent) && historyEvent != null)
+            {
+                historyEvent.Bookmark = bookmark;
+            }
+        }
+
+        public void SetCurrentEvent(int id)
+        {
+            if (_historyEventById.TryGetValue(id, out HistoryEvent historyEvent) && historyEvent != null)
+            {
+                CurrentEvent = historyEvent;
+            }
+        }
+
+        public void AddHistoryEvent(HistoryEvent historyEvent)
+        {
+            AddEvent(historyEvent, false);
+
+            _nextEventId = Math.Max(_nextEventId, historyEvent.Id + 1);
         }
     }
 }

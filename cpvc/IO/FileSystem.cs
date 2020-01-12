@@ -12,9 +12,9 @@ namespace CPvC
         {
         }
 
-        public IFile OpenFile(string filepath)
+        public IBinaryFile OpenBinaryFile(string filepath)
         {
-            return new File(filepath);
+            return new BinaryFile(filepath);
         }
 
         public void RenameFile(string oldFilename, string newFilename)
@@ -118,62 +118,6 @@ namespace CPvC
         public IEnumerable<string> ReadLines(string filepath)
         {
             return System.IO.File.ReadLines(filepath);
-        }
-
-        /// <summary>
-        /// Reads a text file in reverse.
-        /// </summary>
-        /// <param name="filepath">File path of text file to read.</param>
-        /// <returns>An enumerator returning the lines of the text file in reverse.</returns>
-        public IEnumerable<string> ReadLinesReverse(string filepath)
-        {
-            using (FileStream fs = System.IO.File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                fs.Seek(0, SeekOrigin.End);
-
-                byte[] buffer = new byte[1024];
-                bool firstChar = true;
-
-                StringBuilder sb = new StringBuilder();
-                while (fs.Position > 0)
-                {
-                    int bytesToRead = (int)Math.Min(fs.Position, buffer.Length);
-
-                    fs.Position -= bytesToRead;
-                    fs.Read(buffer, 0, bytesToRead);
-                    fs.Position -= bytesToRead;
-
-                    for (int i = bytesToRead - 1; i >= 0; i--)
-                    {
-                        char c = (char)buffer[i];
-                        bool isNewlineChar = (c == '\n');
-
-                        // Don't include newline characters in returned strings, and don't return an empty string
-                        // as the first line if the final character in the file is a newline.
-                        if (!isNewlineChar)
-                        {
-                            firstChar = false;
-
-                            if ((sb.Length > 0) || (c != '\r'))
-                            {
-                                sb.Append(c);
-                            }
-                        }
-                        else if (!firstChar)
-                        {
-                            yield return Helpers.ReverseString(sb.ToString());
-
-                            sb.Clear();
-                        }
-                    }
-                }
-
-                // Ensure that an empty file doesn't return any strings.
-                if (!firstChar)
-                {
-                    yield return Helpers.ReverseString(sb.ToString());
-                }
-            }
         }
     }
 }

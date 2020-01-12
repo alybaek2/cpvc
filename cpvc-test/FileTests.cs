@@ -8,11 +8,9 @@ namespace CPvC.Test
         {
             // Since File will open a file exclusively, if the file can be successfully opened
             // now, it means File.Dispose was correctly invoked and closed the file.
-            string[] lines = null;
-            Assert.DoesNotThrow(() => lines = System.IO.File.ReadAllLines(filepath));
-            Assert.AreEqual(2, lines.Length);
-            Assert.AreEqual("abc", lines[0]);
-            Assert.AreEqual("123", lines[1]);
+            byte[] contents = null;
+            Assert.DoesNotThrow(() => contents = System.IO.File.ReadAllBytes(filepath));
+            Assert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }, contents);
 
             // Ensure that the Close/Dispose call properly closes and releases the file, by ensuring
             // that deleting the file completes successfully and doesn't throw an exception.
@@ -34,11 +32,10 @@ namespace CPvC.Test
             // Setup
             string filepath = TestHelpers.GetTempFilepath("test.txt");
             System.IO.File.Delete(filepath);
-            using (File file = new File(filepath))
+            using (BinaryFile file = new BinaryFile(filepath))
             {
                 // Act
-                file.WriteLine("abc");
-                file.WriteLine("123");
+                file.Write(new byte[] { 0x01, 0x02, 0x03 });
 
                 if (close)
                 {
@@ -59,11 +56,10 @@ namespace CPvC.Test
             // Setup
             string filepath = TestHelpers.GetTempFilepath("test.txt");
             System.IO.File.Delete(filepath);
-            File file = new File(filepath);
+            BinaryFile file = new BinaryFile(filepath);
 
             // Act
-            file.WriteLine("abc");
-            file.WriteLine("123");
+            file.Write(new byte[] { 0x01, 0x02, 0x03 });
             file.Close();
 
             // Verify

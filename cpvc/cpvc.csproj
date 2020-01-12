@@ -112,9 +112,13 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Core\CoreActionBase.cs" />
-    <Compile Include="IO\File.cs" />
-    <Compile Include="IO\IFile.cs" />
+    <Compile Include="IO\BinaryFile.cs" />
+    <Compile Include="IO\IBinaryFile.cs" />
     <Compile Include="ISettings.cs" />
+    <Compile Include="Machine\IBlob.cs" />
+    <Compile Include="Machine\IMachineFileReader.cs" />
+    <Compile Include="Machine\MachineFile.cs" />
+    <Compile Include="Machine\MemoryBlob.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -129,7 +133,6 @@
     <Compile Include="UI\FileTypes.cs" />
     <Compile Include="IO\FileSystem.cs" />
     <Compile Include="IO\IFileSystem.cs" />
-    <Compile Include="Machine\MachineFile.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="UI\Forms\RenameWindow.xaml.cs">
       <DependentUpon>RenameWindow.xaml</DependentUpon>

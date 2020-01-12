@@ -141,16 +141,21 @@ namespace CPvC
                 // If we already have a bitmap, copy its contents over to the new one.
                 if (_bitmap != null)
                 {
-                    byte[] pixels = new byte[_bitmap.PixelWidth * _bitmap.PixelHeight];
-                    Bitmap.CopyPixels(pixels, Pitch, 0);
-
-                    value.WritePixels(_drawRect, pixels, Pitch, 0);
+                    value.WritePixels(_drawRect, GetBitmapBytes(), Pitch, 0);
                 }
 
                 _bitmap = value;
 
                 OnPropertyChanged("Bitmap");
             }
+        }
+
+        public byte[] GetBitmapBytes()
+        {
+            byte[] pixels = new byte[_bitmap.PixelWidth * _bitmap.PixelHeight];
+            _bitmap.CopyPixels(pixels, Pitch, 0);
+
+            return pixels;
         }
 
         /// <summary>
@@ -187,22 +192,15 @@ namespace CPvC
         /// <param name="bookmark">Bookmark to populate the display from.</param>
         public void GetFromBookmark(Bookmark bookmark)
         {
-            if (bookmark == null)
+            if (bookmark?.Screen == null)
             {
                 // Assume a blank screen if no bookmark provided.
                 Buffer.Clear(CPCColour.Black._hwColourNumber);
             }
             else
             {
-                // Otherwise, use the bookmark to create a core, and run it for 2 VSync's in order to populate the screen buffer.
-                using (Core core = Core.Create(bookmark.State))
-                {
-                    core.SetScreenBuffer(Buffer);
-                    core.RunForVSync(2);
-                }
+                Bitmap.WritePixels(_drawRect, bookmark.Screen.GetBytes(), Pitch, 0);
             }
-
-            CopyFromBuffer();
         }
 
         public void Dispose()
