@@ -36,20 +36,170 @@ namespace CPvC
             _binaryFile.Close();
         }
 
-        public class MachineFileBlob : IBlob
-        {
-            private MachineFile _file;
-            private long _pos;
+        // Need a way to read a blob and know what kind of blob it is!
+        //
+        // 0x00: A null blob
+        // 0x01: A physical blob... i.e. length followed by actual bytes.
+        // 0x02: A diff blob... i.e. the position of the old blob followed by the diff blob.
 
-            public MachineFileBlob(MachineFile file, long pos)
+        public MachineFileBlob2 WriteBlob(byte[] bytes)
+        {
+            if (bytes == null)
+            {
+                Write((byte)0x00);
+
+                return null;
+            }
+            else
+            {
+                int pos = (int) _binaryFile.Position;
+
+                Write((byte)0x01);
+
+                Write(bytes);
+
+                return new MachineFileBlob2(this, pos);
+            }
+        }
+
+        public class MachineFileBlob2 : IBlob
+        {
+            // 0x00 - null blob
+            // 0x01 - bytes blob (offset, length)
+            // 0x02 - diff blob (old offset, diff length, diff bytes)
+            //private byte _type;
+
+            private MachineFile _file;
+
+            public int _pos;
+
+            public MachineFileBlob2(MachineFile file, int pos)
             {
                 _file = file;
                 _pos = pos;
             }
 
+            public int Length()
+            {
+                lock (_file._binaryFile)
+                {
+                    long currentPos = _file._binaryFile.Position;
+
+                    _file._binaryFile.Position = _pos;
+
+                    byte type = _file.ReadByte();
+
+                    switch (type)
+                    {
+                        case 0x00:
+                            return 1;
+                        case 0x01:
+                            {
+                                int bytesLen = _file.ReadInt32();
+                                int len = 1 + 4 + bytesLen;
+
+                                _file._binaryFile.Position = currentPos;
+
+                                return len;
+                            }
+                        case 0x02:
+                            {
+                                _file._binaryFile.Position += 4;
+
+                                int diffLen = _file.ReadInt32();
+
+                                int len = 1 + 4 + 4 + diffLen;
+
+                                _file._binaryFile.Position = currentPos;
+
+                                return len;
+                            }
+                        default:
+                            throw new Exception("Unknwon type!!!!!!");
+                    }
+                }
+            }
+
+
+            static public MachineFileBlob2 WriteBytes(MachineFile file, byte[] bytes)
+            {
+                lock (file._binaryFile)
+                {
+                    long currentPos = file._binaryFile.Position;
+
+                    if (bytes == null)
+                    {
+                        file.Write((byte)0x00);
+                    }
+                    else
+                    {
+                        file.Write((byte)0x01);
+                        file.Write(bytes.Length);
+                        file._binaryFile.Write(bytes);
+                    }
+
+                    return new MachineFileBlob2(file, (int)currentPos);
+                }
+            }
+
+            static public MachineFileBlob2 WriteDiffBytes(MachineFile file, MachineFileBlob2 oldBlog, byte[] bytes)
+            {
+                lock (file._binaryFile)
+                {
+                    long currentPos = file._binaryFile.Position;
+
+                    file.Write((byte)0x01);
+                    file.Write(bytes.Length);
+                    file._binaryFile.Write(bytes);
+
+                    return new MachineFileBlob2(file, (int)currentPos);
+                }
+            }
+
             public byte[] GetBytes()
             {
-                return _file.ReadByteArray(_pos);
+                lock (_file._binaryFile)
+                {
+                    long currentPos = _file._binaryFile.Position;
+
+                    _file._binaryFile.Position = _pos;
+
+
+                    byte[] bytes = null;
+
+                    byte type = _file.ReadByte();
+                    switch (type)
+                    {
+                        case 0x00:
+                            bytes = null;
+                            break;
+                        case 0x01:
+                            {
+                                int len = _file.ReadInt32();
+                                bytes = _file.ReadBytes(len);
+                            }
+                            break;
+                        case 0x02:
+                            {
+                                int oldPos = _file.ReadInt32();
+
+                                MachineFileBlob2 blob2 = new MachineFileBlob2(_file, oldPos);
+                                byte[] oldBytes = blob2.GetBytes();
+
+                                int len = _file.ReadInt32();
+                                byte[] diffBytes = _file.ReadBytes(len);
+
+                                bytes = Helpers.BinaryUndiff(oldBytes, diffBytes);
+                            }
+                            break;
+                        default:
+                            throw new Exception("Unknown type!!!");
+                    }
+
+                    _file._binaryFile.Position = currentPos;
+
+                    return bytes;
+                }
             }
         }
 
@@ -127,8 +277,8 @@ namespace CPvC
                 if (hasBookmark)
                 {
                     bool system = ReadBool();
-                    IBlob stateBlob = ReadBlob();
-                    IBlob screenBlob = ReadBlob();
+                    MachineFileBlob2 stateBlob = ReadBlob2();
+                    MachineFileBlob2 screenBlob = ReadBlob2();
 
                     bookmark = new Bookmark(system, stateBlob, screenBlob);
                 }
@@ -145,7 +295,9 @@ namespace CPvC
             }
             else
             {
-                Write(_idBookmark, id, true, bookmark.System, bookmark.State, bookmark.Screen);
+                Write(_idBookmark, id, true, bookmark.System);
+                MachineFileBlob2.WriteBytes(this, bookmark.State.GetBytes());
+                MachineFileBlob2.WriteBytes(this, bookmark.Screen.GetBytes());
             }
         }
 
@@ -273,7 +425,7 @@ namespace CPvC
                 int id = ReadInt32();
                 UInt64 ticks = ReadUInt64();
                 byte drive = ReadByte();
-                IBlob mediaBlob = ReadBlob();
+                MachineFileBlob2 mediaBlob = ReadBlob2();
 
                 CoreAction action = CoreAction.LoadDisc(ticks, drive, mediaBlob);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
@@ -286,7 +438,8 @@ namespace CPvC
 
         private void WriteLoadDisc(int id, UInt64 ticks, byte drive, byte[] media)
         {
-            Write(_idLoadDisc, id, ticks, drive, media);
+            Write(_idLoadDisc, id, ticks, drive);
+            MachineFileBlob2.WriteBytes(this, media);
         }
 
         private void ReadLoadTape(IMachineFileReader reader)
@@ -295,7 +448,7 @@ namespace CPvC
             {
                 int id = ReadInt32();
                 UInt64 ticks = ReadUInt64();
-                IBlob mediaBlob = ReadBlob();
+                MachineFileBlob2 mediaBlob = ReadBlob2();
 
                 CoreAction action = CoreAction.LoadTape(ticks, mediaBlob);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
@@ -308,7 +461,17 @@ namespace CPvC
 
         private void WriteLoadTape(int id, UInt64 ticks, byte[] media)
         {
-            Write(_idLoadTape, id, ticks, media);
+            Write(_idLoadTape, id, ticks);
+            MachineFileBlob2.WriteBytes(this, media);
+        }
+
+        private MachineFileBlob2 ReadBlob2()
+        {
+            MachineFileBlob2 blob = new MachineFileBlob2(this, (int)_binaryFile.Position);
+
+            _binaryFile.Position += blob.Length();
+
+            return blob;
         }
 
         private void ReadCheckpoint(IMachineFileReader reader)
@@ -324,8 +487,15 @@ namespace CPvC
                 if (hasBookmark)
                 {
                     bool system = ReadBool();
-                    IBlob stateBlob = ReadBlob();
-                    IBlob screenBlob = ReadBlob();
+
+                    MachineFileBlob2 stateBlob = ReadBlob2();
+                    MachineFileBlob2 compressedScreenBlob = ReadBlob2();
+
+
+                    byte[] compressedScreen = compressedScreenBlob.GetBytes();
+                    byte[] screen = (compressedScreen != null) ? Helpers.Uncompress(compressedScreen) : null;
+                    IBlob screenBlob = new MemoryBlob(screen);
+
 
                     bookmark = new Bookmark(system, stateBlob, screenBlob);
                 }
@@ -338,11 +508,21 @@ namespace CPvC
                 }
                 else
                 {
-                    Diagnostics.Trace("{0} {1}: Checkpoint (with {2} bookmark; {3} byte state binary, {4} byte screen binary)", id, ticks, bookmark.System?"system":"user", bookmark.State.GetBytes().Length, bookmark.Screen.GetBytes().Length);
+                    Diagnostics.Trace("{0} {1}: Checkpoint (with {2} bookmark)", id, ticks, bookmark.System ? "system" : "user");
                 }
 
                 reader.AddHistoryEvent(historyEvent);
             }
+        }
+
+        private HistoryEvent GetParentBookmarkEvent(HistoryEvent historyEvent)
+        {
+            while (historyEvent != null && historyEvent?.Bookmark == null)
+            {
+                historyEvent = historyEvent.Parent;
+            }
+
+            return historyEvent;
         }
 
         private void WriteCheckpoint(HistoryEvent historyEvent)
@@ -354,8 +534,36 @@ namespace CPvC
             else
             {
                 Write(_idCheckpoint, historyEvent.Id, historyEvent.Ticks, (UInt64)Helpers.DateTimeToNumber(historyEvent.CreateDate), true, historyEvent.Bookmark.System);
-                Write(historyEvent.Bookmark.State.GetBytes());
-                Write(historyEvent.Bookmark.Screen.GetBytes());
+
+                byte[] bookmark = historyEvent.Bookmark.State.GetBytes();
+
+                HistoryEvent parentEvent = GetParentBookmarkEvent(historyEvent?.Parent);
+                IBlob stateBlob = parentEvent?.Bookmark?.State;
+                MachineFileBlob2 mfb = stateBlob as MachineFileBlob2;
+
+                if (stateBlob == null || mfb == null)
+                {
+                    MachineFileBlob2 blob = MachineFileBlob2.WriteBytes(this, bookmark);
+                    historyEvent.Bookmark.State = blob;
+                }
+                else
+                {
+                    MachineFileBlob2 newBlob = MachineFileBlob2.WriteDiffBytes(this, mfb, bookmark);
+                    historyEvent.Bookmark.State = newBlob;
+                }
+
+
+                byte[] screen = historyEvent.Bookmark.Screen.GetBytes();
+                if (screen == null)
+                {
+                    MachineFileBlob2.WriteBytes(this, null);
+                }
+                else
+                {
+                    byte[] compressedScreen = Helpers.Compress(screen);
+
+                    MachineFileBlob2.WriteBytes(this, compressedScreen);
+                }
             }
         }
 
@@ -438,7 +646,7 @@ namespace CPvC
             }
         }
 
-        private MachineFileBlob Write(byte[] b)
+        private MachineFileBlob2 Write(byte[] b)
         {
             lock (_binaryFile)
             {
@@ -450,7 +658,7 @@ namespace CPvC
                 }
                 else
                 {
-                    MachineFileBlob blob = new MachineFileBlob(this, _binaryFile.Position);
+                    MachineFileBlob2 blob = new MachineFileBlob2(this, (int) (_binaryFile.Position - 1));
 
                     Write(b.Length);
                     _binaryFile.Write(b);
@@ -525,7 +733,7 @@ namespace CPvC
 
             _binaryFile.Position += len;
 
-            return new MachineFileBlob(this, pos);
+            return new MachineFileBlob2(this, (int) (pos - 1));
         }
 
         private byte[] ReadBytes(int count)
@@ -543,7 +751,7 @@ namespace CPvC
             }
         }
 
-        public byte[] ReadEntireFile()
+        public byte[] ReadEntireFile(bool upToCurrentPos)
         {
             lock (_binaryFile)
             {
@@ -554,7 +762,14 @@ namespace CPvC
                 {
                     _binaryFile.Position = 0;
 
-                    bytes = ReadBytes((int)_binaryFile.Length);
+                    if (upToCurrentPos)
+                    {
+                        bytes = ReadBytes((int)currentPos);
+                    }
+                    else
+                    {
+                        bytes = ReadBytes((int)_binaryFile.Length);
+                    }
                 }
                 finally
                 {

@@ -16,7 +16,7 @@
         /// <summary>
         /// The state of the CPvC instance as created by <c>Core.GetState</c>.
         /// </summary>
-        public IBlob State { get; }
+        public IBlob State { get; set; }
 
         public IBlob Screen { get; }
 

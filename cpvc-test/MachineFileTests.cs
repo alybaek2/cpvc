@@ -14,16 +14,6 @@ namespace CPvC.Test
         private MockBinaryFile _mockBinaryWriter;
         private MachineFile _file;
 
-        private Bookmark BookmarkMatch(bool system, byte[] state, byte[] screen)
-        {
-            return It.Is<Bookmark>(
-                b => b != null &&
-                b.System == system &&
-                b.State.GetBytes().SequenceEqual(new byte[] { 0x01, 0x02 }) &&
-                b.Screen.GetBytes().SequenceEqual(new byte[] { 0x03, 0x04 })
-                );
-        }
-
         [SetUp]
         public void Setup()
         {
@@ -98,15 +88,15 @@ namespace CPvC.Test
         public void WriteBookmark()
         {
             // Setup
-            Bookmark bookmark = new Bookmark(false, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 });
+            Bookmark bookmark = new Bookmark(false, new byte[] { 0x01, 0x02 }, null);
             byte[] expected = new byte[]
             {
                 0x08,
                       0x19, 0x00, 0x00, 0x00,
                       0x01,
                       0x00,
-                      0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
-                      0x02, 0x00, 0x00, 0x00, 0x03, 0x04
+                      0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
+                      0x00
             };
 
             // Act
@@ -162,7 +152,7 @@ namespace CPvC.Test
         {
             // Setup
             DateTime timestamp = Helpers.NumberToDateTime(0);
-            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, new Bookmark(system, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 }));
+            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, new Bookmark(system, new byte[] { 0x01, 0x02 }, null));
             byte[] expected = new byte[]
             {
                 0x05,
@@ -171,8 +161,8 @@ namespace CPvC.Test
                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                       0x01,
                       (byte)(system ? 0x01 : 0x00),
-                      0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
-                      0x02, 0x00, 0x00, 0x00, 0x03, 0x04
+                      0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
+                      0x00
             };
 
             // Act
@@ -234,7 +224,7 @@ namespace CPvC.Test
                       0x19, 0x00, 0x00, 0x00,
                       0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                       drive,
-                      0x02, 0x00, 0x00, 0x00, 0x01, 0x02
+                      0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02
             };
 
             // Act
@@ -254,7 +244,7 @@ namespace CPvC.Test
                 0x04,
                       0x19, 0x00, 0x00, 0x00,
                       0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      0x02, 0x00, 0x00, 0x00, 0x01, 0x02
+                      0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02
             };
 
             // Act
@@ -337,7 +327,7 @@ namespace CPvC.Test
                       0x19, 0x00, 0x00, 0x00,
                       0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                       drive,
-                      0x02, 0x00, 0x00, 0x00, 0x01, 0x02
+                      0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02
             });
 
             MachineFile file = new MachineFile(binaryFile.Object);
@@ -358,7 +348,7 @@ namespace CPvC.Test
                 0x04,
                       0x19, 0x00, 0x00, 0x00,
                       0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      0x02, 0x00, 0x00, 0x00, 0x01, 0x02
+                      0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02
             });
 
             MachineFile file = new MachineFile(binaryFile.Object);
@@ -383,8 +373,8 @@ namespace CPvC.Test
                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                       0x01,
                       (byte)(system ? 0x01 : 0x00),
-                      0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
-                      0x02, 0x00, 0x00, 0x00, 0x03, 0x04
+                      0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
+                      0x00
             });
 
             MachineFile file = new MachineFile(binaryFile.Object);
@@ -393,7 +383,7 @@ namespace CPvC.Test
             file.ReadFile(mockFileReader.Object);
 
             // Verify
-            mockFileReader.Verify(reader => reader.AddHistoryEvent(CheckpointWithBookmarkEvent(0x19, 100, system, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 })));
+            mockFileReader.Verify(reader => reader.AddHistoryEvent(CheckpointWithBookmarkEvent(0x19, 100, system, 23)));
         }
 
         [Test]
@@ -430,8 +420,8 @@ namespace CPvC.Test
                       0x19, 0x00, 0x00, 0x00,
                       0x01,
                       (byte) (system ? 0x01 : 0x00),
-                      0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
-                      0x02, 0x00, 0x00, 0x00, 0x03, 0x04
+                      0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
+                      0x00
             });
 
             MachineFile file = new MachineFile(binaryFile.Object);
@@ -440,7 +430,7 @@ namespace CPvC.Test
             file.ReadFile(mockFileReader.Object);
 
             // Verify
-            mockFileReader.Verify(reader => reader.SetBookmark(0x19, BookmarkMatch(system, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 })));
+            mockFileReader.Verify(reader => reader.SetBookmark(0x19, BookmarkMatch(system, 7, 14)));
         }
 
         [Test]

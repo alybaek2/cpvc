@@ -14,7 +14,7 @@ namespace CPvC.Test
         [SetUp]
         public void Setup()
         {
-            Mock<IBinaryFile> mockBinaryFile = new Mock<IBinaryFile>();
+            MockBinaryFile mockBinaryFile = new MockBinaryFile();
             _mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenBinaryFile(AnyString())).Returns(mockBinaryFile.Object);
             _mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(AnyString()));

@@ -115,12 +115,21 @@ namespace CPvC.Test
                                             h.Id == id);
         }
 
+        static public Bookmark BookmarkMatch(bool system, int statePos, int screenPos)
+        {
+            return It.Is<Bookmark>(
+                b => b != null &&
+                b.System == system &&
+                ((MachineFile.MachineFileBlob2)(b.State))._pos == statePos &&
+                ((MachineFile.MachineFileBlob2)(b.Screen))._pos == screenPos);
+        }
+
         static public HistoryEvent CheckpointEvent(int id)
         {
             return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id);
         }
 
-        static public HistoryEvent CheckpointWithBookmarkEvent(int id, UInt64 ticks, bool system, byte[] state, byte[] screen)
+        static public HistoryEvent CheckpointWithBookmarkEvent(int id, UInt64 ticks, bool system, int stateBlobPos)
         {
             return It.Is<HistoryEvent>(h => h != null &&
                                             h.Type == HistoryEvent.Types.Checkpoint &&
@@ -128,8 +137,8 @@ namespace CPvC.Test
                                             h.Ticks == ticks &&
                                             h.Bookmark != null &&
                                             h.Bookmark.System == system &&
-                                            h.Bookmark.State.GetBytes().SequenceEqual(state) &&
-                                            h.Bookmark.Screen.GetBytes().SequenceEqual(screen));
+                                            ((MachineFile.MachineFileBlob2) (h.Bookmark.State))._pos == stateBlobPos &&
+                                            ((MemoryBlob)(h.Bookmark.Screen)).GetBytes() == null);
         }
 
         static public HistoryEvent CheckpointWithoutBookmarkEvent(int id, UInt64 ticks)

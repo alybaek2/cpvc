@@ -29,8 +29,14 @@ namespace CPvC.Test
         {
             _readPos = 0;
             Content = new List<byte>();
-            Setup(s => s.WriteByte(It.IsAny<byte>())).Callback<byte>(b => Content.Add(b));
-            Setup(s => s.Write(It.IsAny<byte[]>())).Callback<byte[]>(b => Content.AddRange(b));
+            Setup(s => s.WriteByte(It.IsAny<byte>())).Callback<byte>(b => {
+                Content.Add(b);
+                _readPos = Content.Count;
+            });
+            Setup(s => s.Write(It.IsAny<byte[]>())).Callback<byte[]>(b => {
+                Content.AddRange(b);
+                _readPos = Content.Count;
+            });
             Setup(s => s.ReadByte()).Returns(() => { return Content[(int)_readPos++]; });
             Setup(s => s.ReadBytes(It.IsAny<byte[]>(), It.IsAny<int>())).Returns((byte[] bytes, int count) => {
                 List<byte> b = Content.GetRange((int)_readPos, count);
