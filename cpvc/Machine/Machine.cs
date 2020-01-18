@@ -194,9 +194,7 @@ namespace CPvC
                     bool ticksDifferent = (Core != null && CurrentEvent.Ticks != Core.Ticks);
                     if (ticksDifferent || (CurrentEvent.Bookmark == null && CurrentEvent != RootEvent) || (CurrentEvent.Bookmark != null && !CurrentEvent.Bookmark.System))
                     {
-                        Bookmark bookmark = GetBookmark(true);
-                        HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark);
-                        AddEvent(historyEvent, true);
+                        AddCheckpointWithBookmarkEvent(true);
                     }
                 }
                 finally
@@ -401,8 +399,7 @@ namespace CPvC
         {
             using (AutoPause())
             {
-                Bookmark bookmark = GetBookmark(system);
-                AddEvent(HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark), true);
+                HistoryEvent historyEvent = AddCheckpointWithBookmarkEvent(system);
 
                 Diagnostics.Trace("Created bookmark at tick {0}", _core.Ticks);
                 Status = String.Format("Bookmark added at {0}", Helpers.GetTimeSpanFromTicks(Core.Ticks).ToString(@"hh\:mm\:ss"));
@@ -608,6 +605,15 @@ namespace CPvC
             historyEvent.Bookmark = bookmark;
 
             _file.WriteBookmark(historyEvent.Id, bookmark);
+        }
+
+        private HistoryEvent AddCheckpointWithBookmarkEvent(bool system)
+        {
+            Bookmark bookmark = GetBookmark(system);
+            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark);
+            AddEvent(historyEvent, true);
+
+            return historyEvent;
         }
 
         /// <summary>
