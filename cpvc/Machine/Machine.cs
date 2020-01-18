@@ -110,8 +110,8 @@ namespace CPvC
         {
             try
             {
-                IBinaryFile file2 = _fileSystem.OpenBinaryFile(Filepath);
-                _file = new MachineFile(file2);
+                IByteStream file = _fileSystem.OpenBinaryFile(Filepath);
+                _file = new MachineFile(file);
 
                 _file.ReadFile(this);
 
@@ -159,8 +159,8 @@ namespace CPvC
                 fileSystem.DeleteFile(machineFilepath);
                 machine = new Machine(null, machineFilepath, fileSystem);
 
-                IBinaryFile file2 = fileSystem.OpenBinaryFile(machine.Filepath);
-                machine._file = new MachineFile(file2);
+                IByteStream file = fileSystem.OpenBinaryFile(machine.Filepath);
+                machine._file = new MachineFile(file);
                 machine.Name = name;
 
                 machine.RootEvent = HistoryEvent.CreateCheckpoint(machine.NextEventId(), 0, DateTime.UtcNow, null);
@@ -556,7 +556,7 @@ namespace CPvC
             using (AutoPause())
             {
                 string tempname = Filepath + ".new";
-                IBinaryFile newFile = _fileSystem.OpenBinaryFile(tempname);
+                IByteStream newFile = _fileSystem.OpenBinaryFile(tempname);
 
                 MachineFile tempfile = null;
                 try
@@ -684,7 +684,7 @@ namespace CPvC
         /// </summary>
         /// <param name="file">Machine file to write to.</param>
         /// <param name="historyEvent">History event to write.</param>
-        private void WriteEvent(MachineFile file2, HistoryEvent historyEvent)
+        private void WriteEvent(MachineFile file, HistoryEvent historyEvent)
         {
             // As the history tree could be very deep, keep a "stack" of history events in order to avoid recursive calls.
             List<HistoryEvent> historyEvents = new List<HistoryEvent>
@@ -699,13 +699,13 @@ namespace CPvC
 
                 if (previousEvent != currentEvent.Parent && previousEvent != null)
                 {
-                    file2.WriteCurrent(currentEvent.Parent);
+                    file.WriteCurrent(currentEvent.Parent);
                 }
 
                 // Don't write out non-root checkpoint nodes which have only one child and no bookmark.
                 if (currentEvent == RootEvent || currentEvent.Children.Count != 1 || currentEvent.Type != HistoryEvent.Types.Checkpoint || currentEvent.Bookmark != null)
                 {
-                    file2.WriteHistoryEvent(currentEvent);
+                    file.WriteHistoryEvent(currentEvent);
                 }
 
                 historyEvents.RemoveAt(0);

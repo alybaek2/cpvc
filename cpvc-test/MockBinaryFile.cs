@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CPvC.Test
 {
-    public class MockBinaryFile : Mock<IBinaryFile>
+    public class MockBinaryFile : Mock<IFileByteStream>
     {
         private long _readPos;
 

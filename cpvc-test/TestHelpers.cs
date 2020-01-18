@@ -120,8 +120,8 @@ namespace CPvC.Test
             return It.Is<Bookmark>(
                 b => b != null &&
                 b.System == system &&
-                ((MachineFile.MachineFileBlob)(b.State))._pos == statePos &&
-                ((MachineFile.MachineFileBlob)(b.Screen))._pos == screenPos);
+                ((IStreamBlob)(b.State)).Position == statePos &&
+                ((IStreamBlob)(b.Screen)).Position == screenPos);
         }
 
         static public HistoryEvent CheckpointEvent(int id)
@@ -137,7 +137,7 @@ namespace CPvC.Test
                                             h.Ticks == ticks &&
                                             h.Bookmark != null &&
                                             h.Bookmark.System == system &&
-                                            ((MachineFile.MachineFileBlob) (h.Bookmark.State))._pos == stateBlobPos &&
+                                            ((IStreamBlob) (h.Bookmark.State)).Position == stateBlobPos &&
                                             ((MemoryBlob)(h.Bookmark.Screen)).GetBytes() == null);
         }
 

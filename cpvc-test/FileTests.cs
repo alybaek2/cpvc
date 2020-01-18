@@ -31,8 +31,11 @@ namespace CPvC.Test
         {
             // Setup
             string filepath = TestHelpers.GetTempFilepath("test.txt");
+            
             System.IO.File.Delete(filepath);
-            using (BinaryFile file = new BinaryFile(filepath))
+
+            FileSystem fs = new FileSystem();
+            using (IFileByteStream file = fs.OpenBinaryFile(filepath))
             {
                 // Act
                 file.Write(new byte[] { 0x01, 0x02, 0x03 });
@@ -56,7 +59,9 @@ namespace CPvC.Test
             // Setup
             string filepath = TestHelpers.GetTempFilepath("test.txt");
             System.IO.File.Delete(filepath);
-            BinaryFile file = new BinaryFile(filepath);
+
+            FileSystem fileSystem = new FileSystem();
+            IFileByteStream file = fileSystem.OpenBinaryFile(filepath);
 
             // Act
             file.Write(new byte[] { 0x01, 0x02, 0x03 });

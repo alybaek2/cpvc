@@ -14,7 +14,7 @@ namespace CPvC.Test
             string filepath = TestHelpers.GetTempFilepath("opentest.txt");
             System.IO.File.Delete(filepath);
             FileSystem fs = new FileSystem();
-            IBinaryFile file = fs.OpenBinaryFile(filepath);
+            IByteStream file = fs.OpenBinaryFile(filepath);
 
             // Act
             file.WriteByte(0xfe);
