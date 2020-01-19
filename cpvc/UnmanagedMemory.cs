@@ -24,18 +24,16 @@ namespace CPvC
             Clear(initialValue);
         }
 
+        [DllImport("kernel32.dll", EntryPoint = "RtlFillMemory", SetLastError = false)]
+        static extern void FillMemory(IntPtr destination, uint length, byte fill);
+
         /// <summary>
         /// Sets all bytes in the buffer to a given value.
         /// </summary>
         /// <param name="b">The value to set all bytes in the buffer to.</param>
         public void Clear(byte b)
         {
-            // This isn't the most efficient way of doing this, but there's not currently
-            // a pressing need for good performance here as this is called sparingly.
-            for (int i = 0; i < _size; i++)
-            {
-                Marshal.WriteByte(_memory, i, b);
-            }
+            FillMemory(_memory, (uint)_size, b);
         }
 
         public byte[] Clone()

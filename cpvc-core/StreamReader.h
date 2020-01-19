@@ -34,6 +34,12 @@ public:
         _buffer.push_back(b);
     }
 
+    void SetBuffer(byte* pData, size_t size)
+    {
+        _buffer.resize(size);
+        memcpy(_buffer.data(), pData, size);
+    }
+
     StreamReader& operator>>(bool& data)
     {
         return Read<bool>(data);

@@ -137,10 +137,8 @@ namespace CPvC {
         {
             StreamReader s;
 
-            for (int i = 0; i < state->Length; i++)
-            {
-                s.Push(state[i]);
-            }
+            pin_ptr<byte> ppState = &state[0];
+            s.SetBuffer(ppState, state->Length);
 
             s >> (*_pCore);
         }
