@@ -106,6 +106,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AudioTests.cs" />
+    <Compile Include="BinaryFileTests.cs" />
     <Compile Include="BookmarksViewModelTests.cs" />
     <Compile Include="ConvertersTests.cs" />
     <Compile Include="CoreTests.cs" />

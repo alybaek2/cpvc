@@ -24,6 +24,6 @@ namespace CPvC
 
         IStreamBlob WriteBytesBlob(byte[] bytes);
         IStreamBlob WriteDiffBlob(IStreamBlob oldBlob, byte[] newBytes);
-        IBlob ReadBlob();
+        IStreamBlob ReadBlob();
     }
 }

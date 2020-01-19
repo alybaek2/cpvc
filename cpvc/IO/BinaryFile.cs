@@ -110,7 +110,7 @@ namespace CPvC
             return ReadFixedLengthByteArray(len);
         }
 
-        public void SkipVariableLengthByteArray()
+        private void SkipVariableLengthByteArray()
         {
             int len = ReadInt32();
             _byteStream.Position += len;
@@ -161,7 +161,7 @@ namespace CPvC
             return new AutoPos(this, pos);
         }
 
-        public class FileBlob2 : IStreamBlob
+        public class Blob : IStreamBlob
         {
             // 0x00 - null blob
             // 0x01 - bytes blob (offset, length)
@@ -169,9 +169,9 @@ namespace CPvC
 
             private BinaryFile _file;
 
-            public int _pos;
+            private int _pos;
 
-            public FileBlob2(BinaryFile file, int pos)
+            public Blob(BinaryFile file, int pos)
             {
                 _file = file;
                 _pos = pos;
@@ -179,7 +179,7 @@ namespace CPvC
 
             public byte[] GetBytes()
             {
-                return _file.ReadBlobBytes(_pos);
+                return _file.ReadBlobBytes(_pos, false);
             }
 
             public int Position
@@ -208,7 +208,7 @@ namespace CPvC
                     WriteByte((byte)0x01);
                     WriteVariableLengthByteArray(bytes);
 
-                    return new FileBlob2(this, pos);
+                    return new Blob(this, pos);
                 }
             }
         }
@@ -228,20 +228,20 @@ namespace CPvC
 
                 WriteVariableLengthByteArray(diffBytes);
 
-                return new FileBlob2(this, (int)currentPos);
+                return new Blob(this, (int)currentPos);
             }
         }
 
-        public IBlob ReadBlob()
+        public IStreamBlob ReadBlob()
         {
-            FileBlob2 blob = new FileBlob2(this, (int)_byteStream.Position);
+            Blob blob = new Blob(this, (int)_byteStream.Position);
 
-            SkipBlob();
+            ReadBlobBytes(true);
 
             return blob;
         }
 
-        private void SkipBlob()
+        private byte[] ReadBlobBytes(bool skipOnly)
         {
             lock (_byteStream)
             {
@@ -249,46 +249,46 @@ namespace CPvC
                 switch (type)
                 {
                     case 0x00:
-                        break;
+                        return null;
                     case 0x01:
-                        SkipVariableLengthByteArray();
-                        break;
+                        if (skipOnly)
+                        {
+                            SkipVariableLengthByteArray();
+                            return null;
+                        }
+                        else
+                        {
+                            return ReadVariableLengthByteArray();
+                        }
                     case 0x02:
-                        ReadInt32();
-                        SkipVariableLengthByteArray();
-                        break;
+                        {
+                            int oldPos = ReadInt32();
+
+                            if (skipOnly)
+                            {
+                                SkipVariableLengthByteArray();
+
+                                return null;
+                            }
+                            else
+                            {
+                                byte[] diffBytes = ReadVariableLengthByteArray();
+                                byte[] oldBytes = ReadBlobBytes(oldPos, false);
+
+                                return Helpers.BinaryUndiff(oldBytes, diffBytes);
+                            }
+                        }
                     default:
                         throw new Exception("Unknown type!!!");
                 }
             }
         }
 
-        private byte[] ReadBlobBytes(int pos)
+        private byte[] ReadBlobBytes(int pos, bool skipOnly)
         {
-            lock (_byteStream)
+            using (PushPos(pos))
             {
-                using (PushPos(pos))
-                {
-                    byte type = ReadByte();
-                    switch (type)
-                    {
-                        case 0x00:
-                            return null;
-                        case 0x01:
-                            return ReadVariableLengthByteArray();
-                        case 0x02:
-                            {
-                                int oldPos = ReadInt32();
-
-                                byte[] oldBytes = ReadBlobBytes(oldPos);
-                                byte[] diffBytes = ReadVariableLengthByteArray();
-
-                                return Helpers.BinaryUndiff(oldBytes, diffBytes);
-                            }
-                        default:
-                            throw new Exception("Unknown type!!!");
-                    }
-                }
+                return ReadBlobBytes(skipOnly);
             }
         }
     }

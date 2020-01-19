@@ -25,6 +25,19 @@ namespace CPvC.Test
             Content = new List<byte>(inputBytes);
         }
 
+        public long Position
+        {
+            get
+            {
+                return _readPos;
+            }
+
+            set
+            {
+                _readPos = value;
+            }
+        }
+
         private void Setup()
         {
             _readPos = 0;
