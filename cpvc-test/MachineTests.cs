@@ -63,7 +63,7 @@ namespace CPvC.Test
 
                 if (startBeforeClosing)
                 {
-                    RunForAWhile(machine, 1);
+                    RunForAWhile(machine);
                 }
 
                 ticks = machine.Core.Ticks;

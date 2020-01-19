@@ -197,14 +197,13 @@ namespace CPvC.Test
         }
 
         /// <summary>
-        /// Runs a machine for at least the specified number of ticks.
+        /// Runs a machine for at least one instruction cycle.
         /// </summary>
         /// <param name="machine">The machine to run.</param>
-        /// <param name="ticks">The minimum number of ticks to run the machine for.</param>
-        static public void RunForAWhile(Machine machine, UInt64 ticks = 1)
+        static public void RunForAWhile(Machine machine)
         {
             UInt64 startTicks = machine.Core.Ticks;
-            UInt64 endTicks = startTicks + ticks;
+            UInt64 endTicks = startTicks + 1;
 
             int timeWaited = 0;
             int sleepTime = 10;

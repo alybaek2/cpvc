@@ -33,7 +33,7 @@ namespace CPvC.Test
         {
             // Setup
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
-            RunForAWhile(machine, 100);
+            RunForAWhile(machine);
             machine.AddBookmark(true);
 
             // Act
@@ -55,7 +55,7 @@ namespace CPvC.Test
         {
             // Setup
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
-            RunForAWhile(machine, 100);
+            RunForAWhile(machine);
             machine.AddBookmark(true);
 
             // Act
@@ -79,10 +79,10 @@ namespace CPvC.Test
         {
             // Setup
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
-            RunForAWhile(machine, 100);
+            RunForAWhile(machine);
             machine.AddBookmark(true);
             HistoryEvent bookmarkEvent = machine.CurrentEvent;
-            RunForAWhile(machine, 100);
+            RunForAWhile(machine);
             machine.AddBookmark(true);
 
             // Act
@@ -106,7 +106,7 @@ namespace CPvC.Test
         {
             // Setup
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
-            RunForAWhile(machine, 100);
+            RunForAWhile(machine);
             machine.AddBookmark(true);
 
             // Act
@@ -130,11 +130,11 @@ namespace CPvC.Test
         {
             // Setup
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
-            RunForAWhile(machine, 100);
+            RunForAWhile(machine);
             machine.Key(Keys.A, true);
-            RunForAWhile(machine, 100);
+            RunForAWhile(machine);
             machine.Key(Keys.A, false);
-            RunForAWhile(machine, 100);
+            RunForAWhile(machine);
             machine.AddBookmark(true);
 
             // Act
