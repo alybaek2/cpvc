@@ -136,7 +136,6 @@ namespace CPvC
 
                 return outStream.ToArray();
             }
-
         }
 
         static public byte[] BinaryDiff(byte[] reference, byte[] blob)
@@ -203,22 +202,6 @@ namespace CPvC
         static public TimeSpan GetTimeSpanFromTicks(UInt64 ticks)
         {
             return new TimeSpan((long)(5 * ticks / 2));
-        }
-
-        /// <summary>
-        /// Reverses a string.
-        /// </summary>
-        /// <param name="str">The string to reverse.</param>
-        /// <returns>The reversed string.</returns>
-        static public string ReverseString(string str)
-        {
-            StringBuilder revstr = new StringBuilder(str.Length);
-            for (int i = str.Length - 1; i >= 0; i--)
-            {
-                revstr.Append(str[i]);
-            }
-
-            return revstr.ToString();
         }
     }
 }
