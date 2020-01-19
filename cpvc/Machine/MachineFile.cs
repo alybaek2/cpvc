@@ -117,7 +117,7 @@ namespace CPvC
             {
                 Write(_idBookmark, id, true, bookmark.System);
                 WriteBytesBlob(bookmark.State.GetBytes());
-                WriteBytesBlob(bookmark.Screen.GetBytes());
+                WriteCompressedBlob(bookmark.Screen.GetBytes());
             }
         }
 
@@ -237,7 +237,7 @@ namespace CPvC
         private void WriteLoadDisc(int id, UInt64 ticks, byte drive, byte[] media)
         {
             Write(_idLoadDisc, id, ticks, drive);
-            WriteBytesBlob(media);
+            WriteCompressedBlob(media);
         }
 
         private void ReadLoadTape(IMachineFileReader reader)
@@ -260,7 +260,7 @@ namespace CPvC
         private void WriteLoadTape(int id, UInt64 ticks, byte[] media)
         {
             Write(_idLoadTape, id, ticks);
-            WriteBytesBlob(media);
+            WriteCompressedBlob(media);
         }
 
         private void ReadCheckpoint(IMachineFileReader reader)
@@ -330,7 +330,7 @@ namespace CPvC
                 IBlob stateBlob = parentEvent?.Bookmark?.State;
 
                 // Write the state blob, then update the bookmark to use the returned FileBlob rather than the in-memory blob.
-                IStreamBlob newBlob = (stateBlob is IStreamBlob fileBlob) ? WriteDiffBlob(fileBlob, bookmark) : WriteBytesBlob(bookmark);
+                IStreamBlob newBlob = (stateBlob is IStreamBlob fileBlob) ? WriteDiffBlob(fileBlob, bookmark) : WriteCompressedBlob(bookmark);
                 historyEvent.Bookmark.State = newBlob;
 
                 byte[] screen = historyEvent.Bookmark.Screen.GetBytes();

@@ -166,6 +166,7 @@ namespace CPvC
             // 0x00 - null blob
             // 0x01 - bytes blob (offset, length)
             // 0x02 - diff blob (old offset, diff length, diff bytes)
+            // 0x03 - compressed blob (compressed bytes length, bytes)
 
             private BinaryFile _file;
 
@@ -221,12 +222,34 @@ namespace CPvC
 
                 byte[] oldBytes = oldBlob.GetBytes();
 
-                WriteByte((byte)0x02);
+                WriteByte(0x02);
                 WriteInt32(oldBlob.Position);
 
                 byte[] diffBytes = Helpers.BinaryDiff(oldBytes, newBytes);
 
                 WriteVariableLengthByteArray(diffBytes);
+
+                return new Blob(this, (int)currentPos);
+            }
+        }
+
+        public IStreamBlob WriteCompressedBlob(byte[] bytes)
+        {
+            lock (_byteStream)
+            {
+                long currentPos = _byteStream.Position;
+
+                if (bytes == null)
+                {
+                    WriteByte(0x00);
+                }
+                else
+                {
+                    byte[] compressedBytes = Helpers.Compress(bytes);
+
+                    WriteByte(0x03);
+                    WriteVariableLengthByteArray(compressedBytes);
+                }
 
                 return new Blob(this, (int)currentPos);
             }
@@ -277,6 +300,19 @@ namespace CPvC
 
                                 return Helpers.BinaryUndiff(oldBytes, diffBytes);
                             }
+                        }
+                    case 0x03:
+                        {
+                            if (skipOnly)
+                            {
+                                SkipVariableLengthByteArray();
+
+                                return null;
+                            }
+
+                            byte[] compressedBytes = ReadVariableLengthByteArray();
+
+                            return Helpers.Uncompress(compressedBytes);
                         }
                     default:
                         throw new Exception("Unknown type!!!");
