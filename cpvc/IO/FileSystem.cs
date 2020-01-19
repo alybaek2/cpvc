@@ -14,9 +14,9 @@ namespace CPvC
 
         public IFileByteStream OpenBinaryFile(string filepath)
         {
-            System.IO.FileStream fileSystem = System.IO.File.Open(filepath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
+            System.IO.FileStream fileStream = System.IO.File.Open(filepath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
 
-            return new ByteStream(fileSystem);
+            return new FileByteStream(fileStream);
         }
 
         public void RenameFile(string oldFilename, string newFilename)

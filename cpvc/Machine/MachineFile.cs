@@ -23,6 +23,10 @@ namespace CPvC
         {
         }
 
+        public MachineFile(IFileSystem fileSystem, string filepath) : this(fileSystem.OpenBinaryFile(filepath))
+        {
+        }
+
         public void ReadFile(IMachineFileReader reader)
         {
             lock (_byteStream)

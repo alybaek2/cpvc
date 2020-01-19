@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public sealed class ByteStream : IFileByteStream
+    public sealed class FileByteStream : IFileByteStream
     {
-        private System.IO.FileStream _fileStream;
+        private System.IO.Stream _fileStream;
 
-        public ByteStream(System.IO.FileStream fileStream)
+        public FileByteStream(System.IO.FileStream fileStream)
         {
             _fileStream = fileStream;
         }
@@ -39,11 +39,6 @@ namespace CPvC
             {
                 _fileStream.Position = value;
             }
-        }
-
-        public void Seek(long offset)
-        {
-            _fileStream.Position = offset;
         }
 
         public void WriteByte(byte b)

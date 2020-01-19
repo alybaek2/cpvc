@@ -110,8 +110,7 @@ namespace CPvC
         {
             try
             {
-                IByteStream file = _fileSystem.OpenBinaryFile(Filepath);
-                _file = new MachineFile(file);
+                _file = new MachineFile(_fileSystem, Filepath);
 
                 _file.ReadFile(this);
 
@@ -159,8 +158,7 @@ namespace CPvC
                 fileSystem.DeleteFile(machineFilepath);
                 machine = new Machine(null, machineFilepath, fileSystem);
 
-                IByteStream file = fileSystem.OpenBinaryFile(machine.Filepath);
-                machine._file = new MachineFile(file);
+                machine._file = new MachineFile(fileSystem, machine.Filepath);
                 machine.Name = name;
 
                 machine.RootEvent = HistoryEvent.CreateCheckpoint(machine.NextEventId(), 0, DateTime.UtcNow, null);
@@ -556,12 +554,11 @@ namespace CPvC
             using (AutoPause())
             {
                 string tempname = Filepath + ".new";
-                IByteStream newFile = _fileSystem.OpenBinaryFile(tempname);
 
                 MachineFile tempfile = null;
                 try
                 {
-                    tempfile = new MachineFile(newFile);
+                    tempfile = new MachineFile(_fileSystem, tempname);
 
                     tempfile.WriteName(_name);
                     WriteEvent(tempfile, RootEvent);
@@ -583,7 +580,7 @@ namespace CPvC
                 CurrentEvent = null;
                 _historyEventById.Clear();
 
-                _file = new MachineFile(_fileSystem.OpenBinaryFile(Filepath));
+                _file = new MachineFile(_fileSystem, Filepath);
                 _file.ReadFile(this);
 
                 Status = String.Format("Compacted machine file by {0}%", (Int64)(100 * ((double)(oldLength - newLength)) / ((double)oldLength)));

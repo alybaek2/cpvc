@@ -116,7 +116,7 @@
     </ApplicationDefinition>
     <Compile Include="Core\CoreActionBase.cs" />
     <Compile Include="IO\BinaryFile.cs" />
-    <Compile Include="IO\ByteStream.cs" />
+    <Compile Include="IO\FileByteStream.cs" />
     <Compile Include="IO\IBinaryFile.cs" />
     <Compile Include="IO\IByteStream.cs" />
     <Compile Include="IO\IFileByteStream.cs" />
