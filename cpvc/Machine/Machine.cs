@@ -108,6 +108,7 @@ namespace CPvC
         /// </summary>
         public void Open()
         {
+            Core core = null;
             try
             {
                 _file = new MachineFile(_fileSystem, Filepath);
@@ -127,7 +128,7 @@ namespace CPvC
                     bookmarkEvent = bookmarkEvent.Parent;
                 }
 
-                Core core = GetCore(bookmarkEvent);
+                core = GetCore(bookmarkEvent);
 
                 CurrentEvent = bookmarkEvent;
 
@@ -137,6 +138,7 @@ namespace CPvC
             }
             catch (Exception)
             {
+                core?.Dispose();
                 Dispose();
 
                 throw;

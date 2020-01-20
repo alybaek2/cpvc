@@ -265,20 +265,21 @@ namespace CPvC
         /// <returns>A core of the specified type.</returns>
         static public Core Create(Type type)
         {
-            Core core = new Core();
-
             switch (type)
             {
                 case Type.CPC6128:
-                    core.SetLowerROM(Resources.OS6128);
-                    core.SetUpperROM(0, Resources.Basic6128);
-                    core.SetUpperROM(7, Resources.Amsdos6128);
-                    break;
+                    {
+                        Core core = new Core();
+
+                        core.SetLowerROM(Resources.OS6128);
+                        core.SetUpperROM(0, Resources.Basic6128);
+                        core.SetUpperROM(7, Resources.Amsdos6128);
+
+                        return core;
+                    }
                 default:
                     throw new ArgumentException(String.Format("Unknown core type {0}", type));
             }
-
-            return core;
         }
 
         public void Start()
