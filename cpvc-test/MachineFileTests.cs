@@ -454,7 +454,6 @@ namespace CPvC.Test
             // Verify
             mockFileReader.Verify(reader => reader.SetBookmark(0x19, null));
             mockFileReader.VerifyNoOtherCalls();
-
         }
     }
 }

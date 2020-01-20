@@ -75,7 +75,8 @@ namespace CPvC
 
         public void WriteDelete(HistoryEvent historyEvent)
         {
-            Write(_idDeleteEvent, historyEvent.Id);
+            WriteByte(_idDeleteEvent);
+            WriteInt32(historyEvent.Id);
         }
 
         private void ReadName(IMachineFileReader reader)
@@ -87,7 +88,8 @@ namespace CPvC
 
         public void WriteName(string name)
         {
-            Write(_idName, name);
+            WriteByte(_idName);
+            WriteString(name);
         }
 
         public void ReadBookmark(IMachineFileReader reader)
@@ -115,11 +117,16 @@ namespace CPvC
         {
             if (bookmark == null)
             {
-                Write(_idBookmark, id, false);
+                WriteByte(_idBookmark);
+                WriteInt32(id);
+                WriteBool(false);
             }
             else
             {
-                Write(_idBookmark, id, true, bookmark.System);
+                WriteByte(_idBookmark);
+                WriteInt32(id);
+                WriteBool(true);
+                WriteBool(bookmark.System);
                 WriteBytesBlob(bookmark.State.GetBytes());
                 WriteCompressedBlob(bookmark.Screen.GetBytes());
             }
@@ -149,7 +156,8 @@ namespace CPvC
 
         public void WriteCurrent(HistoryEvent historyEvent)
         {
-            Write(_idCurrent, historyEvent.Id);
+            WriteByte(_idCurrent);
+            WriteInt32(historyEvent.Id);
         }
 
         private void WriteCoreAction(int id, UInt64 ticks, CoreAction action)
@@ -197,7 +205,11 @@ namespace CPvC
             // Since keyCode can only be a value from 0 to 79 (0x00 to 0x4F), we can use the most significant
             // bit to hold the "down" state of the key, instead of wasting a byte for that.
             byte keyCodeAndDown = (byte) ((keyDown ? 0x80 : 0x00) | keyCode);
-            Write(_idKey, id, ticks, keyCodeAndDown);
+
+            WriteByte(_idKey);
+            WriteInt32(id);
+            WriteUInt64(ticks);
+            WriteByte(keyCodeAndDown);
         }
 
         private void ReadReset(IMachineFileReader reader)
@@ -217,7 +229,9 @@ namespace CPvC
 
         private void WriteReset(int id, UInt64 ticks)
         {
-            Write(_idReset, id, ticks);
+            WriteByte(_idReset);
+            WriteInt32(id);
+            WriteUInt64(ticks);
         }
 
         private void ReadLoadDisc(IMachineFileReader reader)
@@ -240,7 +254,10 @@ namespace CPvC
 
         private void WriteLoadDisc(int id, UInt64 ticks, byte drive, byte[] media)
         {
-            Write(_idLoadDisc, id, ticks, drive);
+            WriteByte(_idLoadDisc);
+            WriteInt32(id);
+            WriteUInt64(ticks);
+            WriteByte(drive);
             WriteCompressedBlob(media);
         }
 
@@ -263,7 +280,9 @@ namespace CPvC
 
         private void WriteLoadTape(int id, UInt64 ticks, byte[] media)
         {
-            Write(_idLoadTape, id, ticks);
+            WriteByte(_idLoadTape);
+            WriteInt32(id);
+            WriteUInt64(ticks);
             WriteCompressedBlob(media);
         }
 
@@ -318,7 +337,10 @@ namespace CPvC
 
         private void WriteCheckpoint(HistoryEvent historyEvent)
         {
-            Write(_idCheckpoint, historyEvent.Id, historyEvent.Ticks, (UInt64)Helpers.DateTimeToNumber(historyEvent.CreateDate));
+            WriteByte(_idCheckpoint);
+            WriteInt32(historyEvent.Id);
+            WriteUInt64(historyEvent.Ticks);
+            WriteUInt64((UInt64)Helpers.DateTimeToNumber(historyEvent.CreateDate));
 
             if (historyEvent.Bookmark == null)
             {
@@ -326,7 +348,8 @@ namespace CPvC
             }
             else
             {
-                Write(true, historyEvent.Bookmark.System);
+                WriteBool(true);
+                WriteBool(historyEvent.Bookmark.System);
 
                 byte[] bookmark = historyEvent.Bookmark.State.GetBytes();
 
@@ -358,36 +381,6 @@ namespace CPvC
             Diagnostics.Trace("{0}: Delete", id);
 
             reader.DeleteEvent(id);
-        }
-
-        private void Write(params object[] args)
-        {
-            foreach (object arg in args)
-            {
-                switch (arg)
-                {
-                    case bool b:
-                        WriteBool(b);
-                        break;
-                    case byte b:
-                        WriteByte(b);
-                        break;
-                    case Int32 i:
-                        WriteInt32(i);
-                        break;
-                    case UInt64 u:
-                        WriteUInt64(u);
-                        break;
-                    case Byte[] b:
-                        WriteVariableLengthByteArray(b);
-                        break;
-                    case string s:
-                        WriteString(s);
-                        break;
-                    default:
-                        throw new Exception(String.Format("Unknown argument type"));
-                }
-            }
         }
     }
 }
