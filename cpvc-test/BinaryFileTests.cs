@@ -68,7 +68,7 @@ namespace CPvC.Test
         public void ReadByte(int expected, byte[] content)
         {
             // Setup
-            MockBinaryFile mock = new MockBinaryFile();
+            MockFileByteStream mock = new MockFileByteStream();
             BinaryFile file = new BinaryFile(mock.Object);
             mock.Content = content.ToList();
 
@@ -83,7 +83,7 @@ namespace CPvC.Test
         public void WriteBool(bool b, byte[] expected)
         {
             // Setup
-            MockBinaryFile mock = new MockBinaryFile();
+            MockFileByteStream mock = new MockFileByteStream();
             BinaryFile file = new BinaryFile(mock.Object);
 
             // Act
@@ -97,7 +97,7 @@ namespace CPvC.Test
         public void ReadBool(bool expected, byte[] content)
         {
             // Setup
-            MockBinaryFile mock = new MockBinaryFile();
+            MockFileByteStream mock = new MockFileByteStream();
             BinaryFile file = new BinaryFile(mock.Object);
             mock.Content = content.ToList();
 
@@ -112,7 +112,7 @@ namespace CPvC.Test
         public void WriteByte(byte b, byte[] expected)
         {
             // Setup
-            MockBinaryFile mock = new MockBinaryFile();
+            MockFileByteStream mock = new MockFileByteStream();
             BinaryFile file = new BinaryFile(mock.Object);
 
             // Act
@@ -126,7 +126,7 @@ namespace CPvC.Test
         public void ReadInt32(int expected, byte[] content)
         {
             // Setup
-            MockBinaryFile mock = new MockBinaryFile();
+            MockFileByteStream mock = new MockFileByteStream();
             BinaryFile file = new BinaryFile(mock.Object);
             mock.Content = content.ToList();
 
@@ -141,7 +141,7 @@ namespace CPvC.Test
         public void WriteInt32(int i, byte[] expected)
         {
             // Setup
-            MockBinaryFile mock = new MockBinaryFile();
+            MockFileByteStream mock = new MockFileByteStream();
             BinaryFile file = new BinaryFile(mock.Object);
 
             // Act
@@ -155,7 +155,7 @@ namespace CPvC.Test
         public void ReadInt64(UInt64 expected, byte[] content)
         {
             // Setup
-            MockBinaryFile mock = new MockBinaryFile();
+            MockFileByteStream mock = new MockFileByteStream();
             BinaryFile file = new BinaryFile(mock.Object);
             mock.Content = content.ToList();
 
@@ -170,7 +170,7 @@ namespace CPvC.Test
         public void WriteInt64(UInt64 u, byte[] expected)
         {
             // Setup
-            MockBinaryFile mock = new MockBinaryFile();
+            MockFileByteStream mock = new MockFileByteStream();
             BinaryFile file = new BinaryFile(mock.Object);
 
             // Act
@@ -184,7 +184,7 @@ namespace CPvC.Test
         public void ReadVariableLengthByteArray(byte[] expected, byte[] content)
         {
             // Setup
-            MockBinaryFile mock = new MockBinaryFile();
+            MockFileByteStream mock = new MockFileByteStream();
             BinaryFile file = new BinaryFile(mock.Object);
             mock.Content = content.ToList();
 
@@ -199,7 +199,7 @@ namespace CPvC.Test
         public void WriteVariableLengthByteArray(byte[] array, byte[] expected)
         {
             // Setup
-            MockBinaryFile mock = new MockBinaryFile();
+            MockFileByteStream mock = new MockFileByteStream();
             BinaryFile file = new BinaryFile(mock.Object);
 
             // Act
@@ -213,7 +213,7 @@ namespace CPvC.Test
         public void ReadString(string expected, byte[] content)
         {
             // Setup
-            MockBinaryFile mock = new MockBinaryFile();
+            MockFileByteStream mock = new MockFileByteStream();
             BinaryFile file = new BinaryFile(mock.Object);
             mock.Content = content.ToList();
 
@@ -228,7 +228,7 @@ namespace CPvC.Test
         public void WriteString(string str, byte[] expected)
         {
             // Setup
-            MockBinaryFile mock = new MockBinaryFile();
+            MockFileByteStream mock = new MockFileByteStream();
             BinaryFile file = new BinaryFile(mock.Object);
 
             // Act
@@ -242,7 +242,7 @@ namespace CPvC.Test
         public void ReadBytesBlob(byte[] expected, byte[] content)
         {
             // Setup
-            MockBinaryFile mock = new MockBinaryFile();
+            MockFileByteStream mock = new MockFileByteStream();
             BinaryFile file = new BinaryFile(mock.Object);
             mock.Content = content.ToList();
 
@@ -258,7 +258,7 @@ namespace CPvC.Test
         public void WriteBytesBlob(byte[] array, byte[] expected)
         {
             // Setup
-            MockBinaryFile mock = new MockBinaryFile();
+            MockFileByteStream mock = new MockFileByteStream();
             BinaryFile file = new BinaryFile(mock.Object);
 
             // Act
@@ -282,7 +282,7 @@ namespace CPvC.Test
                 0x67, 0x89
             };
 
-            MockBinaryFile mock = new MockBinaryFile();
+            MockFileByteStream mock = new MockFileByteStream();
             BinaryFile file = new BinaryFile(mock.Object);
             mock.Content = content.ToList();
             mock.Position = 0;

@@ -10,7 +10,7 @@ namespace CPvC.Test
     public class MachineTests
     {
         private Mock<IFileSystem> _mockFileSystem;
-        private MockBinaryFile _mockBinaryWriter;
+        private MockFileByteStream _mockBinaryWriter;
 
         private Machine CreateMachine()
         {
@@ -33,7 +33,7 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
             _mockFileSystem.Setup(fileSystem => fileSystem.FileLength(AnyString())).Returns(100);
 
-            _mockBinaryWriter = new MockBinaryFile();
+            _mockBinaryWriter = new MockFileByteStream();
 
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenBinaryFile("test.cpvc")).Returns(_mockBinaryWriter.Object);
         }
@@ -420,7 +420,7 @@ namespace CPvC.Test
             {
                 Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
 
-                MockBinaryFile rewriteTempFile = new MockBinaryFile();
+                MockFileByteStream rewriteTempFile = new MockFileByteStream();
                 _mockFileSystem.Setup(fileSystem => fileSystem.OpenBinaryFile("test.cpvc.new")).Returns(rewriteTempFile.Object);
 
                 MockSequence sequence = new MockSequence();

@@ -7,18 +7,18 @@ using System.Threading.Tasks;
 
 namespace CPvC.Test
 {
-    public class MockBinaryFile : Mock<IFileByteStream>
+    public class MockFileByteStream : Mock<IFileByteStream>
     {
         private long _readPos;
 
         public List<byte> Content { get; set; }
 
-        public MockBinaryFile() : base(MockBehavior.Strict)
+        public MockFileByteStream() : base(MockBehavior.Strict)
         {
             Setup();
         }
 
-        public MockBinaryFile(List<byte> inputBytes) : base(MockBehavior.Strict)
+        public MockFileByteStream(List<byte> inputBytes) : base(MockBehavior.Strict)
         {
             Setup();
 

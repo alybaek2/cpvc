@@ -19,7 +19,7 @@ namespace CPvC.Test
 
         private string _settingGet;
 
-        private MockBinaryFile _mockBinaryWriter;
+        private MockFileByteStream _mockBinaryWriter;
 
         [SetUp]
         public void Setup()
@@ -35,7 +35,7 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(true);
             _mockFileSystem.Setup(ReadBytes()).Returns(new byte[1]);
 
-            _mockBinaryWriter = new MockBinaryFile();
+            _mockBinaryWriter = new MockFileByteStream();
 
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenBinaryFile(AnyString())).Returns(_mockBinaryWriter.Object);
         }

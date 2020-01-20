@@ -11,14 +11,14 @@ namespace CPvC.Test
     public class MachineFileTests
     {
         private List<string> _lines;
-        private MockBinaryFile _mockBinaryWriter;
+        private MockFileByteStream _mockBinaryWriter;
         private MachineFile _file;
 
         [SetUp]
         public void Setup()
         {
             _lines = new List<string>();
-            _mockBinaryWriter = new MockBinaryFile();
+            _mockBinaryWriter = new MockFileByteStream();
             _file = new MachineFile(_mockBinaryWriter.Object);
         }
 
@@ -279,7 +279,7 @@ namespace CPvC.Test
         {
             // Setup
             Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
-            MockBinaryFile binaryFile = new MockBinaryFile(new List<byte> {
+            MockFileByteStream binaryFile = new MockFileByteStream(new List<byte> {
                 0x02,
                       0x19, 0x00, 0x00, 0x00,
                       0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -300,7 +300,7 @@ namespace CPvC.Test
         {
             // Setup
             Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
-            MockBinaryFile binaryFile = new MockBinaryFile(new List<byte> {
+            MockFileByteStream binaryFile = new MockFileByteStream(new List<byte> {
                 0x01,
                       0x19, 0x00, 0x00, 0x00,
                       0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -322,7 +322,7 @@ namespace CPvC.Test
         {
             // Setup
             Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
-            MockBinaryFile binaryFile = new MockBinaryFile(new List<byte> {
+            MockFileByteStream binaryFile = new MockFileByteStream(new List<byte> {
                 0x03,
                       0x19, 0x00, 0x00, 0x00,
                       0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -344,7 +344,7 @@ namespace CPvC.Test
         {
             // Setup
             Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
-            MockBinaryFile binaryFile = new MockBinaryFile(new List<byte> {
+            MockFileByteStream binaryFile = new MockFileByteStream(new List<byte> {
                 0x04,
                       0x19, 0x00, 0x00, 0x00,
                       0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -366,7 +366,7 @@ namespace CPvC.Test
         {
             // Setup
             Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
-            MockBinaryFile binaryFile = new MockBinaryFile(new List<byte> {
+            MockFileByteStream binaryFile = new MockFileByteStream(new List<byte> {
                 0x05,
                       0x19, 0x00, 0x00, 0x00,
                       0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -391,7 +391,7 @@ namespace CPvC.Test
         {
             // Setup
             Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
-            MockBinaryFile binaryFile = new MockBinaryFile(new List<byte> {
+            MockFileByteStream binaryFile = new MockFileByteStream(new List<byte> {
                 0x05,
                       0x19, 0x00, 0x00, 0x00,
                       0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -414,7 +414,7 @@ namespace CPvC.Test
         {
             // Setup
             Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
-            MockBinaryFile binaryFile = new MockBinaryFile(new List<byte>
+            MockFileByteStream binaryFile = new MockFileByteStream(new List<byte>
             {
                 0x08,
                       0x19, 0x00, 0x00, 0x00,
@@ -439,7 +439,7 @@ namespace CPvC.Test
             // Setup
             Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
 
-            MockBinaryFile mockWriter = new MockBinaryFile(new List<byte>
+            MockFileByteStream mockWriter = new MockFileByteStream(new List<byte>
             {
                 0x08,
                       0x19, 0x00, 0x00, 0x00,
