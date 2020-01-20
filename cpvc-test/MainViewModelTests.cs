@@ -176,7 +176,7 @@ namespace CPvC.Test
             prompt.Verify(x => x(FileTypes.Machine, true), (filepath != null) ? Times.Never() : Times.Once());
             prompt.VerifyNoOtherCalls();
 
-            if (expectedMachineName != "")
+            if (expectedMachineName != String.Empty)
             {
                 Assert.AreEqual(1, viewModel.Machines.Count);
                 Assert.AreEqual(expectedMachineName, viewModel.Machines[0].Name);
@@ -187,7 +187,7 @@ namespace CPvC.Test
             else
             {
                 Assert.IsEmpty(viewModel.Machines);
-                _mockFileSystem.Verify(fileSystem => fileSystem.ReadLines(AnyString()), Times.Never);
+                _mockBinaryWriter.Verify(bw => bw.ReadByte(), Times.Never);
             }
         }
 

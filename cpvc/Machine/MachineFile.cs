@@ -67,7 +67,7 @@ namespace CPvC
                             ReadLoadTape(reader);
                             break;
                         default:
-                            break;
+                            throw new Exception("Unknown block type!");
                     }
                 }
             }

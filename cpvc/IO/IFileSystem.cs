@@ -12,7 +12,6 @@ namespace CPvC
         void RenameFile(string oldFilepath, string newFilepath);
         void ReplaceFile(string filepath, string newFilepath);
         void DeleteFile(string filepath);
-        IEnumerable<string> ReadLines(string filepath);
         byte[] ReadBytes(string filepath);
         bool Exists(string filepath);
         Int64 FileLength(string filepath);

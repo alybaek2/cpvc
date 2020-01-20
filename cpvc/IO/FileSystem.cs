@@ -111,15 +111,5 @@ namespace CPvC
 
             return null;
         }
-
-        /// <summary>
-        /// Reads a text file.
-        /// </summary>
-        /// <param name="filepath">File path of text file to read.</param>
-        /// <returns>An enumerator returning the lines of the text file.</returns>
-        public IEnumerable<string> ReadLines(string filepath)
-        {
-            return System.IO.File.ReadLines(filepath);
-        }
     }
 }

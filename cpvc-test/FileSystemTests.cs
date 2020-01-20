@@ -101,22 +101,6 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void ReadLines()
-        {
-            // Setup
-            string filepath = TestHelpers.GetTempFilepath("linestest.txt");
-            FileSystem fs = new FileSystem();
-            System.IO.File.WriteAllLines(filepath, new string[] { "abc" });
-
-            // Act
-            IEnumerable<string> lines = fs.ReadLines(filepath);
-
-            // Verify
-            CollectionAssert.AreEqual(new string[] { "abc" }, lines);
-            System.IO.File.Delete(filepath);
-        }
-
-        [Test]
         public void ReadBytes()
         {
             // Setup
