@@ -121,6 +121,7 @@
     <Compile Include="IO\IByteStream.cs" />
     <Compile Include="IO\IFileByteStream.cs" />
     <Compile Include="IO\IStreamBlob.cs" />
+    <Compile Include="IO\IStreamDiffBlob.cs" />
     <Compile Include="ISettings.cs" />
     <Compile Include="Machine\IBlob.cs" />
     <Compile Include="Machine\IMachineFileReader.cs" />

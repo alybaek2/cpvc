@@ -299,13 +299,8 @@ namespace CPvC
                 if (hasBookmark)
                 {
                     bool system = ReadBool();
-
                     IBlob stateBlob = ReadBlob();
-                    IBlob compressedScreenBlob = ReadBlob();
-
-                    byte[] compressedScreen = compressedScreenBlob.GetBytes();
-                    byte[] screen = (compressedScreen != null) ? Helpers.Uncompress(compressedScreen) : null;
-                    IBlob screenBlob = new MemoryBlob(screen);
+                    IBlob screenBlob = ReadBlob();
 
                     bookmark = new Bookmark(system, stateBlob, screenBlob);
                 }
@@ -351,26 +346,21 @@ namespace CPvC
                 WriteBool(true);
                 WriteBool(historyEvent.Bookmark.System);
 
-                byte[] bookmark = historyEvent.Bookmark.State.GetBytes();
+                byte[] bookmarkBytes = historyEvent.Bookmark.State.GetBytes();
 
                 HistoryEvent parentEvent = GetParentBookmarkEvent(historyEvent?.Parent);
-                IBlob stateBlob = parentEvent?.Bookmark?.State;
+                Bookmark parentBookmark = parentEvent?.Bookmark;
+
+                IStreamBlob baseBlob = parentBookmark?.State as IStreamBlob;
 
                 // Write the state blob, then update the bookmark to use the returned FileBlob rather than the in-memory blob.
-                IStreamBlob newBlob = (stateBlob is IStreamBlob fileBlob) ? WriteDiffBlob(fileBlob, bookmark) : WriteCompressedBlob(bookmark);
+                IStreamBlob newBlob = WriteSmallestBlob(bookmarkBytes, baseBlob);
                 historyEvent.Bookmark.State = newBlob;
 
                 byte[] screen = historyEvent.Bookmark.Screen.GetBytes();
-                if (screen == null)
-                {
-                    WriteBytesBlob(null);
-                }
-                else
-                {
-                    byte[] compressedScreen = Helpers.Compress(screen);
 
-                    WriteBytesBlob(compressedScreen);
-                }
+                IStreamBlob newBlob2 = WriteSmallestBlob(screen, parentBookmark?.Screen as IStreamBlob); // SmallestBlob(screen, grandparentBookmark?.Screen as IStreamBlob, parentBookmark?.Screen as IStreamBlob);
+                historyEvent.Bookmark.Screen = newBlob2;
             }
         }
 

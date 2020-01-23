@@ -30,40 +30,6 @@ namespace CPvC.Test
             Assert.Throws<System.FormatException>(() => Helpers.NumberToDateTime(""));
         }
 
-        [TestCase(null, "")]
-        [TestCase(new byte[] { }, "")]
-        [TestCase(new byte[] { 0x01 }, "01")]
-        [TestCase(new byte[] { 0x01, 0xaf, 0x73, 0x5b }, "01AF735B")]
-        public void ShouldConvertByteArray(byte[] byteArray, string expectedHexString)
-        {
-            // Act
-            string hexString = Helpers.HexString(byteArray);
-
-            // Verify
-            Assert.AreEqual(hexString, expectedHexString);
-        }
-
-        [TestCase("6")]
-        [TestCase("ab01f")]
-        [TestCase("ab01fe340")]
-        public void OddStringLengthShouldThrow(string hexString)
-        {
-            // Act and Verify
-            Assert.Throws<System.ArgumentException>(() => Helpers.Bytes(hexString));
-        }
-
-        [TestCase("", null)]
-        [TestCase("01", new byte[] { 0x01 })]
-        [TestCase("01AF735B", new byte[] { 0x01, 0xaf, 0x73, 0x5b })]
-        public void ShouldConvertHexString(string hexString, byte[] expectedByteArray)
-        {
-            // Act
-            byte[] byteArray = Helpers.Bytes(hexString);
-
-            // Verify
-            Assert.AreEqual(byteArray, expectedByteArray);
-        }
-
         [TestCase(new byte[] { })]
         [TestCase(new byte[] { 0x01 })]
         [TestCase(new byte[] { 0x01, 0xaf, 0x73, 0x5b })]

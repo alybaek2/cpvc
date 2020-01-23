@@ -9,10 +9,28 @@ namespace CPvC
     public class BinaryFile : IBinaryFile
     {
         public IByteStream _byteStream;
+        private bool _diffsEnabled;
 
         public BinaryFile(IByteStream byteStream)
         {
+            _diffsEnabled = false;
             _byteStream = byteStream;
+        }
+
+        // Since deltaq seems to be exceedingly slow in certain cases, specifically when the two blobs
+        // are the same (or almost the same), we need to be able to control whether diffd can be created.
+        // For now, disable by default and only enable when the machine file is being compacted.
+        public bool DiffsEnabled
+        {
+            get
+            {
+                return _diffsEnabled;
+            }
+
+            set
+            {
+                _diffsEnabled = value;
+            }
         }
 
         public void Close()
@@ -189,6 +207,24 @@ namespace CPvC
                 {
                     return _pos;
                 }
+            }            
+        }
+
+        public class DiffBlob : Blob, IStreamDiffBlob
+        {
+            private IStreamBlob _baseBlob;
+
+            public DiffBlob(BinaryFile file, int pos, IStreamBlob baseBlob) : base(file, pos)
+            {
+                _baseBlob = baseBlob;
+            }
+
+            public IStreamBlob BaseBlob
+            {
+                get
+                {
+                    return _baseBlob;
+                }
             }
         }
 
@@ -196,21 +232,19 @@ namespace CPvC
         {
             lock (_byteStream)
             {
+                int pos = (int)_byteStream.Position;
+
                 if (bytes == null)
                 {
-                    WriteByte((byte)0x00);
-
-                    return null;
+                    WriteByte(0x00);
                 }
                 else
                 {
-                    int pos = (int)_byteStream.Position;
-
-                    WriteByte((byte)0x01);
+                    WriteByte(0x01);
                     WriteVariableLengthByteArray(bytes);
-
-                    return new Blob(this, pos);
                 }
+
+                return new Blob(this, pos);
             }
         }
 
@@ -229,7 +263,7 @@ namespace CPvC
 
                 WriteVariableLengthByteArray(diffBytes);
 
-                return new Blob(this, (int)currentPos);
+                return new DiffBlob(this, (int)currentPos, oldBlob);
             }
         }
 
@@ -252,6 +286,43 @@ namespace CPvC
                 }
 
                 return new Blob(this, (int)currentPos);
+            }
+        }
+
+        public IStreamBlob WriteSmallestBlob(byte[] bytes, IStreamBlob baseBlob)
+        {
+            if (bytes == null)
+            {
+                return WriteBytesBlob(null);
+            }
+
+            // If taking diffs is enabled, find the blob that gives us the smallest diff.
+            IStreamBlob bestBase = null;
+            int bestDiffSize = 0;
+            IStreamBlob currBase = baseBlob;
+            while (DiffsEnabled && currBase != null)
+            {
+                byte[] diff = Helpers.BinaryDiff(currBase.GetBytes(), bytes);
+
+                if (bestBase == null || diff.Length < bestDiffSize)
+                {
+                    bestBase = currBase;
+                    bestDiffSize = diff.Length;
+                }
+
+                currBase = (currBase as IStreamDiffBlob)?.BaseBlob;
+            }
+
+            byte[] compressedBytes = Helpers.Compress(bytes);
+
+            // Compare with compression...
+            if (bestBase == null || compressedBytes.Length < bestDiffSize)
+            {
+                return WriteCompressedBlob(bytes);
+            }
+            else
+            {
+                return WriteDiffBlob(bestBase, bytes);
             }
         }
 

@@ -561,6 +561,7 @@ namespace CPvC
                 try
                 {
                     tempfile = new MachineFile(_fileSystem, tempname);
+                    tempfile.DiffsEnabled = true;
 
                     tempfile.WriteName(_name);
                     WriteEvent(tempfile, RootEvent);

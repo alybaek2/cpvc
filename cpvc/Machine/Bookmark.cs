@@ -18,7 +18,7 @@
         /// </summary>
         public IBlob State { get; set; }
 
-        public IBlob Screen { get; }
+        public IBlob Screen { get; set; }
 
         public Bookmark(bool system, IBlob state, IBlob screen)
         {
