@@ -8,6 +8,5 @@ namespace CPvC
 {
     public interface IFileByteStream : IByteStream, IDisposable
     {
-
     }
 }
