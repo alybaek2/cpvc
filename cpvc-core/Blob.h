@@ -5,24 +5,24 @@
 
 // Class encapsulating a fixed-length buffer allocated on the heap.
 // Created to avoid allocating large byte arrays on the stack, which would cause warnings (C6262) about stack size being exceeded.
-template<class T, int S>
+template<int S>
 class Blob
 {
 public:
     Blob()
     {
-        _pData = new T[S];
+        _pData = new byte[S];
     }
 
-    Blob(const T* pData)
+    Blob(const byte* pData)
     {
-        _pData = new T[S];
+        _pData = new byte[S];
         Copy(pData);
     }
 
-    Blob(const Blob<T, S>& blob)
+    Blob(const Blob<S>& blob)
     {
-        _pData = new T[S];
+        _pData = new byte[S];
         Copy(blob._pData);
     }
 
@@ -32,50 +32,44 @@ public:
         _pData = nullptr;
     }
 
-    void Fill(T value)
+    void Fill(byte value)
     {
-        for (int i = 0; i < S; i++)
-        {
-            _pData[i] = value;
-        }
+        memset(_pData, value, S);
     }
 
-    operator T* ()
+    operator byte* ()
     {
         return _pData;
     };
 
-    Blob<T, S>& operator=(const Blob<T, S>& blob)
+    Blob<S>& operator=(const Blob<S>& blob)
     {
         Copy(blob._pData);
 
         return *this;
     }
 
-    T& operator[](int i)
+    byte& operator[](int i)
     {
         return _pData[i];
     }
 
 private:
-    void Copy(const T* pData)
+    void Copy(const byte* pData)
     {
-        for (int i = 0; i < S; i++)
-        {
-            _pData[i] = pData[i];
-        }
+        memcpy(_pData, pData, S);
     }
 
-    T* _pData;
+    byte* _pData;
 
-    friend StreamWriter& operator<<(StreamWriter& s, const Blob<T, S>& blob)
+    friend StreamWriter& operator<<(StreamWriter& s, const Blob<S>& blob)
     {
         s.WriteArray(blob._pData, S);
 
         return s;
     }
 
-    friend StreamReader& operator>>(StreamReader& s, Blob<T, S>& blob)
+    friend StreamReader& operator>>(StreamReader& s, Blob<S>& blob)
     {
         s.ReadArray(blob._pData, S);
 

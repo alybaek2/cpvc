@@ -14,7 +14,7 @@ namespace CPvC.Test
             string filepath = TestHelpers.GetTempFilepath("opentest.txt");
             System.IO.File.Delete(filepath);
             FileSystem fs = new FileSystem();
-            IBinaryFile file = fs.OpenBinaryFile(filepath);
+            IByteStream file = fs.OpenBinaryFile(filepath);
 
             // Act
             file.WriteByte(0xfe);
@@ -98,22 +98,6 @@ namespace CPvC.Test
 
             // Act and Verify
             Assert.AreEqual(exists, fs.Exists(filepath));
-        }
-
-        [Test]
-        public void ReadLines()
-        {
-            // Setup
-            string filepath = TestHelpers.GetTempFilepath("linestest.txt");
-            FileSystem fs = new FileSystem();
-            System.IO.File.WriteAllLines(filepath, new string[] { "abc" });
-
-            // Act
-            IEnumerable<string> lines = fs.ReadLines(filepath);
-
-            // Verify
-            CollectionAssert.AreEqual(new string[] { "abc" }, lines);
-            System.IO.File.Delete(filepath);
         }
 
         [Test]

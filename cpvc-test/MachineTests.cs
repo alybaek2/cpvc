@@ -10,7 +10,7 @@ namespace CPvC.Test
     public class MachineTests
     {
         private Mock<IFileSystem> _mockFileSystem;
-        private MockBinaryFile _mockBinaryWriter;
+        private MockFileByteStream _mockBinaryWriter;
 
         private Machine CreateMachine()
         {
@@ -33,7 +33,7 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
             _mockFileSystem.Setup(fileSystem => fileSystem.FileLength(AnyString())).Returns(100);
 
-            _mockBinaryWriter = new MockBinaryFile();
+            _mockBinaryWriter = new MockFileByteStream();
 
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenBinaryFile("test.cpvc")).Returns(_mockBinaryWriter.Object);
         }
@@ -63,7 +63,7 @@ namespace CPvC.Test
 
                 if (startBeforeClosing)
                 {
-                    RunForAWhile(machine, 1);
+                    RunForAWhile(machine);
                 }
 
                 ticks = machine.Core.Ticks;
@@ -199,7 +199,7 @@ namespace CPvC.Test
         public void OpenNoCurrentEvent()
         {
             // Setup
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(new string[] { "name:Test" });
+            _mockBinaryWriter.Content = new List<byte>();
 
             // Act and Verify
             Assert.Throws<Exception>(() =>
@@ -209,10 +209,13 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void OpenInvalidToken()
+        public void OpenInvalidBlockType()
         {
             // Setup
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(new string[] { "invalid:0" });
+            _mockBinaryWriter.Content = new List<byte>
+            {
+                0x7f  // Unknown block type - should cause an exception when read.
+            };
 
             // Act and Verify
             Assert.Throws<Exception>(() =>
@@ -420,7 +423,7 @@ namespace CPvC.Test
             {
                 Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
 
-                MockBinaryFile rewriteTempFile = new MockBinaryFile();
+                MockFileByteStream rewriteTempFile = new MockFileByteStream();
                 _mockFileSystem.Setup(fileSystem => fileSystem.OpenBinaryFile("test.cpvc.new")).Returns(rewriteTempFile.Object);
 
                 MockSequence sequence = new MockSequence();
@@ -485,7 +488,19 @@ namespace CPvC.Test
         public void CorruptCheckpointBookmark()
         {
             // Setup
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(new string[] { "name:Test", "checkpoint:0:0:0:0", "checkpoint:1:100:1:0:010203" });
+            _mockBinaryWriter.Content = new List<byte>
+            {
+                0x00,
+                      0x04, 0x00, 0x00, 0x00,
+                      (byte)'T', (byte)'e', (byte)'s', (byte)'t',
+                0x05,
+                      0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0x01,
+                      0x00,
+                      0x01, 0x01, 0x00, 0x00, 0x00  // State blob length is 1, but no actual blob bytes exist... should cause an exception!
+            };
 
             // Act and Verify
             Assert.That(() => Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false), Throws.Exception);
@@ -530,7 +545,6 @@ namespace CPvC.Test
         public void DeleteRootEvent()
         {
             // Setup
-            _mockFileSystem.Setup(fileSystem => fileSystem.ReadLines("test.cpvc")).Returns(new string[] { "name:Test", "checkpoint:0:0:0:0", "delete:0" });
             _mockBinaryWriter.Content = new List<byte>
             {
                 0x00,

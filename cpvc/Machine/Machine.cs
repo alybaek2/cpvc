@@ -108,10 +108,10 @@ namespace CPvC
         /// </summary>
         public void Open()
         {
+            Core core = null;
             try
             {
-                IBinaryFile file2 = _fileSystem.OpenBinaryFile(Filepath);
-                _file = new MachineFile(file2);
+                _file = new MachineFile(_fileSystem, Filepath);
 
                 _file.ReadFile(this);
 
@@ -128,7 +128,7 @@ namespace CPvC
                     bookmarkEvent = bookmarkEvent.Parent;
                 }
 
-                Core core = GetCore(bookmarkEvent);
+                core = GetCore(bookmarkEvent);
 
                 CurrentEvent = bookmarkEvent;
 
@@ -138,6 +138,7 @@ namespace CPvC
             }
             catch (Exception)
             {
+                core?.Dispose();
                 Dispose();
 
                 throw;
@@ -159,8 +160,7 @@ namespace CPvC
                 fileSystem.DeleteFile(machineFilepath);
                 machine = new Machine(null, machineFilepath, fileSystem);
 
-                IBinaryFile file2 = fileSystem.OpenBinaryFile(machine.Filepath);
-                machine._file = new MachineFile(file2);
+                machine._file = new MachineFile(fileSystem, machine.Filepath);
                 machine.Name = name;
 
                 machine.RootEvent = HistoryEvent.CreateCheckpoint(machine.NextEventId(), 0, DateTime.UtcNow, null);
@@ -194,9 +194,7 @@ namespace CPvC
                     bool ticksDifferent = (Core != null && CurrentEvent.Ticks != Core.Ticks);
                     if (ticksDifferent || (CurrentEvent.Bookmark == null && CurrentEvent != RootEvent) || (CurrentEvent.Bookmark != null && !CurrentEvent.Bookmark.System))
                     {
-                        Bookmark bookmark = GetBookmark(true);
-                        HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark);
-                        AddEvent(historyEvent, true);
+                        AddCheckpointWithBookmarkEvent(true);
                     }
                 }
                 finally
@@ -401,8 +399,7 @@ namespace CPvC
         {
             using (AutoPause())
             {
-                Bookmark bookmark = GetBookmark(system);
-                AddEvent(HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark), true);
+                HistoryEvent historyEvent = AddCheckpointWithBookmarkEvent(system);
 
                 Diagnostics.Trace("Created bookmark at tick {0}", _core.Ticks);
                 Status = String.Format("Bookmark added at {0}", Helpers.GetTimeSpanFromTicks(Core.Ticks).ToString(@"hh\:mm\:ss"));
@@ -559,12 +556,12 @@ namespace CPvC
             using (AutoPause())
             {
                 string tempname = Filepath + ".new";
-                IBinaryFile newFile = _fileSystem.OpenBinaryFile(tempname);
 
                 MachineFile tempfile = null;
                 try
                 {
-                    tempfile = new MachineFile(newFile);
+                    tempfile = new MachineFile(_fileSystem, tempname);
+                    tempfile.DiffsEnabled = true;
 
                     tempfile.WriteName(_name);
                     WriteEvent(tempfile, RootEvent);
@@ -586,7 +583,7 @@ namespace CPvC
                 CurrentEvent = null;
                 _historyEventById.Clear();
 
-                _file = new MachineFile(_fileSystem.OpenBinaryFile(Filepath));
+                _file = new MachineFile(_fileSystem, Filepath);
                 _file.ReadFile(this);
 
                 Status = String.Format("Compacted machine file by {0}%", (Int64)(100 * ((double)(oldLength - newLength)) / ((double)oldLength)));
@@ -608,6 +605,15 @@ namespace CPvC
             historyEvent.Bookmark = bookmark;
 
             _file.WriteBookmark(historyEvent.Id, bookmark);
+        }
+
+        private HistoryEvent AddCheckpointWithBookmarkEvent(bool system)
+        {
+            Bookmark bookmark = GetBookmark(system);
+            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark);
+            AddEvent(historyEvent, true);
+
+            return historyEvent;
         }
 
         /// <summary>
@@ -678,7 +684,7 @@ namespace CPvC
         /// </summary>
         /// <param name="file">Machine file to write to.</param>
         /// <param name="historyEvent">History event to write.</param>
-        private void WriteEvent(MachineFile file2, HistoryEvent historyEvent)
+        private void WriteEvent(MachineFile file, HistoryEvent historyEvent)
         {
             // As the history tree could be very deep, keep a "stack" of history events in order to avoid recursive calls.
             List<HistoryEvent> historyEvents = new List<HistoryEvent>
@@ -693,13 +699,13 @@ namespace CPvC
 
                 if (previousEvent != currentEvent.Parent && previousEvent != null)
                 {
-                    file2.WriteCurrent(currentEvent.Parent);
+                    file.WriteCurrent(currentEvent.Parent);
                 }
 
                 // Don't write out non-root checkpoint nodes which have only one child and no bookmark.
                 if (currentEvent == RootEvent || currentEvent.Children.Count != 1 || currentEvent.Type != HistoryEvent.Types.Checkpoint || currentEvent.Bookmark != null)
                 {
-                    file2.WriteHistoryEvent(currentEvent);
+                    file.WriteHistoryEvent(currentEvent);
                 }
 
                 historyEvents.RemoveAt(0);

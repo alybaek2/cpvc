@@ -12,9 +12,11 @@ namespace CPvC
         {
         }
 
-        public IBinaryFile OpenBinaryFile(string filepath)
+        public IFileByteStream OpenBinaryFile(string filepath)
         {
-            return new BinaryFile(filepath);
+            System.IO.FileStream fileStream = System.IO.File.Open(filepath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
+
+            return new FileByteStream(fileStream);
         }
 
         public void RenameFile(string oldFilename, string newFilename)
@@ -108,16 +110,6 @@ namespace CPvC
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// Reads a text file.
-        /// </summary>
-        /// <param name="filepath">File path of text file to read.</param>
-        /// <returns>An enumerator returning the lines of the text file.</returns>
-        public IEnumerable<string> ReadLines(string filepath)
-        {
-            return System.IO.File.ReadLines(filepath);
         }
     }
 }

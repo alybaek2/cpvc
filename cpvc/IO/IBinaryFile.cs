@@ -9,12 +9,21 @@ namespace CPvC
     public interface IBinaryFile
     {
         void WriteByte(byte b);
-        void Write(byte[] b);
-        int ReadByte();
-        int ReadBytes(byte[] array, int count);
-        void Close();
+        void WriteBool(bool b);
+        void WriteInt32(Int32 i);
+        void WriteUInt64(UInt64 u);
+        void WriteVariableLengthByteArray(byte[] b);
+        void WriteString(string s);
+        byte ReadByte();
+        bool ReadBool();
+        int ReadInt32();
+        UInt64 ReadUInt64();
+        byte[] ReadVariableLengthByteArray();
+        string ReadString();
+        byte[] ReadFixedLengthByteArray(int count);
 
-        long Length { get; }
-        long Position { get; set; }
+        IStreamBlob WriteBytesBlob(byte[] bytes);
+        IStreamBlob WriteDiffBlob(IStreamBlob oldBlob, byte[] newBytes);
+        IStreamBlob ReadBlob();
     }
 }

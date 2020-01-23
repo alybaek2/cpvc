@@ -7,7 +7,7 @@
 #include "StreamWriter.h"
 #include "Blob.h"
 
-typedef Blob<byte, 0x4000> Mem16k;
+typedef Blob<0x4000> Mem16k;
 
 
 class Memory

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public class MachineFile
+    public class MachineFile : BinaryFile
     {
         // Using bytes here limits us to 256 possible block types.... could reserve most significant bit and do some kind of variable length encoding if we really need to.
         public const byte _idName = 0;
@@ -19,47 +19,21 @@ namespace CPvC
         public const byte _idCurrent = 7;
         public const byte _idBookmark = 8;
 
-        private IBinaryFile _binaryFile;
-
-        public MachineFile(string filepath)
+        public MachineFile(IByteStream byteStream) : base(byteStream)
         {
-            _binaryFile = new BinaryFile(filepath);
         }
 
-        public MachineFile(IBinaryFile binaryFile)
+        public MachineFile(IFileSystem fileSystem, string filepath) : this(fileSystem.OpenBinaryFile(filepath))
         {
-            _binaryFile = binaryFile;
-        }
-
-        public void Close()
-        {
-            _binaryFile.Close();
-        }
-
-        public class MachineFileBlob : IBlob
-        {
-            private MachineFile _file;
-            private long _pos;
-
-            public MachineFileBlob(MachineFile file, long pos)
-            {
-                _file = file;
-                _pos = pos;
-            }
-
-            public byte[] GetBytes()
-            {
-                return _file.ReadByteArray(_pos);
-            }
         }
 
         public void ReadFile(IMachineFileReader reader)
         {
-            lock (_binaryFile)
+            lock (_byteStream)
             {
-                _binaryFile.Position = 0;
+                _byteStream.Position = 0;
 
-                while (_binaryFile.Position < _binaryFile.Length)
+                while (_byteStream.Position < _byteStream.Length)
                 {
                     byte blockType = ReadByte();
 
@@ -93,7 +67,7 @@ namespace CPvC
                             ReadLoadTape(reader);
                             break;
                         default:
-                            break;
+                            throw new Exception("Unknown block type!");
                     }
                 }
             }
@@ -101,7 +75,8 @@ namespace CPvC
 
         public void WriteDelete(HistoryEvent historyEvent)
         {
-            Write(_idDeleteEvent, historyEvent.Id);
+            WriteByte(_idDeleteEvent);
+            WriteInt32(historyEvent.Id);
         }
 
         private void ReadName(IMachineFileReader reader)
@@ -113,12 +88,13 @@ namespace CPvC
 
         public void WriteName(string name)
         {
-            Write(_idName, name);
+            WriteByte(_idName);
+            WriteString(name);
         }
 
         public void ReadBookmark(IMachineFileReader reader)
         {
-            lock (_binaryFile)
+            lock (_byteStream)
             {
                 int id = ReadInt32();
                 bool hasBookmark = ReadBool();
@@ -141,11 +117,18 @@ namespace CPvC
         {
             if (bookmark == null)
             {
-                Write(_idBookmark, id, false);
+                WriteByte(_idBookmark);
+                WriteInt32(id);
+                WriteBool(false);
             }
             else
             {
-                Write(_idBookmark, id, true, bookmark.System, bookmark.State, bookmark.Screen);
+                WriteByte(_idBookmark);
+                WriteInt32(id);
+                WriteBool(true);
+                WriteBool(bookmark.System);
+                WriteBytesBlob(bookmark.State.GetBytes());
+                WriteCompressedBlob(bookmark.Screen.GetBytes());
             }
         }
 
@@ -173,7 +156,8 @@ namespace CPvC
 
         public void WriteCurrent(HistoryEvent historyEvent)
         {
-            Write(_idCurrent, historyEvent.Id);
+            WriteByte(_idCurrent);
+            WriteInt32(historyEvent.Id);
         }
 
         private void WriteCoreAction(int id, UInt64 ticks, CoreAction action)
@@ -197,31 +181,9 @@ namespace CPvC
             }
         }
 
-        private byte[] ReadByteArray(long position)
-        {
-            lock (_binaryFile)
-            {
-                long currentPos = _binaryFile.Position;
-                byte[] bytes = null;
-
-                try
-                {
-                    _binaryFile.Position = position;
-
-                    bytes = ReadByteArray();
-                }
-                finally
-                {
-                    _binaryFile.Position = currentPos;
-                }
-
-                return bytes;
-            }
-        }
-
         private void ReadKey(IMachineFileReader reader)
         {
-            lock (_binaryFile)
+            lock (_byteStream)
             {
                 int id = ReadInt32();
                 UInt64 ticks = ReadUInt64();
@@ -243,12 +205,16 @@ namespace CPvC
             // Since keyCode can only be a value from 0 to 79 (0x00 to 0x4F), we can use the most significant
             // bit to hold the "down" state of the key, instead of wasting a byte for that.
             byte keyCodeAndDown = (byte) ((keyDown ? 0x80 : 0x00) | keyCode);
-            Write(_idKey, id, ticks, keyCodeAndDown);
+
+            WriteByte(_idKey);
+            WriteInt32(id);
+            WriteUInt64(ticks);
+            WriteByte(keyCodeAndDown);
         }
 
         private void ReadReset(IMachineFileReader reader)
         {
-            lock (_binaryFile)
+            lock (_byteStream)
             {
                 int id = ReadInt32();
                 UInt64 ticks = ReadUInt64();
@@ -263,12 +229,14 @@ namespace CPvC
 
         private void WriteReset(int id, UInt64 ticks)
         {
-            Write(_idReset, id, ticks);
+            WriteByte(_idReset);
+            WriteInt32(id);
+            WriteUInt64(ticks);
         }
 
         private void ReadLoadDisc(IMachineFileReader reader)
         {
-            lock (_binaryFile)
+            lock (_byteStream)
             {
                 int id = ReadInt32();
                 UInt64 ticks = ReadUInt64();
@@ -286,12 +254,16 @@ namespace CPvC
 
         private void WriteLoadDisc(int id, UInt64 ticks, byte drive, byte[] media)
         {
-            Write(_idLoadDisc, id, ticks, drive, media);
+            WriteByte(_idLoadDisc);
+            WriteInt32(id);
+            WriteUInt64(ticks);
+            WriteByte(drive);
+            WriteCompressedBlob(media);
         }
 
         private void ReadLoadTape(IMachineFileReader reader)
         {
-            lock (_binaryFile)
+            lock (_byteStream)
             {
                 int id = ReadInt32();
                 UInt64 ticks = ReadUInt64();
@@ -308,12 +280,15 @@ namespace CPvC
 
         private void WriteLoadTape(int id, UInt64 ticks, byte[] media)
         {
-            Write(_idLoadTape, id, ticks, media);
+            WriteByte(_idLoadTape);
+            WriteInt32(id);
+            WriteUInt64(ticks);
+            WriteCompressedBlob(media);
         }
 
         private void ReadCheckpoint(IMachineFileReader reader)
         {
-            lock (_binaryFile)
+            lock (_byteStream)
             {
                 int id = ReadInt32();
                 UInt64 ticks = ReadUInt64();
@@ -338,24 +313,54 @@ namespace CPvC
                 }
                 else
                 {
-                    Diagnostics.Trace("{0} {1}: Checkpoint (with {2} bookmark; {3} byte state binary, {4} byte screen binary)", id, ticks, bookmark.System?"system":"user", bookmark.State.GetBytes().Length, bookmark.Screen.GetBytes().Length);
+                    Diagnostics.Trace("{0} {1}: Checkpoint (with {2} bookmark)", id, ticks, bookmark.System ? "system" : "user");
                 }
 
                 reader.AddHistoryEvent(historyEvent);
             }
         }
 
+        private HistoryEvent GetParentBookmarkEvent(HistoryEvent historyEvent)
+        {
+            while (historyEvent != null && historyEvent?.Bookmark == null)
+            {
+                historyEvent = historyEvent.Parent;
+            }
+
+            return historyEvent;
+        }
+
         private void WriteCheckpoint(HistoryEvent historyEvent)
         {
+            WriteByte(_idCheckpoint);
+            WriteInt32(historyEvent.Id);
+            WriteUInt64(historyEvent.Ticks);
+            WriteUInt64((UInt64)Helpers.DateTimeToNumber(historyEvent.CreateDate));
+
             if (historyEvent.Bookmark == null)
             {
-                Write(_idCheckpoint, historyEvent.Id, historyEvent.Ticks, (UInt64)Helpers.DateTimeToNumber(historyEvent.CreateDate), false);
+                WriteBool(false);
             }
             else
             {
-                Write(_idCheckpoint, historyEvent.Id, historyEvent.Ticks, (UInt64)Helpers.DateTimeToNumber(historyEvent.CreateDate), true, historyEvent.Bookmark.System);
-                Write(historyEvent.Bookmark.State.GetBytes());
-                Write(historyEvent.Bookmark.Screen.GetBytes());
+                WriteBool(true);
+                WriteBool(historyEvent.Bookmark.System);
+
+                byte[] bookmarkBytes = historyEvent.Bookmark.State.GetBytes();
+
+                HistoryEvent parentEvent = GetParentBookmarkEvent(historyEvent?.Parent);
+                Bookmark parentBookmark = parentEvent?.Bookmark;
+
+                IStreamBlob baseBlob = parentBookmark?.State as IStreamBlob;
+
+                // Write the state blob, then update the bookmark to use the returned FileBlob rather than the in-memory blob.
+                IStreamBlob newBlob = WriteSmallestBlob(bookmarkBytes, baseBlob);
+                historyEvent.Bookmark.State = newBlob;
+
+                byte[] screen = historyEvent.Bookmark.Screen.GetBytes();
+
+                IStreamBlob newBlob2 = WriteSmallestBlob(screen, parentBookmark?.Screen as IStreamBlob); // SmallestBlob(screen, grandparentBookmark?.Screen as IStreamBlob, parentBookmark?.Screen as IStreamBlob);
+                historyEvent.Bookmark.Screen = newBlob2;
             }
         }
 
@@ -366,203 +371,6 @@ namespace CPvC
             Diagnostics.Trace("{0}: Delete", id);
 
             reader.DeleteEvent(id);
-        }
-
-        private void Write(params object[] args)
-        {
-            foreach (object arg in args)
-            {
-                switch (arg)
-                {
-                    case bool b:
-                        Write(b);
-                        break;
-                    case byte b:
-                        Write(b);
-                        break;
-                    case Int32 i:
-                        Write(i);
-                        break;
-                    case UInt64 u:
-                        Write(u);
-                        break;
-                    case Byte[] b:
-                        Write(b);
-                        break;
-                    case string s:
-                        Write(s);
-                        break;
-                    case IBlob b:
-                        Write(b.GetBytes());
-                        break;
-                    case null:
-                        Write((int)-1);
-                        break;
-                    default:
-                        throw new Exception(String.Format("Unknown argument"));
-                }
-            }
-        }
-
-        private void Write(byte b)
-        {
-            lock (_binaryFile)
-            {
-                _binaryFile.WriteByte(b);
-            }
-        }
-
-        private void Write(bool b)
-        {
-            lock (_binaryFile)
-            {
-                _binaryFile.WriteByte((byte)(b ? 1 : 0));
-            }
-        }
-
-        private void Write(Int32 i)
-        {
-            lock (_binaryFile)
-            {
-                byte[] bytes = BitConverter.GetBytes(i);
-                _binaryFile.Write(bytes);
-            }
-        }
-
-        private void Write(UInt64 u)
-        {
-            lock (_binaryFile)
-            {
-                byte[] bytes = BitConverter.GetBytes(u);
-                _binaryFile.Write(bytes);
-            }
-        }
-
-        private MachineFileBlob Write(byte[] b)
-        {
-            lock (_binaryFile)
-            {
-                if (b == null)
-                {
-                    Write((int)-1);
-
-                    return null;
-                }
-                else
-                {
-                    MachineFileBlob blob = new MachineFileBlob(this, _binaryFile.Position);
-
-                    Write(b.Length);
-                    _binaryFile.Write(b);
-
-                    return blob;
-                }
-            }
-        }
-
-        private void Write(string s)
-        {
-            Write(Encoding.UTF8.GetBytes(s));
-        }
-
-        private byte ReadByte()
-        {
-            lock (_binaryFile)
-            {
-                int b = _binaryFile.ReadByte();
-                if (b == -1)
-                {
-                    throw new Exception("Insufficient bytes to read byte!");
-                }
-
-                return (byte)b;
-            }
-        }
-
-        private bool ReadBool()
-        {
-            return ReadByte() != 0;
-        }
-
-        private int ReadInt32()
-        {
-            return BitConverter.ToInt32(ReadBytes(4), 0);
-        }
-
-        private UInt64 ReadUInt64()
-        {
-            return BitConverter.ToUInt64(ReadBytes(8), 0);
-        }
-
-        private byte[] ReadByteArray()
-        {
-            int len = ReadInt32();
-            if (len == -1)
-            {
-                return null;
-            }
-            else
-            {
-                return ReadBytes(len);
-            }
-        }
-
-        private string ReadString()
-        {
-            byte[] bytes = ReadByteArray();
-
-            return Encoding.UTF8.GetString(bytes);
-        }
-
-        private IBlob ReadBlob()
-        {
-            long pos = _binaryFile.Position;
-            int len = ReadInt32();
-            if (len == -1)
-            {
-                return new MemoryBlob(null);
-            }
-
-            _binaryFile.Position += len;
-
-            return new MachineFileBlob(this, pos);
-        }
-
-        private byte[] ReadBytes(int count)
-        {
-            lock (_binaryFile)
-            {
-                byte[] bytes = new byte[count];
-                int bytesRead = _binaryFile.ReadBytes(bytes, count);
-                if (bytesRead < count)
-                {
-                    throw new Exception(String.Format("Insufficient bytes to read {0} bytes.", count));
-                }
-
-                return bytes;
-            }
-        }
-
-        public byte[] ReadEntireFile()
-        {
-            lock (_binaryFile)
-            {
-                long currentPos = _binaryFile.Position;
-                byte[] bytes = null;
-
-                try
-                {
-                    _binaryFile.Position = 0;
-
-                    bytes = ReadBytes((int)_binaryFile.Length);
-                }
-                finally
-                {
-                    _binaryFile.Position = currentPos;
-                }
-
-                return bytes;
-            }
         }
     }
 }

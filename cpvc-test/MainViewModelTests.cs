@@ -19,7 +19,7 @@ namespace CPvC.Test
 
         private string _settingGet;
 
-        private MockBinaryFile _mockBinaryWriter;
+        private MockFileByteStream _mockBinaryWriter;
 
         [SetUp]
         public void Setup()
@@ -35,7 +35,7 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(true);
             _mockFileSystem.Setup(ReadBytes()).Returns(new byte[1]);
 
-            _mockBinaryWriter = new MockBinaryFile();
+            _mockBinaryWriter = new MockFileByteStream();
 
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenBinaryFile(AnyString())).Returns(_mockBinaryWriter.Object);
         }
@@ -176,7 +176,7 @@ namespace CPvC.Test
             prompt.Verify(x => x(FileTypes.Machine, true), (filepath != null) ? Times.Never() : Times.Once());
             prompt.VerifyNoOtherCalls();
 
-            if (expectedMachineName != "")
+            if (expectedMachineName != String.Empty)
             {
                 Assert.AreEqual(1, viewModel.Machines.Count);
                 Assert.AreEqual(expectedMachineName, viewModel.Machines[0].Name);
@@ -187,7 +187,7 @@ namespace CPvC.Test
             else
             {
                 Assert.IsEmpty(viewModel.Machines);
-                _mockFileSystem.Verify(fileSystem => fileSystem.ReadLines(AnyString()), Times.Never);
+                _mockBinaryWriter.Verify(bw => bw.ReadByte(), Times.Never);
             }
         }
 

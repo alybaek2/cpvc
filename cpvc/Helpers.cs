@@ -39,63 +39,6 @@ namespace CPvC
         }
 
         /// <summary>
-        /// Creates a hexadecimal string representation of a byte array.
-        /// </summary>
-        /// <param name="b">Byte array to be represented as a hexadecimal string.</param>
-        /// <returns>Hexadecimal string representation of the byte array.</returns>
-        static public string HexString(byte[] b)
-        {
-            if (b == null)
-            {
-                return String.Empty;
-            }
-
-            char[] buffer = new char[b.Length * 2];
-
-            for (int c = 0; c < b.Length; c++)
-            {
-                byte loNibble = (byte)(b[c] & 0x0f);
-                byte hiNibble = (byte)(b[c] >> 4);
-
-                loNibble += ((loNibble < 10) ? ((byte)'0') : ((byte)'7'));
-                hiNibble += ((hiNibble < 10) ? ((byte)'0') : ((byte)'7'));
-
-                buffer[c * 2] = (char)hiNibble;
-                buffer[(c * 2) + 1] = (char)loNibble;
-            }
-
-            return new string(buffer);
-        }
-
-        /// <summary>
-        /// Converts a hexadecimal string to a byte array.
-        /// </summary>
-        /// <param name="hexString">Hexadecimal string to be converted.</param>
-        /// <returns>A byte array based on the hexadecimal string.</returns>
-        static public byte[] Bytes(string hexString)
-        {
-            if ((hexString.Length % 2) == 1)
-            {
-                throw new ArgumentException(String.Format("Hex string length should be an even number."));
-            }
-
-            if (hexString.Length == 0)
-            {
-                return null;
-            }
-
-            int count = hexString.Length / 2;
-            byte[] bytes = new byte[count];
-
-            for (int i = 0; i < count; i++)
-            {
-                bytes[i] = Convert.ToByte(hexString.Substring(i * 2, 2), 16);
-            }
-
-            return bytes;
-        }
-
-        /// <summary>
         /// Compresses a byte array.
         /// </summary>
         /// <param name="bytes">Byte array to be compressed.</param>
@@ -123,6 +66,26 @@ namespace CPvC
             using (System.IO.Compression.DeflateStream deflate = new System.IO.Compression.DeflateStream(inStream, System.IO.Compression.CompressionMode.Decompress))
             {
                 deflate.CopyTo(outStream);
+
+                return outStream.ToArray();
+            }
+        }
+
+        static public byte[] BinaryUndiff(byte[] reference, byte[] diff)
+        {
+            using (MemoryStream outStream = new MemoryStream())
+            {
+                deltaq.BsDiff.BsPatch.Apply(reference, diff, outStream);
+
+                return outStream.ToArray();
+            }
+        }
+
+        static public byte[] BinaryDiff(byte[] reference, byte[] blob)
+        {
+            using (MemoryStream outStream = new MemoryStream())
+            {
+                deltaq.BsDiff.BsDiff.Create(reference, blob, outStream);
 
                 return outStream.ToArray();
             }
@@ -182,22 +145,6 @@ namespace CPvC
         static public TimeSpan GetTimeSpanFromTicks(UInt64 ticks)
         {
             return new TimeSpan((long)(5 * ticks / 2));
-        }
-
-        /// <summary>
-        /// Reverses a string.
-        /// </summary>
-        /// <param name="str">The string to reverse.</param>
-        /// <returns>The reversed string.</returns>
-        static public string ReverseString(string str)
-        {
-            StringBuilder revstr = new StringBuilder(str.Length);
-            for (int i = str.Length - 1; i >= 0; i--)
-            {
-                revstr.Append(str[i]);
-            }
-
-            return revstr.ToString();
         }
     }
 }

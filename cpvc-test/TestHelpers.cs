@@ -115,12 +115,21 @@ namespace CPvC.Test
                                             h.Id == id);
         }
 
+        static public Bookmark BookmarkMatch(bool system, int statePos, int screenPos)
+        {
+            return It.Is<Bookmark>(
+                b => b != null &&
+                b.System == system &&
+                ((IStreamBlob)(b.State)).Position == statePos &&
+                ((IStreamBlob)(b.Screen)).Position == screenPos);
+        }
+
         static public HistoryEvent CheckpointEvent(int id)
         {
             return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id);
         }
 
-        static public HistoryEvent CheckpointWithBookmarkEvent(int id, UInt64 ticks, bool system, byte[] state, byte[] screen)
+        static public HistoryEvent CheckpointWithBookmarkEvent(int id, UInt64 ticks, bool system, int stateBlobPos)
         {
             return It.Is<HistoryEvent>(h => h != null &&
                                             h.Type == HistoryEvent.Types.Checkpoint &&
@@ -128,8 +137,8 @@ namespace CPvC.Test
                                             h.Ticks == ticks &&
                                             h.Bookmark != null &&
                                             h.Bookmark.System == system &&
-                                            h.Bookmark.State.GetBytes().SequenceEqual(state) &&
-                                            h.Bookmark.Screen.GetBytes().SequenceEqual(screen));
+                                            ((IStreamBlob) (h.Bookmark.State)).Position == stateBlobPos &&
+                                            ((MemoryBlob)(h.Bookmark.Screen)).GetBytes() == null);
         }
 
         static public HistoryEvent CheckpointWithoutBookmarkEvent(int id, UInt64 ticks)
@@ -188,14 +197,13 @@ namespace CPvC.Test
         }
 
         /// <summary>
-        /// Runs a machine for at least the specified number of ticks.
+        /// Runs a machine for at least one instruction cycle.
         /// </summary>
         /// <param name="machine">The machine to run.</param>
-        /// <param name="ticks">The minimum number of ticks to run the machine for.</param>
-        static public void RunForAWhile(Machine machine, UInt64 ticks = 1)
+        static public void RunForAWhile(Machine machine)
         {
             UInt64 startTicks = machine.Core.Ticks;
-            UInt64 endTicks = startTicks + ticks;
+            UInt64 endTicks = startTicks + 1;
 
             int timeWaited = 0;
             int sleepTime = 10;
