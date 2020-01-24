@@ -50,12 +50,19 @@ namespace CPvC.Test
                 Content.AddRange(b);
                 _readPos = Content.Count;
             });
-            Setup(s => s.ReadByte()).Returns(() => { return Content[(int)_readPos++]; });
+            Setup(s => s.ReadByte()).Returns(() => {
+                if (_readPos >= Content.Count)
+                {
+                    return -1;
+                }
+
+                return Content[(int)_readPos++];
+            });
             Setup(s => s.ReadBytes(It.IsAny<byte[]>(), It.IsAny<int>())).Returns((byte[] bytes, int count) => {
-                List<byte> b = Content.GetRange((int)_readPos, count);
-                b.CopyTo(bytes);
-                _readPos += count;
-                return count;
+                int copied = Math.Min((int)(Content.Count - _readPos), count);
+                Content.CopyTo((int)_readPos, bytes, 0, copied);
+                _readPos += copied;
+                return copied;
             });
             SetupGet(s => s.Length).Returns(() => Content.Count);
             SetupGet(s => s.Position).Returns(() => _readPos);

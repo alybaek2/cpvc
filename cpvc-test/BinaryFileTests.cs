@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace CPvC.Test
@@ -298,6 +299,38 @@ namespace CPvC.Test
 
             // Verify
             Assert.AreEqual(newBytes, bytes);
+        }
+
+        [Test]
+        public void ReadPastEndArray()
+        {
+            // Setup
+            byte[] content =
+            {
+                0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07
+            };
+
+            MockFileByteStream mock = new MockFileByteStream();
+            BinaryFile file = new BinaryFile(mock.Object);
+            mock.Content = content.ToList();
+            mock.Position = 0;
+
+            // Act and Verify
+            byte[] array = new byte[8];
+            Assert.Throws<Exception>(() => file.ReadFixedLengthByteArray(8));
+        }
+
+        [Test]
+        public void ReadPastEndByte()
+        {
+            // Setup
+            MockFileByteStream mock = new MockFileByteStream();
+            BinaryFile file = new BinaryFile(mock.Object);
+            mock.Content = new List<byte>();
+            mock.Position = 0;
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => file.ReadByte());
         }
     }
 }

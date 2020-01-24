@@ -76,15 +76,8 @@ namespace CPvC
         {
             lock (_byteStream)
             {
-                if (b == null)
-                {
-                    WriteInt32(-1);
-                }
-                else
-                {
-                    WriteInt32(b.Length);
-                    _byteStream.Write(b);
-                }
+                WriteInt32(b.Length);
+                _byteStream.Write(b);
             }
         }
 
