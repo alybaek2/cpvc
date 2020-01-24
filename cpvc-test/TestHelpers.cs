@@ -129,7 +129,7 @@ namespace CPvC.Test
             return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id);
         }
 
-        static public HistoryEvent CheckpointWithBookmarkEvent(int id, UInt64 ticks, bool system, int stateBlobPos)
+        static public HistoryEvent CheckpointWithBookmarkEvent(int id, UInt64 ticks, bool system, int stateBlobPos, int screenBlobPos)
         {
             return It.Is<HistoryEvent>(h => h != null &&
                                             h.Type == HistoryEvent.Types.Checkpoint &&
@@ -138,7 +138,7 @@ namespace CPvC.Test
                                             h.Bookmark != null &&
                                             h.Bookmark.System == system &&
                                             ((IStreamBlob) (h.Bookmark.State)).Position == stateBlobPos &&
-                                            ((MemoryBlob)(h.Bookmark.Screen)).GetBytes() == null);
+                                            ((IStreamBlob) (h.Bookmark.Screen)).Position == screenBlobPos);
         }
 
         static public HistoryEvent CheckpointWithoutBookmarkEvent(int id, UInt64 ticks)

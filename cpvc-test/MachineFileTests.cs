@@ -383,7 +383,7 @@ namespace CPvC.Test
             file.ReadFile(mockFileReader.Object);
 
             // Verify
-            mockFileReader.Verify(reader => reader.AddHistoryEvent(CheckpointWithBookmarkEvent(0x19, 100, system, 23)));
+            mockFileReader.Verify(reader => reader.AddHistoryEvent(CheckpointWithBookmarkEvent(0x19, 100, system, 23, 30)));
         }
 
         [Test]
