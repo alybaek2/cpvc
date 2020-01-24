@@ -192,5 +192,20 @@ namespace CPvC.Test
             // Verify
             Assert.DoesNotThrow(() => core.Dispose());
         }
+
+        [Test]
+        public void RunForVSync()
+        {
+            // Setup
+            Core core = Core.Create(Core.Type.CPC6128);
+
+            // Act
+            core.RunForVSync(10);
+
+            // Verify - running for 10 VSyncs means we should have completed at
+            //          least 9 full frames, each of which should last approximately
+            //          80000 (4000000 ticks / 50 frames) ticks each.
+            Assert.Greater(core.Ticks, 9 * 80000);
+        }
     }
 }
