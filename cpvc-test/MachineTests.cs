@@ -339,6 +339,31 @@ namespace CPvC.Test
         }
 
         /// <summary>
+        /// Ensures that if a bookmark has somehow been corrupted, an exception is thrown
+        /// when opening the machine.
+        /// </summary>
+        [Test]
+        public void OpenWithCorruptedFinalBookmark()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                RunForAWhile(machine);
+                machine.AddBookmark(true);
+
+                Bookmark corruptedBookmark = new Bookmark(true, new byte[] { }, new byte[] { });
+                machine.SetBookmark(machine.CurrentEvent, corruptedBookmark);
+            }
+
+            // Act and Verify
+            Assert.Throws<System.IndexOutOfRangeException>(() => {
+                using (Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
+                {
+                }
+            });
+        }
+
+        /// <summary>
         /// Ensures the correct number of audio samples are generated after running the core.
         /// </summary>
         /// <param name="ticks">The number of ticks to run the core for.</param>
