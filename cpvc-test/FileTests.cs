@@ -54,7 +54,7 @@ namespace CPvC.Test
         /// Ensures that the Close method correctly closes and releases the file.
         /// </summary>
         [Test]
-        public void WriteLinesAndClose()
+        public void WriteByteArrayAndClose()
         {
             // Setup
             string filepath = TestHelpers.GetTempFilepath("test.txt");
@@ -69,6 +69,44 @@ namespace CPvC.Test
 
             // Verify
             CheckAndDelete(filepath);
+        }
+
+        /// <summary>
+        /// Ensures that a file can be written to and read from using both array
+        /// and single byte versions of the Read and Write methods.
+        /// </summary>
+        [Test]
+        public void WriteAndReadBytes()
+        {
+            // Setup
+            string filepath = TestHelpers.GetTempFilepath("test.txt");
+            System.IO.File.Delete(filepath);
+
+            FileSystem fileSystem = new FileSystem();
+            IFileByteStream file = fileSystem.OpenBinaryFile(filepath);
+
+            // Act
+            file.WriteByte(0x01);
+            file.WriteByte(0x02);
+            file.WriteByte(0x03);
+            file.Write(new byte[] { 0x04, 0x05, 0x06 });
+
+            // Verify
+            file.Position = 0;
+            Assert.AreEqual(0x01, file.ReadByte());
+            Assert.AreEqual(0x02, file.ReadByte());
+            Assert.AreEqual(0x03, file.ReadByte());
+            byte[] bytes = new byte[3];
+            file.ReadBytes(bytes, 3);
+            Assert.AreEqual(new byte[] { 0x04, 0x05, 0x06 }, bytes);
+
+            // Verify reading past the end of the file.
+            Assert.AreEqual(-1, file.ReadByte());
+            Assert.AreEqual(0, file.ReadBytes(bytes, 1));
+
+            Assert.AreEqual(6, file.Position);
+
+            file.Close();
         }
     }
 }
