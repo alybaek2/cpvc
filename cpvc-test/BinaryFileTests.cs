@@ -332,5 +332,49 @@ namespace CPvC.Test
             // Act and Verify
             Assert.Throws<Exception>(() => file.ReadByte());
         }
+
+        [Test]
+        public void WriteSmallestBlob()
+        {
+            // Setup
+            MockFileByteStream mock = new MockFileByteStream();
+            BinaryFile file = new BinaryFile(mock.Object);
+            file.DiffsEnabled = true;
+            mock.Content = new List<byte>();
+            mock.Position = 0;
+            byte[] array1 = new byte[1000];
+            byte[] array2 = new byte[1000];
+            for (int i = 0; i < array2.Length; i++)
+            {
+                array2[i] = (byte)(i % 256);
+            }
+
+            IStreamBlob bytesBlob = file.WriteBytesBlob(array2);
+            IStreamBlob diffBlob1 = file.WriteDiffBlob(bytesBlob, array1);
+            IStreamBlob diffBlob2 = file.WriteDiffBlob(bytesBlob, array2);
+
+            // Act
+            IStreamDiffBlob smallestBlob = file.WriteSmallestBlob(array2, diffBlob2) as IStreamDiffBlob;
+
+            // Verify
+            Assert.NotNull(smallestBlob);
+            Assert.AreEqual(diffBlob2, smallestBlob.BaseBlob);
+            mock.Position = 0;
+            Assert.AreEqual(array2, file.ReadBlob().GetBytes());
+        }
+
+        [Test]
+        public void ReadCorruptBlob()
+        {
+            // Setup
+            MockFileByteStream mock = new MockFileByteStream();
+            BinaryFile file = new BinaryFile(mock.Object);
+            file.DiffsEnabled = true;
+            mock.Content = new List<byte> { 99 }; // Blob type 99 is not valid!
+            mock.Position = 0;
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => file.ReadBlob());
+        }
     }
 }

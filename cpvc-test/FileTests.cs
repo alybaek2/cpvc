@@ -93,6 +93,7 @@ namespace CPvC.Test
 
             // Verify
             file.Position = 0;
+            Assert.AreEqual(6, file.Length);
             Assert.AreEqual(0x01, file.ReadByte());
             Assert.AreEqual(0x02, file.ReadByte());
             Assert.AreEqual(0x03, file.ReadByte());
