@@ -206,3 +206,21 @@ TEST(CoreTests, RunUntilVSync)
     ASSERT_LE(vSyncCount, 51);
     delete pCore;
 }
+
+TEST(CoreTests, KeyPress)
+{
+    // Setup
+    Core* pCore = new Core();
+ 
+    // Act
+    bool prevdown1 = pCore->KeyPress(65, true);
+    bool prevdown2 = pCore->KeyPress(65, true);
+    bool prevdown3 = pCore->KeyPress(65, false);
+
+    // Verify
+    ASSERT_TRUE(prevdown1);
+    ASSERT_FALSE(prevdown2);
+    ASSERT_TRUE(prevdown3);
+
+
+}

@@ -2019,11 +2019,17 @@ TEST_F(Z80Tests, HALT)
     _core.Init();
     SetMemory(0x0000, 0x76);
 
-    // Act
+    // Act and verify
     qword ticks = Run(1);
-
-    // Verify
     CommonChecks(ticks, 0x04, 0x0000, 0x01);
+
+    Run(1);
+    ASSERT_EQ(0x0000, _core.PC);
+
+    _core._iff1 = true;
+    _core._interruptRequested = true;
+    Run(1);
+    ASSERT_EQ(0x0002, _core.PC);
 }
 
 TEST_F(Z80Tests, LDrrnn)
