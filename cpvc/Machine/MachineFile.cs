@@ -322,7 +322,7 @@ namespace CPvC
 
         private HistoryEvent GetParentBookmarkEvent(HistoryEvent historyEvent)
         {
-            while (historyEvent != null && historyEvent?.Bookmark == null)
+            while (historyEvent != null && historyEvent.Bookmark == null)
             {
                 historyEvent = historyEvent.Parent;
             }
@@ -348,7 +348,7 @@ namespace CPvC
 
                 byte[] bookmarkBytes = historyEvent.Bookmark.State.GetBytes();
 
-                HistoryEvent parentEvent = GetParentBookmarkEvent(historyEvent?.Parent);
+                HistoryEvent parentEvent = GetParentBookmarkEvent(historyEvent.Parent);
                 Bookmark parentBookmark = parentEvent?.Bookmark;
 
                 IStreamBlob baseBlob = parentBookmark?.State as IStreamBlob;

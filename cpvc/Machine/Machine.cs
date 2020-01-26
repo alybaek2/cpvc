@@ -133,7 +133,7 @@ namespace CPvC
                 CurrentEvent = bookmarkEvent;
 
                 Display.EnableGreyscale(false);
-                Display.GetFromBookmark(bookmarkEvent?.Bookmark);
+                Display.GetFromBookmark(bookmarkEvent.Bookmark);
                 Core = core;
             }
             catch (Exception)
@@ -464,7 +464,7 @@ namespace CPvC
             SetCheckpoint();
             byte volume = Core.Volume;
 
-            Display.GetFromBookmark(bookmarkEvent?.Bookmark);
+            Display.GetFromBookmark(bookmarkEvent.Bookmark);
             Core = Machine.GetCore(bookmarkEvent);
             Core.Volume = volume;
 

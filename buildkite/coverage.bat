@@ -16,7 +16,7 @@ del coverage-report-xml\Summary.xml
 REM Before uploading to Coveralls, correct the casing of all the filenames. The XML reports all have lowercased filenames, due to
 REM the way they're stored in the PDB files. This results in Coveralls not being able to show the source code. Note that this only
 REM seems to happen with C++ code, not C# code.
-REM CorrectCase will also strip the folder prefix from all filenames in these files. CoverAlls shows duplicates when these prefixes
+REM CorrectCase will also strip the folder prefix from all filenames in these files. Coveralls shows duplicates when these prefixes
 REM differ between builds.
 dir /b /s /a:-D .\cpvc-core\*.cpp .\cpvc-core\*.h > tokens.txt
 dir /b /a:-D .\cpvc-core\*.cpp .\cpvc-core\*.h >> tokens.txt
