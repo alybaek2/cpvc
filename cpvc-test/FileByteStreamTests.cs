@@ -2,7 +2,7 @@
 
 namespace CPvC.Test
 {
-    public class FileTests
+    public class FileByteStreamTests
     {
         private void CheckAndDelete(string filepath)
         {
@@ -35,7 +35,7 @@ namespace CPvC.Test
             System.IO.File.Delete(filepath);
 
             FileSystem fs = new FileSystem();
-            using (IFileByteStream file = fs.OpenBinaryFile(filepath))
+            using (IFileByteStream file = fs.OpenFileByteStream(filepath))
             {
                 // Act
                 file.Write(new byte[] { 0x01, 0x02, 0x03 });
@@ -61,7 +61,7 @@ namespace CPvC.Test
             System.IO.File.Delete(filepath);
 
             FileSystem fileSystem = new FileSystem();
-            IFileByteStream file = fileSystem.OpenBinaryFile(filepath);
+            IFileByteStream file = fileSystem.OpenFileByteStream(filepath);
 
             // Act
             file.Write(new byte[] { 0x01, 0x02, 0x03 });
@@ -83,7 +83,7 @@ namespace CPvC.Test
             System.IO.File.Delete(filepath);
 
             FileSystem fileSystem = new FileSystem();
-            IFileByteStream file = fileSystem.OpenBinaryFile(filepath);
+            IFileByteStream file = fileSystem.OpenFileByteStream(filepath);
 
             // Act
             file.WriteByte(0x01);

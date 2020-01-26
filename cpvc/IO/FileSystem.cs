@@ -12,7 +12,7 @@ namespace CPvC
         {
         }
 
-        public IFileByteStream OpenBinaryFile(string filepath)
+        public IFileByteStream OpenFileByteStream(string filepath)
         {
             System.IO.FileStream fileStream = System.IO.File.Open(filepath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
 

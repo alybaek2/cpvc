@@ -23,7 +23,7 @@ namespace CPvC
         {
         }
 
-        public MachineFile(IFileSystem fileSystem, string filepath) : this(fileSystem.OpenBinaryFile(filepath))
+        public MachineFile(IFileSystem fileSystem, string filepath) : this(fileSystem.OpenFileByteStream(filepath))
         {
         }
 

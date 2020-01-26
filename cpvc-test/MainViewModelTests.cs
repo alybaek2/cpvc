@@ -37,7 +37,7 @@ namespace CPvC.Test
 
             _mockBinaryWriter = new MockFileByteStream();
 
-            _mockFileSystem.Setup(fileSystem => fileSystem.OpenBinaryFile(AnyString())).Returns(_mockBinaryWriter.Object);
+            _mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream(AnyString())).Returns(_mockBinaryWriter.Object);
         }
 
         [TearDown]
@@ -96,7 +96,7 @@ namespace CPvC.Test
             // Setup
             string filepath = "test.cpvc";
             Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
-            mockFileSystem.Setup(fileSystem => fileSystem.OpenBinaryFile(filepath)).Throws(new Exception("File not found"));
+            mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream(filepath)).Throws(new Exception("File not found"));
             mockFileSystem.Setup(ReadBytes()).Throws(new Exception("File missing"));
             mockFileSystem.Setup(DeleteFile(filepath));
             mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(false);
@@ -240,7 +240,7 @@ namespace CPvC.Test
                 Assert.AreEqual(1, viewModel.Machines.Count);
                 Assert.AreEqual(expectedMachineName, viewModel.Machines[0].Name);
                 _mockFileSystem.Verify(fileSystem => fileSystem.DeleteFile(filepath), Times.Once());
-                _mockFileSystem.Verify(fileSystem => fileSystem.OpenBinaryFile(filepath), Times.Once());
+                _mockFileSystem.Verify(fileSystem => fileSystem.OpenFileByteStream(filepath), Times.Once());
             }
             else
             {

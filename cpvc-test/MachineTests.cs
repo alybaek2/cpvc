@@ -35,7 +35,7 @@ namespace CPvC.Test
 
             _mockBinaryWriter = new MockFileByteStream();
 
-            _mockFileSystem.Setup(fileSystem => fileSystem.OpenBinaryFile("test.cpvc")).Returns(_mockBinaryWriter.Object);
+            _mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream("test.cpvc")).Returns(_mockBinaryWriter.Object);
         }
 
         [TearDown]
@@ -449,7 +449,7 @@ namespace CPvC.Test
                 Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
 
                 MockFileByteStream rewriteTempFile = new MockFileByteStream();
-                _mockFileSystem.Setup(fileSystem => fileSystem.OpenBinaryFile("test.cpvc.new")).Returns(rewriteTempFile.Object);
+                _mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream("test.cpvc.new")).Returns(rewriteTempFile.Object);
 
                 MockSequence sequence = new MockSequence();
                 mockFileReader.InSequence(sequence).Setup(x => x.SetName("test")).Verifiable();
