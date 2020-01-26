@@ -127,6 +127,7 @@
     </Compile>
     <Compile Include="SettingsTests.cs" />
     <Compile Include="TestHelpers.cs" />
+    <Compile Include="UnmanagedMemoryTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
