@@ -1,0 +1,3 @@
+[submodule "cpvc-core"]
+	path = cpvc-core
+	url = https://github.com/alybaek2/cpvc-core.git

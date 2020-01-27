@@ -135,7 +135,7 @@
     <None Include="Resources\test.zip" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\cpvc-core-clr\cpvc-core-clr.vcxproj">
+    <ProjectReference Include="..\cpvc-core\cpvc-core-clr\cpvc-core-clr.vcxproj">
       <Project>{b8cb8856-640d-4fde-ad40-c4b409720ed1}</Project>
       <Name>cpvc-core-clr</Name>
     </ProjectReference>
