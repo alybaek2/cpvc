@@ -23,7 +23,7 @@ namespace CPvC.Test
             Mock<IFileSystem> mock = GetFileSystem(0x4000);
 
             // Act and Verify
-            Assert.Throws<ArgumentException>(() => Core.Create((Core.Type)99));
+            Assert.Throws<ArgumentException>(() => Core.Create(Core.LatestVersion, (Core.Type)99));
 
             mock.VerifyNoOtherCalls();
         }
@@ -33,7 +33,7 @@ namespace CPvC.Test
         {
             // Setup
             Mock<RequestProcessedDelegate> mockRequestProcessed = new Mock<RequestProcessedDelegate>();
-            using (Core core = Core.Create(Core.Type.CPC6128))
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.Auditors += mockRequestProcessed.Object;
 
@@ -57,7 +57,7 @@ namespace CPvC.Test
         {
             // Setup
             Mock<BeginVSyncDelegate> mockVSync = new Mock<BeginVSyncDelegate>();
-            using (Core core = Core.Create(Core.Type.CPC6128))
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.BeginVSync += mockVSync.Object;
 
@@ -84,7 +84,7 @@ namespace CPvC.Test
         public void ReadNoAudioSamples()
         {
             // Setup
-            using (Core core = Core.Create(Core.Type.CPC6128))
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
                 // Verify
                 byte[] buffer = new byte[100];
@@ -98,7 +98,7 @@ namespace CPvC.Test
         {
             // Setup
             Mock<RequestProcessedDelegate> mockRequestProcessed = new Mock<RequestProcessedDelegate>();
-            using (Core core = Core.Create(Core.Type.CPC6128))
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.Auditors += mockRequestProcessed.Object;
 
@@ -132,7 +132,7 @@ namespace CPvC.Test
         public void SetVolume(byte volume1, byte volume2, bool notified)
         {
             // Setup
-            using (Core core = Core.Create(Core.Type.CPC6128))
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.Volume = volume1;
                 Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
@@ -162,7 +162,7 @@ namespace CPvC.Test
         {
             // Setup
             byte[] rom = new byte[size];
-            using (Core core = Core.Create(Core.Type.CPC6128))
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
                 TestDelegate action = lower ?
                     (TestDelegate)(() => core.SetLowerROM(rom)) :
@@ -184,7 +184,7 @@ namespace CPvC.Test
         public void DisposeTwice()
         {
             // Setup
-            Core core = Core.Create(Core.Type.CPC6128);
+            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
 
             // Act
             core.Dispose();
@@ -197,7 +197,7 @@ namespace CPvC.Test
         public void RunForVSync()
         {
             // Setup
-            Core core = Core.Create(Core.Type.CPC6128);
+            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
 
             // Act
             core.RunForVSync(10);
