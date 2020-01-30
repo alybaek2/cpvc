@@ -115,7 +115,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Core\CoreActionBase.cs" />
-    <Compile Include="Core\ICoreCLR.cs" />
+    <Compile Include="Core\ICore.cs" />
     <Compile Include="IO\BinaryFile.cs" />
     <Compile Include="IO\FileByteStream.cs" />
     <Compile Include="IO\IBinaryFile.cs" />
