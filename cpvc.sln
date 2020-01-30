@@ -15,11 +15,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cpvc-test", "cpvc-test\cpvc-test.csproj", "{6228B360-F971-45D0-8F19-03BF1E01CC82}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cpvc-core", "cpvc-core\cpvc-core\cpvc-core.vcxproj", "{A96B17DB-68DD-4B88-8581-99220EC16D00}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Cores", "Cores", "{F1BD4307-B02D-4401-AC80-B8B0DBB8B0C8}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cpvc-core-test", "cpvc-core\cpvc-core-test\cpvc-core-test.vcxproj", "{0C5619B2-D04A-4113-840A-C5452250BCAC}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "v1", "v1", "{1D2D7248-7DAF-4D10-8F78-F55C13B2DA08}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cpvc-core-clr", "cpvc-core\cpvc-core-clr\cpvc-core-clr.vcxproj", "{B8CB8856-640D-4FDE-AD40-C4B409720ED1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cpvc-core", "core\v1\cpvc-core\cpvc-core.vcxproj", "{A96B17DB-68DD-4B88-8581-99220EC16D00}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cpvc-core-clr", "core\v1\cpvc-core-clr\cpvc-core-clr.vcxproj", "{B8CB8856-640D-4FDE-AD40-C4B409720ED1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cpvc-core-test", "core\v1\cpvc-core-test\cpvc-core-test.vcxproj", "{0C5619B2-D04A-4113-840A-C5452250BCAC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -65,16 +69,6 @@ Global
 		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Release|x64.Build.0 = Release|x64
 		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Release|x86.ActiveCfg = Release|Win32
 		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Release|x86.Build.0 = Release|Win32
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|x64.ActiveCfg = Debug|x64
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|x64.Build.0 = Debug|x64
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|x86.ActiveCfg = Debug|Win32
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|x86.Build.0 = Debug|Win32
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|Any CPU.ActiveCfg = Release|Win32
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x64.ActiveCfg = Release|x64
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x64.Build.0 = Release|x64
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x86.ActiveCfg = Release|Win32
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x86.Build.0 = Release|Win32
 		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Debug|x64.ActiveCfg = Debug|x64
 		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Debug|x64.Build.0 = Debug|x64
@@ -85,9 +79,25 @@ Global
 		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Release|x64.Build.0 = Release|x64
 		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Release|x86.ActiveCfg = Release|Win32
 		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Release|x86.Build.0 = Release|Win32
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|x64.ActiveCfg = Debug|x64
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|x64.Build.0 = Debug|x64
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|x86.ActiveCfg = Debug|Win32
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|x86.Build.0 = Debug|Win32
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|Any CPU.ActiveCfg = Release|Win32
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x64.ActiveCfg = Release|x64
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x64.Build.0 = Release|x64
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x86.ActiveCfg = Release|Win32
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1D2D7248-7DAF-4D10-8F78-F55C13B2DA08} = {F1BD4307-B02D-4401-AC80-B8B0DBB8B0C8}
+		{A96B17DB-68DD-4B88-8581-99220EC16D00} = {1D2D7248-7DAF-4D10-8F78-F55C13B2DA08}
+		{B8CB8856-640D-4FDE-AD40-C4B409720ED1} = {1D2D7248-7DAF-4D10-8F78-F55C13B2DA08}
+		{0C5619B2-D04A-4113-840A-C5452250BCAC} = {1D2D7248-7DAF-4D10-8F78-F55C13B2DA08}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {37A7BFE4-1BCE-4330-B13A-436F08F0EDCD}
