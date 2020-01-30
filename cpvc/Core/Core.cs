@@ -182,7 +182,7 @@ namespace CPvC
         /// <param name="samples"></param>
         public void AdvancePlayback(int samples)
         {
-            _coreCLR.AdvancePlayback(samples);
+            _coreCLR.GetAudioBuffers(samples, null, null, null);
         }
 
         /// <summary>

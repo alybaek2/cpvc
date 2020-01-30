@@ -15,7 +15,6 @@ namespace CPvC
         void LoadTape(byte[] tapeImage);
         void LoadLowerROM(byte[] lowerRom);
         void LoadUpperROM(byte slotIndex, byte[] upperRom);
-        void AdvancePlayback(int samples);
         int GetAudioBuffers(int samples, byte[] channelA, byte[] channelB, byte[] channelC);
         void SetScreen(IntPtr screenBuffer, UInt16 pitch, UInt16 height, UInt16 width);
         UInt64 Ticks();
