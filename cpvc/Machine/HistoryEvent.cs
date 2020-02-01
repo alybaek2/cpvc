@@ -14,7 +14,8 @@ namespace CPvC
         public enum Types
         {
             Checkpoint,
-            CoreAction
+            CoreAction,
+            Version
         }
 
         public Types Type { get; }
@@ -25,6 +26,7 @@ namespace CPvC
         public CoreAction CoreAction { get; private set; }
         public HistoryEvent Parent { get; set; }
         public List<HistoryEvent> Children { get; }
+        public int Version { get; private set; }
 
         public HistoryEvent(int id, Types type, UInt64 ticks)
         {
@@ -102,6 +104,16 @@ namespace CPvC
             {
                 Bookmark = bookmark,
                 CreateDate = createdDate
+            };
+
+            return historyEvent;
+        }
+
+        static public HistoryEvent CreateVersion(int id, UInt64 ticks, int version)
+        {
+            HistoryEvent historyEvent = new HistoryEvent(id, Types.Version, ticks)
+            {
+                Version = version
             };
 
             return historyEvent;

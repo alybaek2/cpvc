@@ -259,7 +259,7 @@ namespace CPvC.Test
                 Assert.AreEqual(machine.Filepath, "test.cpvc");
                 Assert.AreEqual(machine.Name, "test");
 
-                Assert.AreEqual(HistoryEvent.Types.Checkpoint, machine.RootEvent.Type);
+                Assert.AreEqual(HistoryEvent.Types.Version, machine.RootEvent.Type);
                 Assert.AreEqual(1, machine.RootEvent.Children.Count);
 
                 HistoryEvent historyEvent = machine.RootEvent.Children[0];
@@ -301,6 +301,10 @@ namespace CPvC.Test
                 Assert.AreEqual(HistoryEvent.Types.Checkpoint, historyEvent.Type);
                 Assert.IsNotNull(historyEvent.Bookmark);
 
+                // Opening the machine should add a "Version" event.
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEvent.Types.Version, historyEvent.Type);
+
                 Assert.AreEqual(historyEvent, machine.CurrentEvent);
             }
         }
@@ -332,9 +336,12 @@ namespace CPvC.Test
             // Act
             using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
             {
-                // Verify
+                // Verify - when opened, the machine should rewind to the bookmark, then add a Version
+                //          history event at that point.
                 HistoryEvent bookmarkEvent = machine.RootEvent.Children[0];
-                Assert.AreEqual(bookmarkEvent, machine.CurrentEvent);
+                Assert.AreEqual(2, bookmarkEvent.Children.Count);
+                Assert.AreEqual(machine.CurrentEvent, bookmarkEvent.Children[1]);
+                Assert.AreEqual(HistoryEvent.Types.Version, bookmarkEvent.Children[1].Type);
             }
         }
 
@@ -453,7 +460,7 @@ namespace CPvC.Test
 
                 MockSequence sequence = new MockSequence();
                 mockFileReader.InSequence(sequence).Setup(x => x.SetName("test")).Verifiable();
-                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CheckpointEvent(0))).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(VersionEvent(0))).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(1, CoreActionBase.Types.LoadDisc))).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CheckpointEvent(2))).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(5, CoreActionBase.Types.LoadDisc))).Verifiable();
@@ -461,7 +468,8 @@ namespace CPvC.Test
                 mockFileReader.InSequence(sequence).Setup(x => x.SetCurrentEvent(2)).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(7, CoreActionBase.Types.LoadTape))).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CheckpointEvent(9))).Verifiable();
-                mockFileReader.InSequence(sequence).Setup(x => x.SetCurrentEvent(9)).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(VersionEvent(10))).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.SetCurrentEvent(10)).Verifiable();
 
                 // Act
                 machine.RewriteMachineFile();
@@ -560,7 +568,7 @@ namespace CPvC.Test
 
                 // Verify
                 Assert.IsNotNull(machine.RootEvent);
-                Assert.AreEqual(1, machine.RootEvent.Children.Count);
+                Assert.GreaterOrEqual(machine.RootEvent.Children.Count, 1);
                 Assert.IsEmpty(machine.RootEvent.Children[0].Children);
                 Assert.AreEqual(pos, _mockBinaryWriter.Content.Count);
             }
@@ -580,6 +588,10 @@ namespace CPvC.Test
                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                       0x00,
+                0x01,
+                      0x01, 0x00, 0x00, 0x00,
+                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                      0xba,
                 0x06,
                       0x00, 0x00, 0x00, 0x00
             };
@@ -589,7 +601,7 @@ namespace CPvC.Test
             {
                 // Verify
                 Assert.IsNotNull(machine.RootEvent);
-                Assert.IsEmpty(machine.RootEvent.Children);
+                Assert.IsNotEmpty(machine.RootEvent.Children);
             }
         }
 

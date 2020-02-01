@@ -741,6 +741,13 @@ namespace CPvC.Test
             mockAuditor.Verify(x => x(machine.Core, ResetRequest(), ResetAction()), expectedResetTimes);
             mockAuditor.Verify(x => x(machine.Core, RunUntilRequest(), RunUntilAction()), AnyTimes());
             mockAuditor.Verify(x => x(machine.Core, KeyRequest(Keys.A, true), KeyAction(Keys.A, true)), expectedKeyTimes);
+
+            // Account for the keypresses that result from a call to GetCore...
+            for (byte keyCode = 0; keyCode < 80; keyCode++)
+            {
+                mockAuditor.Verify(x => x(machine.Core, KeyRequest(keyCode, false), null), Times.Once);
+            }
+
             mockAuditor.VerifyNoOtherCalls();
         }
 

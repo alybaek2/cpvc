@@ -18,6 +18,7 @@ namespace CPvC
         public const byte _idDeleteEvent = 6;
         public const byte _idCurrent = 7;
         public const byte _idBookmark = 8;
+        public const byte _idVersion = 9;
 
         public MachineFile(IByteStream byteStream) : base(byteStream)
         {
@@ -65,6 +66,9 @@ namespace CPvC
                             break;
                         case _idLoadTape:
                             ReadLoadTape(reader);
+                            break;
+                        case _idVersion:
+                            ReadVersion(reader);
                             break;
                         default:
                             throw new Exception("Unknown block type!");
@@ -141,6 +145,9 @@ namespace CPvC
                     break;
                 case HistoryEvent.Types.CoreAction:
                     WriteCoreAction(historyEvent.Id, historyEvent.Ticks, historyEvent.CoreAction);
+                    break;
+                case HistoryEvent.Types.Version:
+                    WriteVersion(historyEvent.Id, historyEvent.Ticks, historyEvent.Version);
                     break;
                 default:
                     throw new Exception(String.Format("Unrecognized history event type {0}.", historyEvent.Type));
@@ -259,6 +266,33 @@ namespace CPvC
             WriteUInt64(ticks);
             WriteByte(drive);
             WriteCompressedBlob(media);
+        }
+
+        private void ReadVersion(IMachineFileReader reader)
+        {
+            lock (_byteStream)
+            {
+                int id = ReadInt32();
+                UInt64 ticks = ReadUInt64();
+                int version = ReadInt32();
+
+                HistoryEvent historyEvent = HistoryEvent.CreateVersion(id, ticks, version);
+
+                Diagnostics.Trace("{0} {1}: Version {2}", id, ticks, version);
+
+                reader.AddHistoryEvent(historyEvent);
+            }
+        }
+
+        private void WriteVersion(int id, UInt64 ticks, int version)
+        {
+            lock (_byteStream)
+            {
+                WriteByte(_idVersion);
+                WriteInt32(id);
+                WriteUInt64(ticks);
+                WriteInt32(version);
+            }
         }
 
         private void ReadLoadTape(IMachineFileReader reader)

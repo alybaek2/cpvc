@@ -135,6 +135,8 @@ namespace CPvC
                 Display.EnableGreyscale(false);
                 Display.GetFromBookmark(bookmarkEvent.Bookmark);
                 Core = core;
+
+                AddEvent(HistoryEvent.CreateVersion(NextEventId(), Core.Ticks, Core.LatestVersion), true);
             }
             catch (Exception)
             {
@@ -163,7 +165,7 @@ namespace CPvC
                 machine._file = new MachineFile(fileSystem, machine.Filepath);
                 machine.Name = name;
 
-                machine.RootEvent = HistoryEvent.CreateCheckpoint(machine.NextEventId(), 0, DateTime.UtcNow, null);
+                machine.RootEvent = HistoryEvent.CreateVersion(machine.NextEventId(), 0, Core.LatestVersion);
                 machine._file.WriteHistoryEvent(machine.RootEvent);
 
                 machine.CurrentEvent = machine.RootEvent;
