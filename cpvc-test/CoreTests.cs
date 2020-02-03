@@ -207,5 +207,12 @@ namespace CPvC.Test
             //          80000 (4000000 ticks / 50 frames) ticks each.
             Assert.Greater(core.Ticks, 9 * 80000);
         }
+
+        [Test]
+        public void CreateInvalidVersion()
+        {
+            // Setup and Verify
+            Assert.Throws<Exception>(() => Core.Create(2, Core.Type.CPC6128));
+        }
     }
 }
