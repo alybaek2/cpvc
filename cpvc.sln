@@ -3,16 +3,10 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cpvc-core", "cpvc-core\cpvc-core.vcxproj", "{A96B17DB-68DD-4B88-8581-99220EC16D00}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cpvc-core-test", "cpvc-core-test\cpvc-core-test.vcxproj", "{0C5619B2-D04A-4113-840A-C5452250BCAC}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cpvc-core-clr", "cpvc-core-clr\cpvc-core-clr.vcxproj", "{B8CB8856-640D-4FDE-AD40-C4B409720ED1}"
-	ProjectSection(ProjectDependencies) = postProject
-		{A96B17DB-68DD-4B88-8581-99220EC16D00} = {A96B17DB-68DD-4B88-8581-99220EC16D00}
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cpvc", "cpvc\cpvc.csproj", "{B5258E5F-96D2-4D7B-B92C-61414BE3F4C5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B8CB8856-640D-4FDE-AD40-C4B409720ED1} = {B8CB8856-640D-4FDE-AD40-C4B409720ED1}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{87DCB63C-B6E9-4816-85F6-66956F096E2C}"
 	ProjectSection(SolutionItems) = preProject
@@ -20,6 +14,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cpvc-test", "cpvc-test\cpvc-test.csproj", "{6228B360-F971-45D0-8F19-03BF1E01CC82}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Cores", "Cores", "{F1BD4307-B02D-4401-AC80-B8B0DBB8B0C8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "v1", "v1", "{1D2D7248-7DAF-4D10-8F78-F55C13B2DA08}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cpvc-core", "core\v1\cpvc-core\cpvc-core.vcxproj", "{A96B17DB-68DD-4B88-8581-99220EC16D00}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cpvc-core-clr", "core\v1\cpvc-core-clr\cpvc-core-clr.vcxproj", "{B8CB8856-640D-4FDE-AD40-C4B409720ED1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cpvc-core-test", "core\v1\cpvc-core-test\cpvc-core-test.vcxproj", "{0C5619B2-D04A-4113-840A-C5452250BCAC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,36 +35,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Debug|x64.ActiveCfg = Debug|x64
-		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Debug|x64.Build.0 = Debug|x64
-		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Debug|x86.ActiveCfg = Debug|Win32
-		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Debug|x86.Build.0 = Debug|Win32
-		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Release|Any CPU.ActiveCfg = Release|Win32
-		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Release|x64.ActiveCfg = Release|x64
-		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Release|x64.Build.0 = Release|x64
-		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Release|x86.ActiveCfg = Release|Win32
-		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Release|x86.Build.0 = Release|Win32
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|x64.ActiveCfg = Debug|x64
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|x64.Build.0 = Debug|x64
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|x86.ActiveCfg = Debug|Win32
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|x86.Build.0 = Debug|Win32
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|Any CPU.ActiveCfg = Release|Win32
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x64.ActiveCfg = Release|x64
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x64.Build.0 = Release|x64
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x86.ActiveCfg = Release|Win32
-		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x86.Build.0 = Release|Win32
-		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Debug|x64.ActiveCfg = Debug|x64
-		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Debug|x64.Build.0 = Debug|x64
-		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Debug|x86.ActiveCfg = Debug|Win32
-		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Debug|x86.Build.0 = Debug|Win32
-		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Release|Any CPU.ActiveCfg = Release|Win32
-		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Release|x64.ActiveCfg = Release|x64
-		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Release|x64.Build.0 = Release|x64
-		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Release|x86.ActiveCfg = Release|Win32
-		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Release|x86.Build.0 = Release|Win32
 		{B5258E5F-96D2-4D7B-B92C-61414BE3F4C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B5258E5F-96D2-4D7B-B92C-61414BE3F4C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B5258E5F-96D2-4D7B-B92C-61414BE3F4C5}.Debug|x64.ActiveCfg = Debug|x64
@@ -85,9 +59,45 @@ Global
 		{6228B360-F971-45D0-8F19-03BF1E01CC82}.Release|x64.Build.0 = Release|x64
 		{6228B360-F971-45D0-8F19-03BF1E01CC82}.Release|x86.ActiveCfg = Release|x86
 		{6228B360-F971-45D0-8F19-03BF1E01CC82}.Release|x86.Build.0 = Release|x86
+		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Debug|x64.ActiveCfg = Debug|x64
+		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Debug|x64.Build.0 = Debug|x64
+		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Debug|x86.ActiveCfg = Debug|Win32
+		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Debug|x86.Build.0 = Debug|Win32
+		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Release|Any CPU.ActiveCfg = Release|Win32
+		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Release|x64.ActiveCfg = Release|x64
+		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Release|x64.Build.0 = Release|x64
+		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Release|x86.ActiveCfg = Release|Win32
+		{A96B17DB-68DD-4B88-8581-99220EC16D00}.Release|x86.Build.0 = Release|Win32
+		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Debug|x64.ActiveCfg = Debug|x64
+		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Debug|x64.Build.0 = Debug|x64
+		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Debug|x86.ActiveCfg = Debug|Win32
+		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Debug|x86.Build.0 = Debug|Win32
+		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Release|Any CPU.ActiveCfg = Release|Win32
+		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Release|x64.ActiveCfg = Release|x64
+		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Release|x64.Build.0 = Release|x64
+		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Release|x86.ActiveCfg = Release|Win32
+		{B8CB8856-640D-4FDE-AD40-C4B409720ED1}.Release|x86.Build.0 = Release|Win32
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|x64.ActiveCfg = Debug|x64
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|x64.Build.0 = Debug|x64
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|x86.ActiveCfg = Debug|Win32
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Debug|x86.Build.0 = Debug|Win32
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|Any CPU.ActiveCfg = Release|Win32
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x64.ActiveCfg = Release|x64
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x64.Build.0 = Release|x64
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x86.ActiveCfg = Release|Win32
+		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1D2D7248-7DAF-4D10-8F78-F55C13B2DA08} = {F1BD4307-B02D-4401-AC80-B8B0DBB8B0C8}
+		{A96B17DB-68DD-4B88-8581-99220EC16D00} = {1D2D7248-7DAF-4D10-8F78-F55C13B2DA08}
+		{B8CB8856-640D-4FDE-AD40-C4B409720ED1} = {1D2D7248-7DAF-4D10-8F78-F55C13B2DA08}
+		{0C5619B2-D04A-4113-840A-C5452250BCAC} = {1D2D7248-7DAF-4D10-8F78-F55C13B2DA08}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {37A7BFE4-1BCE-4330-B13A-436F08F0EDCD}

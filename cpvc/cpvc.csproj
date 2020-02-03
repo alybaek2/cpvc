@@ -115,6 +115,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Core\CoreActionBase.cs" />
+    <Compile Include="Core\ICore.cs" />
     <Compile Include="IO\BinaryFile.cs" />
     <Compile Include="IO\FileByteStream.cs" />
     <Compile Include="IO\IBinaryFile.cs" />
@@ -228,12 +229,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\cpvc-core-clr\cpvc-core-clr.vcxproj">
-      <Project>{b8cb8856-640d-4fde-ad40-c4b409720ed1}</Project>
-      <Name>cpvc-core-clr</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="UI\Resources\cpvc.png" />
   </ItemGroup>
   <ItemGroup>
@@ -269,6 +264,12 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="UI\Resources\bookmarkadd16.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\core\v1\cpvc-core-clr\cpvc-core-clr.vcxproj">
+      <Project>{b8cb8856-640d-4fde-ad40-c4b409720ed1}</Project>
+      <Name>cpvc-core-clr</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -135,6 +135,8 @@ namespace CPvC
                 Display.EnableGreyscale(false);
                 Display.GetFromBookmark(bookmarkEvent.Bookmark);
                 Core = core;
+
+                AddEvent(HistoryEvent.CreateVersion(NextEventId(), Core.Ticks, Core.LatestVersion), true);
             }
             catch (Exception)
             {
@@ -163,12 +165,12 @@ namespace CPvC
                 machine._file = new MachineFile(fileSystem, machine.Filepath);
                 machine.Name = name;
 
-                machine.RootEvent = HistoryEvent.CreateCheckpoint(machine.NextEventId(), 0, DateTime.UtcNow, null);
+                machine.RootEvent = HistoryEvent.CreateVersion(machine.NextEventId(), 0, Core.LatestVersion);
                 machine._file.WriteHistoryEvent(machine.RootEvent);
 
                 machine.CurrentEvent = machine.RootEvent;
 
-                machine.Core = Core.Create(Core.Type.CPC6128);
+                machine.Core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
 
                 return machine;
             }
@@ -729,11 +731,11 @@ namespace CPvC
                 if (historyEvent.Parent == null)
                 {
                     // A history event with no parent is assumed to be the root.
-                    core = Core.Create(Core.Type.CPC6128);
+                    core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
                 }
                 else if (historyEvent.Bookmark != null)
                 {
-                    core = Core.Create(historyEvent.Bookmark.State.GetBytes());
+                    core = Core.Create(Core.LatestVersion, historyEvent.Bookmark.State.GetBytes());
 
                     // Ensure all keys are in an "up" state.
                     for (byte keycode = 0; keycode < 80; keycode++)

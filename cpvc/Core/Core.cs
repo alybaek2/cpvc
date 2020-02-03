@@ -23,12 +23,16 @@ namespace CPvC
     /// </summary>
     public sealed class Core : INotifyPropertyChanged, IDisposable
     {
+        // Core versions.
+        public const int LatestVersion = 1;
+        private class Corev1 : CoreCLR, ICore { }
+
         public enum Type
         {
             CPC6128
         }
 
-        private CoreCLR _coreCLR;
+        private ICore _coreCLR;
         private readonly List<CoreRequest> _requests;
 
         private bool _quitThread;
@@ -81,9 +85,9 @@ namespace CPvC
             }
         }
 
-        private Core()
+        private Core(int version)
         {
-            _coreCLR = new CoreCLR();
+            _coreCLR = CreateVersionedCore(version);
             _requests = new List<CoreRequest>();
 
             _quitThread = false;
@@ -99,6 +103,17 @@ namespace CPvC
 
             _audioReady = new AutoResetEvent(true);
             _requestQueueEmpty = new AutoResetEvent(true);
+        }
+
+        static private ICore CreateVersionedCore(int version)
+        {
+            switch (version)
+            {
+                case 1:
+                    return new Corev1();
+                default:
+                    throw new Exception(String.Format("Cannot instantiate CLR core version {0}.", version));
+            }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -167,7 +182,7 @@ namespace CPvC
         /// <param name="samples"></param>
         public void AdvancePlayback(int samples)
         {
-            _coreCLR.AdvancePlayback(samples);
+            _coreCLR.GetAudioBuffers(samples, null, null, null);
         }
 
         /// <summary>
@@ -248,11 +263,12 @@ namespace CPvC
         /// <summary>
         /// Creates a core based on the result of a previous <c>GetState</c> call.
         /// </summary>
+        /// <param name="version">Version of the core to create.</param>
         /// <param name="state">A byte array created by <c>GetState</c>.</param>
         /// <returns>The newly created core.</returns>
-        static public Core Create(byte[] state)
+        static public Core Create(int version, byte[] state)
         {
-            Core core = new Core();
+            Core core = new Core(version);
             core.LoadState(state);
 
             return core;
@@ -263,13 +279,13 @@ namespace CPvC
         /// </summary>
         /// <param name="type">The model of CPC the core should emulate.</param>
         /// <returns>A core of the specified type.</returns>
-        static public Core Create(Type type)
+        static public Core Create(int version, Type type)
         {
             switch (type)
             {
                 case Type.CPC6128:
                     {
-                        Core core = new Core();
+                        Core core = new Core(version);
 
                         core.SetLowerROM(Resources.OS6128);
                         core.SetUpperROM(0, Resources.Basic6128);

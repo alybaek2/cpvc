@@ -124,6 +124,11 @@ namespace CPvC.Test
                 ((IStreamBlob)(b.Screen)).Position == screenPos);
         }
 
+        static public HistoryEvent VersionEvent(int id)
+        {
+            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Version && h.Id == id);
+        }
+
         static public HistoryEvent CheckpointEvent(int id)
         {
             return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id);
