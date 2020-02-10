@@ -17,6 +17,7 @@ namespace CPvC.UI
             _settings = settings;
 
             Machines = new ObservableCollection<Machine>();
+            ReplayMachines = new ObservableCollection<ReplayMachine>();
 
             LoadFromSettings(fileSystem);
         }
@@ -25,6 +26,8 @@ namespace CPvC.UI
         /// Represents the set of machines that are currently open or closed.
         /// </summary>
         public ObservableCollection<Machine> Machines { get; }
+
+        public ObservableCollection<ReplayMachine> ReplayMachines { get; }
 
         /// <summary>
         /// Adds a machine to the model if it doesn't already exist.

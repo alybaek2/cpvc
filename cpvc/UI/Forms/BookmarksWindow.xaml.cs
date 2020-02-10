@@ -9,6 +9,7 @@ namespace CPvC.UI.Forms
     public sealed partial class BookmarkSelectWindow : Window, IDisposable
     {
         public HistoryEvent SelectedEvent { get; private set; }
+        public HistoryEvent SelectedReplayEvent { get; private set; }
 
         private readonly Machine _machine;
         private BookmarksViewModel _viewModel;
@@ -94,6 +95,17 @@ namespace CPvC.UI.Forms
             }
 
             _viewModel.RefreshHistoryViewItems();
+        }
+
+        private void _replayButton_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = true;
+
+            HistoryViewItem item = (HistoryViewItem)_historyListView.SelectedItem;
+            if (item?.HistoryEvent != null)
+            {
+                SelectedReplayEvent = item.HistoryEvent;
+            }
         }
     }
 }

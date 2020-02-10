@@ -13,7 +13,10 @@ namespace CPvC
             KeyPress,
             LoadDisc,
             LoadTape,
-            RunUntil
+            RunUntil,
+            CoreVersion,
+            RunUntilForce,
+            Quit
         }
 
         public Types Type { get; protected set; }
@@ -47,6 +50,11 @@ namespace CPvC
         /// For a request, a bitmask indicating the reasons that the core should running before reaching StopTicks. For an action, this is a bitmask indicating the actual reason why the core stopped.
         /// </summary>
         public byte StopReason { get; protected set; }
+
+        /// <summary>
+        /// For an action, this indicates the version of the core to switch to.
+        /// </summary>
+        public int Version { get; protected set; }
 
         public CoreActionBase(Types type)
         {

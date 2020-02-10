@@ -146,9 +146,6 @@ namespace CPvC
                 case HistoryEvent.Types.CoreAction:
                     WriteCoreAction(historyEvent.Id, historyEvent.Ticks, historyEvent.CoreAction);
                     break;
-                case HistoryEvent.Types.Version:
-                    WriteVersion(historyEvent.Id, historyEvent.Ticks, historyEvent.Version);
-                    break;
                 default:
                     throw new Exception(String.Format("Unrecognized history event type {0}.", historyEvent.Type));
             }
@@ -182,6 +179,9 @@ namespace CPvC
                     break;
                 case CoreActionBase.Types.LoadTape:
                     WriteLoadTape(id, ticks, action.MediaBuffer.GetBytes());
+                    break;
+                case CoreActionBase.Types.CoreVersion:
+                    WriteVersion(id, ticks, action.Version);
                     break;
                 default:
                     throw new Exception(String.Format("Unrecognized core action type {0}.", action.Type));
@@ -276,7 +276,8 @@ namespace CPvC
                 UInt64 ticks = ReadUInt64();
                 int version = ReadInt32();
 
-                HistoryEvent historyEvent = HistoryEvent.CreateVersion(id, ticks, version);
+                CoreAction action = CoreAction.CoreVersion(ticks, version);
+                HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
                 Diagnostics.Trace("{0} {1}: Version {2}", id, ticks, version);
 

@@ -43,6 +43,14 @@ namespace CPvC.UI
             }
         }
 
+        public ObservableCollection<ReplayMachine> ReplayMachines
+        {
+            get
+            {
+                return _model.ReplayMachines;
+            }
+        }
+
         /// <summary>
         /// Represents the currently active item in the main window. Corresponds to the DataContext associated with the currently
         /// selected tab in the main window.
@@ -65,11 +73,11 @@ namespace CPvC.UI
         /// <summary>
         /// If the currently selected tab corresponds to a Machine, this property will be a reference to that machine. Otherwise, this property is null.
         /// </summary>
-        public Machine ActiveMachine
+        public IMachine ActiveMachine
         {
             get
             {
-                return _active as Machine;
+                return _active as IMachine;
             }
 
             set
@@ -118,7 +126,7 @@ namespace CPvC.UI
 
         public void SelectBookmark(PromptForBookmarkDelegate promptForBookmark)
         {
-            Machine machine = ActiveMachine;
+            Machine machine = ActiveMachine as Machine;
             if (machine == null)
             {
                 return;
@@ -137,7 +145,7 @@ namespace CPvC.UI
 
         public void RenameMachine(PromptForNameDelegate promptForName)
         {
-            Machine machine = ActiveMachine;
+            Machine machine = ActiveMachine as Machine;
             if (machine == null)
             {
                 return;
@@ -155,34 +163,25 @@ namespace CPvC.UI
 
         public void EnableTurbo(bool enabled)
         {
-            Machine machine = ActiveMachine;
-            if (machine == null)
-            {
-                return;
-            }
-
-            using (machine.AutoPause())
-            {
-                machine.EnableTurbo(enabled);
-            }
+            ActiveMachine?.EnableTurbo(enabled);
         }
 
-        public void Resume(Machine machine)
+        public void Resume(IMachine machine)
         {
             (machine ?? ActiveMachine)?.Start();
         }
 
-        public void Pause(Machine machine)
+        public void Pause(IMachine machine)
         {
             (machine ?? ActiveMachine)?.Stop();
         }
 
-        public void Reset(Machine machine)
+        public void Reset(IMachine machine)
         {
             (machine ?? ActiveMachine)?.Reset();
         }
 
-        public void Close(Machine machine)
+        public void Close(IMachine machine)
         {
             (machine ?? ActiveMachine)?.Close();
         }
@@ -194,17 +193,17 @@ namespace CPvC.UI
 
         public void AddBookmark()
         {
-            ActiveMachine?.AddBookmark(false);
+            (ActiveMachine as Machine)?.AddBookmark(false);
         }
 
         public void SeekToLastBookmark()
         {
-            ActiveMachine?.SeekToLastBookmark();
+            (ActiveMachine as Machine)?.SeekToLastBookmark();
         }
 
         public void CompactFile()
         {
-            ActiveMachine?.RewriteMachineFile();
+            (ActiveMachine as Machine)?.RewriteMachineFile();
         }
 
         public void Remove(Machine machine)
@@ -219,11 +218,16 @@ namespace CPvC.UI
             {
                 machine.Close();
             }
+
+            foreach (ReplayMachine machine in _model.ReplayMachines)
+            {
+                machine.Close();
+            }
         }
 
         public void LoadDisc(byte drive, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
         {
-            Machine machine = ActiveMachine;
+            Machine machine = ActiveMachine as Machine;
             if (machine == null)
             {
                 return;
@@ -241,21 +245,12 @@ namespace CPvC.UI
 
         public void EjectDisc(byte drive)
         {
-            Machine machine = ActiveMachine;
-            if (machine == null)
-            {
-                return;
-            }
-
-            using (machine.AutoPause())
-            {
-                machine.LoadDisc(drive, null);
-            }
+            ActiveMachine?.LoadDisc(drive, null);
         }
 
         public void LoadTape(IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
         {
-            Machine machine = ActiveMachine;
+            Machine machine = ActiveMachine as Machine;
             if (machine == null)
             {
                 return;
@@ -273,19 +268,10 @@ namespace CPvC.UI
 
         public void EjectTape()
         {
-            Machine machine = ActiveMachine;
-            if (machine == null)
-            {
-                return;
-            }
-
-            using (machine.AutoPause())
-            {
-                machine.LoadTape(null);
-            }
+            ActiveMachine?.LoadTape(null);
         }
 
-        public void ToggleRunning(Machine machine)
+        public void ToggleRunning(IMachine machine)
         {
             machine?.ToggleRunning();
         }
@@ -306,6 +292,19 @@ namespace CPvC.UI
                     else
                     {
                         machine.AdvancePlayback(samplesRequested);
+                    }
+                }
+                foreach (ReplayMachine replayMachine in ReplayMachines)
+                {
+                    // Play audio only from the currently active machine; for the rest, just
+                    // advance the audio playback position.
+                    if (replayMachine == ActiveItem)
+                    {
+                        samplesWritten = replayMachine.ReadAudio(buffer, offset, samplesRequested);
+                    }
+                    else
+                    {
+                        replayMachine.Core.AdvancePlayback(samplesRequested);
                     }
                 }
 

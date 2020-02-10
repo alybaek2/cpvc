@@ -649,14 +649,17 @@ namespace CPvC.Test
             MainViewModel viewModel = SetupViewModel(1);
             Machine machine = viewModel.Machines[0];
             machine.Open();
-            machine.Start();
             viewModel.ActiveMachine = machine;
 
             // Act
             viewModel.EjectTape();
-            machine.Core.WaitForRequestQueueEmpty();
+            machine.Core.Quit();
+
+            machine.Start();
+            WaitForCoreToQuit(machine.Core, 2000);
 
             // Verify - need a better way of checking this; perhaps play the tape and check no tones are generated.
+            Assert.False(machine.Core.Running);
             Assert.AreEqual("Ejected tape", machine.Status);
         }
 
@@ -668,14 +671,17 @@ namespace CPvC.Test
             MainViewModel viewModel = SetupViewModel(1);
             Machine machine = viewModel.Machines[0];
             machine.Open();
-            machine.Start();
             viewModel.ActiveMachine = machine;
 
             // Act
             viewModel.EjectDisc(drive);
-            machine.Core.WaitForRequestQueueEmpty();
+            machine.Core.Quit();
+
+            machine.Start();
+            WaitForCoreToQuit(machine.Core, 2000);
 
             // Verify - need a better way of checking this; perhaps query the FDC main status register.
+            Assert.False(machine.Core.Running);
             Assert.AreEqual("Ejected disc", machine.Status);
         }
 
@@ -731,15 +737,17 @@ namespace CPvC.Test
             // Act
             viewModel.Reset(nullMachine ? null : machine);
             viewModel.Key(Keys.A, true);
+            machine.Core.Quit();
+
             machine.Start();
-            machine.Core.WaitForRequestQueueEmpty();
-            machine.Stop();
+            WaitForCoreToQuit(machine.Core, 2000);
 
             // Verify
+            Assert.False(machine.Core.Running);
             Times expectedResetTimes = (active || !nullMachine) ? Times.Once() : Times.Never();
             Times expectedKeyTimes = active ? Times.Once() : Times.Never();
             mockAuditor.Verify(x => x(machine.Core, ResetRequest(), ResetAction()), expectedResetTimes);
-            mockAuditor.Verify(x => x(machine.Core, RunUntilRequest(), RunUntilAction()), AnyTimes());
+            mockAuditor.Verify(x => x(machine.Core, null, RunUntilActionForce()), AnyTimes());
             mockAuditor.Verify(x => x(machine.Core, KeyRequest(Keys.A, true), KeyAction(Keys.A, true)), expectedKeyTimes);
 
             // Account for the keypresses that result from a call to GetCore...

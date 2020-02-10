@@ -48,6 +48,9 @@
                     </Label.Style>
                 </Label>
             </Grid>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <Button x:Name="_replayButton" Content="Play Start to Here" Width="110" Height="20" Margin="10,10,10,10" Click="_replayButton_Click"/>
+            </StackPanel>
             <ListView x:Name="_historyListView" Margin="10,10,10,10" Height="250" Width="{Binding ActualWidth, ElementName=_grid, Mode=OneWay}" ItemsSource="{Binding Items, Mode=OneWay}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}" SelectionMode="Single">
                 <ListView.ItemContainerStyle>
                     <Style TargetType="{x:Type ListViewItem}">

@@ -34,7 +34,9 @@ namespace CPvC
 
         private ICore _coreCLR;
         private readonly List<CoreRequest> _requests;
+        private object _lockObject;
 
+        private bool _running;
         private bool _quitThread;
         private Thread _coreThread;
 
@@ -89,9 +91,11 @@ namespace CPvC
         {
             _coreCLR = CreateVersionedCore(version);
             _requests = new List<CoreRequest>();
+            _lockObject = new object();
 
             _quitThread = false;
             _coreThread = null;
+            _running = false;
 
             BeginVSync = null;
 
@@ -157,6 +161,11 @@ namespace CPvC
             PushRequest(CoreRequest.Reset());
         }
 
+        public void Quit()
+        {
+            PushRequest(CoreRequest.Quit());
+        }
+
         /// <summary>
         /// Asynchronously loads a disc.
         /// </summary>
@@ -182,7 +191,10 @@ namespace CPvC
         /// <param name="samples"></param>
         public void AdvancePlayback(int samples)
         {
-            _coreCLR.GetAudioBuffers(samples, null, null, null);
+            lock (_lockObject)
+            {
+                _coreCLR.GetAudioBuffers(samples, null, null, null);
+            }
         }
 
         /// <summary>
@@ -195,7 +207,10 @@ namespace CPvC
         /// <returns>The number of samples copied to each array.</returns>
         public int GetAudioBuffers(int samples, byte[] channelA, byte[] channelB, byte[] channelC)
         {
-            return _coreCLR.GetAudioBuffers(samples, channelA, channelB, channelC);
+            lock (_lockObject)
+            {
+                return _coreCLR.GetAudioBuffers(samples, channelA, channelB, channelC);
+            }
         }
 
         /// <summary>
@@ -203,7 +218,18 @@ namespace CPvC
         /// </summary>
         public void SetScreenBuffer(IntPtr screenBuffer)
         {
-            _coreCLR.SetScreen(screenBuffer, Display.Pitch, Display.Height, Display.Width);
+            lock (_lockObject)
+            {
+                _coreCLR.SetScreen(screenBuffer, Display.Pitch, Display.Height, Display.Width);
+            }
+        }
+
+        public IntPtr GetScreen()
+        {
+            lock (_lockObject)
+            {
+                return _coreCLR.GetScreen();
+            }
         }
 
         /// <summary>
@@ -213,7 +239,17 @@ namespace CPvC
         {
             get
             {
-                return (_coreThread != null);
+                return _running;
+            }
+
+            private set
+            {
+                if (_running != value)
+                {
+                    _running = value;
+
+                    OnPropertyChanged("Running");
+                }
             }
         }
 
@@ -224,7 +260,10 @@ namespace CPvC
         {
             get
             {
-                return _coreCLR.Ticks();
+                lock (_lockObject)
+                {
+                    return _coreCLR.Ticks();
+                }
             }
         }
 
@@ -242,7 +281,7 @@ namespace CPvC
         /// <returns>A byte array containing the serialized core.</returns>
         public byte[] GetState()
         {
-            lock (_coreCLR)
+            lock (_lockObject)
             {
                 return _coreCLR.GetState();
             }
@@ -254,7 +293,7 @@ namespace CPvC
         /// <param name="state">A byte array created by <c>GetState</c>.</param>
         public void LoadState(byte[] state)
         {
-            lock (_coreCLR)
+            lock (_lockObject)
             {
                 _coreCLR.LoadState(state);
             }
@@ -326,7 +365,10 @@ namespace CPvC
         /// <returns>A bitmask specifying why the execution stopped. See <c>StopReasons</c> for a list of values.</returns>
         public byte RunUntil(UInt64 ticks, byte stopReason)
         {
-            return _coreCLR.RunUntil(ticks, stopReason);
+            lock (_lockObject)
+            {
+                return _coreCLR.RunUntil(ticks, stopReason);
+            }
         }
 
         /// <summary>
@@ -357,30 +399,18 @@ namespace CPvC
         {
             while (!_quitThread)
             {
-                lock (_coreCLR)
+                //lock (_lockObject)
                 {
-                    CoreRequest request = PopRequest() ?? CoreRequest.RunUntil(Ticks + 20000, (byte)(StopReasons.AudioOverrun | StopReasons.VSync));
-
-                    CoreAction action = ProcessRequest(request);
-                    if (action?.Type == CoreAction.Types.RunUntil)
+                    if (ProcessNextRequest())
                     {
-                        if ((action.StopReason & StopReasons.AudioOverrun) != 0)
-                        {
-                            // Wait for audio buffer to not be full...
-                            _audioReady.WaitOne(20);
-                        }
-
-                        if ((action.StopReason & StopReasons.VSync) != 0)
-                        {
-                            BeginVSync?.Invoke(this);
-                        }
+                        _quitThread = true;
+                        break;
                     }
-
-                    Auditors?.Invoke(this, request, action);
                 }
             }
 
             _quitThread = false;
+            Running = false;
         }
 
         /// <summary>Takes the amplitude levels from the three PSG audio channels and converts them to 16-bit stereo samples that can be played by NAudio.</summary>
@@ -448,18 +478,31 @@ namespace CPvC
             // For now, hard-code turbo mode to 10 times normal speed.
             UInt32 frequency = enabled ? (_audioSamplingFrequency / 10) : _audioSamplingFrequency;
 
-            lock (_coreCLR)
+            lock (_lockObject)
             {
                 _coreCLR.AudioSampleFrequency(frequency);
             }
         }
 
-        private void PushRequest(CoreRequest request)
+        public void PushRequest(CoreRequest request)
         {
             lock (_requests)
             {
                 _requests.Add(request);
                 _requestQueueEmpty.Reset();
+            }
+        }
+
+        private CoreRequest FirstRequest()
+        {
+            lock (_requests)
+            {
+                if (_requests.Count > 0)
+                {
+                    return _requests[0];
+                }
+
+                return null;
             }
         }
 
@@ -473,10 +516,11 @@ namespace CPvC
                 {
                     request = _requests[0];
                     _requests.RemoveAt(0);
-                }
-                else
-                {
-                    _requestQueueEmpty.Set();
+
+                    if (_requests.Count == 0)
+                    {
+                        _requestQueueEmpty.Set();
+                    }
                 }
             }
 
@@ -487,64 +531,146 @@ namespace CPvC
         {
             if (running)
             {
-                if (_coreThread == null)
+                if (!_running)
                 {
                     _coreThread = new Thread(CoreThread);
                     _coreThread.Start();
 
-                    OnPropertyChanged("Running");
+                    Running = true;
                 }
             }
             else
             {
-                if (_coreThread != null)
+                if (_running)
                 {
                     _quitThread = true;
                     _coreThread.Join();
                     _coreThread = null;
 
-                    OnPropertyChanged("Running");
+                    Running = false;
                 }
             }
         }
 
-        private CoreAction ProcessRequest(CoreRequest request)
+        private bool ProcessNextRequest()
         {
-            UInt64 ticks = Ticks;
+            bool success = true;
+
+            CoreRequest request = FirstRequest();
             CoreAction action = null;
-            switch (request.Type)
+
+            if (request == null)
             {
-                case CoreActionBase.Types.KeyPress:
-                    if (_coreCLR.KeyPress(request.KeyCode, request.KeyDown))
-                    {
-                        action = CoreAction.KeyPress(ticks, request.KeyCode, request.KeyDown);
-                    }
-                    break;
-                case CoreActionBase.Types.Reset:
-                    _coreCLR.Reset();
-                    action = CoreAction.Reset(ticks);
-                    break;
-                case CoreActionBase.Types.LoadDisc:
-                    _coreCLR.LoadDisc(request.Drive, request.MediaBuffer.GetBytes());
-                    action = CoreAction.LoadDisc(ticks, request.Drive, request.MediaBuffer);
-                    break;
-                case CoreActionBase.Types.LoadTape:
-                    _coreCLR.LoadTape(request.MediaBuffer.GetBytes());
-                    action = CoreAction.LoadTape(ticks, request.MediaBuffer);
-                    break;
-                case CoreActionBase.Types.RunUntil:
-                    {
-                        byte stopReason = RunUntil(request.StopTicks, request.StopReason);
-                        action = CoreAction.RunUntil(ticks, Ticks, stopReason);
-                        if (Ticks > ticks)
+                action = RunForAWhile(Ticks + 20000);
+            }
+            else
+            {
+                UInt64 ticks = Ticks;
+                switch (request.Type)
+                {
+                    case CoreActionBase.Types.KeyPress:
+                        lock (_lockObject)
                         {
-                            OnPropertyChanged("Ticks");
+                            if (_coreCLR.KeyPress(request.KeyCode, request.KeyDown))
+                            {
+                                action = CoreAction.KeyPress(ticks, request.KeyCode, request.KeyDown);
+                            }
                         }
-                    }
-                    break;
+                        break;
+                    case CoreActionBase.Types.Reset:
+                        lock (_lockObject)
+                        {
+                            _coreCLR.Reset();
+                        }
+                        action = CoreAction.Reset(ticks);
+                        break;
+                    case CoreActionBase.Types.LoadDisc:
+                        lock (_lockObject)
+                        {
+                            _coreCLR.LoadDisc(request.Drive, request.MediaBuffer.GetBytes());
+                        }
+                        action = CoreAction.LoadDisc(ticks, request.Drive, request.MediaBuffer);
+                        break;
+                    case CoreActionBase.Types.LoadTape:
+                        lock (_lockObject)
+                        {
+                            _coreCLR.LoadTape(request.MediaBuffer.GetBytes());
+                        }
+                        action = CoreAction.LoadTape(ticks, request.MediaBuffer);
+                        break;
+                    case CoreActionBase.Types.RunUntil:
+                        action = RunForAWhile(request.StopTicks);
+                        break;
+                    case CoreActionBase.Types.RunUntilForce:
+                        {
+                            while (Ticks < request.StopTicks)
+                            {
+                                RunForAWhile(request.StopTicks);
+
+                                if (_quitThread)
+                                {
+                                    success = false;
+                                    break;
+                                }
+                            }
+
+                            action = CoreAction.RunUntilForce(ticks, Ticks);
+                        }
+                        break;
+                    case CoreActionBase.Types.CoreVersion:
+                        {
+                            //byte[] state = GetState();
+
+                            //ICore newCore = Core.CreateVersionedCore(request.Version);
+                            //newCore.LoadState(state);
+
+                            //IntPtr pScr = _coreCLR.GetScreen();
+
+                            //_coreCLR.Dispose();
+                            //_coreCLR = newCore;
+
+                            //SetScreenBuffer(pScr);
+                        }
+                        break;
+                    case CoreActionBase.Types.Quit:
+                        PopRequest();
+                        return true;
+                }
             }
 
-            return action;
+            Auditors?.Invoke(this, request, action);
+
+            if (request != null && success)
+            {
+                PopRequest();
+            }
+
+            return false;
+        }
+
+        private CoreAction RunForAWhile(UInt64 stopTicks)
+        {
+            UInt64 ticks = Ticks;
+
+            byte stopReason = RunUntil(stopTicks, (byte)(StopReasons.AudioOverrun | StopReasons.VSync));
+
+            if ((stopReason & StopReasons.AudioOverrun) != 0)
+            {
+                // Wait for audio buffer to not be full...
+                _audioReady.WaitOne(20);
+            }
+
+            if ((stopReason & StopReasons.VSync) != 0)
+            {
+                BeginVSync?.Invoke(this);
+            }
+
+            if (Ticks > ticks)
+            {
+                OnPropertyChanged("Ticks");
+            }
+
+            return CoreAction.RunUntilForce(ticks, stopTicks);
         }
     }
 }

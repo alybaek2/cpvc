@@ -11,7 +11,7 @@ namespace CPvC
     /// The Machine class, in addition to encapsulating a running Core object, also maintains a file which contains the state of the machine.
     /// This allows a machine to be closed, and then resumed where it left off the next time it's opened.
     /// </remarks>
-    public sealed class Machine : IMachineFileReader, INotifyPropertyChanged, IDisposable
+    public sealed class Machine : IMachine, IMachineFileReader, INotifyPropertyChanged, IDisposable
     {
         private string _name;
         private Core _core;
@@ -136,7 +136,8 @@ namespace CPvC
                 Display.GetFromBookmark(bookmarkEvent.Bookmark);
                 Core = core;
 
-                AddEvent(HistoryEvent.CreateVersion(NextEventId(), Core.Ticks, Core.LatestVersion), true);
+                CoreAction action = CoreAction.CoreVersion(Core.Ticks, Core.LatestVersion);
+                AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true); // Core.Ticks, Core.LatestVersion), true);
             }
             catch (Exception)
             {
@@ -165,12 +166,13 @@ namespace CPvC
                 machine._file = new MachineFile(fileSystem, machine.Filepath);
                 machine.Name = name;
 
-                machine.RootEvent = HistoryEvent.CreateVersion(machine.NextEventId(), 0, Core.LatestVersion);
+                machine.Core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+
+                CoreAction action = CoreAction.CoreVersion(machine.Core.Ticks, Core.LatestVersion);
+                machine.RootEvent = HistoryEvent.CreateCoreAction(machine.NextEventId(), action); // (machine.NextEventId(), 0, Core.LatestVersion);
                 machine._file.WriteHistoryEvent(machine.RootEvent);
 
                 machine.CurrentEvent = machine.RootEvent;
-
-                machine.Core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
 
                 return machine;
             }
@@ -228,7 +230,7 @@ namespace CPvC
         /// <param name="action">The action taken.</param>
         private void RequestProcessed(Core core, CoreRequest request, CoreAction action)
         {
-            if (core == _core && action != null && action.Type != CoreAction.Types.RunUntil)
+            if (core == _core && action != null && action.Type != CoreAction.Types.RunUntil && action.Type != CoreAction.Types.RunUntilForce)
             {
                 AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
 

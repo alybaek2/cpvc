@@ -45,6 +45,16 @@ namespace CPvC
 
             return action;
         }
+        
+        static public CoreAction RunUntilForce(UInt64 ticks, UInt64 stopTicks)
+        {
+            CoreAction action = new CoreAction(Types.RunUntilForce, ticks)
+            {
+                StopTicks = stopTicks
+            };
+
+            return action;
+        }
 
         static public CoreAction LoadDisc(UInt64 ticks, byte drive, IBlob disc)
         {
@@ -75,6 +85,39 @@ namespace CPvC
         static public CoreAction LoadTape(UInt64 ticks, byte[] tape)
         {
             return LoadTape(ticks, new MemoryBlob(tape));
+        }
+
+        static public CoreAction CoreVersion(UInt64 ticks, int version)
+        {
+            CoreAction action = new CoreAction(Types.CoreVersion, ticks)
+            {
+                Version = version
+            };
+
+            return action;
+        }
+
+        public CoreRequest AsRequest()
+        {
+            CoreRequest request = new CoreRequest(Type);
+
+            switch (Type)
+            {
+                case Types.KeyPress:
+                    return CoreRequest.KeyPress(KeyCode, KeyDown);
+                case Types.LoadDisc:
+                    return CoreRequest.LoadDisc(Drive, MediaBuffer.GetBytes());
+                case Types.LoadTape:
+                    return CoreRequest.LoadTape(MediaBuffer.GetBytes());
+                case Types.Reset:
+                    return CoreRequest.Reset();
+                case Types.RunUntil:
+                    return CoreRequest.RunUntil(StopTicks, StopReasons.None);
+                case Types.CoreVersion:
+                    return CoreRequest.SwitchVersion(Version);
+            }
+
+            return null;
         }
     }
 }

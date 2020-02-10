@@ -2,12 +2,21 @@
 using NUnit.Framework;
 using System;
 using System.ComponentModel;
+using System.Threading;
 using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
 {
     public class CoreTests
     {
+        private Mock<RequestProcessedDelegate> _mockRequestProcessed;
+
+        [SetUp]
+        public void Setup()
+        {
+            _mockRequestProcessed = new Mock<RequestProcessedDelegate>();
+        }
+
         static private Mock<IFileSystem> GetFileSystem(int size)
         {
             Mock<IFileSystem> mock = new Mock<IFileSystem>(MockBehavior.Strict);
@@ -38,16 +47,16 @@ namespace CPvC.Test
                 core.Auditors += mockRequestProcessed.Object;
 
                 // Act
+                core.KeyPress(Keys.Space, true);
+                core.KeyPress(Keys.Space, true);
+                core.Quit();
+
                 core.Start();
-                core.KeyPress(Keys.Space, true);
-                core.KeyPress(Keys.Space, true);
-                core.WaitForRequestQueueEmpty();
-                core.Stop();
+                WaitForCoreToQuit(core, 2000);
 
                 // Verify
                 mockRequestProcessed.Verify(x => x(core, KeyRequest(Keys.Space, true), KeyAction(Keys.Space, true)), Times.Once);
                 mockRequestProcessed.Verify(x => x(core, KeyRequest(Keys.Space, true), null), Times.Once);
-                mockRequestProcessed.Verify(x => x(core, RunUntilRequest(), RunUntilAction()), AnyTimes());
                 mockRequestProcessed.VerifyNoOtherCalls();
             }
         }
@@ -97,31 +106,29 @@ namespace CPvC.Test
         public void ProcessesActionsInCorrectOrder()
         {
             // Setup
-            Mock<RequestProcessedDelegate> mockRequestProcessed = new Mock<RequestProcessedDelegate>();
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
-                core.Auditors += mockRequestProcessed.Object;
+                core.Auditors += _mockRequestProcessed.Object;
 
                 MockSequence sequence = new MockSequence();
-                mockRequestProcessed.InSequence(sequence).Setup(x => x(core, KeyRequest(Keys.Space, true), KeyAction(Keys.Space, true))).Verifiable();
-                mockRequestProcessed.InSequence(sequence).Setup(x => x(core, TapeRequest(), TapeAction())).Verifiable();
-                mockRequestProcessed.InSequence(sequence).Setup(x => x(core, DiscRequest(), DiscAction())).Verifiable();
-                mockRequestProcessed.InSequence(sequence).Setup(x => x(core, ResetRequest(), ResetAction())).Verifiable();
+                _mockRequestProcessed.InSequence(sequence).Setup(x => x(core, KeyRequest(Keys.Space, true), KeyAction(Keys.Space, true))).Verifiable();
+                _mockRequestProcessed.InSequence(sequence).Setup(x => x(core, TapeRequest(), TapeAction())).Verifiable();
+                _mockRequestProcessed.InSequence(sequence).Setup(x => x(core, DiscRequest(), DiscAction())).Verifiable();
+                _mockRequestProcessed.InSequence(sequence).Setup(x => x(core, ResetRequest(), ResetAction())).Verifiable();
 
                 // Act
                 core.KeyPress(Keys.Space, true);
                 core.LoadTape(null);
                 core.LoadDisc(0, null);
                 core.Reset();
+                core.Quit();
 
                 core.Start();
-                core.WaitForRequestQueueEmpty();
-                core.Stop();
+                WaitForCoreToQuit(core, 2000);
 
                 // Verify
-                mockRequestProcessed.Verify();
-                mockRequestProcessed.Verify(x => x(core, RunUntilRequest(), RunUntilAction()), AnyTimes());
-                mockRequestProcessed.VerifyNoOtherCalls();
+                _mockRequestProcessed.Verify();
+                _mockRequestProcessed.VerifyNoOtherCalls();
             }
         }
 

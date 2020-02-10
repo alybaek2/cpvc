@@ -259,7 +259,8 @@ namespace CPvC.Test
                 Assert.AreEqual(machine.Filepath, "test.cpvc");
                 Assert.AreEqual(machine.Name, "test");
 
-                Assert.AreEqual(HistoryEvent.Types.Version, machine.RootEvent.Type);
+                Assert.AreEqual(HistoryEvent.Types.CoreAction, machine.RootEvent.Type);
+                Assert.AreEqual(CoreActionBase.Types.CoreVersion, machine.RootEvent.CoreAction.Type);
                 Assert.AreEqual(1, machine.RootEvent.Children.Count);
 
                 HistoryEvent historyEvent = machine.RootEvent.Children[0];
@@ -303,7 +304,8 @@ namespace CPvC.Test
 
                 // Opening the machine should add a "Version" event.
                 historyEvent = historyEvent.Children[0];
-                Assert.AreEqual(HistoryEvent.Types.Version, historyEvent.Type);
+                Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
+                Assert.AreEqual(CoreActionBase.Types.CoreVersion, historyEvent.CoreAction.Type);
 
                 Assert.AreEqual(historyEvent, machine.CurrentEvent);
             }
@@ -341,7 +343,8 @@ namespace CPvC.Test
                 HistoryEvent bookmarkEvent = machine.RootEvent.Children[0];
                 Assert.AreEqual(2, bookmarkEvent.Children.Count);
                 Assert.AreEqual(machine.CurrentEvent, bookmarkEvent.Children[1]);
-                Assert.AreEqual(HistoryEvent.Types.Version, bookmarkEvent.Children[1].Type);
+                Assert.AreEqual(HistoryEvent.Types.CoreAction, bookmarkEvent.Children[1].Type);
+                Assert.AreEqual(CoreActionBase.Types.CoreVersion, bookmarkEvent.Children[1].CoreAction.Type);
             }
         }
 

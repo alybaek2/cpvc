@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 
 namespace CPvC.Test
 {
@@ -61,6 +62,11 @@ namespace CPvC.Test
         static public CoreAction RunUntilAction()
         {
             return It.Is<CoreAction>(r => r == null || r.Type == CoreActionBase.Types.RunUntil);
+        }
+
+        static public CoreAction RunUntilActionForce()
+        {
+            return It.Is<CoreAction>(r => r == null || r.Type == CoreActionBase.Types.RunUntilForce);
         }
 
         static public CoreRequest ResetRequest()
@@ -126,7 +132,7 @@ namespace CPvC.Test
 
         static public HistoryEvent VersionEvent(int id)
         {
-            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Version && h.Id == id);
+            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction != null && h.CoreAction.Type == CoreActionBase.Types.CoreVersion && h.Id == id);
         }
 
         static public HistoryEvent CheckpointEvent(int id)
@@ -233,6 +239,26 @@ namespace CPvC.Test
         static public string GetTempFilepath(string filename)
         {
             return String.Format("{0}\\{1}", System.IO.Path.GetTempPath(), filename);
+        }
+
+        static public void WaitForCoreToQuit(Core core, int timeout)
+        {
+            using (ManualResetEvent done = new ManualResetEvent(false))
+            {
+                PropertyChangedEventHandler propChanged = (object sender, PropertyChangedEventArgs e) =>
+                {
+                    if (e.PropertyName == "Running" && !core.Running)
+                    {
+                        done.Set();
+                    }
+                };
+
+                core.PropertyChanged += propChanged;
+
+                done.WaitOne(timeout);
+
+                core.PropertyChanged -= propChanged;
+            }
         }
     }
 }

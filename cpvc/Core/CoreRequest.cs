@@ -40,6 +40,16 @@ namespace CPvC
             return request;
         }
 
+        static public CoreRequest RunUntilForce(UInt64 stopTicks)
+        {
+            CoreRequest request = new CoreRequest(Types.RunUntilForce)
+            {
+                StopTicks = stopTicks
+            };
+
+            return request;
+        }
+
         static public CoreRequest LoadDisc(byte drive, byte[] buffer)
         {
             CoreRequest request = new CoreRequest(Types.LoadDisc)
@@ -59,6 +69,21 @@ namespace CPvC
             };
 
             return request;
+        }
+
+        static public CoreRequest SwitchVersion(int version)
+        {
+            CoreRequest request = new CoreRequest(Types.CoreVersion)
+            {
+                Version = version
+            };
+
+            return request;
+        }
+
+        static public CoreRequest Quit()
+        {
+            return new CoreRequest(Types.Quit);
         }
     }
 }

@@ -353,7 +353,7 @@ namespace CPvC.UI.Forms
 
         private HistoryEvent PromptForBookmark()
         {
-            Machine machine = _mainViewModel.ActiveMachine;
+            Machine machine = _mainViewModel.ActiveMachine as Machine;
 
             using (machine.AutoPause())
             {
@@ -363,9 +363,18 @@ namespace CPvC.UI.Forms
                 using (BookmarkSelectWindow dialog = new BookmarkSelectWindow(this, machine))
                 {
                     bool? result = dialog.ShowDialog();
-                    if (result.HasValue && result.Value && dialog.SelectedEvent?.Bookmark != null)
+                    if (result.HasValue && result.Value)
                     {
-                        return dialog.SelectedEvent;
+                        if (dialog.SelectedReplayEvent != null)
+                        {
+                            ReplayMachine replayMachine = new ReplayMachine(dialog.SelectedReplayEvent);
+                            _mainViewModel.ReplayMachines.Add(replayMachine);
+                            return null;
+                        }
+                        else if (dialog.SelectedEvent?.Bookmark != null)
+                        {
+                            return dialog.SelectedEvent;
+                        }
                     }
 
                     return null;
@@ -451,7 +460,7 @@ namespace CPvC.UI.Forms
 
         private void ScreenGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is Machine machine)
+            if (sender is FrameworkElement element && element.DataContext is IMachine machine)
             {
                 _mainViewModel.ToggleRunning(machine);
             }

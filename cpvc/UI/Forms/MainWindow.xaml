@@ -33,6 +33,7 @@
                 <System:String>RequiresOpen</System:String>
             </CollectionViewSource.LiveFilteringProperties>
         </CollectionViewSource>
+        <CollectionViewSource x:Key="ReplayMachines" Source="{Binding ReplayMachines}"/>
     </Window.Resources>
     <Grid AllowDrop="True" Margin="0,0,0,0" Background="#FFF0F0F0">
         <Grid.RowDefinitions>
@@ -265,6 +266,7 @@
                         </TabItem.ContentTemplate>
                     </TabItem>
                     <CollectionContainer Collection="{Binding Source={StaticResource OpenMachines}}" />
+                    <CollectionContainer Collection="{Binding Source={StaticResource ReplayMachines}}" />
                 </CompositeCollection>
             </TabControl.ItemsSource>
         </TabControl>
