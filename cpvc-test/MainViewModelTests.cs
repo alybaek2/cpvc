@@ -654,7 +654,7 @@ namespace CPvC.Test
             // Act
             viewModel.EjectTape();
 
-            ProcessQueueAndStop(machine.Core, 2000);
+            ProcessQueueAndStop(machine.Core);
 
             // Verify - need a better way of checking this; perhaps play the tape and check no tones are generated.
             Assert.False(machine.Core.Running);
@@ -674,7 +674,7 @@ namespace CPvC.Test
             // Act
             viewModel.EjectDisc(drive);
 
-            ProcessQueueAndStop(machine.Core, 2000);
+            ProcessQueueAndStop(machine.Core);
 
             // Verify - need a better way of checking this; perhaps query the FDC main status register.
             Assert.False(machine.Core.Running);
@@ -734,7 +734,7 @@ namespace CPvC.Test
             viewModel.Reset(nullMachine ? null : machine);
             viewModel.Key(Keys.A, true);
 
-            ProcessQueueAndStop(machine.Core, 2000);
+            ProcessQueueAndStop(machine.Core);
 
             // Verify
             Assert.False(machine.Core.Running);

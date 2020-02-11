@@ -54,16 +54,6 @@ namespace CPvC.Test
             return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.LoadTape);
         }
 
-        static public CoreRequest RunUntilRequest()
-        {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.RunUntil);
-        }
-
-        static public CoreAction RunUntilAction()
-        {
-            return It.Is<CoreAction>(r => r == null || r.Type == CoreActionBase.Types.RunUntil);
-        }
-
         static public CoreAction RunUntilActionForce()
         {
             return It.Is<CoreAction>(r => r == null || r.Type == CoreActionBase.Types.RunUntilForce);
@@ -241,11 +231,12 @@ namespace CPvC.Test
             return String.Format("{0}\\{1}", System.IO.Path.GetTempPath(), filename);
         }
 
-        static public void ProcessQueueAndStop(Core core, int timeout)
+        static public void ProcessQueueAndStop(Core core)
         {
             core.Quit();
             core.Start();
 
+            int timeout = 30000;
             while (timeout > 0)
             {
                 if (!core.Running)

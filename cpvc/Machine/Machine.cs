@@ -230,7 +230,7 @@ namespace CPvC
         /// <param name="action">The action taken.</param>
         private void RequestProcessed(Core core, CoreRequest request, CoreAction action)
         {
-            if (core == _core && action != null && action.Type != CoreAction.Types.RunUntil && action.Type != CoreAction.Types.RunUntilForce)
+            if (core == _core && action != null && action.Type != CoreAction.Types.RunUntilForce)
             {
                 AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
 

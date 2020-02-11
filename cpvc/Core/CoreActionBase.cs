@@ -13,7 +13,6 @@ namespace CPvC
             KeyPress,
             LoadDisc,
             LoadTape,
-            RunUntil,
             CoreVersion,
             RunUntilForce,
             Quit

@@ -389,17 +389,7 @@ namespace CPvC
         /// </remarks>
         public void CoreThread()
         {
-            while (!_quitThread)
-            {
-                //lock (_lockObject)
-                {
-                    if (ProcessNextRequest())
-                    {
-                        _quitThread = true;
-                        break;
-                    }
-                }
-            }
+            while (!_quitThread && !ProcessNextRequest()) { }
 
             _quitThread = false;
             Running = false;
@@ -589,9 +579,6 @@ namespace CPvC
                             _coreCLR.LoadTape(request.MediaBuffer.GetBytes());
                         }
                         action = CoreAction.LoadTape(ticks, request.MediaBuffer);
-                        break;
-                    case CoreActionBase.Types.RunUntil:
-                        action = RunForAWhile(request.StopTicks);
                         break;
                     case CoreActionBase.Types.RunUntilForce:
                         {

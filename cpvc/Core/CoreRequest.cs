@@ -29,17 +29,6 @@ namespace CPvC
             return request;
         }
 
-        static public CoreRequest RunUntil(UInt64 stopTicks, byte stopReason)
-        {
-            CoreRequest request = new CoreRequest(Types.RunUntil)
-            {
-                StopTicks = stopTicks,
-                StopReason = stopReason
-            };
-
-            return request;
-        }
-
         static public CoreRequest RunUntilForce(UInt64 stopTicks)
         {
             CoreRequest request = new CoreRequest(Types.RunUntilForce)

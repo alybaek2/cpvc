@@ -34,17 +34,6 @@ namespace CPvC
 
             return action;
         }
-
-        static public CoreAction RunUntil(UInt64 ticks, UInt64 stopTicks, byte stopReason)
-        {
-            CoreAction action = new CoreAction(Types.RunUntil, ticks)
-            {
-                StopTicks = stopTicks,
-                StopReason = stopReason
-            };
-
-            return action;
-        }
         
         static public CoreAction RunUntilForce(UInt64 ticks, UInt64 stopTicks)
         {
@@ -111,8 +100,6 @@ namespace CPvC
                     return CoreRequest.LoadTape(MediaBuffer.GetBytes());
                 case Types.Reset:
                     return CoreRequest.Reset();
-                case Types.RunUntil:
-                    return CoreRequest.RunUntil(StopTicks, StopReasons.None);
                 case Types.CoreVersion:
                     return CoreRequest.SwitchVersion(Version);
             }
