@@ -268,14 +268,6 @@ namespace CPvC
         }
 
         /// <summary>
-        /// Waits for all outstanding requests in the core's queue to be processed, and then returns.
-        /// </summary>
-        public void WaitForRequestQueueEmpty()
-        {
-            while (_coreThread.IsAlive && !_requestQueueEmpty.WaitOne(10)) { }
-        }
-
-        /// <summary>
         /// Serializes the core to a byte array.
         /// </summary>
         /// <returns>A byte array containing the serialized core.</returns>
