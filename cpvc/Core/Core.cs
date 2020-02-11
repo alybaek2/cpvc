@@ -611,17 +611,17 @@ namespace CPvC
                         break;
                     case CoreActionBase.Types.CoreVersion:
                         {
-                            //byte[] state = GetState();
+                            byte[] state = GetState();
 
-                            //ICore newCore = Core.CreateVersionedCore(request.Version);
-                            //newCore.LoadState(state);
+                            ICore newCore = Core.CreateVersionedCore(request.Version);
+                            newCore.LoadState(state);
 
-                            //IntPtr pScr = _coreCLR.GetScreen();
+                            IntPtr pScr = _coreCLR.GetScreen();
 
-                            //_coreCLR.Dispose();
-                            //_coreCLR = newCore;
+                            _coreCLR.Dispose();
+                            _coreCLR = newCore;
 
-                            //SetScreenBuffer(pScr);
+                            SetScreenBuffer(pScr);
                         }
                         break;
                     case CoreActionBase.Types.Quit:
