@@ -241,23 +241,20 @@ namespace CPvC.Test
             return String.Format("{0}\\{1}", System.IO.Path.GetTempPath(), filename);
         }
 
-        static public void WaitForCoreToQuit(Core core, int timeout)
+        static public void ProcessQueueAndStop(Core core, int timeout)
         {
-            using (ManualResetEvent done = new ManualResetEvent(false))
+            core.Quit();
+            core.Start();
+
+            while (timeout > 0)
             {
-                PropertyChangedEventHandler propChanged = (object sender, PropertyChangedEventArgs e) =>
+                if (!core.Running)
                 {
-                    if (e.PropertyName == "Running" && !core.Running)
-                    {
-                        done.Set();
-                    }
-                };
+                    break;
+                }
 
-                core.PropertyChanged += propChanged;
-
-                done.WaitOne(timeout);
-
-                core.PropertyChanged -= propChanged;
+                Thread.Sleep(20);
+                timeout -= 20;
             }
         }
     }

@@ -49,10 +49,8 @@ namespace CPvC.Test
                 // Act
                 core.KeyPress(Keys.Space, true);
                 core.KeyPress(Keys.Space, true);
-                core.Quit();
 
-                core.Start();
-                WaitForCoreToQuit(core, 2000);
+                ProcessQueueAndStop(core, 2000);
 
                 // Verify
                 mockRequestProcessed.Verify(x => x(core, KeyRequest(Keys.Space, true), KeyAction(Keys.Space, true)), Times.Once);
@@ -121,10 +119,8 @@ namespace CPvC.Test
                 core.LoadTape(null);
                 core.LoadDisc(0, null);
                 core.Reset();
-                core.Quit();
 
-                core.Start();
-                WaitForCoreToQuit(core, 2000);
+                ProcessQueueAndStop(core, 2000);
 
                 // Verify
                 _mockRequestProcessed.Verify();
