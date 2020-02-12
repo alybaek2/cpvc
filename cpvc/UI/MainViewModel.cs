@@ -73,11 +73,11 @@ namespace CPvC.UI
         /// <summary>
         /// If the currently selected tab corresponds to a Machine, this property will be a reference to that machine. Otherwise, this property is null.
         /// </summary>
-        public IMachine ActiveMachine
+        public IBaseMachine ActiveMachine
         {
             get
             {
-                return _active as IMachine;
+                return _active as IBaseMachine;
             }
 
             set
@@ -163,32 +163,32 @@ namespace CPvC.UI
 
         public void EnableTurbo(bool enabled)
         {
-            ActiveMachine?.EnableTurbo(enabled);
+            (ActiveMachine as ITurboableMachine)?.EnableTurbo(enabled);
         }
 
-        public void Resume(IMachine machine)
+        public void Resume(IBaseMachine machine)
         {
-            (machine ?? ActiveMachine)?.Start();
+            ((machine ?? ActiveMachine) as IPausableMachine)?.Start();
         }
 
-        public void Pause(IMachine machine)
+        public void Pause(IBaseMachine machine)
         {
-            (machine ?? ActiveMachine)?.Stop();
+            ((machine ?? ActiveMachine) as IPausableMachine)?.Stop();
         }
 
-        public void Reset(IMachine machine)
+        public void Reset(IBaseMachine machine)
         {
-            (machine ?? ActiveMachine)?.Reset();
+            ((machine ?? ActiveMachine) as IInteractiveMachine)?.Reset();
         }
 
-        public void Close(IMachine machine)
+        public void Close(IBaseMachine machine)
         {
             (machine ?? ActiveMachine)?.Close();
         }
 
         public void Key(byte key, bool down)
         {
-            ActiveMachine?.Key(key, down);
+            (ActiveMachine as IInteractiveMachine)?.Key(key, down);
         }
 
         public void AddBookmark()
@@ -245,7 +245,7 @@ namespace CPvC.UI
 
         public void EjectDisc(byte drive)
         {
-            ActiveMachine?.LoadDisc(drive, null);
+            (ActiveMachine as IInteractiveMachine)?.LoadDisc(drive, null);
         }
 
         public void LoadTape(IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
@@ -268,12 +268,12 @@ namespace CPvC.UI
 
         public void EjectTape()
         {
-            ActiveMachine?.LoadTape(null);
+            (ActiveMachine as IInteractiveMachine)?.LoadTape(null);
         }
 
-        public void ToggleRunning(IMachine machine)
+        public void ToggleRunning(IBaseMachine machine)
         {
-            machine?.ToggleRunning();
+            (machine as IPausableMachine)?.ToggleRunning();
         }
 
         public int ReadAudio(byte[] buffer, int offset, int samplesRequested)

@@ -460,7 +460,7 @@ namespace CPvC.UI.Forms
 
         private void ScreenGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is IMachine machine)
+            if (sender is FrameworkElement element && element.DataContext is IBaseMachine machine)
             {
                 _mainViewModel.ToggleRunning(machine);
             }

@@ -11,7 +11,7 @@ namespace CPvC
     /// The Machine class, in addition to encapsulating a running Core object, also maintains a file which contains the state of the machine.
     /// This allows a machine to be closed, and then resumed where it left off the next time it's opened.
     /// </remarks>
-    public sealed class Machine : IMachine, IMachineFileReader, INotifyPropertyChanged, IDisposable
+    public sealed class Machine : IBaseMachine, IInteractiveMachine, IBookmarkableMachine, IPausableMachine, ITurboableMachine, IMachineFileReader, INotifyPropertyChanged, IDisposable
     {
         private string _name;
         private Core _core;

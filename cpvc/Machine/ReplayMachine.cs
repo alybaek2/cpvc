@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public class ReplayMachine : IMachine
+    public class ReplayMachine : IBaseMachine
     {
         private Core _core;
         private UInt64 _endTicks;
