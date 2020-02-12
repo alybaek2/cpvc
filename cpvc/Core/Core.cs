@@ -550,7 +550,7 @@ namespace CPvC
                 UInt64 ticks = Ticks;
                 switch (request.Type)
                 {
-                    case CoreActionBase.Types.KeyPress:
+                    case CoreRequest.Types.KeyPress:
                         lock (_lockObject)
                         {
                             if (_coreCLR.KeyPress(request.KeyCode, request.KeyDown))
@@ -559,28 +559,28 @@ namespace CPvC
                             }
                         }
                         break;
-                    case CoreActionBase.Types.Reset:
+                    case CoreRequest.Types.Reset:
                         lock (_lockObject)
                         {
                             _coreCLR.Reset();
                         }
                         action = CoreAction.Reset(ticks);
                         break;
-                    case CoreActionBase.Types.LoadDisc:
+                    case CoreRequest.Types.LoadDisc:
                         lock (_lockObject)
                         {
                             _coreCLR.LoadDisc(request.Drive, request.MediaBuffer.GetBytes());
                         }
                         action = CoreAction.LoadDisc(ticks, request.Drive, request.MediaBuffer);
                         break;
-                    case CoreActionBase.Types.LoadTape:
+                    case CoreRequest.Types.LoadTape:
                         lock (_lockObject)
                         {
                             _coreCLR.LoadTape(request.MediaBuffer.GetBytes());
                         }
                         action = CoreAction.LoadTape(ticks, request.MediaBuffer);
                         break;
-                    case CoreActionBase.Types.RunUntilForce:
+                    case CoreRequest.Types.RunUntilForce:
                         {
                             while (Ticks < request.StopTicks)
                             {
@@ -596,7 +596,7 @@ namespace CPvC
                             action = CoreAction.RunUntilForce(ticks, Ticks);
                         }
                         break;
-                    case CoreActionBase.Types.CoreVersion:
+                    case CoreRequest.Types.CoreVersion:
                         {
                             byte[] state = GetState();
 
@@ -611,7 +611,7 @@ namespace CPvC
                             SetScreenBuffer(pScr);
                         }
                         break;
-                    case CoreActionBase.Types.Quit:
+                    case CoreRequest.Types.Quit:
                         PopRequest();
                         return true;
                 }

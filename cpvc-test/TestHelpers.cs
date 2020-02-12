@@ -26,55 +26,55 @@ namespace CPvC.Test
 
         static public CoreRequest KeyRequest(byte keycode, bool down)
         {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.KeyPress && r.KeyCode == keycode && r.KeyDown == down);
+            return It.Is<CoreRequest>(r => r != null && r.Type == CoreRequest.Types.KeyPress && r.KeyCode == keycode && r.KeyDown == down);
         }
 
         static public CoreAction KeyAction(byte keycode, bool down)
         {
-            return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.KeyPress && r.KeyCode == keycode && r.KeyDown == down);
+            return It.Is<CoreAction>(r => r != null && r.Type == CoreRequest.Types.KeyPress && r.KeyCode == keycode && r.KeyDown == down);
         }
 
         static public CoreRequest DiscRequest()
         {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.LoadDisc);
+            return It.Is<CoreRequest>(r => r != null && r.Type == CoreRequest.Types.LoadDisc);
         }
 
         static public CoreAction DiscAction()
         {
-            return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.LoadDisc);
+            return It.Is<CoreAction>(r => r != null && r.Type == CoreRequest.Types.LoadDisc);
         }
 
         static public CoreRequest TapeRequest()
         {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.LoadTape);
+            return It.Is<CoreRequest>(r => r != null && r.Type == CoreRequest.Types.LoadTape);
         }
 
         static public CoreAction TapeAction()
         {
-            return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.LoadTape);
+            return It.Is<CoreAction>(r => r != null && r.Type == CoreRequest.Types.LoadTape);
         }
 
         static public CoreAction RunUntilActionForce()
         {
-            return It.Is<CoreAction>(r => r == null || r.Type == CoreActionBase.Types.RunUntilForce);
+            return It.Is<CoreAction>(r => r == null || r.Type == CoreRequest.Types.RunUntilForce);
         }
 
         static public CoreRequest ResetRequest()
         {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.Reset);
+            return It.Is<CoreRequest>(r => r != null && r.Type == CoreRequest.Types.Reset);
         }
 
         static public CoreAction ResetAction()
         {
-            return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.Reset);
+            return It.Is<CoreAction>(r => r != null && r.Type == CoreRequest.Types.Reset);
         }
 
-        static public HistoryEvent CoreActionEvent(int id, CoreActionBase.Types type)
+        static public HistoryEvent CoreActionEvent(int id, CoreRequest.Types type)
         {
             return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction.Type == type && h.Id == id);
         }
 
-        static public HistoryEvent CoreActionEvent(int id, UInt64 ticks, CoreActionBase.Types type)
+        static public HistoryEvent CoreActionEvent(int id, UInt64 ticks, CoreRequest.Types type)
         {
             return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction.Type == type && h.Ticks == ticks && h.Id == id);
         }
@@ -83,7 +83,7 @@ namespace CPvC.Test
         {
             return It.Is<HistoryEvent>(h => h != null &&
                                             h.Type == HistoryEvent.Types.CoreAction &&
-                                            h.CoreAction.Type == CoreActionBase.Types.KeyPress &&
+                                            h.CoreAction.Type == CoreRequest.Types.KeyPress &&
                                             h.CoreAction.KeyCode == keyCode &&
                                             h.CoreAction.KeyDown == keyDown &&
                                             h.Ticks == ticks &&
@@ -94,7 +94,7 @@ namespace CPvC.Test
         {
             return It.Is<HistoryEvent>(h => h != null &&
                                             h.Type == HistoryEvent.Types.CoreAction &&
-                                            h.CoreAction.Type == CoreActionBase.Types.LoadDisc &&
+                                            h.CoreAction.Type == CoreRequest.Types.LoadDisc &&
                                             h.CoreAction.Drive == drive &&
                                             h.CoreAction.MediaBuffer.GetBytes().SequenceEqual(disc) &&
                                             h.Ticks == ticks &&
@@ -105,7 +105,7 @@ namespace CPvC.Test
         {
             return It.Is<HistoryEvent>(h => h != null &&
                                             h.Type == HistoryEvent.Types.CoreAction &&
-                                            h.CoreAction.Type == CoreActionBase.Types.LoadTape &&
+                                            h.CoreAction.Type == CoreRequest.Types.LoadTape &&
                                             h.CoreAction.MediaBuffer.GetBytes().SequenceEqual(tape) &&
                                             h.Ticks == ticks &&
                                             h.Id == id);
@@ -122,7 +122,7 @@ namespace CPvC.Test
 
         static public HistoryEvent VersionEvent(int id)
         {
-            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction != null && h.CoreAction.Type == CoreActionBase.Types.CoreVersion && h.Id == id);
+            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction != null && h.CoreAction.Type == CoreRequest.Types.CoreVersion && h.Id == id);
         }
 
         static public HistoryEvent CheckpointEvent(int id)

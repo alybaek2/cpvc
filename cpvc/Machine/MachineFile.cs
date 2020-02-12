@@ -168,19 +168,19 @@ namespace CPvC
         {
             switch (action.Type)
             {
-                case CoreActionBase.Types.KeyPress:
+                case CoreRequest.Types.KeyPress:
                     WriteKey(id, ticks, action.KeyCode, action.KeyDown);
                     break;
-                case CoreActionBase.Types.Reset:
+                case CoreRequest.Types.Reset:
                     WriteReset(id, ticks);
                     break;
-                case CoreActionBase.Types.LoadDisc:
+                case CoreRequest.Types.LoadDisc:
                     WriteLoadDisc(id, ticks, action.Drive, action.MediaBuffer.GetBytes());
                     break;
-                case CoreActionBase.Types.LoadTape:
+                case CoreRequest.Types.LoadTape:
                     WriteLoadTape(id, ticks, action.MediaBuffer.GetBytes());
                     break;
-                case CoreActionBase.Types.CoreVersion:
+                case CoreRequest.Types.CoreVersion:
                     WriteVersion(id, ticks, action.Version);
                     break;
                 default:

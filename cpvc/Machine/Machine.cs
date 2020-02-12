@@ -236,13 +236,13 @@ namespace CPvC
 
                 switch (action.Type)
                 {
-                    case CoreActionBase.Types.LoadDisc:
+                    case CoreRequest.Types.LoadDisc:
                         Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded disc" : "Ejected disc";
                         break;
-                    case CoreActionBase.Types.LoadTape:
+                    case CoreRequest.Types.LoadTape:
                         Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded tape" : "Ejected tape";
                         break;
-                    case CoreActionBase.Types.Reset:
+                    case CoreRequest.Types.Reset:
                         Status = "Reset";
                         break;
                 }

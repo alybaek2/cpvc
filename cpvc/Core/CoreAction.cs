@@ -5,7 +5,7 @@ namespace CPvC
     /// <summary>
     /// Represents an action taken by the core thread in response to a request.
     /// </summary>
-    public class CoreAction : CoreActionBase
+    public class CoreAction : CoreRequest
     {
         /// <summary>
         /// The ticks at which the action took place.
@@ -19,9 +19,7 @@ namespace CPvC
 
         static public CoreAction Reset(UInt64 ticks)
         {
-            CoreAction request = new CoreAction(Types.Reset, ticks);
-
-            return request;
+            return new CoreAction(Types.Reset, ticks);
         }
 
         static public CoreAction KeyPress(UInt64 ticks, byte keycode, bool down)
@@ -56,11 +54,6 @@ namespace CPvC
             return action;
         }
 
-        static public CoreAction LoadDisc(UInt64 ticks, byte drive, byte[] disc)
-        {
-            return LoadDisc(ticks, drive, new MemoryBlob(disc));
-        }
-
         static public CoreAction LoadTape(UInt64 ticks, IBlob tape)
         {
             CoreAction action = new CoreAction(Types.LoadTape, ticks)
@@ -71,11 +64,6 @@ namespace CPvC
             return action;
         }
 
-        static public CoreAction LoadTape(UInt64 ticks, byte[] tape)
-        {
-            return LoadTape(ticks, new MemoryBlob(tape));
-        }
-
         static public CoreAction CoreVersion(UInt64 ticks, int version)
         {
             CoreAction action = new CoreAction(Types.CoreVersion, ticks)
@@ -84,27 +72,6 @@ namespace CPvC
             };
 
             return action;
-        }
-
-        public CoreRequest AsRequest()
-        {
-            CoreRequest request = new CoreRequest(Type);
-
-            switch (Type)
-            {
-                case Types.KeyPress:
-                    return CoreRequest.KeyPress(KeyCode, KeyDown);
-                case Types.LoadDisc:
-                    return CoreRequest.LoadDisc(Drive, MediaBuffer.GetBytes());
-                case Types.LoadTape:
-                    return CoreRequest.LoadTape(MediaBuffer.GetBytes());
-                case Types.Reset:
-                    return CoreRequest.Reset();
-                case Types.CoreVersion:
-                    return CoreRequest.SwitchVersion(Version);
-            }
-
-            return null;
         }
     }
 }

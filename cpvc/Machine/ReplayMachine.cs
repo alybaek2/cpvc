@@ -18,28 +18,27 @@ namespace CPvC
 
             _endTicks = historyEvent.Ticks;
 
-            List<CoreAction> actions = new List<CoreAction>();
+            List<CoreRequest> actions = new List<CoreRequest>();
+            actions.Add(CoreRequest.RunUntilForce(_endTicks));
+            actions.Add(CoreRequest.Quit());
 
             while (historyEvent != null)
             {
                 if (historyEvent.CoreAction != null)
                 {
                     actions.Insert(0, historyEvent.CoreAction);
+                    actions.Insert(0, CoreRequest.RunUntilForce(historyEvent.Ticks));
                 }
 
                 historyEvent = historyEvent.Parent;
+            }
 
-                _core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-                _core.BeginVSync += BeginVSync;
+            _core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            _core.BeginVSync += BeginVSync;
 
-                foreach (CoreAction action in actions)
-                {
-                    _core.PushRequest(CoreRequest.RunUntilForce(action.Ticks));
-                    _core.PushRequest(action.AsRequest());
-                }
-
-                _core.PushRequest(CoreRequest.RunUntilForce(_endTicks));
-                _core.PushRequest(CoreRequest.Quit());
+            foreach (CoreRequest action in actions)
+            {
+                _core.PushRequest(action);
             }
 
             _core.SetScreenBuffer(Display.Buffer);

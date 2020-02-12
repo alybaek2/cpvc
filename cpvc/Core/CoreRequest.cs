@@ -5,17 +5,59 @@ namespace CPvC
     /// <summary>
     /// Represents a request to the core thread.
     /// </summary>
-    public class CoreRequest : CoreActionBase
+    public class CoreRequest
     {
-        public CoreRequest(Types type) : base(type)
+        public CoreRequest(Types type)
         {
+            Type = type;
         }
+
+        public enum Types
+        {
+            Reset,
+            KeyPress,
+            LoadDisc,
+            LoadTape,
+            CoreVersion,
+            RunUntilForce,
+            Quit
+        }
+
+        public Types Type { get; protected set; }
+
+        /// <summary>
+        /// The key that has been pressed. Key codes are encoded as a two digit decimal number; the first digit is the key bit and the second is the key line.
+        /// </summary>
+        public byte KeyCode { get; protected set; }
+
+        /// <summary>
+        /// Indicates whether the key is in the down state. If false, the key is "up" (ie. not pressed).
+        /// </summary>
+        public bool KeyDown { get; protected set; }
+
+        /// <summary>
+        /// Indicates the drive for LoadDisc; 0 is Drive A and 1 is Drive B.
+        /// </summary>
+        public byte Drive { get; protected set; }
+
+        /// <summary>
+        /// A buffer representing an uncompressed tape or disc image.
+        /// </summary>
+        public IBlob MediaBuffer { get; protected set; }
+
+        /// <summary>
+        /// For a request, indicates the desired ticks to stop at. For an action represents the actual ticks value that the core stopped at.
+        /// </summary>
+        public UInt64 StopTicks { get; protected set; }
+
+        /// <summary>
+        /// For an action, this indicates the version of the core to switch to.
+        /// </summary>
+        public int Version { get; protected set; }
 
         static public CoreRequest Reset()
         {
-            CoreRequest request = new CoreRequest(Types.Reset);
-
-            return request;
+            return new CoreRequest(Types.Reset);
         }
 
         static public CoreRequest KeyPress(byte keycode, bool down)

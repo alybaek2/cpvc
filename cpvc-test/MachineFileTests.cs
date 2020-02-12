@@ -217,7 +217,7 @@ namespace CPvC.Test
         public void WriteDisc(byte drive)
         {
             // Setup
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.LoadDisc(100, drive, new byte[] { 0x01, 0x02 }));
+            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.LoadDisc(100, drive, new MemoryBlob(new byte[] { 0x01, 0x02 })));
             byte[] expected = new byte[]
             {
                 0x03,
@@ -238,7 +238,7 @@ namespace CPvC.Test
         public void WriteTape()
         {
             // Setup
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.LoadTape(100, new byte[] { 0x01, 0x02 }));
+            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.LoadTape(100, new MemoryBlob(new byte[]{ 0x01, 0x02 })));
             byte[] expected = new byte[]
             {
                 0x04,
@@ -268,7 +268,7 @@ namespace CPvC.Test
         public void WriteInvalidCoreActionType()
         {
             // Setup
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, new CoreAction((CoreActionBase.Types)99, 100));
+            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, new CoreAction((CoreRequest.Types)99, 100));
 
             // Act and Verify
             Assert.Throws<Exception>(() => _file.WriteHistoryEvent(historyEvent));
@@ -291,7 +291,7 @@ namespace CPvC.Test
             file.ReadFile(mockFileReader.Object);
 
             // Verify
-            mockFileReader.Verify(reader => reader.AddHistoryEvent(CoreActionEvent(0x19, 100, CoreActionBase.Types.Reset)));
+            mockFileReader.Verify(reader => reader.AddHistoryEvent(CoreActionEvent(0x19, 100, CoreRequest.Types.Reset)));
         }
 
         [TestCase(false)]

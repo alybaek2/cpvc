@@ -114,7 +114,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Core\CoreActionBase.cs" />
     <Compile Include="Core\ICore.cs" />
     <Compile Include="IO\BinaryFile.cs" />
     <Compile Include="IO\FileByteStream.cs" />

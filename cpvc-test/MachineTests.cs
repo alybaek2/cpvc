@@ -260,32 +260,32 @@ namespace CPvC.Test
                 Assert.AreEqual(machine.Name, "test");
 
                 Assert.AreEqual(HistoryEvent.Types.CoreAction, machine.RootEvent.Type);
-                Assert.AreEqual(CoreActionBase.Types.CoreVersion, machine.RootEvent.CoreAction.Type);
+                Assert.AreEqual(CoreRequest.Types.CoreVersion, machine.RootEvent.CoreAction.Type);
                 Assert.AreEqual(1, machine.RootEvent.Children.Count);
 
                 HistoryEvent historyEvent = machine.RootEvent.Children[0];
                 Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
-                Assert.AreEqual(CoreActionBase.Types.KeyPress, historyEvent.CoreAction.Type);
+                Assert.AreEqual(CoreRequest.Types.KeyPress, historyEvent.CoreAction.Type);
                 Assert.AreEqual(Keys.A, historyEvent.CoreAction.KeyCode);
                 Assert.IsTrue(historyEvent.CoreAction.KeyDown);
                 Assert.AreEqual(1, historyEvent.Children.Count);
 
                 historyEvent = historyEvent.Children[0];
                 Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
-                Assert.AreEqual(CoreActionBase.Types.LoadDisc, historyEvent.CoreAction.Type);
+                Assert.AreEqual(CoreRequest.Types.LoadDisc, historyEvent.CoreAction.Type);
                 Assert.AreEqual(0, historyEvent.CoreAction.Drive);
                 Assert.IsNull(historyEvent.CoreAction.MediaBuffer.GetBytes());
                 Assert.AreEqual(1, historyEvent.Children.Count);
 
                 historyEvent = historyEvent.Children[0];
                 Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
-                Assert.AreEqual(CoreActionBase.Types.LoadTape, historyEvent.CoreAction.Type);
+                Assert.AreEqual(CoreRequest.Types.LoadTape, historyEvent.CoreAction.Type);
                 Assert.IsNull(historyEvent.CoreAction.MediaBuffer.GetBytes());
                 Assert.AreEqual(1, historyEvent.Children.Count);
 
                 historyEvent = historyEvent.Children[0];
                 Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
-                Assert.AreEqual(CoreActionBase.Types.Reset, historyEvent.CoreAction.Type);
+                Assert.AreEqual(CoreRequest.Types.Reset, historyEvent.CoreAction.Type);
                 Assert.AreEqual(1, historyEvent.Children.Count);
 
                 historyEvent = historyEvent.Children[0];
@@ -305,7 +305,7 @@ namespace CPvC.Test
                 // Opening the machine should add a "Version" event.
                 historyEvent = historyEvent.Children[0];
                 Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
-                Assert.AreEqual(CoreActionBase.Types.CoreVersion, historyEvent.CoreAction.Type);
+                Assert.AreEqual(CoreRequest.Types.CoreVersion, historyEvent.CoreAction.Type);
 
                 Assert.AreEqual(historyEvent, machine.CurrentEvent);
             }
@@ -344,7 +344,7 @@ namespace CPvC.Test
                 Assert.AreEqual(2, bookmarkEvent.Children.Count);
                 Assert.AreEqual(machine.CurrentEvent, bookmarkEvent.Children[1]);
                 Assert.AreEqual(HistoryEvent.Types.CoreAction, bookmarkEvent.Children[1].Type);
-                Assert.AreEqual(CoreActionBase.Types.CoreVersion, bookmarkEvent.Children[1].CoreAction.Type);
+                Assert.AreEqual(CoreRequest.Types.CoreVersion, bookmarkEvent.Children[1].CoreAction.Type);
             }
         }
 
@@ -464,12 +464,12 @@ namespace CPvC.Test
                 MockSequence sequence = new MockSequence();
                 mockFileReader.InSequence(sequence).Setup(x => x.SetName("test")).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(VersionEvent(0))).Verifiable();
-                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(1, CoreActionBase.Types.LoadDisc))).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(1, CoreRequest.Types.LoadDisc))).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CheckpointEvent(2))).Verifiable();
-                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(5, CoreActionBase.Types.LoadDisc))).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(5, CoreRequest.Types.LoadDisc))).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CheckpointEvent(6))).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.SetCurrentEvent(2)).Verifiable();
-                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(7, CoreActionBase.Types.LoadTape))).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(7, CoreRequest.Types.LoadTape))).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CheckpointEvent(9))).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(VersionEvent(10))).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.SetCurrentEvent(10)).Verifiable();
