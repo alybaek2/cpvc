@@ -745,10 +745,7 @@ namespace CPvC.Test
             mockAuditor.Verify(x => x(machine.Core, KeyRequest(Keys.A, true), KeyAction(Keys.A, true)), expectedKeyTimes);
 
             // Account for the keypresses that result from a call to GetCore...
-            for (byte keyCode = 0; keyCode < 80; keyCode++)
-            {
-                mockAuditor.Verify(x => x(machine.Core, KeyRequest(keyCode, false), null), Times.Once);
-            }
+            mockAuditor.Verify(x => x(machine.Core, It.Is<CoreRequest>(r => r != null && r.Type == CoreRequest.Types.KeyPress && !r.KeyDown), null), Times.Exactly(80));
 
             mockAuditor.VerifyNoOtherCalls();
         }
@@ -795,21 +792,50 @@ namespace CPvC.Test
             machine.Open();
             machine.AddBookmark(false);
             HistoryEvent bookmarkEvent = machine.CurrentEvent;
+
+            for (byte k = 0; k < 80; k++)
+            {
+                machine.Key(k, true);
+            }
+
+            bool[] keys = new bool[80];
+            Array.Clear(keys, 0, keys.Length);
+            RequestProcessedDelegate auditor = (core, request, action) =>
+            {
+                if (request != null && request.Type == CoreRequest.Types.KeyPress)
+                {
+                    keys[request.KeyCode] = request.KeyDown;
+                }
+            };
+
+            machine.Core.Auditors += auditor;
             RunForAWhile(machine);
+            ProcessQueueAndStop(machine.Core);
+
             HistoryEvent lastEvent = machine.CurrentEvent;
             viewModel.ActiveMachine = active ? machine : null;
 
             // Act
             viewModel.SeekToLastBookmark();
+            machine.Core.Auditors += auditor;
+            ProcessQueueAndStop(machine.Core);
 
             // Verify
             if (active)
             {
                 Assert.AreEqual(bookmarkEvent, machine.CurrentEvent);
+                for (byte j = 0; j < 80; j++)
+                {
+                    Assert.IsFalse(keys[j]);
+                }
             }
             else
             {
                 Assert.AreEqual(lastEvent, machine.CurrentEvent);
+                for (byte j = 0; j < 80; j++)
+                {
+                    Assert.IsTrue(keys[j]);
+                }
             }
         }
 
