@@ -27,6 +27,30 @@
             </Style.Resources>
             <Setter Property="IsEnabled" Value="{Binding ActiveMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
         </Style>
+        <Style x:Key="InteractiveMachineButtonStyle" TargetType="{x:Type Button}">
+            <Style.Resources>
+                <Style TargetType="{x:Type Image}">
+                    <Style.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Style.Resources>
+            <Setter Property="IsEnabled" Value="{Binding ActiveInteractiveMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
+        </Style>
+        <Style x:Key="PausableMachineButtonStyle" TargetType="{x:Type Button}">
+            <Style.Resources>
+                <Style TargetType="{x:Type Image}">
+                    <Style.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Style.Resources>
+            <Setter Property="IsEnabled" Value="{Binding ActivePausableMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
+        </Style>
         <CollectionViewSource x:Key="Machines" Source="{Binding Machines}"/>
         <CollectionViewSource x:Key="OpenMachines" Source="{Binding Machines}" Filter="OpenMachines_Filter" IsLiveFilteringRequested="True">
             <CollectionViewSource.LiveFilteringProperties>
@@ -112,35 +136,35 @@
         </Menu>
         <ToolBarTray x:Name="toolBarTray" Margin="0" VerticalAlignment="Top" Grid.Row="1" Background="#FFF0F0F0">
             <ToolBar x:Name="toolBar" ToolBarTray.IsLocked="True" HorizontalContentAlignment="Left" VerticalAlignment="Center" VerticalContentAlignment="Center" Background="#FFF0F0F0">
-                <Button x:Name="_driveAButton" Height="25" VerticalAlignment="Top" Width="40" Click="DriveAButton_Click" Style="{StaticResource MachineButtonStyle}">
+                <Button x:Name="_driveAButton" Height="25" VerticalAlignment="Top" Width="40" Click="DriveAButton_Click" Style="{StaticResource InteractiveMachineButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/floppy.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                         <TextBlock><Run Text="A:"/></TextBlock>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_driveBButton" Height="25" VerticalAlignment="Top" Width="40" Click="DriveBButton_Click" Style="{StaticResource MachineButtonStyle}">
+                <Button x:Name="_driveBButton" Height="25" VerticalAlignment="Top" Width="40" Click="DriveBButton_Click" Style="{StaticResource InteractiveMachineButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/floppy.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                         <TextBlock><Run Text="B:"/></TextBlock>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_tapeButton" Height="25" VerticalAlignment="Top" Width="25" Click="TapeButton_Click" Style="{StaticResource MachineButtonStyle}">
+                <Button x:Name="_tapeButton" Height="25" VerticalAlignment="Top" Width="25" Click="TapeButton_Click" Style="{StaticResource InteractiveMachineButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/tape16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
                 <Separator/>
-                <Button x:Name="_pauseButton" Height="25" VerticalAlignment="Top" Width="25" Click="PauseButton_Click" Style="{StaticResource MachineButtonStyle}">
+                <Button x:Name="_pauseButton" Height="25" VerticalAlignment="Top" Width="25" Click="PauseButton_Click" Style="{StaticResource PausableMachineButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/pause16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_resumeButton" Height="25" VerticalAlignment="Top" Width="25" Click="ResumeButton_Click" Style="{StaticResource MachineButtonStyle}">
+                <Button x:Name="_resumeButton" Height="25" VerticalAlignment="Top" Width="25" Click="ResumeButton_Click" Style="{StaticResource PausableMachineButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/resume16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_resetButton" Height="25" VerticalAlignment="Top" Width="25" Click="ResetButton_Click" Style="{StaticResource MachineButtonStyle}">
+                <Button x:Name="_resetButton" Height="25" VerticalAlignment="Top" Width="25" Click="ResetButton_Click" Style="{StaticResource InteractiveMachineButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/reset16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
