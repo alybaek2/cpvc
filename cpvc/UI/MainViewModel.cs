@@ -135,8 +135,6 @@ namespace CPvC.UI
                 _active = value;
                 OnPropertyChanged("ActiveItem");
                 OnPropertyChanged("ActiveMachine");
-                OnPropertyChanged("ActiveInteractiveMachine");
-                OnPropertyChanged("ActivePausableMachine");
             }
         }
 
@@ -161,24 +159,6 @@ namespace CPvC.UI
 
                 OnPropertyChanged("ActiveItem");
                 OnPropertyChanged("ActiveMachine");
-                OnPropertyChanged("ActiveInteractiveMachine");
-                OnPropertyChanged("ActivePausableMachine");
-            }
-        }
-
-        public IInteractiveMachine ActiveInteractiveMachine
-        {
-            get
-            {
-                return _active as IInteractiveMachine;
-            }
-        }
-
-        public IPausableMachine ActivePausableMachine
-        {
-            get
-            {
-                return _active as IPausableMachine;
             }
         }
 

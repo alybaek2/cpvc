@@ -377,18 +377,22 @@ namespace CPvC.Test
                 }
             }
 
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, null, null, null, null);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, mockSelect.Object, mockPrompt.Object, null, null);
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
             viewModel.ActiveMachine = machine;
 
             // Act
             if (drive == 2)
             {
-                viewModel.LoadTape(_mockFileSystem.Object, mockPrompt.Object, mockSelect.Object);
+                viewModel.TapeCommand.Execute(null);
             }
-            else
+            else if (drive == 0)
             {
-                viewModel.LoadDisc(drive, _mockFileSystem.Object, mockPrompt.Object, mockSelect.Object);
+                viewModel.DriveACommand.Execute(null);
+            }
+            else if (drive == 1)
+            {
+                viewModel.DriveBCommand.Execute(null);
             }
 
             // Verify
@@ -432,8 +436,8 @@ namespace CPvC.Test
             {
                 viewModel.Key(Keys.A, true);
                 viewModel.Reset(null);
-                viewModel.Pause(null);
-                viewModel.Resume(null);
+                viewModel.PauseCommand.Execute(null);
+                viewModel.ResumeCommand.Execute(null);
                 viewModel.LoadDisc(0, _mockFileSystem.Object, prompt.Object, null);
                 viewModel.LoadTape(_mockFileSystem.Object, prompt.Object, null);
                 viewModel.EjectDisc(0);
@@ -685,12 +689,10 @@ namespace CPvC.Test
         /// Ensures that Pause and Resume calls are passed through from the view model to the machine.
         /// </summary>
         /// <param name="active">Indicates whether the machine should be set as the view model's active machine.</param>
-        /// <param name="nullMachine">Indicates whether Pause and Resume should be called with a null parameter instead of a machine.</param>
-        [TestCase(false, false)]
-        [TestCase(true, false)]
-        [TestCase(false, true)]
-        [TestCase(true, true)]
-        public void PauseAndResume(bool active, bool nullMachine)
+        /// <param nam="nullMachine">Indicates whether Pause and Resume should be called with a null parameter instead of a machine.</param>
+        [TestCase(false)]
+        [TestCase(true)]
+        public void PauseAndResume(bool active)
         {
             // Setup
             MainViewModel viewModel = SetupViewModel(1);
@@ -700,14 +702,14 @@ namespace CPvC.Test
 
             // Act
             bool initialState = machine.Core.Running;
-            viewModel.Pause(nullMachine ? null : machine);
+            viewModel.PauseCommand.Execute(null);
             bool pausedState = machine.Core.Running;
-            viewModel.Resume(nullMachine ? null : machine);
+            viewModel.ResumeCommand.Execute(null);
             bool runningState = machine.Core.Running;
 
             // Verify
             Assert.IsFalse(initialState);
-            Assert.AreEqual((active || !nullMachine), runningState);
+            Assert.AreEqual(active, runningState);
             Assert.IsFalse(pausedState);
         }
 
