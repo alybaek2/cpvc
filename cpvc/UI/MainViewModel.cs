@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Windows.Input;
 
 namespace CPvC.UI
 {
@@ -17,6 +18,43 @@ namespace CPvC.UI
         public delegate HistoryEvent PromptForBookmarkDelegate();
         public delegate string PromptForNameDelegate(string existingName);
 
+        ViewModelCommand _driveACommand;
+        ViewModelCommand _driveBCommand;
+        ViewModelCommand _tapeCommand;
+        ViewModelCommand _resetCommand;
+        ViewModelCommand _pauseCommand;
+        ViewModelCommand _resumeCommand;
+
+        public ICommand ResetCommand
+        {
+            get { return _resetCommand; }
+        }
+
+        public ICommand DriveACommand
+        {
+            get { return _driveACommand; }
+        }
+
+        public ICommand DriveBCommand
+        {
+            get { return _driveBCommand; }
+        }
+
+        public ICommand TapeCommand
+        {
+            get { return _tapeCommand; }
+        }
+
+        public ICommand PauseCommand
+        {
+            get { return _pauseCommand; }
+        }
+
+        public ICommand ResumeCommand
+        {
+            get { return _resumeCommand; }
+        }
+
         /// <summary>
         /// The data model associated with this view model.
         /// </summary>
@@ -29,10 +67,40 @@ namespace CPvC.UI
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public MainViewModel(ISettings settings, IFileSystem fileSystem)
+        public MainViewModel(ISettings settings, IFileSystem fileSystem, SelectItemDelegate selectItem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName)
         {
             _model = new MainModel(settings, fileSystem);
             ActiveItem = this;
+
+            _resetCommand = new ViewModelCommand(
+                p => (ActiveMachine as IInteractiveMachine)?.Reset(),
+                p => (ActiveMachine as IInteractiveMachine) != null
+            );
+
+            _driveACommand = new ViewModelCommand(
+                p => LoadDisc(0, fileSystem, promptForFile, selectItem),
+                p => (ActiveMachine as IInteractiveMachine) != null
+            );
+
+            _driveBCommand = new ViewModelCommand(
+                p => LoadDisc(1, fileSystem, promptForFile, selectItem),
+                p => (ActiveMachine as IInteractiveMachine) != null
+            );
+
+            _tapeCommand = new ViewModelCommand(
+                p => LoadTape(fileSystem, promptForFile, selectItem),
+                p => (ActiveMachine as IInteractiveMachine) != null
+            );
+
+            _pauseCommand = new ViewModelCommand(
+                p => Pause(null),
+                p => (ActiveMachine as IPausableMachine) != null && ((ActiveMachine as Machine)?.Core?.Running ?? false)
+            );
+
+            _resumeCommand = new ViewModelCommand(
+                p => Resume(null),
+                p => (ActiveMachine as IPausableMachine) != null && !(((ActiveMachine as Machine)?.Core?.Running ?? true))
+            );
         }
 
         public ObservableCollection<Machine> Machines

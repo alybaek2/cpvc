@@ -12,9 +12,6 @@
         <converters:IsNotNull x:Key="isNotNullConverter" />
         <converters:RunningIcon x:Key="runningIconConverter" />
         <converters:BooleanInverter x:Key="booleanInverterConverter" />
-        <Style x:Key="MachineMenuItemStyle" TargetType="{x:Type MenuItem}">
-            <Setter Property="IsEnabled" Value="{Binding ActiveMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
-        </Style>
         <Style x:Key="MachineButtonStyle" TargetType="{x:Type Button}">
             <Style.Resources>
                 <Style TargetType="{x:Type Image}">
@@ -27,7 +24,7 @@
             </Style.Resources>
             <Setter Property="IsEnabled" Value="{Binding ActiveMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
         </Style>
-        <Style x:Key="InteractiveMachineButtonStyle" TargetType="{x:Type Button}">
+        <Style x:Key="RegularMachineButtonStyle" TargetType="{x:Type Button}">
             <Style.Resources>
                 <Style TargetType="{x:Type Image}">
                     <Style.Triggers>
@@ -37,7 +34,7 @@
                     </Style.Triggers>
                 </Style>
             </Style.Resources>
-            <Setter Property="IsEnabled" Value="{Binding ActiveInteractiveMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
+            <!--<Setter Property="IsEnabled" Value="{Binding ActiveInteractiveMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />-->
         </Style>
         <Style x:Key="PausableMachineButtonStyle" TargetType="{x:Type Button}">
             <Style.Resources>
@@ -70,45 +67,45 @@
             <MenuItem Header="File">
                 <MenuItem x:Name="_newMenuItem" Header="New..." Click="NewMenuItem_Click"/>
                 <MenuItem x:Name="_openMenuItem" Header="Open..." Click="OpenMenuItem_Click"/>
-                <MenuItem x:Name="_closeMenuItem" Header="Close" Click="CloseMenuItem_Click" Style="{StaticResource MachineMenuItemStyle}"/>
+                <MenuItem x:Name="_closeMenuItem" Header="Close" Click="CloseMenuItem_Click"/>
                 <Separator/>
                 <MenuItem x:Name="_exitMenuItem" Header="Exit" Click="ExitMenuItem_Click"/>
             </MenuItem>
-            <MenuItem x:Name="_machineMenuItem" Header="Machine" Style="{StaticResource MachineMenuItemStyle}">
+            <MenuItem x:Name="_machineMenuItem" Header="Machine">
                 <MenuItem Header="Drive A:">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
-                    <MenuItem x:Name="_driveAMenuItem" Header="Load..." Click="DriveAMenuItem_Click"/>
+                    <MenuItem x:Name="_driveAMenuItem" Header="Load..." Command="{Binding DriveACommand}"/>
                     <MenuItem x:Name="_driveAEjectMenuItem" Header="Eject" Click="DriveAEjectMenuItem_Click"/>
                 </MenuItem>
                 <MenuItem Header="Drive B:">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
-                    <MenuItem x:Name="_driveBMenuItem" Header="Load..." Click="DriveBMenuItem_Click"/>
+                    <MenuItem x:Name="_driveBMenuItem" Header="Load..." Command="{Binding DriveBCommand}"/>
                     <MenuItem x:Name="_driveBEjectMenuItem" Header="Eject" Click="DriveBEjectMenuItem_Click"/>
                 </MenuItem>
                 <MenuItem Header="Tape">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/tape16.png" />
                     </MenuItem.Icon>
-                    <MenuItem x:Name="_tapeMenuItem" Header="Load..." Click="TapeMenuItem_Click"/>
+                    <MenuItem x:Name="_tapeMenuItem" Header="Load..." Command="{Binding TapeCommand}"/>
                     <MenuItem x:Name="_tapeEjectMenuItem" Header="Eject" Click="TapeEjectMenuItem_Click"/>
                 </MenuItem>
                 <Separator/>
-                <MenuItem x:Name="_pauseMenuItem" Header="Pause" Click="PauseMenuItem_Click">
+                <MenuItem x:Name="_pauseMenuItem" Header="Pause" Command="{Binding PauseCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/pause16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem x:Name="_resumeMenuItem" Header="Resume" Click="ResumeMenuItem_Click">
+                <MenuItem x:Name="_resumeMenuItem" Header="Resume" Command="{Binding ResumeCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/resume16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem x:Name="_resetMenuItem" Header="Reset" Click="ResetMenuItem_Click">
+                <MenuItem x:Name="_resetMenuItem" Header="Reset" Command="{Binding ResetCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/reset16.png" />
                     </MenuItem.Icon>
@@ -136,35 +133,35 @@
         </Menu>
         <ToolBarTray x:Name="toolBarTray" Margin="0" VerticalAlignment="Top" Grid.Row="1" Background="#FFF0F0F0">
             <ToolBar x:Name="toolBar" ToolBarTray.IsLocked="True" HorizontalContentAlignment="Left" VerticalAlignment="Center" VerticalContentAlignment="Center" Background="#FFF0F0F0">
-                <Button x:Name="_driveAButton" Height="25" VerticalAlignment="Top" Width="40" Click="DriveAButton_Click" Style="{StaticResource InteractiveMachineButtonStyle}">
+                <Button x:Name="_driveAButton" Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding DriveACommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/floppy.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                         <TextBlock><Run Text="A:"/></TextBlock>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_driveBButton" Height="25" VerticalAlignment="Top" Width="40" Click="DriveBButton_Click" Style="{StaticResource InteractiveMachineButtonStyle}">
+                <Button x:Name="_driveBButton" Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding DriveBCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/floppy.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                         <TextBlock><Run Text="B:"/></TextBlock>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_tapeButton" Height="25" VerticalAlignment="Top" Width="25" Click="TapeButton_Click" Style="{StaticResource InteractiveMachineButtonStyle}">
+                <Button x:Name="_tapeButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding TapeCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/tape16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
                 <Separator/>
-                <Button x:Name="_pauseButton" Height="25" VerticalAlignment="Top" Width="25" Click="PauseButton_Click" Style="{StaticResource PausableMachineButtonStyle}">
+                <Button x:Name="_pauseButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding PauseCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/pause16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_resumeButton" Height="25" VerticalAlignment="Top" Width="25" Click="ResumeButton_Click" Style="{StaticResource PausableMachineButtonStyle}">
+                <Button x:Name="_resumeButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ResumeCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/resume16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_resetButton" Height="25" VerticalAlignment="Top" Width="25" Click="ResetButton_Click" Style="{StaticResource InteractiveMachineButtonStyle}">
+                <Button x:Name="_resetButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ResetCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/reset16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
