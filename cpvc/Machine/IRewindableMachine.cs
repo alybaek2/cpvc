@@ -8,5 +8,6 @@ namespace CPvC
 {
     public interface IRewindableMachine
     {
+        void SeekToLastBookmark();
     }
 }

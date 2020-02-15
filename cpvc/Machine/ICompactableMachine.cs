@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public interface IBookmarkableMachine
+    public interface ICompactableMachine
     {
-        void AddBookmark(bool system);
-        void SeekToLastBookmark();
+        void Compact();
     }
 }

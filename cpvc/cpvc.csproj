@@ -129,6 +129,7 @@
     <Compile Include="Machine\IBaseMachine.cs" />
     <Compile Include="Machine\IMachineFileReader.cs" />
     <Compile Include="Machine\IPausableMachine.cs" />
+    <Compile Include="Machine\ICompactableMachine.cs" />
     <Compile Include="Machine\IPrerecordedMachine.cs" />
     <Compile Include="Machine\IRewindableMachine.cs" />
     <Compile Include="Machine\ITurboableMachine.cs" />

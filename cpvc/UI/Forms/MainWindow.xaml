@@ -34,7 +34,6 @@
                     </Style.Triggers>
                 </Style>
             </Style.Resources>
-            <!--<Setter Property="IsEnabled" Value="{Binding ActiveInteractiveMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />-->
         </Style>
         <Style x:Key="PausableMachineButtonStyle" TargetType="{x:Type Button}">
             <Style.Resources>
@@ -111,17 +110,17 @@
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem x:Name="_addBookmarkMenuItem" Header="Add Bookmark" Click="AddBookmarkMenuItem_Click">
+                <MenuItem x:Name="_addBookmarkMenuItem" Header="Add Bookmark" Command="{Binding AddBookmarkCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmarkadd16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem x:Name="_previousBookmarkMenuItem" Header="Back to Previous Bookmark" Click="PreviousBookmarkMenuItem_Click">
+                <MenuItem x:Name="_previousBookmarkMenuItem" Header="Back to Previous Bookmark" Command="{Binding SeekToPreviousBookmarkCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmarkprev16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem x:Name="_jumpToBookmarkMenuItem" Header="Bookmarks..." Click="JumpToBookmarkMenuItem_Click">
+                <MenuItem x:Name="_jumpToBookmarkMenuItem" Header="Bookmarks..." Command="{Binding BrowseBookmarksCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmark16.png" />
                     </MenuItem.Icon>
@@ -167,17 +166,17 @@
                     </StackPanel>
                 </Button>
                 <Separator/>
-                <Button x:Name="_addBookmarkButton" Height="25" VerticalAlignment="Top" Width="25" Click="AddBookmarkButton_Click" Style="{StaticResource MachineButtonStyle}">
+                <Button x:Name="_addBookmarkButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding AddBookmarkCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmarkadd16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_seekToLastBookmarkButton" Height="25" VerticalAlignment="Top" Width="25" Click="SeekToLastBookmarkButton_Click" Style="{StaticResource MachineButtonStyle}">
+                <Button x:Name="_seekToLastBookmarkButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding SeekToPreviousBookmarkCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmarkprev16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_browseBookmarksButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Click="BrowseBookmarksButton_Click">
+                <Button x:Name="_browseBookmarksButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding BrowseBookmarksCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmark16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>

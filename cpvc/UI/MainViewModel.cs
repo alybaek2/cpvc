@@ -24,6 +24,9 @@ namespace CPvC.UI
         ViewModelCommand _resetCommand;
         ViewModelCommand _pauseCommand;
         ViewModelCommand _resumeCommand;
+        ViewModelCommand _addBookmarkCommand;
+        ViewModelCommand _seekToPreviousBookmarkCommand;
+        ViewModelCommand _browseBookmarksCommand;
 
         public ICommand ResetCommand
         {
@@ -53,6 +56,21 @@ namespace CPvC.UI
         public ICommand ResumeCommand
         {
             get { return _resumeCommand; }
+        }
+
+        public ICommand AddBookmarkCommand
+        {
+            get { return _addBookmarkCommand; }
+        }
+
+        public ICommand SeekToPreviousBookmarkCommand
+        {
+            get { return _seekToPreviousBookmarkCommand; }
+        }
+
+        public ICommand BrowseBookmarksCommand
+        {
+            get { return _browseBookmarksCommand; }
         }
 
         /// <summary>
@@ -100,6 +118,21 @@ namespace CPvC.UI
             _resumeCommand = new ViewModelCommand(
                 p => Resume(null),
                 p => (ActiveMachine as IPausableMachine) != null && !(((ActiveMachine as Machine)?.Core?.Running ?? true))
+            );
+
+            _addBookmarkCommand = new ViewModelCommand(
+                p => AddBookmark(),
+                p => (ActiveMachine as IBookmarkableMachine) != null
+            );
+
+            _seekToPreviousBookmarkCommand = new ViewModelCommand(
+                p => SeekToLastBookmark(),
+                p => (ActiveMachine as IBookmarkableMachine) != null
+            );
+
+            _browseBookmarksCommand = new ViewModelCommand(
+                p => SelectBookmark(promptForBookmark),
+                p => (ActiveMachine as IBookmarkableMachine) != null
             );
         }
 
@@ -234,12 +267,12 @@ namespace CPvC.UI
             (ActiveMachine as ITurboableMachine)?.EnableTurbo(enabled);
         }
 
-        public void Resume(IBaseMachine machine)
+        private void Resume(IBaseMachine machine)
         {
             ((machine ?? ActiveMachine) as IPausableMachine)?.Start();
         }
 
-        public void Pause(IBaseMachine machine)
+        private void Pause(IBaseMachine machine)
         {
             ((machine ?? ActiveMachine) as IPausableMachine)?.Stop();
         }
@@ -271,7 +304,7 @@ namespace CPvC.UI
 
         public void CompactFile()
         {
-            (ActiveMachine as Machine)?.RewriteMachineFile();
+            (ActiveMachine as Machine)?.Compact();
         }
 
         public void Remove(Machine machine)

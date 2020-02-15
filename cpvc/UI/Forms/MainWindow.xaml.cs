@@ -187,16 +187,6 @@ namespace CPvC.UI.Forms
             }
         }
 
-        private void AddBookmarkButton_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.AddBookmark();
-        }
-
-        private void SeekToLastBookmarkButton_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.SeekToLastBookmark();
-        }
-
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             _mainViewModel.Close(null);
@@ -217,16 +207,6 @@ namespace CPvC.UI.Forms
         private void CloseMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _mainViewModel.Close(null);
-        }
-
-        private void AddBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.AddBookmark();
-        }
-
-        private void PreviousBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.SeekToLastBookmark();
         }
 
         private string PromptForFile(FileTypes type, bool existing)
@@ -353,11 +333,6 @@ namespace CPvC.UI.Forms
             }
         }
 
-        private void JumpToBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.SelectBookmark(PromptForBookmark);
-        }
-
         private void DriveAEjectMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _mainViewModel.EjectDisc(0);
@@ -461,11 +436,6 @@ namespace CPvC.UI.Forms
             {
                 e.Accepted = false;
             }
-        }
-
-        private void BrowseBookmarksButton_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.SelectBookmark(PromptForBookmark);
         }
     }
 }

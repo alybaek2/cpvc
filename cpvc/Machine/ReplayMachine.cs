@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public class ReplayMachine : IPausableMachine, ITurboableMachine, IBaseMachine
+    public class ReplayMachine : IPausableMachine, ITurboableMachine, IPrerecordedMachine, IBaseMachine
     {
         private Core _core;
         private UInt64 _endTicks;
@@ -119,25 +119,24 @@ namespace CPvC
             _core?.Dispose();
         }
 
-        public void Reset()
+        public void SeekToStart()
         {
 
         }
 
-        public void Key(byte keycode, bool down)
+        public void SeekToEnd()
         {
 
         }
 
-        public void LoadDisc(byte drive, byte[] diskBuffer)
+        public void SeekToPreviousBookmark()
         {
 
         }
 
-        public void LoadTape(byte[] tapeBuffer)
+        public void SeekToNextBookmark()
         {
 
         }
-
     }
 }

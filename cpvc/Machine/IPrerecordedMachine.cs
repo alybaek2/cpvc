@@ -8,5 +8,9 @@ namespace CPvC
 {
     public interface IPrerecordedMachine
     {
+        void SeekToStart();
+        void SeekToEnd();
+        void SeekToPreviousBookmark();
+        void SeekToNextBookmark();
     }
 }
