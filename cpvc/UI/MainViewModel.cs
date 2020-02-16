@@ -19,14 +19,19 @@ namespace CPvC.UI
         public delegate string PromptForNameDelegate(string existingName);
 
         ViewModelCommand _driveACommand;
+        ViewModelCommand _driveAEjectCommand;
         ViewModelCommand _driveBCommand;
+        ViewModelCommand _driveBEjectCommand;
         ViewModelCommand _tapeCommand;
+        ViewModelCommand _tapeEjectCommand;
         ViewModelCommand _resetCommand;
         ViewModelCommand _pauseCommand;
         ViewModelCommand _resumeCommand;
         ViewModelCommand _addBookmarkCommand;
         ViewModelCommand _seekToPreviousBookmarkCommand;
         ViewModelCommand _browseBookmarksCommand;
+        ViewModelCommand _compactCommand;
+        ViewModelCommand _renameCommand;
 
         public ICommand ResetCommand
         {
@@ -43,9 +48,24 @@ namespace CPvC.UI
             get { return _driveBCommand; }
         }
 
+        public ICommand DriveAEjectCommand
+        {
+            get { return _driveAEjectCommand; }
+        }
+
+        public ICommand DriveBEjectCommand
+        {
+            get { return _driveBEjectCommand; }
+        }
+
         public ICommand TapeCommand
         {
             get { return _tapeCommand; }
+        }
+
+        public ICommand TapeEjectCommand
+        {
+            get { return _tapeEjectCommand; }
         }
 
         public ICommand PauseCommand
@@ -71,6 +91,16 @@ namespace CPvC.UI
         public ICommand BrowseBookmarksCommand
         {
             get { return _browseBookmarksCommand; }
+        }
+
+        public ICommand CompactCommand
+        {
+            get { return _compactCommand; }
+        }
+
+        public ICommand RenameCommand
+        {
+            get { return _renameCommand; }
         }
 
         /// <summary>
@@ -100,13 +130,28 @@ namespace CPvC.UI
                 p => (ActiveMachine as IInteractiveMachine) != null
             );
 
+            _driveAEjectCommand = new ViewModelCommand(
+                p => EjectDisc(0),
+                p => (ActiveMachine as IInteractiveMachine) != null
+            );
+
             _driveBCommand = new ViewModelCommand(
                 p => LoadDisc(1, fileSystem, promptForFile, selectItem),
                 p => (ActiveMachine as IInteractiveMachine) != null
             );
 
+            _driveBEjectCommand = new ViewModelCommand(
+                p => EjectDisc(1),
+                p => (ActiveMachine as IInteractiveMachine) != null
+            );
+
             _tapeCommand = new ViewModelCommand(
                 p => LoadTape(fileSystem, promptForFile, selectItem),
+                p => (ActiveMachine as IInteractiveMachine) != null
+            );
+
+            _tapeEjectCommand = new ViewModelCommand(
+                p => EjectTape(),
                 p => (ActiveMachine as IInteractiveMachine) != null
             );
 
@@ -133,6 +178,16 @@ namespace CPvC.UI
             _browseBookmarksCommand = new ViewModelCommand(
                 p => SelectBookmark(promptForBookmark),
                 p => (ActiveMachine as IBookmarkableMachine) != null
+            );
+
+            _compactCommand = new ViewModelCommand(
+                p => CompactFile(),
+                p => (ActiveMachine as ICompactableMachine) != null
+            );
+
+            _renameCommand = new ViewModelCommand(
+                p => RenameMachine(promptForName),
+                p => (ActiveMachine as IBaseMachine) != null
             );
         }
 

@@ -76,21 +76,21 @@
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
                     <MenuItem x:Name="_driveAMenuItem" Header="Load..." Command="{Binding DriveACommand}"/>
-                    <MenuItem x:Name="_driveAEjectMenuItem" Header="Eject" Click="DriveAEjectMenuItem_Click"/>
+                    <MenuItem x:Name="_driveAEjectMenuItem" Header="Eject" Command="{Binding DriveAEjectCommand}"/>
                 </MenuItem>
                 <MenuItem Header="Drive B:">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
                     <MenuItem x:Name="_driveBMenuItem" Header="Load..." Command="{Binding DriveBCommand}"/>
-                    <MenuItem x:Name="_driveBEjectMenuItem" Header="Eject" Click="DriveBEjectMenuItem_Click"/>
+                    <MenuItem x:Name="_driveBEjectMenuItem" Header="Eject" Command="{Binding DriveBEjectCommand}"/>
                 </MenuItem>
                 <MenuItem Header="Tape">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/tape16.png" />
                     </MenuItem.Icon>
                     <MenuItem x:Name="_tapeMenuItem" Header="Load..." Command="{Binding TapeCommand}"/>
-                    <MenuItem x:Name="_tapeEjectMenuItem" Header="Eject" Click="TapeEjectMenuItem_Click"/>
+                    <MenuItem x:Name="_tapeEjectMenuItem" Header="Eject" Command="{Binding TapeEjectCommand}"/>
                 </MenuItem>
                 <Separator/>
                 <MenuItem x:Name="_pauseMenuItem" Header="Pause" Command="{Binding PauseCommand}">
@@ -126,8 +126,8 @@
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem x:Name="_renameFileMenuItem" Header="Rename machine..." Click="RenameFileMenuItem_Click"/>
-                <MenuItem x:Name="_compactFileMenuItem" Header="Compact machine file" Click="CompactFileMenuItem_Click"/>
+                <MenuItem x:Name="_renameFileMenuItem" Header="Rename machine..." Command="{Binding RenameCommand}"/>
+                <MenuItem x:Name="_compactFileMenuItem" Header="Compact machine file" Command="{Binding CompactCommand}"/>
             </MenuItem>
         </Menu>
         <ToolBarTray x:Name="toolBarTray" Margin="0" VerticalAlignment="Top" Grid.Row="1" Background="#FFF0F0F0">

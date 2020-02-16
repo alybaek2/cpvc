@@ -333,31 +333,6 @@ namespace CPvC.UI.Forms
             }
         }
 
-        private void DriveAEjectMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.EjectDisc(0);
-        }
-
-        private void DriveBEjectMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.EjectDisc(1);
-        }
-
-        private void TapeEjectMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.EjectTape();
-        }
-
-        private void CompactFileMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.CompactFile();
-        }
-
-        private void RenameFileMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.RenameMachine(PromptForName);
-        }
-
         private void MachinePreviewGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (sender is FrameworkElement element && element.DataContext is Machine machine)
