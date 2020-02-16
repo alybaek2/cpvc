@@ -172,7 +172,7 @@ namespace CPvC.UI
             );
 
             _toggleRunningCommand = new ViewModelCommand(
-                p => ToggleRunning(null),
+                p => ToggleRunning(p as IPausableMachine),
                 p => (ActiveMachine as IPausableMachine) != null
             );
 
@@ -438,9 +438,9 @@ namespace CPvC.UI
             (ActiveMachine as IInteractiveMachine)?.LoadTape(null);
         }
 
-        private void ToggleRunning(IBaseMachine machine)
+        private void ToggleRunning(IPausableMachine machine)
         {
-            (machine as IPausableMachine)?.ToggleRunning();
+            machine?.ToggleRunning();
         }
 
         public int ReadAudio(byte[] buffer, int offset, int samplesRequested)
