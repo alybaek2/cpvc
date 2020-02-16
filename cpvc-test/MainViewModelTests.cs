@@ -467,7 +467,7 @@ namespace CPvC.Test
             viewModel.ActiveMachine = active ? machine : null;
 
             // Act
-            viewModel.SelectBookmark(prompt.Object);
+            viewModel.BrowseBookmarksCommand.Execute(null);
 
             // Verify
             if (active)
@@ -608,9 +608,9 @@ namespace CPvC.Test
 
             // Act
             bool runningState1 = machine.Core.Running;
-            viewModel.ToggleRunning(machine);
+            viewModel.ToggleRunningCommand.Execute(machine);
             bool runningState2 = machine.Core.Running;
-            viewModel.ToggleRunning(machine);
+            viewModel.ToggleRunningCommand.Execute(machine);
             bool runningState3 = machine.Core.Running;
 
             // Verify
@@ -625,7 +625,7 @@ namespace CPvC.Test
             MainViewModel viewModel = SetupViewModel(0, null, null, null);
 
             // Act and Verify
-            Assert.DoesNotThrow(() => viewModel.ToggleRunning(null));
+            Assert.DoesNotThrow(() => viewModel.ToggleRunningCommand.Execute(null));
         }
 
         [Test]

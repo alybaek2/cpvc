@@ -352,7 +352,7 @@ namespace CPvC.UI.Forms
         {
             if (sender is FrameworkElement element && element.DataContext is IBaseMachine machine)
             {
-                _mainViewModel.ToggleRunning(machine);
+                _mainViewModel.ToggleRunningCommand.Execute(machine);
             }
         }
 

@@ -27,6 +27,7 @@ namespace CPvC.UI
         ViewModelCommand _resetCommand;
         ViewModelCommand _pauseCommand;
         ViewModelCommand _resumeCommand;
+        ViewModelCommand _toggleRunningCommand;
         ViewModelCommand _addBookmarkCommand;
         ViewModelCommand _seekToPreviousBookmarkCommand;
         ViewModelCommand _browseBookmarksCommand;
@@ -76,6 +77,11 @@ namespace CPvC.UI
         public ICommand ResumeCommand
         {
             get { return _resumeCommand; }
+        }
+
+        public ICommand ToggleRunningCommand
+        {
+            get { return _toggleRunningCommand; }
         }
 
         public ICommand AddBookmarkCommand
@@ -163,6 +169,11 @@ namespace CPvC.UI
             _resumeCommand = new ViewModelCommand(
                 p => Resume(null),
                 p => (ActiveMachine as IPausableMachine) != null && !(((ActiveMachine as Machine)?.Core?.Running ?? true))
+            );
+
+            _toggleRunningCommand = new ViewModelCommand(
+                p => ToggleRunning(null),
+                p => (ActiveMachine as IPausableMachine) != null
             );
 
             _addBookmarkCommand = new ViewModelCommand(
@@ -280,7 +291,7 @@ namespace CPvC.UI
             return machine;
         }
 
-        public void SelectBookmark(PromptForBookmarkDelegate promptForBookmark)
+        private void SelectBookmark(PromptForBookmarkDelegate promptForBookmark)
         {
             Machine machine = ActiveMachine as Machine;
             if (machine == null)
@@ -427,7 +438,7 @@ namespace CPvC.UI
             (ActiveMachine as IInteractiveMachine)?.LoadTape(null);
         }
 
-        public void ToggleRunning(IBaseMachine machine)
+        private void ToggleRunning(IBaseMachine machine)
         {
             (machine as IPausableMachine)?.ToggleRunning();
         }
