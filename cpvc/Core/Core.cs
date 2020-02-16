@@ -389,8 +389,6 @@ namespace CPvC
         /// </remarks>
         public void CoreThread()
         {
-            Running = true;
-
             while (!_quitThread && !ProcessNextRequest()) { }
 
             _quitThread = false;
@@ -517,6 +515,8 @@ namespace CPvC
             {
                 if (!Running)
                 {
+                    Running = true;
+
                     _coreThread = new Thread(CoreThread);
                     _coreThread.Start();
                 }
