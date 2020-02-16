@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public interface IRewindableMachine
+    public interface IRewindableMachine : IBaseMachine
     {
         void SeekToLastBookmark();
     }

@@ -10,6 +10,9 @@ namespace CPvC
     {
         void Close();
 
+        void AdvancePlayback(int samples);
+        int ReadAudio(byte[] buffer, int offset, int samplesRequested);
+
         string Name { get; }
         Core Core { get; }
 

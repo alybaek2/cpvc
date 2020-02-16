@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public interface IBookmarkableMachine
+    public interface IBookmarkableMachine : IBaseMachine
     {
         void AddBookmark(bool system);
         void SeekToLastBookmark();

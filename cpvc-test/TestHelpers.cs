@@ -201,7 +201,7 @@ namespace CPvC.Test
         /// Runs a machine for at least one instruction cycle.
         /// </summary>
         /// <param name="machine">The machine to run.</param>
-        static public void RunForAWhile(Machine machine)
+        static public void RunForAWhile(IPausableMachine machine)
         {
             UInt64 startTicks = machine.Core.Ticks;
             UInt64 endTicks = startTicks + 1;

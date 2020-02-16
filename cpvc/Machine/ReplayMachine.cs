@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public class ReplayMachine : IPausableMachine, ITurboableMachine, IPrerecordedMachine, IBaseMachine
+    public sealed class ReplayMachine : IPausableMachine, ITurboableMachine, IPrerecordedMachine, IBaseMachine, IDisposable
     {
         private Core _core;
         private UInt64 _endTicks;
@@ -63,6 +63,14 @@ namespace CPvC
         }
 
         public Display Display { get; private set; }
+
+        public void Dispose()
+        {
+            Close();
+
+            Display?.Dispose();
+            Display = null;
+        }
 
 
         private void BeginVSync(Core core)

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public interface ITurboableMachine
+    public interface ITurboableMachine : IBaseMachine
     {
         void EnableTurbo(bool enabled);
     }
