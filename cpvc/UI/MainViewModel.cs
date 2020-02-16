@@ -299,7 +299,7 @@ namespace CPvC.UI
             }
         }
 
-        public void RenameMachine(PromptForNameDelegate promptForName)
+        private void RenameMachine(PromptForNameDelegate promptForName)
         {
             Machine machine = ActiveMachine as Machine;
             if (machine == null)
@@ -332,7 +332,7 @@ namespace CPvC.UI
             ((machine ?? ActiveMachine) as IPausableMachine)?.Stop();
         }
 
-        public void Reset(IBaseMachine machine)
+        private void Reset(IBaseMachine machine)
         {
             ((machine ?? ActiveMachine) as IInteractiveMachine)?.Reset();
         }
@@ -347,17 +347,17 @@ namespace CPvC.UI
             (ActiveMachine as IInteractiveMachine)?.Key(key, down);
         }
 
-        public void AddBookmark()
+        private void AddBookmark()
         {
             (ActiveMachine as Machine)?.AddBookmark(false);
         }
 
-        public void SeekToLastBookmark()
+        private void SeekToLastBookmark()
         {
             (ActiveMachine as Machine)?.SeekToLastBookmark();
         }
 
-        public void CompactFile()
+        private void CompactFile()
         {
             (ActiveMachine as Machine)?.Compact();
         }
@@ -381,7 +381,7 @@ namespace CPvC.UI
             }
         }
 
-        public void LoadDisc(byte drive, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
+        private void LoadDisc(byte drive, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
         {
             Machine machine = ActiveMachine as Machine;
             if (machine == null)
@@ -399,12 +399,12 @@ namespace CPvC.UI
             }
         }
 
-        public void EjectDisc(byte drive)
+        private void EjectDisc(byte drive)
         {
             (ActiveMachine as IInteractiveMachine)?.LoadDisc(drive, null);
         }
 
-        public void LoadTape(IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
+        private void LoadTape(IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
         {
             Machine machine = ActiveMachine as Machine;
             if (machine == null)
@@ -422,7 +422,7 @@ namespace CPvC.UI
             }
         }
 
-        public void EjectTape()
+        private void EjectTape()
         {
             (ActiveMachine as IInteractiveMachine)?.LoadTape(null);
         }
