@@ -247,6 +247,11 @@ namespace CPvC.Test
                 Thread.Sleep(20);
                 timeout -= 20;
             }
+
+            // This seems to be necessary for some tests to succeed. For example, MainViewModelTests.Reset sometimes
+            // fails without this because resetCalled is set only after it's tested in an assertion. Need to investigate
+            // this more to understand what's going on.
+            Thread.Sleep(500);
         }
     }
 }

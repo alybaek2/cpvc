@@ -728,8 +728,27 @@ namespace CPvC.Test
             Mock<RequestProcessedDelegate> mockAuditor = new Mock<RequestProcessedDelegate>();
             MainViewModel viewModel = SetupViewModel(1);
             Machine machine = viewModel.Machines[0];
+
+            bool resetCalled = false;
+            bool[] keys = new bool[80];
+            Array.Clear(keys, 0, keys.Length);
+            RequestProcessedDelegate auditor = (core, request, action) =>
+            {
+                if (core == machine.Core && action != null)
+                {
+                    if (action.Type == CoreRequest.Types.KeyPress)
+                    {
+                        keys[action.KeyCode] = action.KeyDown;
+                    }
+                    else if (action.Type == CoreRequest.Types.Reset)
+                    {
+                        resetCalled = true;
+                    }
+                }
+            };
+
             machine.Open();
-            machine.Core.Auditors += mockAuditor.Object;
+            machine.Core.Auditors += auditor;
             viewModel.ActiveMachine = active ? machine : null;
 
             // Act
@@ -740,16 +759,22 @@ namespace CPvC.Test
 
             // Verify
             Assert.False(machine.Core.Running);
+
+            Assert.AreEqual(active || !nullMachine, resetCalled);
             Times expectedResetTimes = (active || !nullMachine) ? Times.Once() : Times.Never();
             Times expectedKeyTimes = active ? Times.Once() : Times.Never();
-            mockAuditor.Verify(x => x(machine.Core, ResetRequest(), ResetAction()), expectedResetTimes);
-            mockAuditor.Verify(x => x(machine.Core, null, RunUntilActionForce()), AnyTimes());
-            mockAuditor.Verify(x => x(machine.Core, KeyRequest(Keys.A, true), KeyAction(Keys.A, true)), expectedKeyTimes);
 
-            // Account for the keypresses that result from a call to GetCore...
-            mockAuditor.Verify(x => x(machine.Core, It.Is<CoreRequest>(r => r != null && r.Type == CoreRequest.Types.KeyPress && !r.KeyDown), null), Times.Exactly(80));
-
-            mockAuditor.VerifyNoOtherCalls();
+            for (byte k = 0; k < 80; k++)
+            {
+                if (k == Keys.A)
+                {
+                    Assert.AreEqual(active, keys[k]);
+                }
+                else
+                {
+                    Assert.False(keys[k]);
+                }
+            }
         }
 
         /// <summary>
