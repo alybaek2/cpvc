@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public interface IPrerecordedMachine : IBaseMachine
+    public interface IPrerecordedMachine : ICoreMachine
     {
         void SeekToStart();
         void SeekToEnd();

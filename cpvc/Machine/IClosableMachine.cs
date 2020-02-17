@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public interface ICompactableMachine : ICoreMachine
+    public interface IClosableMachine
     {
-        void Compact();
+        void Close();
     }
 }

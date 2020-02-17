@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public sealed class ReplayMachine : IPausableMachine, ITurboableMachine, IPrerecordedMachine, IBaseMachine, IDisposable
+    public sealed class ReplayMachine : CoreMachine, IPausableMachine, ITurboableMachine, IPrerecordedMachine, IClosableMachine, INotifyPropertyChanged, IDisposable
     {
-        private Core _core;
         private UInt64 _endTicks;
 
         public ReplayMachine(HistoryEvent historyEvent)
@@ -35,6 +35,7 @@ namespace CPvC
 
             _core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
             _core.BeginVSync += BeginVSync;
+            _core.PropertyChanged += CorePropertyChanged;
 
             foreach (CoreRequest action in actions)
             {
@@ -44,25 +45,10 @@ namespace CPvC
             _core.SetScreenBuffer(Display.Buffer);
         }
 
-        public Core Core
-        {
-            get
-            {
-                return _core;
-            }
-        }
-
-        public string Filepath
-        {
-            get;
-        }
-
         public string Name
         {
-            get; private set;
+            get; set;
         }
-
-        public Display Display { get; private set; }
 
         public void Dispose()
         {
@@ -72,24 +58,9 @@ namespace CPvC
             Display = null;
         }
 
-
-        private void BeginVSync(Core core)
+        public void Close()
         {
-            // Only copy to the display if the VSync is from a core we're interesting in.
-            if (core != null && _core == core)
-            {
-                Display.CopyFromBufferAsync();
-            }
-        }
-
-        public int ReadAudio(byte[] buffer, int offset, int samplesRequested)
-        {
-            return _core?.ReadAudio16BitStereo(buffer, offset, samplesRequested) ?? 0;
-        }
-
-        public void AdvancePlayback(int samples)
-        {
-            _core?.AdvancePlayback(samples);
+            _core?.Dispose();
         }
 
         public void EnableTurbo(bool enabled)
@@ -122,11 +93,6 @@ namespace CPvC
             }
         }
 
-        public void Close()
-        {
-            _core?.Dispose();
-        }
-
         public void SeekToStart()
         {
 
@@ -145,6 +111,22 @@ namespace CPvC
         public void SeekToNextBookmark()
         {
 
+        }
+
+        private void CorePropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "Ticks")
+            {
+                OnPropertyChanged("Ticks");
+            }
+            else if (e.PropertyName == "Running")
+            {
+                OnPropertyChanged("Running");
+            }
+            else if (e.PropertyName == "Volume")
+            {
+                OnPropertyChanged("Volume");
+            }
         }
     }
 }

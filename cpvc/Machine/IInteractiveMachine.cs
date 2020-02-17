@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public interface IInteractiveMachine : IBaseMachine
+    public interface IInteractiveMachine : ICoreMachine
     {
         void Reset();
         void Key(byte keycode, bool down);

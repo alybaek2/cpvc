@@ -203,17 +203,17 @@ namespace CPvC.Test
         /// <param name="machine">The machine to run.</param>
         static public void RunForAWhile(IPausableMachine machine)
         {
-            UInt64 startTicks = machine.Core.Ticks;
+            UInt64 startTicks = machine.Ticks;
             UInt64 endTicks = startTicks + 1;
 
             int timeWaited = 0;
             int sleepTime = 10;
             machine.Start();
-            while (machine.Core.Ticks < endTicks)
+            while (machine.Ticks < endTicks)
             {
                 if (timeWaited > 1000)
                 {
-                    throw new Exception(String.Format("Waited too long for Machine to run! {0} {1}", machine.Core.Ticks, machine.Core.Running));
+                    throw new Exception(String.Format("Waited too long for Machine to run! {0} {1}", machine.Ticks, machine.Running));
                 }
 
                 System.Threading.Thread.Sleep(sleepTime);

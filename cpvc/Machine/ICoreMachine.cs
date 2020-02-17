@@ -6,15 +6,14 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public interface IBaseMachine
+    public interface ICoreMachine
     {
-        void Close();
-
         void AdvancePlayback(int samples);
         int ReadAudio(byte[] buffer, int offset, int samplesRequested);
 
-        string Name { get; }
-        Core Core { get; }
+        UInt64 Ticks { get; }
+        bool Running { get; }
+        byte Volume { get; set;  }
 
         string Filepath { get; }
     }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public interface IPausableMachine : IBaseMachine
+    public interface IPausableMachine : ICoreMachine
     {
         void Start();
         void Stop();

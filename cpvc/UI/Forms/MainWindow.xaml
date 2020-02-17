@@ -291,9 +291,9 @@
             </TabControl.ItemsSource>
         </TabControl>
         <StatusBar x:Name="_statusBar" Height="30" Grid.Row="3" VerticalAlignment="Top">
-            <TextBlock x:Name="_clockTextBlock" TextWrapping="Wrap" Text="{Binding ActiveMachine.Core.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
+            <TextBlock x:Name="_clockTextBlock" TextWrapping="Wrap" Text="{Binding ActiveMachine.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
             <Separator/>
-            <Slider x:Name="_volumeSlider" Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding ActiveMachine.Core.Volume, Mode=TwoWay}" ToolTip="{Binding ActiveMachine.Core.Volume}" />
+            <Slider x:Name="_volumeSlider" Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding ActiveMachine.Volume, Mode=TwoWay}" ToolTip="{Binding ActiveMachine.Core.Volume}" />
             <Button x:Name="_previousBookmark" Content="Prev"/>
             <Button x:Name="_nextBookmark" Content="Next"/>
             <Slider x:Name="_timelineSlider" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right" Maximum="100" TickPlacement="BottomRight"/>

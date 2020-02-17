@@ -198,7 +198,7 @@ namespace CPvC.UI
 
             _renameCommand = new ViewModelCommand(
                 p => RenameMachine(promptForName),
-                p => (ActiveMachine as IBaseMachine) != null
+                p => (ActiveMachine as ICoreMachine) != null
             );
         }
 
@@ -240,11 +240,11 @@ namespace CPvC.UI
         /// <summary>
         /// If the currently selected tab corresponds to a Machine, this property will be a reference to that machine. Otherwise, this property is null.
         /// </summary>
-        public IBaseMachine ActiveMachine
+        public ICoreMachine ActiveMachine
         {
             get
             {
-                return _active as IBaseMachine;
+                return _active as ICoreMachine;
             }
 
             set
@@ -333,24 +333,24 @@ namespace CPvC.UI
             (ActiveMachine as ITurboableMachine)?.EnableTurbo(enabled);
         }
 
-        private void Resume(IBaseMachine machine)
+        private void Resume(ICoreMachine machine)
         {
             ((machine ?? ActiveMachine) as IPausableMachine)?.Start();
         }
 
-        private void Pause(IBaseMachine machine)
+        private void Pause(ICoreMachine machine)
         {
             ((machine ?? ActiveMachine) as IPausableMachine)?.Stop();
         }
 
-        private void Reset(IBaseMachine machine)
+        private void Reset(ICoreMachine machine)
         {
             ((machine ?? ActiveMachine) as IInteractiveMachine)?.Reset();
         }
 
-        public void Close(IBaseMachine machine)
+        public void Close(ICoreMachine machine)
         {
-            (machine ?? ActiveMachine)?.Close();
+            ((machine ?? ActiveMachine) as IClosableMachine)?.Close();
         }
 
         public void Key(byte key, bool down)

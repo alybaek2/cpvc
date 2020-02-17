@@ -12,8 +12,12 @@ namespace CPvC.Test
         private ReplayMachine CreateMachine()
         {
             HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(0, 0, DateTime.UtcNow, null);
-            HistoryEvent finalHistoryEvent = HistoryEvent.CreateCheckpoint(1, 40000000, DateTime.UtcNow, null);
-            historyEvent.AddChild(finalHistoryEvent);
+            HistoryEvent historyEvent2 = HistoryEvent.CreateCoreAction(1, CoreAction.KeyPress(10000000, Keys.A, true));
+            HistoryEvent historyEvent3 = HistoryEvent.CreateCoreAction(1, CoreAction.KeyPress(20000000, Keys.A, false));
+            HistoryEvent finalHistoryEvent = HistoryEvent.CreateCheckpoint(1, 30000000, DateTime.UtcNow, null);
+            historyEvent.AddChild(historyEvent2);
+            historyEvent2.AddChild(historyEvent3);
+            historyEvent3.AddChild(finalHistoryEvent);
 
             ReplayMachine replayMachine = new ReplayMachine(finalHistoryEvent);
 

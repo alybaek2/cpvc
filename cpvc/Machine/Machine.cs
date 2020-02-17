@@ -11,34 +11,29 @@ namespace CPvC
     /// The Machine class, in addition to encapsulating a running Core object, also maintains a file which contains the state of the machine.
     /// This allows a machine to be closed, and then resumed where it left off the next time it's opened.
     /// </remarks>
-    public sealed class Machine : IBaseMachine,
+    public sealed class Machine : CoreMachine,
         IInteractiveMachine,
         IBookmarkableMachine,
         IPausableMachine,
         ITurboableMachine,
         ICompactableMachine,
+        IClosableMachine,
         IMachineFileReader,
         INotifyPropertyChanged,
         IDisposable
     {
         private string _name;
-        private Core _core;
         private bool _running;
         private int _autoPauseCount;
 
-        public Display Display { get; private set; }
         public HistoryEvent CurrentEvent { get; private set; }
         public HistoryEvent RootEvent { get; private set; }
         private Dictionary<int, HistoryEvent> _historyEventById;
-
-        public string Filepath { get; }
 
         private int _nextEventId;
 
         private readonly IFileSystem _fileSystem;
         private MachineFile _file;
-
-        public event PropertyChangedEventHandler PropertyChanged;
 
         private string _status;
 
@@ -143,6 +138,8 @@ namespace CPvC
                 Display.EnableGreyscale(false);
                 Display.GetFromBookmark(bookmarkEvent.Bookmark);
                 Core = core;
+                Core.Auditors += RequestProcessed;
+                OnPropertyChanged("RequiresOpen");
 
                 CoreAction action = CoreAction.CoreVersion(Core.Ticks, Core.LatestVersion);
                 AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true); // Core.Ticks, Core.LatestVersion), true);
@@ -175,6 +172,8 @@ namespace CPvC
                 machine.Name = name;
 
                 machine.Core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+                machine.OnPropertyChanged("RequiresOpen");
+                machine.Core.Auditors += machine.RequestProcessed;
 
                 CoreAction action = CoreAction.CoreVersion(machine.Core.Ticks, Core.LatestVersion);
                 machine.RootEvent = HistoryEvent.CreateCoreAction(machine.NextEventId(), action); // (machine.NextEventId(), 0, Core.LatestVersion);
@@ -215,7 +214,14 @@ namespace CPvC
                 }
             }
 
+            if (Core != null)
+            {
+                Core.Auditors -= RequestProcessed;
+            }
+
             Core = null;
+            OnPropertyChanged("RequiresOpen");
+
 
             _running = false;
             _autoPauseCount = 0;
@@ -254,39 +260,6 @@ namespace CPvC
                         Status = "Reset";
                         break;
                 }
-            }
-        }
-
-        public Core Core
-        {
-            get
-            {
-                return _core;
-            }
-
-            private set
-            {
-                if (_core == value)
-                {
-                    return;
-                }
-
-                if (_core != null)
-                {
-                    _core.Dispose();
-                }
-
-                if (value != null)
-                {
-                    value.SetScreenBuffer(Display.Buffer);
-                    value.Auditors += RequestProcessed;
-                    value.BeginVSync = BeginVSync;
-                }
-
-                _core = value;
-
-                OnPropertyChanged("Core");
-                OnPropertyChanged("RequiresOpen");
             }
         }
 
@@ -347,19 +320,6 @@ namespace CPvC
             }
         }
 
-        /// <summary>
-        /// Delegate for VSync events.
-        /// </summary>
-        /// <param name="core">Core whose VSync signal went form low to high.</param>
-        private void BeginVSync(Core core)
-        {
-            // Only copy to the display if the VSync is from a core we're interesting in.
-            if (core != null && _core == core)
-            {
-                Display.CopyFromBufferAsync();
-            }
-        }
-
         public void Reset()
         {
             _core.Reset();
@@ -395,16 +355,6 @@ namespace CPvC
             {
                 Start();
             }
-        }
-
-        public void AdvancePlayback(int samples)
-        {
-            _core?.AdvancePlayback(samples);
-        }
-
-        public int ReadAudio(byte[] buffer, int offset, int samplesRequested)
-        {
-            return _core?.ReadAudio16BitStereo(buffer, offset, samplesRequested) ?? 0;
         }
 
         public void AddBookmark(bool system)
@@ -453,11 +403,6 @@ namespace CPvC
             _core.LoadTape(tapeBuffer);
         }
 
-        private void OnPropertyChanged(string name)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
-
         public void EnableTurbo(bool enabled)
         {
             _core.EnableTurbo(enabled);
@@ -479,6 +424,8 @@ namespace CPvC
             Display.GetFromBookmark(bookmarkEvent.Bookmark);
             Core = Machine.GetCore(bookmarkEvent);
             Core.Volume = volume;
+            OnPropertyChanged("RequiresOpen");
+            Core.Auditors += RequestProcessed;
 
             _file.WriteCurrent(bookmarkEvent);
             CurrentEvent = bookmarkEvent;
