@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public abstract class CoreMachine : ICoreMachine
+    public class CoreMachine : ICoreMachine
     {
         protected Core _core;
-        protected String _filepath;
+        protected string _filepath;
 
         public event PropertyChangedEventHandler PropertyChanged;
 

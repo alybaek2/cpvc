@@ -137,9 +137,7 @@ namespace CPvC
 
                 Display.EnableGreyscale(false);
                 Display.GetFromBookmark(bookmarkEvent.Bookmark);
-                Core = core;
-                Core.Auditors += RequestProcessed;
-                OnPropertyChanged("RequiresOpen");
+                SetCore(core);
 
                 CoreAction action = CoreAction.CoreVersion(Core.Ticks, Core.LatestVersion);
                 AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true); // Core.Ticks, Core.LatestVersion), true);
@@ -171,9 +169,7 @@ namespace CPvC
                 machine._file = new MachineFile(fileSystem, machine.Filepath);
                 machine.Name = name;
 
-                machine.Core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-                machine.OnPropertyChanged("RequiresOpen");
-                machine.Core.Auditors += machine.RequestProcessed;
+                machine.SetCore(Core.Create(Core.LatestVersion, Core.Type.CPC6128));
 
                 CoreAction action = CoreAction.CoreVersion(machine.Core.Ticks, Core.LatestVersion);
                 machine.RootEvent = HistoryEvent.CreateCoreAction(machine.NextEventId(), action); // (machine.NextEventId(), 0, Core.LatestVersion);
@@ -214,14 +210,7 @@ namespace CPvC
                 }
             }
 
-            if (Core != null)
-            {
-                Core.Auditors -= RequestProcessed;
-            }
-
-            Core = null;
-            OnPropertyChanged("RequiresOpen");
-
+            SetCore(null);
 
             _running = false;
             _autoPauseCount = 0;
@@ -268,6 +257,27 @@ namespace CPvC
             get
             {
                 return _core == null;
+            }
+        }
+
+        private void SetCore(Core core)
+        {
+            if (Core == core)
+            {
+                return;
+            }
+
+            if (core == null)
+            {
+                Core.Auditors -= RequestProcessed;
+                Core = null;
+                OnPropertyChanged("RequiresOpen");
+            }
+            else
+            {
+                Core = core;
+                Core.Auditors += RequestProcessed;
+                OnPropertyChanged("RequiresOpen");
             }
         }
 
@@ -422,10 +432,8 @@ namespace CPvC
             byte volume = Core.Volume;
 
             Display.GetFromBookmark(bookmarkEvent.Bookmark);
-            Core = Machine.GetCore(bookmarkEvent);
+            SetCore(Machine.GetCore(bookmarkEvent));
             Core.Volume = volume;
-            OnPropertyChanged("RequiresOpen");
-            Core.Auditors += RequestProcessed;
 
             _file.WriteCurrent(bookmarkEvent);
             CurrentEvent = bookmarkEvent;
