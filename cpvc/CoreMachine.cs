@@ -123,7 +123,7 @@ namespace CPvC
             Core?.AdvancePlayback(samples);
         }
 
-        private void CorePropertyChanged(object sender, PropertyChangedEventArgs e)
+        protected void CorePropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == "Ticks")
             {
