@@ -271,14 +271,14 @@ namespace CPvC
             {
                 Core.Auditors -= RequestProcessed;
                 Core = null;
-                OnPropertyChanged("RequiresOpen");
             }
             else
             {
                 Core = core;
                 Core.Auditors += RequestProcessed;
-                OnPropertyChanged("RequiresOpen");
             }
+
+            OnPropertyChanged("RequiresOpen");
         }
 
         /// <summary>

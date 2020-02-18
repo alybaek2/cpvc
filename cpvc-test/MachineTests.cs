@@ -625,5 +625,102 @@ namespace CPvC.Test
                 Assert.AreEqual(pos, _mockBinaryWriter.Content.Count);
             }
         }
+
+        [Test]
+        public void Volume()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                // Act
+                machine.Volume = 100;
+
+                // Verify
+                Assert.AreEqual(100, machine.Volume);
+            }
+        }
+
+        [Test]
+        public void VolumeNoCore()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                // Act
+                machine.Volume = 100;
+                machine.Close();
+
+                // Verify
+                Assert.Zero(machine.Volume);
+            }
+        }
+
+        [Test]
+        public void RunningNoCore()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                // Act
+                machine.Close();
+
+                // Verify
+                Assert.False(machine.Running);
+            }
+        }
+
+        [Test]
+        public void AdvancePlaybackNoCore()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                machine.Close();
+
+                // Act and Verify
+                Assert.DoesNotThrow(() => machine.AdvancePlayback(1));
+            }
+        }
+
+        [Test]
+        public void ReadAudioNoCore()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                machine.Close();
+
+                // Act and Verify
+                Assert.DoesNotThrow(() => machine.AdvancePlayback(1));
+            }
+        }
+
+        [Test]
+        public void BeginVSyncNoCore()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                machine.Close();
+
+                // Act and Verify
+                Assert.DoesNotThrow(() => machine.AdvancePlayback(1));
+            }
+        }
+
+        [Test]
+        public void SetSameCore()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                // Act and Verify - note that if CoreMachine.Core_set didn't do a check for reference
+                //                  equality between the new core and current core, an exception would
+                //                  later be thrown due to Dispose() being called.
+                Assert.DoesNotThrow(() => {
+                    machine.Core = machine.Core;
+                });
+            }
+        }
     }
 }

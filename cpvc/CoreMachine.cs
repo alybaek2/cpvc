@@ -107,7 +107,7 @@ namespace CPvC
         protected void BeginVSync(Core core)
         {
             // Only copy to the display if the VSync is from a core we're interesting in.
-            if (core != null && Core == core)
+            if (Core == core)
             {
                 Display.CopyFromBufferAsync();
             }

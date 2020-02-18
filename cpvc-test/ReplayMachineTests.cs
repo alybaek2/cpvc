@@ -29,13 +29,13 @@ namespace CPvC.Test
         {
             // Setup
             ReplayMachine replayMachine = CreateMachine();
-            bool runningState1 = replayMachine.Core.Running;
+            bool runningState1 = replayMachine.Running;
 
             // Act
             replayMachine.Start();
-            bool runningState2 = replayMachine.Core.Running;
+            bool runningState2 = replayMachine.Running;
             replayMachine.Stop();
-            bool runningState3 = replayMachine.Core.Running;
+            bool runningState3 = replayMachine.Running;
 
             // Verify
             Assert.False(runningState1);
@@ -52,15 +52,15 @@ namespace CPvC.Test
                 machine.Start();
 
                 // Act
-                bool running1 = machine.Core.Running;
+                bool running1 = machine.Running;
                 machine.ToggleRunning();
-                bool running2 = machine.Core.Running;
+                bool running2 = machine.Running;
                 machine.ToggleRunning();
 
                 // Verify
                 Assert.IsTrue(running1);
                 Assert.IsFalse(running2);
-                Assert.IsTrue(machine.Core.Running);
+                Assert.IsTrue(machine.Running);
             }
         }
     }
