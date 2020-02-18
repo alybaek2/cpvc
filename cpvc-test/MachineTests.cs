@@ -670,6 +670,21 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void TicksNoCore()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                // Act
+                RunForAWhile(machine);
+                machine.Close();
+
+                // Verify
+                Assert.Zero(machine.Ticks);
+            }
+        }
+
+        [Test]
         public void AdvancePlaybackNoCore()
         {
             // Setup
@@ -691,20 +706,7 @@ namespace CPvC.Test
                 machine.Close();
 
                 // Act and Verify
-                Assert.DoesNotThrow(() => machine.AdvancePlayback(1));
-            }
-        }
-
-        [Test]
-        public void BeginVSyncNoCore()
-        {
-            // Setup
-            using (Machine machine = CreateMachine())
-            {
-                machine.Close();
-
-                // Act and Verify
-                Assert.DoesNotThrow(() => machine.AdvancePlayback(1));
+                Assert.DoesNotThrow(() => machine.ReadAudio(null, 0, 1));
             }
         }
 

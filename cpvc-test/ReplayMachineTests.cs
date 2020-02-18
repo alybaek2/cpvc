@@ -28,19 +28,21 @@ namespace CPvC.Test
         public void StartAndStop()
         {
             // Setup
-            ReplayMachine replayMachine = CreateMachine();
-            bool runningState1 = replayMachine.Running;
+            using (ReplayMachine replayMachine = CreateMachine())
+            {
+                bool runningState1 = replayMachine.Running;
 
-            // Act
-            replayMachine.Start();
-            bool runningState2 = replayMachine.Running;
-            replayMachine.Stop();
-            bool runningState3 = replayMachine.Running;
+                // Act
+                replayMachine.Start();
+                bool runningState2 = replayMachine.Running;
+                replayMachine.Stop();
+                bool runningState3 = replayMachine.Running;
 
-            // Verify
-            Assert.False(runningState1);
-            Assert.True(runningState2);
-            Assert.False(runningState3);
+                // Verify
+                Assert.False(runningState1);
+                Assert.True(runningState2);
+                Assert.False(runningState3);
+            }
         }
 
         [Test]

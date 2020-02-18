@@ -106,11 +106,7 @@ namespace CPvC
         /// <param name="core">Core whose VSync signal went form low to high.</param>
         protected void BeginVSync(Core core)
         {
-            // Only copy to the display if the VSync is from a core we're interesting in.
-            if (Core == core)
-            {
-                Display.CopyFromBufferAsync();
-            }
+            Display.CopyFromBufferAsync();
         }
 
         public int ReadAudio(byte[] buffer, int offset, int samplesRequested)

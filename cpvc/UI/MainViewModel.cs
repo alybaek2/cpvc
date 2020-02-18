@@ -163,12 +163,12 @@ namespace CPvC.UI
 
             _pauseCommand = new ViewModelCommand(
                 p => Pause(null),
-                p => (ActiveMachine as IPausableMachine) != null && ((ActiveMachine as Machine)?.Core?.Running ?? false)
+                p => (ActiveMachine as IPausableMachine) != null && ((ActiveMachine as ICoreMachine)?.Running ?? false)
             );
 
             _resumeCommand = new ViewModelCommand(
                 p => Resume(null),
-                p => (ActiveMachine as IPausableMachine) != null && !(((ActiveMachine as Machine)?.Core?.Running ?? true))
+                p => (ActiveMachine as IPausableMachine) != null && !(((ActiveMachine as ICoreMachine)?.Running ?? true))
             );
 
             _toggleRunningCommand = new ViewModelCommand(
