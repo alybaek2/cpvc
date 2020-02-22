@@ -74,5 +74,48 @@ namespace CPvC.Test
                 Assert.IsTrue(machine.Running);
             }
         }
+
+        [Test]
+        public void Name()
+        {
+            // Setup
+            using (ReplayMachine machine = CreateMachine())
+            {
+                // Act
+                machine.Name = "Test";
+
+                // Verify
+                Assert.AreEqual("Test", machine.Name);
+            }
+        }
+
+
+        [Test]
+        public void CloseTwice()
+        {
+            // Setup
+            using (ReplayMachine machine = CreateMachine())
+            {
+                machine.Close();
+
+                // Act and Verify
+                Assert.DoesNotThrow(() => {
+                    machine.Close();
+                });
+            }
+        }
+
+        [Test]
+        public void DisposeTwice()
+        {
+            // Setup
+            ReplayMachine machine = CreateMachine();
+            machine.Dispose();
+
+            // Act and Verify
+            Assert.DoesNotThrow(() => {
+                machine.Dispose();
+            });
+        }
     }
 }

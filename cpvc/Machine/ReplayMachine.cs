@@ -56,7 +56,7 @@ namespace CPvC
 
         public void Close()
         {
-            _core?.Dispose();
+            Core = null;
         }
 
         private void SeekToBookmark(int historyEventIndex)
