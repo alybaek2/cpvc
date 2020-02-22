@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,11 +12,20 @@ namespace CPvC
     {
         private readonly Predicate<object> _canExecute;
         private readonly Action<object> _execute;
+        private readonly object _watchObject;
+        private readonly string _watchPropertyName;
 
-        public ViewModelCommand(Action<object> execute, Predicate<object> canExecute)
+        public ViewModelCommand(Action<object> execute, Predicate<object> canExecute, INotifyPropertyChanged watchObject, string watchProperty)
         {
             _execute = execute;
             _canExecute = canExecute;
+            _watchObject = watchObject;
+            _watchPropertyName = watchProperty;
+
+            if (watchObject != null)
+            {
+                watchObject.PropertyChanged += WatchObjectPropertyChanged;
+            }
         }
 
         public void Execute(object parameter)
@@ -28,16 +38,13 @@ namespace CPvC
             return _canExecute(parameter);
         }
 
-        public event EventHandler CanExecuteChanged
-        {
-            add
-            {
-                CommandManager.RequerySuggested += value;
-            }
+        public event EventHandler CanExecuteChanged;
 
-            remove
+        public void WatchObjectPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (sender == _watchObject && e.PropertyName == _watchPropertyName)
             {
-                CommandManager.RequerySuggested -= value;
+                CanExecuteChanged?.Invoke(sender, e);
             }
         }
     }
