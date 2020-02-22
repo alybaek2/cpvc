@@ -102,7 +102,7 @@ namespace CPvC
             return request;
         }
 
-        static public CoreRequest SwitchVersion(int version)
+        static public CoreRequest CoreVersion(int version)
         {
             CoreRequest request = new CoreRequest(Types.CoreVersion)
             {

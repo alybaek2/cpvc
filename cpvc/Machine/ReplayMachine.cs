@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace CPvC
 {
@@ -11,38 +12,51 @@ namespace CPvC
     {
         private UInt64 _endTicks;
 
+        private List<HistoryEvent> _historyEvents;
+        private DoubleCollection _bookmarkTicks;
+
+        public double EndTicks
+        {
+            get
+            {
+                return _endTicks;
+            }
+        }
+
+        public DoubleCollection BookmarkTicks
+        {
+            get
+            {
+                return _bookmarkTicks;
+            }
+        }
+
         public ReplayMachine(HistoryEvent historyEvent)
         {
-            Name = "Replay!!!";
             Display = new Display();
 
             _endTicks = historyEvent.Ticks;
+            OnPropertyChanged("EndTicks");
 
-            List<CoreRequest> actions = new List<CoreRequest>();
-            actions.Add(CoreRequest.RunUntilForce(_endTicks));
-            actions.Add(CoreRequest.Quit());
+            _historyEvents = new List<HistoryEvent>();
+            _bookmarkTicks = new DoubleCollection();
 
             while (historyEvent != null)
             {
-                if (historyEvent.CoreAction != null)
+                _historyEvents.Insert(0, historyEvent.CloneWithoutChildren());
+
+                if (historyEvent.Bookmark != null)
                 {
-                    actions.Insert(0, historyEvent.CoreAction);
-                    actions.Insert(0, CoreRequest.RunUntilForce(historyEvent.Ticks));
+                    if (_bookmarkTicks.Count == 0 || _bookmarkTicks[0] != historyEvent.Ticks)
+                    {
+                        _bookmarkTicks.Insert(0, historyEvent.Ticks);
+                    }
                 }
 
                 historyEvent = historyEvent.Parent;
             }
 
-            _core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-            _core.BeginVSync += BeginVSync;
-            _core.PropertyChanged += CorePropertyChanged;
-
-            foreach (CoreRequest action in actions)
-            {
-                _core.PushRequest(action);
-            }
-
-            _core.SetScreenBuffer(Display.Buffer);
+            SeekToBookmark(0);
         }
 
         public string Name
@@ -61,6 +75,64 @@ namespace CPvC
         public void Close()
         {
             _core?.Dispose();
+        }
+
+        private void SeekToBookmark(int historyEventIndex)
+        {
+            Core core = null;
+
+            int version = -1;
+
+            for (int i = 0; i < _historyEvents.Count; i++)
+            {
+                HistoryEvent historyEvent = _historyEvents[i];
+
+                if (historyEvent.CoreAction != null && historyEvent.CoreAction.Type == CoreRequest.Types.CoreVersion)
+                {
+                    version = historyEvent.CoreAction.Version;
+                }
+                
+                if (historyEventIndex == i)
+                {
+                    if (i == 0)
+                    {
+                        core = Core.Create(version, Core.Type.CPC6128);
+                        Display.GetFromBookmark(null);
+                    }
+                    else
+                    {
+                        if (historyEvent.Bookmark != null)
+                        {
+                            core = Core.Create(version, historyEvent.Bookmark.State.GetBytes());
+                            Display.GetFromBookmark(historyEvent.Bookmark);
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
+                }
+                else if (i == (_historyEvents.Count - 1))
+                {
+                    core.PushRequest(CoreRequest.RunUntilForce(historyEvent.Ticks));
+                    core.PushRequest(CoreRequest.Quit());
+                }
+                else if (i > historyEventIndex)
+                {
+                    if (historyEvent.Type == HistoryEvent.Types.CoreAction)
+                    {
+                        core.PushRequest(CoreRequest.RunUntilForce(historyEvent.Ticks));
+                        core.PushRequest(historyEvent.CoreAction);
+                    }
+                }
+            }
+
+            bool running = Core?.Running ?? false;
+            Core = core;
+            if (running)
+            {
+                Core.Start();
+            }
         }
 
         public void EnableTurbo(bool enabled)
@@ -95,22 +167,25 @@ namespace CPvC
 
         public void SeekToStart()
         {
-
-        }
-
-        public void SeekToEnd()
-        {
-
+            SeekToBookmark(0);
         }
 
         public void SeekToPreviousBookmark()
         {
-
+            int historyIndex = _historyEvents.FindLastIndex(he => he != null && he.Ticks < _core.Ticks && he.Bookmark != null);
+            if (historyIndex != -1)
+            {
+                SeekToBookmark(historyIndex);
+            }
         }
 
         public void SeekToNextBookmark()
         {
-
+            int historyIndex = _historyEvents.FindIndex(he => he != null && he.Ticks > _core.Ticks && he.Bookmark != null);
+            if (historyIndex != -1)
+            {
+                SeekToBookmark(historyIndex);
+            }
         }
     }
 }

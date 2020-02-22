@@ -35,7 +35,7 @@ namespace CPvC
 
                 if (value != null)
                 {
-                    value.SetScreenBuffer(Display.Buffer);
+                    value.SetScreen(Display.Buffer);
 
                     if (_core != null)
                     {

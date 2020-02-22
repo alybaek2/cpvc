@@ -201,7 +201,7 @@ namespace CPvC
                 CoreAction action = CoreAction.KeyPress(ticks, keyCode, keyDown);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                Diagnostics.Trace("{0} {1}: Key {2} {3}", id, ticks, keyCode, keyDown?"down":"up");
+                //Diagnostics.Trace("{0} {1}: Key {2} {3}", id, ticks, keyCode, keyDown?"down":"up");
 
                 reader.AddHistoryEvent(historyEvent);
             }
@@ -228,7 +228,7 @@ namespace CPvC
                 CoreAction action = CoreAction.Reset(ticks);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                Diagnostics.Trace("{0} {1}: Reset", id, ticks);
+                //Diagnostics.Trace("{0} {1}: Reset", id, ticks);
 
                 reader.AddHistoryEvent(historyEvent);
             }
@@ -253,7 +253,7 @@ namespace CPvC
                 CoreAction action = CoreAction.LoadDisc(ticks, drive, mediaBlob);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                Diagnostics.Trace("{0} {1}: Load disc (drive {2}, {3} byte tape image)", id, ticks, (drive == 0) ? "A:" : "B:", mediaBlob.GetBytes()?.Length ?? 0);
+                //Diagnostics.Trace("{0} {1}: Load disc (drive {2}, {3} byte tape image)", id, ticks, (drive == 0) ? "A:" : "B:", mediaBlob.GetBytes()?.Length ?? 0);
 
                 reader.AddHistoryEvent(historyEvent);
             }
@@ -279,7 +279,7 @@ namespace CPvC
                 CoreAction action = CoreAction.CoreVersion(ticks, version);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                Diagnostics.Trace("{0} {1}: Version {2}", id, ticks, version);
+                //Diagnostics.Trace("{0} {1}: Version {2}", id, ticks, version);
 
                 reader.AddHistoryEvent(historyEvent);
             }
@@ -307,7 +307,7 @@ namespace CPvC
                 CoreAction action = CoreAction.LoadTape(ticks, mediaBlob);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                Diagnostics.Trace("{0} {1}: Load tape ({2} byte tape image)", id, ticks, mediaBlob.GetBytes()?.Length ?? 0);
+                //Diagnostics.Trace("{0} {1}: Load tape ({2} byte tape image)", id, ticks, mediaBlob.GetBytes()?.Length ?? 0);
 
                 reader.AddHistoryEvent(historyEvent);
             }
@@ -342,14 +342,14 @@ namespace CPvC
 
                 HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(id, ticks, created, bookmark);
 
-                if (bookmark == null)
-                {
-                    Diagnostics.Trace("{0} {1}: Checkpoint (no bookmark)", id, ticks);
-                }
-                else
-                {
-                    Diagnostics.Trace("{0} {1}: Checkpoint (with {2} bookmark)", id, ticks, bookmark.System ? "system" : "user");
-                }
+                //if (bookmark == null)
+                //{
+                //    Diagnostics.Trace("{0} {1}: Checkpoint (no bookmark)", id, ticks);
+                //}
+                //else
+                //{
+                //    Diagnostics.Trace("{0} {1}: Checkpoint (with {2} bookmark)", id, ticks, bookmark.System ? "system" : "user");
+                //}
 
                 reader.AddHistoryEvent(historyEvent);
             }
@@ -403,7 +403,7 @@ namespace CPvC
         {
             int id = ReadInt32();
 
-            Diagnostics.Trace("{0}: Delete", id);
+            //Diagnostics.Trace("{0}: Delete", id);
 
             reader.DeleteEvent(id);
         }

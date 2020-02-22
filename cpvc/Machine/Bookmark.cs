@@ -33,5 +33,10 @@
             State = new MemoryBlob(state);
             Screen = new MemoryBlob(screen);
         }
+
+        public Bookmark Clone()
+        {
+            return new Bookmark(System, State.GetBytes(), Screen.GetBytes());
+        }
     }
 }

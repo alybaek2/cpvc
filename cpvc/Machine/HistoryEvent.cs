@@ -121,5 +121,18 @@ namespace CPvC
 
             return Children.Select(x => x.GetMaxDescendentTicks()).Max();
         }
+
+        public HistoryEvent CloneWithoutChildren()
+        {
+            switch (Type)
+            {
+                case Types.CoreAction:
+                    return CreateCoreAction(Id, CoreAction.Clone());
+                case Types.Checkpoint:
+                    return CreateCheckpoint(Id, Ticks, CreateDate, Bookmark?.Clone() ?? null);
+            }
+
+            return null;
+        }
     }
 }

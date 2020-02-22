@@ -99,7 +99,7 @@ namespace CPvC
 
             BeginVSync = null;
 
-            SetScreenBuffer(IntPtr.Zero);
+            SetScreen(IntPtr.Zero);
 
             _audioSamplingFrequency = 48000;
             _volume = 80;
@@ -216,7 +216,7 @@ namespace CPvC
         /// <summary>
         /// Sets a Pointer to a block of unmanaged memory to be used by the core for video rendering.
         /// </summary>
-        public void SetScreenBuffer(IntPtr screenBuffer)
+        public void SetScreen(IntPtr screenBuffer)
         {
             lock (_lockObject)
             {
@@ -244,12 +244,9 @@ namespace CPvC
 
             private set
             {
-                if (_running != value)
-                {
-                    _running = value;
+                _running = value;
 
-                    OnPropertyChanged("Running");
-                }
+                OnPropertyChanged("Running");
             }
         }
 
@@ -488,15 +485,12 @@ namespace CPvC
             }
         }
 
-        private CoreRequest PopRequest()
+        private void RemoveFirstRequest()
         {
-            CoreRequest request = null;
-
             lock (_requests)
             {
                 if (_requests.Count > 0)
                 {
-                    request = _requests[0];
                     _requests.RemoveAt(0);
 
                     if (_requests.Count == 0)
@@ -505,8 +499,6 @@ namespace CPvC
                     }
                 }
             }
-
-            return request;
         }
 
         private void SetRunning(bool running)
@@ -606,11 +598,11 @@ namespace CPvC
                             _coreCLR.Dispose();
                             _coreCLR = newCore;
 
-                            SetScreenBuffer(pScr);
+                            SetScreen(pScr);
                         }
                         break;
                     case CoreRequest.Types.Quit:
-                        PopRequest();
+                        RemoveFirstRequest();
                         return true;
                 }
             }
@@ -619,7 +611,7 @@ namespace CPvC
 
             if (request != null && success)
             {
-                PopRequest();
+                RemoveFirstRequest();
             }
 
             return false;

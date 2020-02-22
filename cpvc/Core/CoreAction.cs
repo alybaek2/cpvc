@@ -32,7 +32,7 @@ namespace CPvC
 
             return action;
         }
-        
+
         static public CoreAction RunUntilForce(UInt64 ticks, UInt64 stopTicks)
         {
             CoreAction action = new CoreAction(Types.RunUntilForce, ticks)
@@ -72,6 +72,29 @@ namespace CPvC
             };
 
             return action;
+        }
+
+        public CoreAction Clone()
+        {
+            switch (Type)
+            {
+                case Types.CoreVersion:
+                    return CoreAction.CoreVersion(Ticks, Version);
+                case Types.KeyPress:
+                    return CoreAction.KeyPress(Ticks, KeyCode, KeyDown);
+                case Types.LoadDisc:
+                    return CoreAction.LoadDisc(Ticks, Drive, (MediaBuffer != null) ? (new MemoryBlob(MediaBuffer.GetBytes())) : null);
+                case Types.LoadTape:
+                    return CoreAction.LoadTape(Ticks, (MediaBuffer != null) ? (new MemoryBlob(MediaBuffer.GetBytes())) : null);
+                case Types.Quit:
+                    return new CoreAction(Types.Quit, Ticks);
+                case Types.Reset:
+                    return CoreAction.Reset(Ticks);
+                case Types.RunUntilForce:
+                    return CoreAction.RunUntilForce(Ticks, StopTicks);
+            }
+
+            return null;
         }
     }
 }

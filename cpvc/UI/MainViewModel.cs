@@ -33,6 +33,9 @@ namespace CPvC.UI
         ViewModelCommand _browseBookmarksCommand;
         ViewModelCommand _compactCommand;
         ViewModelCommand _renameCommand;
+        ViewModelCommand _seekToNextBookmarkCommand;
+        ViewModelCommand _seekToPrevBookmarkCommand;
+        ViewModelCommand _seekToStartCommand;
 
         public ICommand ResetCommand
         {
@@ -107,6 +110,21 @@ namespace CPvC.UI
         public ICommand RenameCommand
         {
             get { return _renameCommand; }
+        }
+
+        public ICommand SeekToNextBookmarkCommand
+        {
+            get { return _seekToNextBookmarkCommand; }
+        }
+
+        public ICommand SeekToPrevBookmarkCommand
+        {
+            get { return _seekToPrevBookmarkCommand; }
+        }
+
+        public ICommand SeekToStartCommand
+        {
+            get { return _seekToStartCommand; }
         }
 
         /// <summary>
@@ -199,6 +217,21 @@ namespace CPvC.UI
             _renameCommand = new ViewModelCommand(
                 p => RenameMachine(promptForName),
                 p => (ActiveMachine as ICoreMachine) != null
+            );
+
+            _seekToNextBookmarkCommand = new ViewModelCommand(
+                p => SeekToNextBookmark(),
+                p => (ActiveMachine as IPrerecordedMachine) != null
+            );
+
+            _seekToPrevBookmarkCommand = new ViewModelCommand(
+                p => SeekToPrevBookmark(),
+                p => (ActiveMachine as IPrerecordedMachine) != null
+            );
+
+            _seekToStartCommand = new ViewModelCommand(
+                p => SeekToBegin(),
+                p => (ActiveMachine as IPrerecordedMachine) != null
             );
         }
 
@@ -361,6 +394,21 @@ namespace CPvC.UI
         private void AddBookmark()
         {
             (ActiveMachine as Machine)?.AddBookmark(false);
+        }
+
+        private void SeekToNextBookmark()
+        {
+            (ActiveMachine as IPrerecordedMachine)?.SeekToNextBookmark();
+        }
+
+        private void SeekToPrevBookmark()
+        {
+            (ActiveMachine as IPrerecordedMachine)?.SeekToPreviousBookmark();
+        }
+
+        private void SeekToBegin()
+        {
+            (ActiveMachine as IPrerecordedMachine)?.SeekToStart();
         }
 
         private void SeekToLastBookmark()

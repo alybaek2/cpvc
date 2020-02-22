@@ -217,5 +217,19 @@ namespace CPvC.Test
             // Setup and Verify
             Assert.Throws<Exception>(() => Core.Create(2, Core.Type.CPC6128));
         }
+
+        [Test]
+        public void SetScreenBuffer()
+        {
+            // Setup
+            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            IntPtr scrPtr = (IntPtr)1234;
+
+            // Act
+            core.SetScreen(scrPtr);
+
+            // Verify
+            Assert.AreEqual(scrPtr, core.GetScreen());
+        }
     }
 }
