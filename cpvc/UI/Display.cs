@@ -196,6 +196,7 @@ namespace CPvC
             {
                 // Assume a blank screen if no bookmark provided.
                 Buffer.Clear(CPCColour.Black._hwColourNumber);
+                CopyFromBuffer();
             }
             else
             {

@@ -109,6 +109,7 @@
     <Compile Include="BinaryFileTests.cs" />
     <Compile Include="BookmarksViewModelTests.cs" />
     <Compile Include="ConvertersTests.cs" />
+    <Compile Include="CoreActionTests.cs" />
     <Compile Include="CoreTests.cs" />
     <Compile Include="FileSystemTests.cs" />
     <Compile Include="FileByteStreamTests.cs" />
