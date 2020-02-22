@@ -9,7 +9,10 @@ namespace CPvC.Test
 {
     public class ReplayMachineTests
     {
-        private ReplayMachine CreateMachine()
+        private HistoryEvent _finalHistoryEvent;
+
+        [SetUp]
+        public void Setup()
         {
             HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(0, CoreAction.CoreVersion(0, 1));
             HistoryEvent historyEvent2 = HistoryEvent.CreateCoreAction(1, CoreAction.KeyPress(10000000, Keys.A, true));
@@ -18,7 +21,7 @@ namespace CPvC.Test
             HistoryEvent historyEvent5 = HistoryEvent.CreateCoreAction(4, CoreAction.LoadDisc(40000000, 0, null));
             HistoryEvent historyEvent6 = HistoryEvent.CreateCoreAction(5, CoreAction.LoadTape(50000000, new MemoryBlob(new byte[] { 0x01, 0x02 })));
             HistoryEvent historyEvent7 = HistoryEvent.CreateCoreAction(6, CoreAction.LoadTape(60000000, null));
-            HistoryEvent finalHistoryEvent = HistoryEvent.CreateCheckpoint(7, 70000000, DateTime.UtcNow, null);
+            _finalHistoryEvent = HistoryEvent.CreateCheckpoint(7, 70000000, DateTime.UtcNow, null);
 
             historyEvent.AddChild(historyEvent2);
             historyEvent2.AddChild(historyEvent3);
@@ -26,9 +29,12 @@ namespace CPvC.Test
             historyEvent4.AddChild(historyEvent5);
             historyEvent5.AddChild(historyEvent6);
             historyEvent6.AddChild(historyEvent7);
-            historyEvent7.AddChild(finalHistoryEvent);
+            historyEvent7.AddChild(_finalHistoryEvent);
+        }
 
-            ReplayMachine replayMachine = new ReplayMachine(finalHistoryEvent);
+        private ReplayMachine CreateMachine()
+        {
+            ReplayMachine replayMachine = new ReplayMachine(_finalHistoryEvent);
 
             return replayMachine;
         }
@@ -51,6 +57,17 @@ namespace CPvC.Test
                 Assert.False(runningState1);
                 Assert.True(runningState2);
                 Assert.False(runningState3);
+            }
+        }
+
+        [Test]
+        public void EndTicks()
+        {
+            // Setup
+            using (ReplayMachine replayMachine = CreateMachine())
+            {
+                // Verify
+                Assert.AreEqual(_finalHistoryEvent.Ticks, replayMachine.EndTicks);
             }
         }
 
