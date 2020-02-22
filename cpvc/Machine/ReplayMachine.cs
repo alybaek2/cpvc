@@ -13,21 +13,12 @@ namespace CPvC
         private UInt64 _endTicks;
 
         private List<HistoryEvent> _historyEvents;
-        private DoubleCollection _bookmarkTicks;
 
-        public double EndTicks
+        public UInt64 EndTicks
         {
             get
             {
                 return _endTicks;
-            }
-        }
-
-        public DoubleCollection BookmarkTicks
-        {
-            get
-            {
-                return _bookmarkTicks;
             }
         }
 
@@ -39,19 +30,10 @@ namespace CPvC
             OnPropertyChanged("EndTicks");
 
             _historyEvents = new List<HistoryEvent>();
-            _bookmarkTicks = new DoubleCollection();
 
             while (historyEvent != null)
             {
                 _historyEvents.Insert(0, historyEvent.CloneWithoutChildren());
-
-                if (historyEvent.Bookmark != null)
-                {
-                    if (_bookmarkTicks.Count == 0 || _bookmarkTicks[0] != historyEvent.Ticks)
-                    {
-                        _bookmarkTicks.Insert(0, historyEvent.Ticks);
-                    }
-                }
 
                 historyEvent = historyEvent.Parent;
             }
