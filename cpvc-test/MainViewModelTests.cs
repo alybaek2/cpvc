@@ -62,8 +62,17 @@ namespace CPvC.Test
                       0x00
             };
 
-
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object, null, mockPromptForFile?.Object, mockPromptForBookmark?.Object, mockPromptForName?.Object);
+
+            // Create a Replay machine.
+            HistoryEvent historyEvent = null;
+            using (Machine machine = CreateTestMachine())
+            {
+                historyEvent = machine.CurrentEvent;
+            }
+
+            ReplayMachine replayMachine = new ReplayMachine(historyEvent);
+            viewModel.ReplayMachines.Add(replayMachine);
 
             return viewModel;
         }
@@ -489,18 +498,20 @@ namespace CPvC.Test
             }
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public void ReadAudio(bool active)
+        [TestCase(false, false)]
+        [TestCase(true, false)]
+        [TestCase(true, true)]
+        public void ReadAudio(bool active, bool replayMachine)
         {
             // Setup
             MainViewModel viewModel = SetupViewModel(1, null, null, null);
             Machine machine = viewModel.Machines[0];
             machine.Open();
-            viewModel.ActiveMachine = active ? machine : null;
+            CoreMachine coreMachine = replayMachine ? (CoreMachine)viewModel.ReplayMachines[0] : (CoreMachine)machine;
+            viewModel.ActiveMachine = active ? coreMachine : null;
 
             // Run the machine enough to fill up the audio buffer.
-            Run(machine, 4000000, true);
+            Run(coreMachine, 4000000, true);
 
             // Act
             byte[] buffer = new byte[4];

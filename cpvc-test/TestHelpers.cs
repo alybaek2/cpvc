@@ -138,8 +138,8 @@ namespace CPvC.Test
                                             h.Ticks == ticks &&
                                             h.Bookmark != null &&
                                             h.Bookmark.System == system &&
-                                            ((IStreamBlob) (h.Bookmark.State)).Position == stateBlobPos &&
-                                            ((IStreamBlob) (h.Bookmark.Screen)).Position == screenBlobPos);
+                                            ((IStreamBlob)(h.Bookmark.State)).Position == stateBlobPos &&
+                                            ((IStreamBlob)(h.Bookmark.Screen)).Position == screenBlobPos);
         }
 
         static public HistoryEvent CheckpointWithoutBookmarkEvent(int id, UInt64 ticks)
@@ -189,7 +189,7 @@ namespace CPvC.Test
         /// <param name="ticks">The number of ticks to run the machine for.</param>
         /// <param name="stopOnAudioOverrun">Indicates if the machine should stop in the event of an audio overrun.</param>
         /// <returns>The total number of ticks that the machine ran for. Note this may be slightly larger than <c>ticks</c>, since Z80 instructions take at least 4 ticks.</returns>
-        static public UInt64 Run(Machine machine, UInt64 ticks, bool stopOnAudioOverrun)
+        static public UInt64 Run(CoreMachine machine, UInt64 ticks, bool stopOnAudioOverrun)
         {
             UInt64 beforeTicks = machine.Core.Ticks;
             machine.Core.RunUntil(beforeTicks + ticks, stopOnAudioOverrun ? StopReasons.AudioOverrun : StopReasons.None);
@@ -265,6 +265,42 @@ namespace CPvC.Test
             // fails without this because resetCalled is set only after it's tested in an assertion. Need to investigate
             // this more to understand what's going on.
             Thread.Sleep(500);
+        }
+
+        static public Machine CreateTestMachine()
+        {
+            Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
+            mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(AnyString()));
+            mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
+            mockFileSystem.Setup(fileSystem => fileSystem.FileLength(AnyString())).Returns(100);
+
+            MockFileByteStream mockBinaryWriter = new MockFileByteStream();
+
+            mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream("test.cpvc")).Returns(mockBinaryWriter.Object);
+
+            Machine machine = Machine.New("test", "test.cpvc", mockFileSystem.Object);
+
+            // For consistency with automated builds, use all zero ROMs.
+            byte[] zeroROM = new byte[0x4000];
+            machine.Core.SetLowerROM(zeroROM);
+            machine.Core.SetUpperROM(0, zeroROM);
+            machine.Core.SetUpperROM(7, zeroROM);
+
+            RunForAWhile(machine);
+            machine.Key(Keys.A, true);
+            RunForAWhile(machine);
+            machine.Key(Keys.A, false);
+            RunForAWhile(machine);
+            machine.LoadDisc(0, null);
+            RunForAWhile(machine);
+            machine.LoadTape(null);
+            RunForAWhile(machine);
+            machine.AddBookmark(false);
+            RunForAWhile(machine);
+            machine.AddBookmark(false);
+            RunForAWhile(machine);
+
+            return machine;
         }
     }
 }
