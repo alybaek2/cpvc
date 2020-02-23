@@ -587,6 +587,7 @@ namespace CPvC
                         }
                         break;
                     case CoreRequest.Types.CoreVersion:
+                        lock (_lockObject)
                         {
                             byte[] state = GetState();
 
