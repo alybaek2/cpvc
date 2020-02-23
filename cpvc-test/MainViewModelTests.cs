@@ -881,55 +881,15 @@ namespace CPvC.Test
         {
             // Setup
             MainViewModel viewModel = SetupViewModel(1, null, null, null);
-            Machine machine = viewModel.Machines[0];
-            machine.Open();
-            machine.AddBookmark(false);
-            HistoryEvent bookmarkEvent = machine.CurrentEvent;
 
-            for (byte k = 0; k < 80; k++)
-            {
-                machine.Key(k, true);
-            }
-
-            bool[] keys = new bool[80];
-            Array.Clear(keys, 0, keys.Length);
-            RequestProcessedDelegate auditor = (core, request, action) =>
-            {
-                if (request != null && request.Type == CoreRequest.Types.KeyPress)
-                {
-                    keys[request.KeyCode] = request.KeyDown;
-                }
-            };
-
-            machine.Core.Auditors += auditor;
-            RunForAWhile(machine);
-            ProcessQueueAndStop(machine.Core);
-
-            HistoryEvent lastEvent = machine.CurrentEvent;
-            viewModel.ActiveMachine = active ? machine : null;
+            Mock<IBookmarkableMachine> mockPrerecordedMachine = new Mock<IBookmarkableMachine>();
+            viewModel.ActiveMachine = active ? mockPrerecordedMachine.Object : null;
 
             // Act
             viewModel.SeekToPreviousBookmarkCommand.Execute(null);
-            machine.Core.Auditors += auditor;
-            ProcessQueueAndStop(machine.Core);
 
             // Verify
-            if (active)
-            {
-                Assert.AreEqual(bookmarkEvent, machine.CurrentEvent);
-                for (byte j = 0; j < 80; j++)
-                {
-                    Assert.IsFalse(keys[j]);
-                }
-            }
-            else
-            {
-                Assert.AreEqual(lastEvent, machine.CurrentEvent);
-                for (byte j = 0; j < 80; j++)
-                {
-                    Assert.IsTrue(keys[j]);
-                }
-            }
+            mockPrerecordedMachine.Verify(m => m.SeekToLastBookmark(), active ? Times.Once() : Times.Never());
         }
 
         /// <summary>

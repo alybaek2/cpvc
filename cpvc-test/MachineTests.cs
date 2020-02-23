@@ -724,5 +724,46 @@ namespace CPvC.Test
                 });
             }
         }
+
+        [Test]
+        public void SetCurrentEvent()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                for (byte k = 0; k < 80; k++)
+                {
+                    machine.Key(k, true);
+                }
+
+                RunForAWhile(machine);
+
+                machine.AddBookmark(true);
+                HistoryEvent bookmarkEvent = machine.CurrentEvent;
+                RunForAWhile(machine);
+
+                // Act and Verify
+                machine.SetCurrentEvent(bookmarkEvent);
+                Assert.AreEqual(bookmarkEvent, machine.CurrentEvent);
+
+                bool[] keys = new bool[80];
+                Array.Clear(keys, 0, keys.Length);
+                RequestProcessedDelegate auditor = (core, request, action) =>
+                {
+                    if (request != null && request.Type == CoreRequest.Types.KeyPress)
+                    {
+                        keys[request.KeyCode] = request.KeyDown;
+                    }
+                };
+
+                machine.Core.Auditors += auditor;
+                ProcessQueueAndStop(machine.Core);
+
+                for (byte j = 0; j < 80; j++)
+                {
+                    Assert.IsFalse(keys[j]);
+                }
+            }
+        }
     }
 }

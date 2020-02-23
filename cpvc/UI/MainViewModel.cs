@@ -431,7 +431,7 @@ namespace CPvC.UI
 
         private void SeekToLastBookmark()
         {
-            (ActiveMachine as Machine)?.SeekToLastBookmark();
+            (ActiveMachine as IBookmarkableMachine)?.SeekToLastBookmark();
         }
 
         private void CompactFile()
