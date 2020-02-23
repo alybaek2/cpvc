@@ -155,10 +155,12 @@ namespace CPvC
         public void SeekToPreviousBookmark()
         {
             int historyIndex = _historyEvents.FindLastIndex(he => he != null && he.Ticks < _core.Ticks && he.Bookmark != null);
-            if (historyIndex != -1)
+            if (historyIndex == -1)
             {
-                SeekToBookmark(historyIndex);
+                historyIndex = 0;
             }
+
+            SeekToBookmark(historyIndex);
         }
 
         public void SeekToNextBookmark()

@@ -12,7 +12,7 @@ namespace CPvC.Test
         private Mock<IFileSystem> _mockFileSystem;
         private MockFileByteStream _mockBinaryWriter;
 
-        private Machine CreateMachine()
+        public Machine CreateMachine()
         {
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
 

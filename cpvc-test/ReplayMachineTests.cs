@@ -10,26 +10,34 @@ namespace CPvC.Test
     public class ReplayMachineTests
     {
         private HistoryEvent _finalHistoryEvent;
+        private List<UInt64> _bookmarkTicks;
 
         [SetUp]
         public void Setup()
         {
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(0, CoreAction.CoreVersion(0, 1));
-            HistoryEvent historyEvent2 = HistoryEvent.CreateCoreAction(1, CoreAction.KeyPress(10000000, Keys.A, true));
-            HistoryEvent historyEvent3 = HistoryEvent.CreateCoreAction(2, CoreAction.KeyPress(20000000, Keys.A, false));
-            HistoryEvent historyEvent4 = HistoryEvent.CreateCoreAction(3, CoreAction.LoadDisc(30000000, 0, new MemoryBlob(new byte[] { 0x01, 0x02 })));
-            HistoryEvent historyEvent5 = HistoryEvent.CreateCoreAction(4, CoreAction.LoadDisc(40000000, 0, null));
-            HistoryEvent historyEvent6 = HistoryEvent.CreateCoreAction(5, CoreAction.LoadTape(50000000, new MemoryBlob(new byte[] { 0x01, 0x02 })));
-            HistoryEvent historyEvent7 = HistoryEvent.CreateCoreAction(6, CoreAction.LoadTape(60000000, null));
-            _finalHistoryEvent = HistoryEvent.CreateCheckpoint(7, 70000000, DateTime.UtcNow, null);
+            _bookmarkTicks = new List<UInt64>();
+            MachineTests machineTests = new MachineTests();
+            machineTests.Setup();
+            using (Machine machine = machineTests.CreateMachine())
+            {
+                RunForAWhile(machine);
+                machine.Key(Keys.A, true);
+                RunForAWhile(machine);
+                machine.Key(Keys.A, false);
+                RunForAWhile(machine);
+                machine.LoadDisc(0, null);
+                RunForAWhile(machine);
+                machine.LoadTape(null);
+                RunForAWhile(machine);
+                machine.AddBookmark(false);
+                _bookmarkTicks.Add(machine.Ticks);
+                RunForAWhile(machine);
+                machine.AddBookmark(false);
+                _bookmarkTicks.Add(machine.Ticks);
+                RunForAWhile(machine);
 
-            historyEvent.AddChild(historyEvent2);
-            historyEvent2.AddChild(historyEvent3);
-            historyEvent3.AddChild(historyEvent4);
-            historyEvent4.AddChild(historyEvent5);
-            historyEvent5.AddChild(historyEvent6);
-            historyEvent6.AddChild(historyEvent7);
-            historyEvent7.AddChild(_finalHistoryEvent);
+                _finalHistoryEvent = machine.CurrentEvent;
+            }
         }
 
         private ReplayMachine CreateMachine()
@@ -133,6 +141,95 @@ namespace CPvC.Test
             Assert.DoesNotThrow(() => {
                 machine.Dispose();
             });
+        }
+
+        [Test]
+        public void SeekToStart()
+        {
+            // Setup
+            using (ReplayMachine replayMachine = CreateMachine())
+            {
+                RunForAWhile(replayMachine);
+
+                // Act
+                replayMachine.SeekToStart();
+
+                // Verify
+                Assert.AreEqual(0, replayMachine.Ticks);
+            }
+        }
+
+        [Test]
+        public void StartAtEnd()
+        {
+            // Setup
+            using (ReplayMachine replayMachine = CreateMachine())
+            {
+                replayMachine.SeekToNextBookmark();
+                replayMachine.SeekToNextBookmark();
+
+                while (replayMachine.Running)
+                {
+                    RunForAWhile(replayMachine);
+                }
+
+                // Act
+                replayMachine.Start();
+
+                // Verify
+                Assert.False(replayMachine.Running);
+                Assert.AreEqual(replayMachine.EndTicks, replayMachine.Ticks);
+            }
+        }
+
+        [Test]
+        public void SeekToPrevAndNextBookmark()
+        {
+            // Setup
+            using (ReplayMachine replayMachine = CreateMachine())
+            {
+                // Act and Verify
+                foreach (UInt64 bookmarkTick in _bookmarkTicks)
+                {
+                    replayMachine.SeekToNextBookmark();
+                    Assert.AreEqual(bookmarkTick, replayMachine.Ticks);
+                }
+
+                UInt64 finalTicks = replayMachine.Ticks;
+                replayMachine.SeekToNextBookmark();
+                Assert.AreEqual(finalTicks, replayMachine.Ticks);
+
+                _bookmarkTicks.Reverse();
+                foreach (UInt64 bookmarkTick in _bookmarkTicks)
+                {
+                    Assert.AreEqual(bookmarkTick, replayMachine.Ticks);
+                    replayMachine.SeekToPreviousBookmark();
+                }
+
+                Assert.AreEqual(0, replayMachine.Ticks);
+                replayMachine.SeekToPreviousBookmark();
+                Assert.AreEqual(0, replayMachine.Ticks);
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SetRunning(bool running)
+        {
+            // Setup
+            using (ReplayMachine replayMachine = CreateMachine())
+            {
+                if (running)
+                {
+                    replayMachine.Start();
+                }
+
+                // Act
+                replayMachine.SeekToNextBookmark();
+
+                // Verify
+                Assert.AreEqual(running, replayMachine.Running);
+            }
         }
     }
 }
