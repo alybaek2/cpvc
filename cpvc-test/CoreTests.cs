@@ -212,6 +212,40 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void RunForVSyncWithHandler()
+        {
+            // Setup
+            bool beginVSyncCalled = false;
+            BeginVSyncDelegate beginVSync = _ => { beginVSyncCalled = true; };
+            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            core.BeginVSync += beginVSync;
+
+            // Act
+            RunForAWhile(core, 200000);
+
+            // Verify
+            Assert.True(beginVSyncCalled);
+        }
+
+        [Test]
+        public void CoreVersion()
+        {
+            // Setup
+            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            UnmanagedMemory screen = new UnmanagedMemory(Display.Width * Display.Pitch, 0);
+            core.SetScreen(screen);
+            RunForAWhile(core, 10000);
+
+            // Act
+            core.PushRequest(CoreRequest.CoreVersion(1));
+            RunForAWhile(core, 10000);
+
+            // Verify - this isn't the greatest test since we only have 1 version to test with.
+            //          Once we have a new version, this test can be updated.
+            Assert.AreEqual((IntPtr)screen, core.GetScreen());
+        }
+
+        [Test]
         public void CreateInvalidVersion()
         {
             // Setup and Verify
@@ -230,6 +264,20 @@ namespace CPvC.Test
 
             // Verify
             Assert.AreEqual(scrPtr, core.GetScreen());
+        }
+
+        /// <summary>
+        /// Tests that the core doesn't throw an exception when there are no PropertyChanged
+        /// handlers registered and a property is changed.
+        /// </summary>
+        [Test]
+        public void NoPropertyChangedHandlers()
+        {
+            // Setup
+            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+
+            // Act and Verify
+            Assert.DoesNotThrow(() => core.Volume = 100);
         }
     }
 }

@@ -226,6 +226,19 @@ namespace CPvC.Test
             machine.Stop();
         }
 
+        static public void RunForAWhile(Core core, UInt64 duration)
+        {
+            UInt64 endTicks = core.Ticks + duration;
+            core.Start();
+            while (core.Ticks < endTicks)
+            {
+                // Empty out the audio buffer just in case on an overrun.
+                core.AdvancePlayback(10000);
+            }
+
+            core.Stop();
+        }
+
         static public string GetTempFilepath(string filename)
         {
             return String.Format("{0}\\{1}", System.IO.Path.GetTempPath(), filename);

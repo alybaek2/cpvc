@@ -54,12 +54,13 @@ namespace CPvC.Test
             Assert.AreEqual(true, clone.KeyDown);
         }
 
-        [Test]
-        public void CloneLoadDisc()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void CloneLoadDisc(bool eject)
         {
             // Setup
             byte[] bytes = new byte[] { 0x01, 0x02 };
-            CoreAction action = CoreAction.LoadDisc(100, 1, new MemoryBlob(bytes));
+            CoreAction action = CoreAction.LoadDisc(100, 1, eject ? null : new MemoryBlob(bytes));
 
             // Act
             CoreAction clone = action.Clone();
@@ -68,16 +69,25 @@ namespace CPvC.Test
             Assert.AreEqual(CoreRequest.Types.LoadDisc, clone.Type);
             Assert.AreEqual(100, clone.Ticks);
             Assert.AreEqual(1, clone.Drive);
-            Assert.AreNotSame(action.MediaBuffer, clone.MediaBuffer);
-            Assert.AreEqual(bytes, clone.MediaBuffer.GetBytes());
+
+            if (eject)
+            {
+                Assert.IsNull(clone.MediaBuffer);
+            }
+            else
+            {
+                Assert.AreNotSame(action.MediaBuffer, clone.MediaBuffer);
+                Assert.AreEqual(bytes, clone.MediaBuffer.GetBytes());
+            }
         }
 
-        [Test]
-        public void CloneLoadTape()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void CloneLoadTape(bool eject)
         {
             // Setup
             byte[] bytes = new byte[] { 0x01, 0x02 };
-            CoreAction action = CoreAction.LoadTape(100, new MemoryBlob(bytes));
+            CoreAction action = CoreAction.LoadTape(100, eject ? null : new MemoryBlob(bytes));
 
             // Act
             CoreAction clone = action.Clone();
@@ -85,8 +95,16 @@ namespace CPvC.Test
             // Verify
             Assert.AreEqual(CoreRequest.Types.LoadTape, clone.Type);
             Assert.AreEqual(100, clone.Ticks);
-            Assert.AreNotSame(action.MediaBuffer, clone.MediaBuffer);
-            Assert.AreEqual(bytes, clone.MediaBuffer.GetBytes());
+
+            if (eject)
+            {
+                Assert.IsNull(clone.MediaBuffer);
+            }
+            else
+            {
+                Assert.AreNotSame(action.MediaBuffer, clone.MediaBuffer);
+                Assert.AreEqual(bytes, clone.MediaBuffer.GetBytes());
+            }
         }
 
         [Test]

@@ -102,6 +102,16 @@ namespace CPvC
             return request;
         }
 
+        static public CoreRequest CoreVersion(int version)
+        {
+            CoreRequest action = new CoreRequest(Types.CoreVersion)
+            {
+                Version = version
+            };
+
+            return action;
+        }
+
         static public CoreRequest Quit()
         {
             return new CoreRequest(Types.Quit);
