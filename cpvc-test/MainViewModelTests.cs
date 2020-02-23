@@ -457,6 +457,9 @@ namespace CPvC.Test
                 viewModel.SeekToPreviousBookmarkCommand.Execute(null);
                 viewModel.EnableTurbo(true);
                 viewModel.CompactCommand.Execute(null);
+                viewModel.SeekToNextBookmarkCommand.Execute(null);
+                viewModel.SeekToPrevBookmarkCommand.Execute(null);
+                viewModel.SeekToStartCommand.Execute(null);
                 viewModel.Close(null);
             });
         }
@@ -815,6 +818,57 @@ namespace CPvC.Test
             {
                 Assert.IsNull(machine.CurrentEvent.Bookmark);
             }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SeekToBegin(bool active)
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+
+            Mock<IPrerecordedMachine> mockPrerecordedMachine = new Mock<IPrerecordedMachine>();
+            viewModel.ActiveMachine = active ? mockPrerecordedMachine.Object : null;
+
+            // Act
+            viewModel.SeekToStartCommand.Execute(null);
+
+            // Verify
+            mockPrerecordedMachine.Verify(m => m.SeekToStart(), active ? Times.Once() : Times.Never());
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SeekToNextBookmark(bool active)
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+
+            Mock<IPrerecordedMachine> mockPrerecordedMachine = new Mock<IPrerecordedMachine>();
+            viewModel.ActiveMachine = active ? mockPrerecordedMachine.Object : null;
+
+            // Act
+            viewModel.SeekToNextBookmarkCommand.Execute(null);
+
+            // Verify
+            mockPrerecordedMachine.Verify(m => m.SeekToNextBookmark(), active ? Times.Once() : Times.Never());
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SeekToPrevBookmark(bool active)
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+
+            Mock<IPrerecordedMachine> mockPrerecordedMachine = new Mock<IPrerecordedMachine>();
+            viewModel.ActiveMachine = active ? mockPrerecordedMachine.Object : null;
+
+            // Act
+            viewModel.SeekToPrevBookmarkCommand.Execute(null);
+
+            // Verify
+            mockPrerecordedMachine.Verify(m => m.SeekToPreviousBookmark(), active ? Times.Once() : Times.Never());
         }
 
         /// <summary>
