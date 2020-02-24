@@ -381,7 +381,7 @@ namespace CPvC
         /// <summary>
         /// Rewind from the current event in the timeline to the most recent bookmark, and begin a new timeline branch from there.
         /// </summary>
-        public void SeekToLastBookmark()
+        public void JumpToMostRecentBookmark()
         {
             HistoryEvent lastBookmarkEvent = CurrentEvent;
             while (lastBookmarkEvent != null)

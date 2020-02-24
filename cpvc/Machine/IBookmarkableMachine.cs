@@ -9,6 +9,6 @@ namespace CPvC
     public interface IBookmarkableMachine : ICoreMachine
     {
         void AddBookmark(bool system);
-        void SeekToLastBookmark();
+        void JumpToMostRecentBookmark();
     }
 }

@@ -29,7 +29,7 @@ namespace CPvC.UI
         ViewModelCommand _resumeCommand;
         ViewModelCommand _toggleRunningCommand;
         ViewModelCommand _addBookmarkCommand;
-        ViewModelCommand _seekToPreviousBookmarkCommand;
+        ViewModelCommand _jumpToMostRecentBookmarkCommand;
         ViewModelCommand _browseBookmarksCommand;
         ViewModelCommand _compactCommand;
         ViewModelCommand _renameCommand;
@@ -92,9 +92,9 @@ namespace CPvC.UI
             get { return _addBookmarkCommand; }
         }
 
-        public ICommand SeekToPreviousBookmarkCommand
+        public ICommand JumpToMostRecentBookmarkCommand
         {
-            get { return _seekToPreviousBookmarkCommand; }
+            get { return _jumpToMostRecentBookmarkCommand; }
         }
 
         public ICommand BrowseBookmarksCommand
@@ -210,8 +210,8 @@ namespace CPvC.UI
                 this, "ActiveMachine"
             );
 
-            _seekToPreviousBookmarkCommand = new ViewModelCommand(
-                p => SeekToLastBookmark(),
+            _jumpToMostRecentBookmarkCommand = new ViewModelCommand(
+                p => JumpToMostRecentBookmark(),
                 p => (ActiveMachine as IBookmarkableMachine) != null,
                 this, "ActiveMachine"
             );
@@ -429,9 +429,9 @@ namespace CPvC.UI
             (ActiveMachine as IPrerecordedMachine)?.SeekToStart();
         }
 
-        private void SeekToLastBookmark()
+        private void JumpToMostRecentBookmark()
         {
-            (ActiveMachine as IBookmarkableMachine)?.SeekToLastBookmark();
+            (ActiveMachine as IBookmarkableMachine)?.JumpToMostRecentBookmark();
         }
 
         private void CompactFile()

@@ -454,7 +454,7 @@ namespace CPvC.Test
                 viewModel.DriveAEjectCommand.Execute(null);
                 viewModel.TapeEjectCommand.Execute(null);
                 viewModel.AddBookmarkCommand.Execute(null);
-                viewModel.SeekToPreviousBookmarkCommand.Execute(null);
+                viewModel.JumpToMostRecentBookmarkCommand.Execute(null);
                 viewModel.EnableTurbo(true);
                 viewModel.CompactCommand.Execute(null);
                 viewModel.SeekToNextBookmarkCommand.Execute(null);
@@ -872,12 +872,12 @@ namespace CPvC.Test
         }
 
         /// <summary>
-        /// Ensures that a SeekToLastBookmark call is passed through from the view model to the machine.
+        /// Ensures that a JumpToMostRecentBookmark call is passed through from the view model to the machine.
         /// </summary>
         /// <param name="active">Indicates whether the machine should be set as the view model's active machine.</param>
         [TestCase(false)]
         [TestCase(true)]
-        public void SeekToLastBookmark(bool active)
+        public void JumpToMostRecentBookmark(bool active)
         {
             // Setup
             MainViewModel viewModel = SetupViewModel(1, null, null, null);
@@ -886,10 +886,10 @@ namespace CPvC.Test
             viewModel.ActiveMachine = active ? mockPrerecordedMachine.Object : null;
 
             // Act
-            viewModel.SeekToPreviousBookmarkCommand.Execute(null);
+            viewModel.JumpToMostRecentBookmarkCommand.Execute(null);
 
             // Verify
-            mockPrerecordedMachine.Verify(m => m.SeekToLastBookmark(), active ? Times.Once() : Times.Never());
+            mockPrerecordedMachine.Verify(m => m.JumpToMostRecentBookmark(), active ? Times.Once() : Times.Never());
         }
 
         /// <summary>

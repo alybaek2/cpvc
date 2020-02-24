@@ -158,13 +158,13 @@ namespace CPvC.Test
             machine.AddBookmark(false);
             HistoryEvent event100 = machine.CurrentEvent;
             Run(machine, 300, true);
-            machine.SeekToLastBookmark();
+            machine.JumpToMostRecentBookmark();
             HistoryEvent event400 = machine.CurrentEvent.Children[0];
             Run(machine, 100, true);
             machine.AddBookmark(false);
             HistoryEvent event200 = machine.CurrentEvent;
             Run(machine, 100, true);
-            machine.SeekToLastBookmark();
+            machine.JumpToMostRecentBookmark();
             HistoryEvent event300 = machine.CurrentEvent.Children[0];
             Run(machine, 300, true);
             machine.AddBookmark(true);

@@ -157,7 +157,7 @@ namespace CPvC.Test
                 RunForAWhile(machine);
 
                 // Act
-                machine.SeekToLastBookmark();
+                machine.JumpToMostRecentBookmark();
 
                 // Verify
                 Assert.AreEqual(machine.CurrentEvent.Id, bookmarkId);
@@ -245,7 +245,7 @@ namespace CPvC.Test
                 machine.AddBookmark(false);
                 HistoryEvent bookmarkEvent = machine.CurrentEvent;
                 RunForAWhile(machine);
-                machine.SeekToLastBookmark();
+                machine.JumpToMostRecentBookmark();
                 HistoryEvent eventToDelete = bookmarkEvent.Children[0];
                 RunForAWhile(machine);
                 machine.SetBookmark(bookmarkEvent, null);
@@ -444,10 +444,10 @@ namespace CPvC.Test
 
                 HistoryEvent eventToDelete = machine.CurrentEvent;
 
-                machine.SeekToLastBookmark();
+                machine.JumpToMostRecentBookmark();
                 machine.LoadDisc(0, null);
                 RunForAWhile(machine);
-                machine.SeekToLastBookmark();
+                machine.JumpToMostRecentBookmark();
                 machine.LoadTape(null);
                 RunForAWhile(machine);
                 machine.TrimTimeline(eventToDelete.Children[0]);
