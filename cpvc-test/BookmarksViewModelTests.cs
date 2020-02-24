@@ -36,9 +36,9 @@ namespace CPvC.Test
             RunForAWhile(machine);
             machine.AddBookmark(true);
 
-            // Act
             using (BookmarksViewModel viewModel = new BookmarksViewModel(machine))
             {
+                // Act
                 viewModel.SelectedItem = null;
 
                 // Verify
@@ -180,6 +180,20 @@ namespace CPvC.Test
                 Assert.AreEqual(event200, viewModel.Items[3].HistoryEvent);
                 Assert.AreEqual(event100, viewModel.Items[4].HistoryEvent);
                 Assert.AreEqual(machine.RootEvent, viewModel.Items[5].HistoryEvent);
+            }
+        }
+
+        [Test]
+        public void DisposeTwice()
+        {
+            // Setup
+            using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
+            {
+                BookmarksViewModel viewModel = new BookmarksViewModel(machine);
+                viewModel.Dispose();
+
+                // Act and Verify
+                Assert.DoesNotThrow(() => viewModel.Dispose());
             }
         }
     }

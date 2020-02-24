@@ -33,7 +33,7 @@ namespace CPvC.UI
             RefreshHistoryViewItems();
 
             // The initial selected item is set to the current event.
-            SelectedItem = Items.FirstOrDefault(i => i != null && i.HistoryEvent == _machine.CurrentEvent);
+            SelectedItem = Items.FirstOrDefault(i => i.HistoryEvent == _machine.CurrentEvent);
         }
 
         public void Dispose()
@@ -78,7 +78,7 @@ namespace CPvC.UI
                     {
                         bitmap = _machine.Display.Bitmap;
                     }
-                    else if (historyEvent?.Type == HistoryEvent.Types.Checkpoint && historyEvent.Bookmark != null)
+                    else if (historyEvent.Type == HistoryEvent.Types.Checkpoint && historyEvent.Bookmark != null)
                     {
                         _display.GetFromBookmark(historyEvent.Bookmark);
 
@@ -89,7 +89,7 @@ namespace CPvC.UI
                 Bitmap = bitmap;
                 OnPropertyChanged("Bitmap");
 
-                bool bookmarkSelected = (_selectedItem?.HistoryEvent?.Bookmark != null);
+                bool bookmarkSelected = (_selectedItem?.HistoryEvent.Bookmark != null);
 
                 CanDeleteBookmark = bookmarkSelected;
                 OnPropertyChanged("CanDeleteBookmark");
