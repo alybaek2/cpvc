@@ -500,14 +500,14 @@ namespace CPvC.Test
                 machine.EnableTurbo(true);
 
                 // Run long enough to fill the audio buffer.
-                Run(machine, 10000000, true);
+                Run(machine, 8000000, true);
                 turboDuration = machine.Core.Ticks;
 
                 // Empty out the audio buffer.
                 machine.AdvancePlayback(1000000);
 
                 machine.EnableTurbo(false);
-                Run(machine, 10000000, true);
+                Run(machine, 8000000, true);
                 normalDuration = machine.Core.Ticks - turboDuration;
             }
 

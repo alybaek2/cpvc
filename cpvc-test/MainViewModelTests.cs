@@ -513,7 +513,7 @@ namespace CPvC.Test
             viewModel.ActiveMachine = active ? coreMachine : null;
 
             // Run the machine enough to fill up the audio buffer.
-            Run(coreMachine, 4000000, true);
+            Run(coreMachine, 200, true);
 
             // Act
             byte[] buffer = new byte[4];
