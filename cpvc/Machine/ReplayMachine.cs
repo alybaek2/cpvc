@@ -38,7 +38,7 @@ namespace CPvC
                 historyEvent = historyEvent.Parent;
             }
 
-            SeekToBookmark(0);
+            SeekToBookmark(null);
         }
 
         public string Name
@@ -59,52 +59,46 @@ namespace CPvC
             Core = null;
         }
 
-        private void SeekToBookmark(int historyEventIndex)
+        private void SeekToBookmark(Bookmark bookmark)
         {
             Core core = null;
 
             int version = -1;
+            bool foundBookmark = false;
 
             for (int i = 0; i < _historyEvents.Count; i++)
             {
                 HistoryEvent historyEvent = _historyEvents[i];
-
                 if (historyEvent.CoreAction != null && historyEvent.CoreAction.Type == CoreRequest.Types.CoreVersion)
                 {
                     version = historyEvent.CoreAction.Version;
                 }
-                
-                if (historyEventIndex == i)
+
+                if (bookmark == null)
                 {
-                    if (i == 0)
-                    {
-                        core = Core.Create(version, Core.Type.CPC6128);
-                        Display.GetFromBookmark(null);
-                    }
-                    else
-                    {
-                        if (historyEvent.Bookmark != null)
-                        {
-                            core = Core.Create(version, historyEvent.Bookmark.State.GetBytes());
-                            Display.GetFromBookmark(historyEvent.Bookmark);
-                        }
-                        else
-                        {
-                            return;
-                        }
-                    }
+                    foundBookmark = true;
+                    core = Core.Create(version, Core.Type.CPC6128);
+                    Display.GetFromBookmark(null);
                 }
-                else if (i == (_historyEvents.Count - 1))
+                else if (historyEvent?.Bookmark == bookmark)
                 {
-                    core.PushRequest(CoreRequest.RunUntilForce(historyEvent.Ticks));
-                    core.PushRequest(CoreRequest.Quit());
+                    foundBookmark = true;
+                    core = Core.Create(version, historyEvent.Bookmark.State.GetBytes());
+                    Display.GetFromBookmark(historyEvent.Bookmark);
                 }
-                else if (i > historyEventIndex)
+
+                if (foundBookmark)
                 {
                     if (historyEvent.Type == HistoryEvent.Types.CoreAction)
                     {
                         core.PushRequest(CoreRequest.RunUntilForce(historyEvent.Ticks));
                         core.PushRequest(historyEvent.CoreAction);
+                    }
+
+                    if (i == (_historyEvents.Count - 1))
+                    {
+                        core.PushRequest(CoreRequest.RunUntilForce(historyEvent.Ticks));
+                        core.PushRequest(CoreRequest.Quit());
                     }
                 }
             }
@@ -144,26 +138,21 @@ namespace CPvC
 
         public void SeekToStart()
         {
-            SeekToBookmark(0);
+            SeekToBookmark(null);
         }
 
         public void SeekToPreviousBookmark()
         {
-            int historyIndex = _historyEvents.FindLastIndex(he => he != null && he.Ticks < _core.Ticks && he.Bookmark != null);
-            if (historyIndex == -1)
-            {
-                historyIndex = 0;
-            }
-
-            SeekToBookmark(historyIndex);
+            Bookmark bookmark = _historyEvents.Where(he => he.Ticks < _core.Ticks && he.Bookmark != null).Select(he => he.Bookmark).LastOrDefault();
+            SeekToBookmark(bookmark);
         }
 
         public void SeekToNextBookmark()
         {
-            int historyIndex = _historyEvents.FindIndex(he => he != null && he.Ticks > _core.Ticks && he.Bookmark != null);
-            if (historyIndex != -1)
+            Bookmark bookmark = _historyEvents.Where(he => he.Ticks > _core.Ticks && he.Bookmark != null).Select(he => he.Bookmark).FirstOrDefault();
+            if (bookmark != null)
             {
-                SeekToBookmark(historyIndex);
+                SeekToBookmark(bookmark);
             }
         }
     }

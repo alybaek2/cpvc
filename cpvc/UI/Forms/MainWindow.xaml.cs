@@ -288,7 +288,7 @@ namespace CPvC.UI.Forms
                         if (dialog.SelectedReplayEvent != null)
                         {
                             ReplayMachine replayMachine = new ReplayMachine(dialog.SelectedReplayEvent);
-                            replayMachine.Name = String.Format("{0} Replay", machine.Name);
+                            replayMachine.Name = String.Format("{0} (Replay)", machine.Name);
                             _mainViewModel.ReplayMachines.Add(replayMachine);
                             _mainViewModel.ActiveMachine = replayMachine;
                             return null;
