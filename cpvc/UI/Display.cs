@@ -211,7 +211,7 @@ namespace CPvC
 
         protected virtual void Dispose(bool disposing)
         {
-            Buffer?.Dispose();
+            Buffer.Dispose();
         }
 
         private void OnPropertyChanged(string name)

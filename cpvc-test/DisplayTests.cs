@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -45,6 +46,21 @@ namespace CPvC.Test
 
             // Act and Verify - note that EnableGreyscale will trigger a change on the "Bitmap" property.
             Assert.DoesNotThrow(() => display.EnableGreyscale(true));
+        }
+
+        [Test]
+        public void PropertyChanged()
+        {
+            // Setup
+            Display display = new Display();
+            Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
+            display.PropertyChanged += propChanged.Object;
+
+            // Act - note that EnableGreyscale will trigger a change on the "Bitmap" property.
+            display.EnableGreyscale(true);
+
+            // Verify
+            propChanged.Verify(p => p(display, It.Is<PropertyChangedEventArgs>(e => e.PropertyName == "Bitmap")));
         }
     }
 }
