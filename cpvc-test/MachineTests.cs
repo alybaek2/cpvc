@@ -765,5 +765,38 @@ namespace CPvC.Test
                 }
             }
         }
+
+        [Test]
+        public void DeleteEventInvalidId()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                // Act and Verify - probably better to verify that the history is unchanged...
+                Assert.DoesNotThrow(() => machine.DeleteEvent(9999));
+            }
+        }
+
+        [Test]
+        public void SetBookmarkInvalidId()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                // Act and Verify
+                Assert.DoesNotThrow(() => machine.SetBookmark(9999, null));
+            }
+        }
+
+        [Test]
+        public void SetCurrentEventInvalidId()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                // Act and Verify
+                Assert.DoesNotThrow(() => machine.SetCurrentEvent(9999));
+            }
+        }
     }
 }
