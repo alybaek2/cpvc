@@ -79,15 +79,15 @@ namespace CPvC
                 {
                     machine.Close();
                 }
+
+                return machine;
             }
             catch (Exception)
             {
-                machine?.Dispose();
+                machine.Dispose();
 
                 throw;
             }
-
-            return machine;
         }
 
         /// <summary>
@@ -147,8 +147,8 @@ namespace CPvC
             Machine machine = null;
             try
             {
-                fileSystem.DeleteFile(machineFilepath);
                 machine = new Machine(null, machineFilepath, fileSystem);
+                fileSystem.DeleteFile(machineFilepath);
 
                 machine._file = new MachineFile(fileSystem, machine.Filepath);
                 machine.Name = name;
@@ -165,7 +165,7 @@ namespace CPvC
             }
             catch (Exception)
             {
-                machine?.Dispose();
+                machine.Dispose();
 
                 throw;
             }
@@ -667,33 +667,25 @@ namespace CPvC
         /// <returns>If the HistoryEvent contains a bookmark, returns a core based on that bookmark. If the HistoryEvent is the root event, a newly-instantiated core is returned. Otherwise, null is returned.</returns>
         static private Core GetCore(HistoryEvent historyEvent)
         {
-            Core core = null;
-            try
+            if (historyEvent.Parent == null)
             {
-                if (historyEvent.Parent == null)
-                {
-                    // A history event with no parent is assumed to be the root.
-                    core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-                }
-                else if (historyEvent.Bookmark != null)
-                {
-                    core = Core.Create(Core.LatestVersion, historyEvent.Bookmark.State.GetBytes());
+                // A history event with no parent is assumed to be the root.
+                return Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            }
+            else if (historyEvent.Bookmark != null)
+            {
+                Core core = Core.Create(Core.LatestVersion, historyEvent.Bookmark.State.GetBytes());
 
-                    // Ensure all keys are in an "up" state.
-                    for (byte keycode = 0; keycode < 80; keycode++)
-                    {
-                        core.KeyPress(keycode, false);
-                    }
+                // Ensure all keys are in an "up" state.
+                for (byte keycode = 0; keycode < 80; keycode++)
+                {
+                    core.KeyPress(keycode, false);
                 }
 
                 return core;
             }
-            catch (Exception)
-            {
-                core?.Dispose();
 
-                throw;
-            }
+            return null;
         }
 
         private int NextEventId()
