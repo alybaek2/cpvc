@@ -135,5 +135,18 @@ namespace CPvC.Test
             Assert.AreEqual(CoreRequest.Types.Quit, clone.Type);
             Assert.AreEqual(100, clone.Ticks);
         }
+
+        [Test]
+        public void CloneInvalidType()
+        {
+            // Setup
+            CoreAction action = new CoreAction((CoreRequest.Types) 999, 100);
+
+            // Act
+            CoreAction clone = action.Clone();
+
+            // Verify
+            Assert.IsNull(clone);
+        }
     }
 }

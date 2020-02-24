@@ -189,7 +189,7 @@ namespace CPvC.Test
         /// <param name="ticks">The number of ticks to run the machine for.</param>
         /// <param name="stopOnAudioOverrun">Indicates if the machine should stop in the event of an audio overrun.</param>
         /// <returns>The total number of ticks that the machine ran for. Note this may be slightly larger than <c>ticks</c>, since Z80 instructions take at least 4 ticks.</returns>
-        static public UInt64 Run(CoreMachine machine, UInt64 ticks, bool stopOnAudioOverrun)
+        static public UInt64 Run(ICoreMachine machine, UInt64 ticks, bool stopOnAudioOverrun)
         {
             UInt64 beforeTicks = machine.Core.Ticks;
             machine.Core.RunUntil(beforeTicks + ticks, stopOnAudioOverrun ? StopReasons.AudioOverrun : StopReasons.None);

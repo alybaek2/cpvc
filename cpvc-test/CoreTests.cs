@@ -274,10 +274,41 @@ namespace CPvC.Test
         public void NoPropertyChangedHandlers()
         {
             // Setup
-            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                // Act and Verify
+                Assert.DoesNotThrow(() => core.Volume = 100);
+            }
+        }
 
-            // Act and Verify
-            Assert.DoesNotThrow(() => core.Volume = 100);
+        [Test]
+        public void ProcessInvalidRequest()
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                CoreRequest request = new CoreRequest((CoreRequest.Types)999);
+
+                Core auditorCore = null;
+                CoreRequest auditorRequest = null;
+                CoreAction auditorAction = null;
+                RequestProcessedDelegate auditor = (c, r, a) => {
+                    auditorCore = c;
+                    auditorRequest = r;
+                    auditorAction = a;
+                };
+                core.Auditors += auditor;
+
+                // Act
+                core.PushRequest(request);
+                core.PushRequest(CoreRequest.Quit());
+                core.CoreThread();
+
+                // Verify
+                Assert.AreEqual(core, auditorCore);
+                Assert.AreEqual(request, auditorRequest);
+                Assert.IsNull(auditorAction);
+            }
         }
     }
 }

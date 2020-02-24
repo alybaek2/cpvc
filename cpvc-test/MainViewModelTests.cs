@@ -509,7 +509,7 @@ namespace CPvC.Test
             MainViewModel viewModel = SetupViewModel(1, null, null, null);
             Machine machine = viewModel.Machines[0];
             machine.Open();
-            CoreMachine coreMachine = replayMachine ? (CoreMachine)viewModel.ReplayMachines[0] : (CoreMachine)machine;
+            ICoreMachine coreMachine = replayMachine ? (ICoreMachine)viewModel.ReplayMachines[0] : (ICoreMachine)machine;
             viewModel.ActiveMachine = active ? coreMachine : null;
 
             // Run the machine enough to fill up the audio buffer.

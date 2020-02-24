@@ -605,6 +605,9 @@ namespace CPvC
                     case CoreRequest.Types.Quit:
                         RemoveFirstRequest();
                         return true;
+                    default:
+                        Diagnostics.Trace(String.Format("Unknown core request type {0}. Ignoring request.", request.Type));
+                        break;
                 }
             }
 

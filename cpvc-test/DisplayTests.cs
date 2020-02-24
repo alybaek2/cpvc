@@ -34,7 +34,7 @@ namespace CPvC.Test
         }
 
         /// <summary>
-        /// Tests that the core doesn't throw an exception when there are no PropertyChanged
+        /// Tests that the display doesn't throw an exception when there are no PropertyChanged
         /// handlers registered and a property is changed.
         /// </summary>
         [Test]

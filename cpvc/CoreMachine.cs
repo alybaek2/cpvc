@@ -121,18 +121,7 @@ namespace CPvC
 
         protected void CorePropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == "Ticks")
-            {
-                OnPropertyChanged("Ticks");
-            }
-            else if (e.PropertyName == "Running")
-            {
-                OnPropertyChanged("Running");
-            }
-            else if (e.PropertyName == "Volume")
-            {
-                OnPropertyChanged("Volume");
-            }
+            OnPropertyChanged(e.PropertyName);
         }
 
         protected void OnPropertyChanged(string name)

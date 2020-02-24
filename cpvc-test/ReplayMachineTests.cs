@@ -231,5 +231,20 @@ namespace CPvC.Test
                 Assert.AreEqual(running, replayMachine.Running);
             }
         }
+
+        /// <summary>
+        /// Tests that the machine doesn't throw an exception when there are no PropertyChanged
+        /// handlers registered and a property is changed.
+        /// </summary>
+        [Test]
+        public void NoPropertyChangedHandlers()
+        {
+            // Setup
+            using (ReplayMachine replayMachine = CreateMachine())
+            {
+                // Act and Verify - note that EnableGreyscale will trigger a change on the "Bitmap" property.
+                Assert.DoesNotThrow(() => replayMachine.Volume = 100);
+            }
+        }
     }
 }

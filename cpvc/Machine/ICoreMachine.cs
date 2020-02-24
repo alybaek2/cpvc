@@ -8,6 +8,8 @@ namespace CPvC
 {
     public interface ICoreMachine
     {
+        Core Core { get; set; }
+
         void AdvancePlayback(int samples);
         int ReadAudio(byte[] buffer, int offset, int samplesRequested);
 

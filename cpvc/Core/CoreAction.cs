@@ -92,9 +92,9 @@ namespace CPvC
                     return CoreAction.Reset(Ticks);
                 case Types.RunUntilForce:
                     return CoreAction.RunUntilForce(Ticks, StopTicks);
+                default:
+                    return null;
             }
-
-            return null;
         }
     }
 }
