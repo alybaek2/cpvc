@@ -117,11 +117,6 @@ namespace CPvC
             }
         }
 
-        public void EnableTurbo(bool enabled)
-        {
-            _core.EnableTurbo(enabled);
-        }
-
         public void Start()
         {
             if (_core.Ticks < _endTicks)

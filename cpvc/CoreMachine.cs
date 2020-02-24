@@ -7,10 +7,11 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public class CoreMachine : ICoreMachine
+    public class CoreMachine : ICoreMachine, ITurboableMachine
     {
         protected Core _core;
         protected string _filepath;
+        private string _status;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -95,6 +96,27 @@ namespace CPvC
             set
             {
                 Core.Volume = value;
+            }
+        }
+
+        public void EnableTurbo(bool enabled)
+        {
+            _core.EnableTurbo(enabled);
+
+            Status = enabled ? "Turbo enabled" : "Turbo disabled";
+        }
+
+        public string Status
+        {
+            get
+            {
+                return _status;
+            }
+
+            set
+            {
+                _status = value;
+                OnPropertyChanged("Status");
             }
         }
 

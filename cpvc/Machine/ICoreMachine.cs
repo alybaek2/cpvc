@@ -17,6 +17,8 @@ namespace CPvC
         bool Running { get; }
         byte Volume { get; set;  }
 
+        string Status { get; set; }
+
         string Filepath { get; }
     }
 }

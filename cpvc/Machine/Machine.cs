@@ -35,22 +35,6 @@ namespace CPvC
         private readonly IFileSystem _fileSystem;
         private MachineFile _file;
 
-        private string _status;
-
-        public string Status
-        {
-            get
-            {
-                return _status;
-            }
-
-            set
-            {
-                _status = value;
-                OnPropertyChanged("Status");
-            }
-        }
-
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
             _name = name;
@@ -172,7 +156,7 @@ namespace CPvC
                 machine.SetCore(Core.Create(Core.LatestVersion, Core.Type.CPC6128));
 
                 CoreAction action = CoreAction.CoreVersion(machine.Core.Ticks, Core.LatestVersion);
-                machine.RootEvent = HistoryEvent.CreateCoreAction(machine.NextEventId(), action); // (machine.NextEventId(), 0, Core.LatestVersion);
+                machine.RootEvent = HistoryEvent.CreateCoreAction(machine.NextEventId(), action);
                 machine._file.WriteHistoryEvent(machine.RootEvent);
 
                 machine.CurrentEvent = machine.RootEvent;
@@ -411,13 +395,6 @@ namespace CPvC
         public void LoadTape(byte[] tapeBuffer)
         {
             _core.LoadTape(tapeBuffer);
-        }
-
-        public void EnableTurbo(bool enabled)
-        {
-            _core.EnableTurbo(enabled);
-
-            Status = enabled ? "Turbo enabled" : "Turbo disabled";
         }
 
         /// <summary>
