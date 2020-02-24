@@ -145,7 +145,7 @@ namespace CPvC.UI
             ActiveItem = this;
 
             _resetCommand = new ViewModelCommand(
-                p => (ActiveMachine as IInteractiveMachine)?.Reset(),
+                p => Reset(),
                 p => (ActiveMachine as IInteractiveMachine) != null,
                 this, "ActiveMachine"
             );
@@ -187,13 +187,13 @@ namespace CPvC.UI
             );
 
             _pauseCommand = new ViewModelCommand(
-                p => Pause(null),
+                p => Pause(),
                 p => (ActiveMachine as IPausableMachine) != null && ((ActiveMachine as ICoreMachine)?.Running ?? false),
                 this, "ActiveMachine"
             );
 
             _resumeCommand = new ViewModelCommand(
-                p => Resume(null),
+                p => Resume(),
                 p => (ActiveMachine as IPausableMachine) != null && !(((ActiveMachine as ICoreMachine)?.Running ?? true)),
                 this, "ActiveMachine"
             );
@@ -384,19 +384,19 @@ namespace CPvC.UI
             (ActiveMachine as ITurboableMachine)?.EnableTurbo(enabled);
         }
 
-        private void Resume(ICoreMachine machine)
+        private void Resume()
         {
-            ((machine ?? ActiveMachine) as IPausableMachine)?.Start();
+            (ActiveMachine as IPausableMachine)?.Start();
         }
 
-        private void Pause(ICoreMachine machine)
+        private void Pause()
         {
-            ((machine ?? ActiveMachine) as IPausableMachine)?.Stop();
+            (ActiveMachine as IPausableMachine)?.Stop();
         }
 
-        private void Reset(ICoreMachine machine)
+        private void Reset()
         {
-            ((machine ?? ActiveMachine) as IInteractiveMachine)?.Reset();
+            (ActiveMachine as IInteractiveMachine)?.Reset();
         }
 
         public void Close(ICoreMachine machine)

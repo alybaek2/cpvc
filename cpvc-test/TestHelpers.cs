@@ -207,7 +207,7 @@ namespace CPvC.Test
             UInt64 endTicks = startTicks + 1;
 
             int timeWaited = 0;
-            int sleepTime = 50;
+            int sleepTime = 10;
             machine.Start();
             while (machine.Ticks < endTicks)
             {
