@@ -203,12 +203,12 @@ namespace CPvC.Test
             Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
 
             // Act
-            core.RunForVSync(10);
+            core.RunForVSync(2);
 
-            // Verify - running for 10 VSyncs means we should have completed at
-            //          least 9 full frames, each of which should last approximately
+            // Verify - running for 2 VSyncs means we should have completed at
+            //          least 1 full frames, each of which should last approximately
             //          80000 (4000000 ticks / 50 frames) ticks each.
-            Assert.Greater(core.Ticks, 9 * 80000);
+            Assert.Greater(core.Ticks, 1 * 80000);
         }
 
         [Test]
@@ -221,7 +221,7 @@ namespace CPvC.Test
             core.BeginVSync += beginVSync;
 
             // Act
-            RunForAWhile(core, 200000);
+            RunForAWhile(core, 100000);
 
             // Verify
             Assert.True(beginVSyncCalled);
@@ -234,11 +234,11 @@ namespace CPvC.Test
             Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
             UnmanagedMemory screen = new UnmanagedMemory(Display.Width * Display.Pitch, 0);
             core.SetScreen(screen);
-            RunForAWhile(core, 10000);
+            RunForAWhile(core, 4);
 
             // Act
             core.PushRequest(CoreRequest.CoreVersion(1));
-            RunForAWhile(core, 10000);
+            RunForAWhile(core, 4);
 
             // Verify - this isn't the greatest test since we only have 1 version to test with.
             //          Once we have a new version, this test can be updated.
