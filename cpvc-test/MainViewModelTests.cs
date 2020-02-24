@@ -4,7 +4,6 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Windows.Input;

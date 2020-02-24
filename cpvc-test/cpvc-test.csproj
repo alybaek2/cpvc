@@ -111,6 +111,7 @@
     <Compile Include="ConvertersTests.cs" />
     <Compile Include="CoreActionTests.cs" />
     <Compile Include="CoreTests.cs" />
+    <Compile Include="DisplayTests.cs" />
     <Compile Include="FileSystemTests.cs" />
     <Compile Include="FileByteStreamTests.cs" />
     <Compile Include="HelpersTests.cs" />
