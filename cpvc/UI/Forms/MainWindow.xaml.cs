@@ -293,9 +293,9 @@ namespace CPvC.UI.Forms
                             _mainViewModel.ActiveMachine = replayMachine;
                             return null;
                         }
-                        else if (dialog.SelectedEvent?.Bookmark != null)
+                        else if (dialog.SelectedJumpEvent?.Bookmark != null)
                         {
-                            return dialog.SelectedEvent;
+                            return dialog.SelectedJumpEvent;
                         }
                     }
 

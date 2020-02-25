@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
 namespace CPvC.UI
@@ -12,20 +13,47 @@ namespace CPvC.UI
     /// </summary>
     public class BookmarksViewModel : INotifyPropertyChanged, IDisposable
     {
+        public delegate void ItemSelectedDelegate();
+
         private Machine _machine;
         private HistoryViewItem _selectedItem;
         private Display _display;
 
-        public bool CanJumpToBookmark { get; private set; }
-        public bool CanDeleteBookmark { get; private set; }
-        public bool CanDeleteBranch { get; private set; }
+        private ViewModelCommand _deleteBookmarksCommand;
+        private ViewModelCommand _deleteBranchesCommand;
+        private ViewModelCommand _jumpToBookmarkCommand;
+        private ViewModelCommand _replayTimelineCommand;
+
+        public ICommand DeleteBookmarksCommand
+        {
+            get { return _deleteBookmarksCommand; }
+        }
+
+        public ICommand DeleteBranchesCommand
+        {
+            get { return _deleteBranchesCommand; }
+        }
+
+        public ICommand JumpToBookmarkCommand
+        {
+            get { return _jumpToBookmarkCommand; }
+        }
+
+        public ICommand ReplayTimelineCommand
+        {
+            get { return _replayTimelineCommand; }
+        }
+
+
+        public HistoryEvent SelectedJumpEvent { get; private set; }
+        public HistoryEvent SelectedReplayEvent { get; private set; }
 
         public WriteableBitmap Bitmap { get; private set; }
         public ObservableCollection<HistoryViewItem> Items { get; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public BookmarksViewModel(Machine machine)
+        public BookmarksViewModel(Machine machine, ItemSelectedDelegate itemSelected)
         {
             _display = new Display();
             _machine = machine;
@@ -34,6 +62,30 @@ namespace CPvC.UI
 
             // The initial selected item is set to the current event.
             SelectedItem = Items.FirstOrDefault(i => i.HistoryEvent == _machine.CurrentEvent);
+
+            _replayTimelineCommand = new ViewModelCommand(
+                p => ReplayTimeline(itemSelected),
+                p => (SelectedItem as HistoryViewItem)?.HistoryEvent != null,
+                this, "SelectedItem"
+            );
+
+            _jumpToBookmarkCommand = new ViewModelCommand(
+                p => JumpToBookmark(itemSelected),
+                p => (SelectedItem as HistoryViewItem)?.HistoryEvent.Bookmark != null,
+                this, "SelectedItem"
+            );
+
+            _deleteBookmarksCommand = new ViewModelCommand(
+                p => DeleteBookmarks(),
+                p => (SelectedItem as HistoryViewItem)?.HistoryEvent.Bookmark != null,
+                this, "SelectedItem"
+            );
+
+            _deleteBranchesCommand = new ViewModelCommand(
+                p => DeleteBranches(),
+                p => (SelectedItem as HistoryViewItem)?.HistoryEvent != null,
+                this, "SelectedItem"
+            );
         }
 
         public void Dispose()
@@ -88,17 +140,6 @@ namespace CPvC.UI
 
                 Bitmap = bitmap;
                 OnPropertyChanged("Bitmap");
-
-                bool bookmarkSelected = (_selectedItem?.HistoryEvent.Bookmark != null);
-
-                CanDeleteBookmark = bookmarkSelected;
-                OnPropertyChanged("CanDeleteBookmark");
-
-                CanJumpToBookmark = bookmarkSelected;
-                OnPropertyChanged("CanJumpToBookmark");
-
-                CanDeleteBranch = (_selectedItem != null);
-                OnPropertyChanged("CanDeleteBranch");
             }
         }
 
@@ -226,6 +267,44 @@ namespace CPvC.UI
             foreach (HistoryViewItem item in items)
             {
                 Items.Add(item);
+            }
+        }
+
+        private void DeleteBookmarks()
+        {
+            if (SelectedItem?.HistoryEvent.Bookmark != null)
+            {
+                _machine.SetBookmark(SelectedItem.HistoryEvent, null);
+
+                RefreshHistoryViewItems();
+            }
+        }
+
+        private void DeleteBranches()
+        {
+            if (SelectedItem?.HistoryEvent != null)
+            {
+                _machine.TrimTimeline(SelectedItem.HistoryEvent);
+
+                RefreshHistoryViewItems();
+            }
+        }
+
+        private void JumpToBookmark(ItemSelectedDelegate itemSelected)
+        {
+            if (SelectedItem?.HistoryEvent.Bookmark != null)
+            {
+                SelectedJumpEvent = SelectedItem.HistoryEvent;
+                itemSelected();
+            }
+        }
+
+        private void ReplayTimeline(ItemSelectedDelegate itemSelected)
+        {
+            if (SelectedItem?.HistoryEvent != null)
+            {
+                SelectedReplayEvent = SelectedItem.HistoryEvent;
+                itemSelected();
             }
         }
 

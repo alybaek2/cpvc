@@ -18,24 +18,24 @@ namespace CPvC.UI
         public delegate HistoryEvent PromptForBookmarkDelegate();
         public delegate string PromptForNameDelegate(string existingName);
 
-        ViewModelCommand _driveACommand;
-        ViewModelCommand _driveAEjectCommand;
-        ViewModelCommand _driveBCommand;
-        ViewModelCommand _driveBEjectCommand;
-        ViewModelCommand _tapeCommand;
-        ViewModelCommand _tapeEjectCommand;
-        ViewModelCommand _resetCommand;
-        ViewModelCommand _pauseCommand;
-        ViewModelCommand _resumeCommand;
-        ViewModelCommand _toggleRunningCommand;
-        ViewModelCommand _addBookmarkCommand;
-        ViewModelCommand _jumpToMostRecentBookmarkCommand;
-        ViewModelCommand _browseBookmarksCommand;
-        ViewModelCommand _compactCommand;
-        ViewModelCommand _renameCommand;
-        ViewModelCommand _seekToNextBookmarkCommand;
-        ViewModelCommand _seekToPrevBookmarkCommand;
-        ViewModelCommand _seekToStartCommand;
+        private ViewModelCommand _driveACommand;
+        private ViewModelCommand _driveAEjectCommand;
+        private ViewModelCommand _driveBCommand;
+        private ViewModelCommand _driveBEjectCommand;
+        private ViewModelCommand _tapeCommand;
+        private ViewModelCommand _tapeEjectCommand;
+        private ViewModelCommand _resetCommand;
+        private ViewModelCommand _pauseCommand;
+        private ViewModelCommand _resumeCommand;
+        private ViewModelCommand _toggleRunningCommand;
+        private ViewModelCommand _addBookmarkCommand;
+        private ViewModelCommand _jumpToMostRecentBookmarkCommand;
+        private ViewModelCommand _browseBookmarksCommand;
+        private ViewModelCommand _compactCommand;
+        private ViewModelCommand _renameCommand;
+        private ViewModelCommand _seekToNextBookmarkCommand;
+        private ViewModelCommand _seekToPrevBookmarkCommand;
+        private ViewModelCommand _seekToStartCommand;
 
         public ICommand ResetCommand
         {

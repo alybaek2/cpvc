@@ -49,7 +49,7 @@
                 </Label>
             </Grid>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                <Button x:Name="_replayButton" Content="Replay Selected Timeline" Width="150" Height="20" Margin="10,10,10,10" Click="_replayButton_Click"/>
+                <Button x:Name="_replayButton" Content="Replay Selected Timeline" Width="150" Height="20" Margin="10,10,10,10" Command="{Binding ReplayTimelineCommand}"/>
             </StackPanel>
             <ListView x:Name="_historyListView" Margin="10,10,10,10" Height="250" Width="{Binding ActualWidth, ElementName=_grid, Mode=OneWay}" ItemsSource="{Binding Items, Mode=OneWay}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}" SelectionMode="Single">
                 <ListView.ItemContainerStyle>
@@ -68,10 +68,10 @@
                 </ListView.View>
             </ListView>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="_deleteBranchButton" Content="Delete Branch" Width="90" Height="20" Margin="0,0,10,10" Click="DeleteBranchButton_Click" IsEnabled="{Binding CanDeleteBranch, Mode=OneWay}"/>
-                <Button x:Name="_deleteBookmarkButton" Content="Delete Bookmark" Width="102" Height="20" Margin="0,0,10,10" Click="DeleteBookmarkButton_Click" IsEnabled="{Binding CanDeleteBookmark, Mode=OneWay}"/>
-                <Button x:Name="_jumpToBookmarkButton" Content="Jump to Bookmark" Width="111" Height="20" Margin="0,0,10,10" Click="JumpToBookmarkButton_Click" IsEnabled="{Binding CanJumpToBookmark, Mode=OneWay}"/>
-                <Button x:Name="_closeButton" Content="Close" Width="54" Height="20" Margin="0,0,10,10" Click="CloseButton_Click"/>
+                <Button x:Name="_deleteBranchButton" Content="Delete Branch" Width="90" Height="20" Margin="0,0,10,10" Command="{Binding DeleteBranchesCommand}"/>
+                <Button x:Name="_deleteBookmarkButton" Content="Delete Bookmark" Width="102" Height="20" Margin="0,0,10,10" Command="{Binding DeleteBookmarksCommand}"/>
+                <Button x:Name="_jumpToBookmarkButton" Content="Jump to Bookmark" Width="111" Height="20" Margin="0,0,10,10" Command="{Binding JumpToBookmarkCommand}"/>
+                <Button x:Name="_closeButton" Content="Close" Width="54" Height="20" Margin="0,0,10,10" IsCancel="True"/>
             </StackPanel>
         </StackPanel>
     </Grid>
