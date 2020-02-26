@@ -310,5 +310,21 @@ namespace CPvC.Test
                 Assert.IsNull(auditorAction);
             }
         }
+
+        [Test]
+        public void StartTwice()
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                core.Start();
+
+                // Act
+                core.Start();
+
+                // Verify
+                Assert.True(core.Running);
+            }
+        }
     }
 }
