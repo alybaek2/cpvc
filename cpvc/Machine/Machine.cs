@@ -182,8 +182,9 @@ namespace CPvC
                 {
                     // Create a system bookmark so the machine can resume from where it left off the next time it's loaded, but don't
                     // create one if we already have a system bookmark at the current event, or we're at the root event.
-                    bool ticksDifferent = (Core != null && CurrentEvent.Ticks != Core.Ticks);
-                    if (ticksDifferent || (CurrentEvent.Bookmark == null && CurrentEvent != RootEvent) || (CurrentEvent.Bookmark != null && !CurrentEvent.Bookmark.System))
+                    if ((CurrentEvent.Ticks != Ticks) ||
+                        (CurrentEvent.Bookmark == null && CurrentEvent != RootEvent) ||
+                        (CurrentEvent.Bookmark != null && !CurrentEvent.Bookmark.System))
                     {
                         AddCheckpointWithBookmarkEvent(true);
                     }
@@ -308,7 +309,7 @@ namespace CPvC
             set
             {
                 _name = value;
-                _file?.WriteName(_name);
+                _file.WriteName(_name);
 
                 OnPropertyChanged("Name");
             }
