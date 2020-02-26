@@ -64,44 +64,47 @@ namespace CPvC
             Core core = null;
 
             int version = -1;
-            bool foundBookmark = false;
+            int startIndex = 0;
 
-            for (int i = 0; i < _historyEvents.Count; i++)
+            // First find the bookmark.
+            if (bookmark == null)
+            {
+                core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+                Display.GetFromBookmark(null);
+            }
+            else
+            {
+                for (int i = 0; i < _historyEvents.Count; i++)
+                {
+                    HistoryEvent historyEvent = _historyEvents[i];
+                    if (historyEvent.CoreAction != null && historyEvent.CoreAction.Type == CoreRequest.Types.CoreVersion)
+                    {
+                        version = historyEvent.CoreAction.Version;
+                    }
+                    else if (historyEvent.Bookmark == bookmark)
+                    {
+                        core = Core.Create(version, historyEvent.Bookmark.State.GetBytes());
+                        Display.GetFromBookmark(historyEvent.Bookmark);
+                        startIndex = i + 1;
+                        break;
+                    }
+                }
+
+                // Need a check for core == null?
+            }
+
+            for (int i = startIndex; i < _historyEvents.Count; i++)
             {
                 HistoryEvent historyEvent = _historyEvents[i];
-                if (historyEvent.CoreAction != null && historyEvent.CoreAction.Type == CoreRequest.Types.CoreVersion)
+                if (historyEvent.Type == HistoryEvent.Types.CoreAction)
                 {
-                    version = historyEvent.CoreAction.Version;
-                }
-
-                if (bookmark == null)
-                {
-                    foundBookmark = true;
-                    core = Core.Create(version, Core.Type.CPC6128);
-                    Display.GetFromBookmark(null);
-                }
-                else if (historyEvent?.Bookmark == bookmark)
-                {
-                    foundBookmark = true;
-                    core = Core.Create(version, historyEvent.Bookmark.State.GetBytes());
-                    Display.GetFromBookmark(historyEvent.Bookmark);
-                }
-
-                if (foundBookmark)
-                {
-                    if (historyEvent.Type == HistoryEvent.Types.CoreAction)
-                    {
-                        core.PushRequest(CoreRequest.RunUntilForce(historyEvent.Ticks));
-                        core.PushRequest(historyEvent.CoreAction);
-                    }
-
-                    if (i == (_historyEvents.Count - 1))
-                    {
-                        core.PushRequest(CoreRequest.RunUntilForce(historyEvent.Ticks));
-                        core.PushRequest(CoreRequest.Quit());
-                    }
+                    core.PushRequest(CoreRequest.RunUntilForce(historyEvent.Ticks));
+                    core.PushRequest(historyEvent.CoreAction);
                 }
             }
+
+            core.PushRequest(CoreRequest.RunUntilForce(_endTicks));
+            core.PushRequest(CoreRequest.Quit());
 
             bool running = Core?.Running ?? false;
             Core = core;

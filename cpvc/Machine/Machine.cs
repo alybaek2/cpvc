@@ -110,17 +110,17 @@ namespace CPvC
 
                 // Rewind from the current event to the most recent one with a bookmark...
                 HistoryEvent bookmarkEvent = CurrentEvent;
-                while (bookmarkEvent.Parent != null && bookmarkEvent.Bookmark == null)
+                while (bookmarkEvent != null && bookmarkEvent.Bookmark == null)
                 {
                     bookmarkEvent = bookmarkEvent.Parent;
                 }
 
-                core = GetCore(bookmarkEvent);
+                core = GetCore(bookmarkEvent?.Bookmark);
 
-                CurrentEvent = bookmarkEvent;
+                CurrentEvent = bookmarkEvent ?? RootEvent;
 
                 Display.EnableGreyscale(false);
-                Display.GetFromBookmark(bookmarkEvent.Bookmark);
+                Display.GetFromBookmark(bookmarkEvent?.Bookmark);
                 SetCore(core);
 
                 CoreAction action = CoreAction.CoreVersion(Core.Ticks, Core.LatestVersion);
@@ -409,7 +409,7 @@ namespace CPvC
             byte volume = Core.Volume;
 
             Display.GetFromBookmark(bookmarkEvent.Bookmark);
-            SetCore(Machine.GetCore(bookmarkEvent));
+            SetCore(Machine.GetCore(bookmarkEvent.Bookmark));
             Core.Volume = volume;
 
             _file.WriteCurrent(bookmarkEvent);
@@ -663,18 +663,13 @@ namespace CPvC
         /// <summary>
         /// Returns a new core based on a HistoryEvent.
         /// </summary>
-        /// <param name="historyEvent">HistoryEvent to create the core from.</param>
-        /// <returns>If the HistoryEvent contains a bookmark, returns a core based on that bookmark. If the HistoryEvent is the root event, a newly-instantiated core is returned. Otherwise, null is returned.</returns>
-        static private Core GetCore(HistoryEvent historyEvent)
+        /// <param name="bookmark">Bookmark to create the core from. If null, then a new core is created.</param>
+        /// <returns>If <c>bookmark</c> is not null, returns a core based on that bookmark. If the HistoryEvent is null, a newly-instantiated core is returned.</returns>
+        static private Core GetCore(Bookmark bookmark)
         {
-            if (historyEvent.Parent == null)
+            if (bookmark != null)
             {
-                // A history event with no parent is assumed to be the root.
-                return Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-            }
-            else if (historyEvent.Bookmark != null)
-            {
-                Core core = Core.Create(Core.LatestVersion, historyEvent.Bookmark.State.GetBytes());
+                Core core = Core.Create(Core.LatestVersion, bookmark.State.GetBytes());
 
                 // Ensure all keys are in an "up" state.
                 for (byte keycode = 0; keycode < 80; keycode++)
@@ -685,7 +680,7 @@ namespace CPvC
                 return core;
             }
 
-            return null;
+            return Core.Create(Core.LatestVersion, Core.Type.CPC6128);
         }
 
         private int NextEventId()
