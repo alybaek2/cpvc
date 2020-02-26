@@ -38,7 +38,7 @@ namespace CPvC
                 historyEvent = historyEvent.Parent;
             }
 
-            SeekToBookmark(null);
+            SeekToBookmark(-1);
         }
 
         public string Name
@@ -59,38 +59,24 @@ namespace CPvC
             Core = null;
         }
 
-        private void SeekToBookmark(Bookmark bookmark)
+        private void SeekToBookmark(int bookmarkEventIndex)
         {
-            Core core = null;
+            Core core;
 
-            int version = -1;
             int startIndex = 0;
 
             // First find the bookmark.
-            if (bookmark == null)
+            if (bookmarkEventIndex == -1)
             {
                 core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
                 Display.GetFromBookmark(null);
             }
             else
             {
-                for (int i = 0; i < _historyEvents.Count; i++)
-                {
-                    HistoryEvent historyEvent = _historyEvents[i];
-                    if (historyEvent.CoreAction != null && historyEvent.CoreAction.Type == CoreRequest.Types.CoreVersion)
-                    {
-                        version = historyEvent.CoreAction.Version;
-                    }
-                    else if (historyEvent.Bookmark == bookmark)
-                    {
-                        core = Core.Create(version, historyEvent.Bookmark.State.GetBytes());
-                        Display.GetFromBookmark(historyEvent.Bookmark);
-                        startIndex = i + 1;
-                        break;
-                    }
-                }
-
-                // Need a check for core == null?
+                Bookmark bookmark = _historyEvents[bookmarkEventIndex].Bookmark;
+                core = Core.Create(bookmark.Version, bookmark.State.GetBytes());
+                Display.GetFromBookmark(bookmark);
+                startIndex = bookmarkEventIndex;
             }
 
             for (int i = startIndex; i < _historyEvents.Count; i++)
@@ -141,21 +127,21 @@ namespace CPvC
 
         public void SeekToStart()
         {
-            SeekToBookmark(null);
+            SeekToBookmark(-1);
         }
 
         public void SeekToPreviousBookmark()
         {
-            Bookmark bookmark = _historyEvents.Where(he => he.Ticks < _core.Ticks && he.Bookmark != null).Select(he => he.Bookmark).LastOrDefault();
-            SeekToBookmark(bookmark);
+            int bookmarkIndex = _historyEvents.FindLastIndex(he => he.Ticks < _core.Ticks && he.Bookmark != null);
+            SeekToBookmark(bookmarkIndex);
         }
 
         public void SeekToNextBookmark()
         {
-            Bookmark bookmark = _historyEvents.Where(he => he.Ticks > _core.Ticks && he.Bookmark != null).Select(he => he.Bookmark).FirstOrDefault();
-            if (bookmark != null)
+            int bookmarkIndex = _historyEvents.FindIndex(he => he.Ticks > _core.Ticks && he.Bookmark != null);
+            if (bookmarkIndex != -1)
             {
-                SeekToBookmark(bookmark);
+                SeekToBookmark(bookmarkIndex);
             }
         }
     }

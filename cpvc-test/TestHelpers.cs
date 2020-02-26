@@ -111,11 +111,12 @@ namespace CPvC.Test
                                             h.Id == id);
         }
 
-        static public Bookmark BookmarkMatch(bool system, int statePos, int screenPos)
+        static public Bookmark BookmarkMatch(bool system, int version, int statePos, int screenPos)
         {
             return It.Is<Bookmark>(
                 b => b != null &&
                 b.System == system &&
+                b.Version == version &&
                 ((IStreamBlob)(b.State)).Position == statePos &&
                 ((IStreamBlob)(b.Screen)).Position == screenPos);
         }
@@ -130,7 +131,7 @@ namespace CPvC.Test
             return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id);
         }
 
-        static public HistoryEvent CheckpointWithBookmarkEvent(int id, UInt64 ticks, bool system, int stateBlobPos, int screenBlobPos)
+        static public HistoryEvent CheckpointWithBookmarkEvent(int id, UInt64 ticks, bool system, int version, int stateBlobPos, int screenBlobPos)
         {
             return It.Is<HistoryEvent>(h => h != null &&
                                             h.Type == HistoryEvent.Types.Checkpoint &&
@@ -138,6 +139,7 @@ namespace CPvC.Test
                                             h.Ticks == ticks &&
                                             h.Bookmark != null &&
                                             h.Bookmark.System == system &&
+                                            h.Bookmark.Version == version &&
                                             ((IStreamBlob)(h.Bookmark.State)).Position == stateBlobPos &&
                                             ((IStreamBlob)(h.Bookmark.Screen)).Position == screenBlobPos);
         }

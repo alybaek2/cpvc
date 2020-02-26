@@ -88,13 +88,14 @@ namespace CPvC.Test
         public void WriteBookmark()
         {
             // Setup
-            Bookmark bookmark = new Bookmark(false, new byte[] { 0x01, 0x02 }, null);
+            Bookmark bookmark = new Bookmark(false, 5, new byte[] { 0x01, 0x02 }, null);
             byte[] expected = new byte[]
             {
                 0x08,
                       0x19, 0x00, 0x00, 0x00,
                       0x01,
                       0x00,
+                      0x05, 0x00, 0x00, 0x00,
                       0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
                       0x00
             };
@@ -152,7 +153,7 @@ namespace CPvC.Test
         {
             // Setup
             DateTime timestamp = Helpers.NumberToDateTime(0);
-            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, new Bookmark(system, new byte[] { 0x01, 0x02 }, null));
+            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, new Bookmark(system, 5, new byte[] { 0x01, 0x02 }, null));
             byte[] expected = new byte[]
             {
                 0x05,
@@ -161,6 +162,7 @@ namespace CPvC.Test
                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                       0x01,
                       (byte)(system ? 0x01 : 0x00),
+                      0x05, 0x00, 0x00, 0x00,
                       0x03, 0x04, 0x00, 0x00, 0x00, 0x63, 0x64, 0x02, 0x00,
                       0x00
             };
@@ -373,6 +375,7 @@ namespace CPvC.Test
                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                       0x01,
                       (byte)(system ? 0x01 : 0x00),
+                      0x05, 0x00, 0x00, 0x00,
                       0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
                       0x00
             });
@@ -383,7 +386,7 @@ namespace CPvC.Test
             file.ReadFile(mockFileReader.Object);
 
             // Verify
-            mockFileReader.Verify(reader => reader.AddHistoryEvent(CheckpointWithBookmarkEvent(0x19, 100, system, 23, 30)));
+            mockFileReader.Verify(reader => reader.AddHistoryEvent(CheckpointWithBookmarkEvent(0x19, 100, system, 5, 27, 34)));
         }
 
         [Test]
@@ -420,6 +423,7 @@ namespace CPvC.Test
                       0x19, 0x00, 0x00, 0x00,
                       0x01,
                       (byte) (system ? 0x01 : 0x00),
+                      0x05, 0x00, 0x00, 0x00,
                       0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
                       0x00
             });
@@ -430,7 +434,7 @@ namespace CPvC.Test
             file.ReadFile(mockFileReader.Object);
 
             // Verify
-            mockFileReader.Verify(reader => reader.SetBookmark(0x19, BookmarkMatch(system, 7, 14)));
+            mockFileReader.Verify(reader => reader.SetBookmark(0x19, BookmarkMatch(system, 5, 11, 18)));
         }
 
         [Test]

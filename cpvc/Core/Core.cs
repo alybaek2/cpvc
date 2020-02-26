@@ -33,6 +33,7 @@ namespace CPvC
         }
 
         private ICore _coreCLR;
+        private int _version;
         private readonly List<CoreRequest> _requests;
         private object _lockObject;
 
@@ -87,8 +88,17 @@ namespace CPvC
             }
         }
 
+        public int Version
+        {
+            get
+            {
+                return _version;
+            }
+        }
+
         private Core(int version)
         {
+            _version = version;
             _coreCLR = CreateVersionedCore(version);
             _requests = new List<CoreRequest>();
             _lockObject = new object();

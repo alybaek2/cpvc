@@ -619,7 +619,7 @@ namespace CPvC
                 byte[] screen = Display.GetBitmapBytes();
                 byte[] core = _core.GetState();
 
-                return new Bookmark(system, core, screen);
+                return new Bookmark(system, _core.Version, core, screen);
             }
         }
 

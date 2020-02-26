@@ -107,10 +107,11 @@ namespace CPvC
                 if (hasBookmark)
                 {
                     bool system = ReadBool();
+                    int version = ReadInt32();
                     IBlob stateBlob = ReadBlob();
                     IBlob screenBlob = ReadBlob();
 
-                    bookmark = new Bookmark(system, stateBlob, screenBlob);
+                    bookmark = new Bookmark(system, version, stateBlob, screenBlob);
                 }
 
                 reader.SetBookmark(id, bookmark);
@@ -131,6 +132,7 @@ namespace CPvC
                 WriteInt32(id);
                 WriteBool(true);
                 WriteBool(bookmark.System);
+                WriteInt32(bookmark.Version);
                 WriteBytesBlob(bookmark.State.GetBytes());
                 WriteCompressedBlob(bookmark.Screen.GetBytes());
             }
@@ -334,10 +336,11 @@ namespace CPvC
                 if (hasBookmark)
                 {
                     bool system = ReadBool();
+                    int version = ReadInt32();
                     IBlob stateBlob = ReadBlob();
                     IBlob screenBlob = ReadBlob();
 
-                    bookmark = new Bookmark(system, stateBlob, screenBlob);
+                    bookmark = new Bookmark(system, version, stateBlob, screenBlob);
                 }
 
                 HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(id, ticks, created, bookmark);
@@ -380,6 +383,7 @@ namespace CPvC
             {
                 WriteBool(true);
                 WriteBool(historyEvent.Bookmark.System);
+                WriteInt32(historyEvent.Bookmark.Version);
 
                 byte[] bookmarkBytes = historyEvent.Bookmark.State.GetBytes();
 

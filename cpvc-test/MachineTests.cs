@@ -361,7 +361,7 @@ namespace CPvC.Test
                 RunForAWhile(machine);
                 machine.AddBookmark(true);
 
-                Bookmark corruptedBookmark = new Bookmark(true, new byte[] { }, new byte[] { });
+                Bookmark corruptedBookmark = new Bookmark(true, 5, new byte[] { }, new byte[] { });
                 machine.SetBookmark(machine.CurrentEvent, corruptedBookmark);
             }
 
