@@ -245,7 +245,7 @@ namespace CPvC.Test
             {
                 Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
                 BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
-                HistoryViewItem bookmarkEventViewItem = viewModel.Items[1];
+                HistoryViewItem bookmarkEventViewItem = viewModel.Items[3];
                 viewModel.SelectedItem = bookmarkEventViewItem;
 
                 // Act
