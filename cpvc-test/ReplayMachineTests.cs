@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading;
 using static CPvC.Test.TestHelpers;
 
@@ -242,8 +243,25 @@ namespace CPvC.Test
             // Setup
             using (ReplayMachine replayMachine = CreateMachine())
             {
-                // Act and Verify - note that EnableGreyscale will trigger a change on the "Bitmap" property.
-                Assert.DoesNotThrow(() => replayMachine.Volume = 100);
+                // Act and Verify
+                Assert.DoesNotThrow(() => replayMachine.Status = "Status");
+            }
+        }
+
+        [Test]
+        public void StatusChanged()
+        {
+            // Setup
+            using (ReplayMachine replayMachine = CreateMachine())
+            {
+                Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
+                replayMachine.PropertyChanged += propChanged.Object;
+
+                // Act
+                replayMachine.Status = "Status";
+
+                // Verify
+                propChanged.Verify(p => p(replayMachine, It.Is<PropertyChangedEventArgs>(e => e.PropertyName == "Status")));
             }
         }
     }
