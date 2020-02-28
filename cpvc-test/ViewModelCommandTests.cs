@@ -93,5 +93,91 @@ namespace CPvC.Test
             // Verify
             Assert.AreEqual(canExecute, result);
         }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void CanExecuteChanged(bool subscribe)
+        {
+            // Setup
+            bool canExecuteChangeCalled = false;
+            TestObject testObject = new TestObject(false);
+            ViewModelCommand command = new ViewModelCommand(
+                p => { },
+                p => { return testObject.Flag; },
+                testObject, "Flag", null);
+            if (subscribe)
+            {
+                command.CanExecuteChanged += (sender, e) =>
+                {
+                    canExecuteChangeCalled = true;
+                };
+            }
+
+            // Act
+            Assert.DoesNotThrow(() => testObject.Flag = true);
+
+            // Verify
+            Assert.AreEqual(subscribe, canExecuteChangeCalled);
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void CanExecuteChangedChild(bool subscribe)
+        {
+            // Setup
+            bool canExecuteChangeCalled = false;
+            TestObject testObject = new TestObject(false);
+            TestObject testObjectChild = new TestObject(false);
+            testObject.Child = testObjectChild;
+            ViewModelCommand command = new ViewModelCommand(
+                p => { },
+                p => { return testObject.Flag; },
+                testObject, "Child", "Flag");
+            if (subscribe)
+            {
+                command.CanExecuteChanged += (sender, e) =>
+                {
+                    canExecuteChangeCalled = true;
+                };
+            }
+
+            // Act
+            Assert.DoesNotThrow(() =>
+            {
+                TestObject testObjectChild2 = new TestObject(false);
+                testObject.Child = testObjectChild2;
+            });
+
+            // Verify
+            Assert.AreEqual(subscribe, canExecuteChangeCalled);
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void CanExecuteChangedChildFlag(bool subscribe)
+        {
+            // Setup
+            bool canExecuteChangeCalled = false;
+            TestObject testObject = new TestObject(false);
+            TestObject testObjectChild = new TestObject(false);
+            testObject.Child = testObjectChild;
+            ViewModelCommand command = new ViewModelCommand(
+                p => { },
+                p => { return testObject.Flag; },
+                testObject, "Child", "Flag");
+            if (subscribe)
+            {
+                command.CanExecuteChanged += (sender, e) =>
+                {
+                    canExecuteChangeCalled = true;
+                };
+            }
+
+            // Act
+            Assert.DoesNotThrow(() => testObject.Child.Flag = true);
+
+            // Verify
+            Assert.AreEqual(subscribe, canExecuteChangeCalled);
+        }
     }
 }

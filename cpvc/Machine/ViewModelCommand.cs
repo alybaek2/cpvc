@@ -65,10 +65,7 @@ namespace CPvC
             }
             else
             {
-                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    WatchObjectPropertyChangedAsync(sender, e);
-                }));
+                Application.Current.Dispatcher.BeginInvoke(new Action(() => WatchObjectPropertyChangedAsync(sender, e)  ));
             }
         }
 
