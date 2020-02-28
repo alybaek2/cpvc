@@ -66,25 +66,25 @@ namespace CPvC.UI
             _replayTimelineCommand = new ViewModelCommand(
                 p => ReplayTimeline(itemSelected),
                 p => (SelectedItem as HistoryViewItem)?.HistoryEvent != null,
-                this, "SelectedItem"
+                this, "SelectedItem", null
             );
 
             _jumpToBookmarkCommand = new ViewModelCommand(
                 p => JumpToBookmark(itemSelected),
                 p => (SelectedItem as HistoryViewItem)?.HistoryEvent.Bookmark != null,
-                this, "SelectedItem"
+                this, "SelectedItem", null
             );
 
             _deleteBookmarksCommand = new ViewModelCommand(
                 p => DeleteBookmarks(),
                 p => (SelectedItem as HistoryViewItem)?.HistoryEvent.Bookmark != null,
-                this, "SelectedItem"
+                this, "SelectedItem", null
             );
 
             _deleteBranchesCommand = new ViewModelCommand(
                 p => DeleteBranches(),
                 p => (SelectedItem as HistoryViewItem)?.HistoryEvent != null,
-                this, "SelectedItem"
+                this, "SelectedItem", null
             );
         }
 

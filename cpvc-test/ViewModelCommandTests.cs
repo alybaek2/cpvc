@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
+using System.Windows;
 using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
@@ -13,10 +14,12 @@ namespace CPvC.Test
         private class TestObject : INotifyPropertyChanged
         {
             private bool _flag;
+            private TestObject _child;
 
             public TestObject(bool flag)
             {
                 _flag = flag;
+                _child = null;
             }
 
             public bool Flag
@@ -30,6 +33,20 @@ namespace CPvC.Test
                 {
                     _flag = value;
                     OnPropertyChanged("Flag");
+                }
+            }
+
+            public TestObject Child
+            {
+                get
+                {
+                    return _child;
+                }
+
+                set
+                {
+                    _child = value;
+                    OnPropertyChanged("Child");
                 }
             }
 
@@ -51,7 +68,7 @@ namespace CPvC.Test
             ViewModelCommand command = new ViewModelCommand(
                 p => { executeCalled = true; },
                 p => { return canExecute; },
-                testObject, "Flag");
+                testObject, "Flag", null);
 
             // Act
             command.Execute(null);
@@ -68,35 +85,13 @@ namespace CPvC.Test
             ViewModelCommand command = new ViewModelCommand(
                 p => { },
                 p => { return canExecute; },
-                null, "");
+                null, "", null);
 
             // Act
             bool result = command.CanExecute(null);
 
             // Verify
             Assert.AreEqual(canExecute, result);
-        }
-
-        [Test]
-        public void CanExecuteChanged()
-        {
-            // Setup
-            bool canExecuteChangeCalled = false;
-            TestObject testObject = new TestObject(false);
-            ViewModelCommand command = new ViewModelCommand(
-                p => { },
-                p => { return testObject.Flag; },
-                testObject, "Flag");
-            command.CanExecuteChanged += (sender, e) =>
-            {
-                canExecuteChangeCalled = true;
-            };
-
-            // Act
-            testObject.Flag = true;
-
-            // Verify
-            Assert.True(canExecuteChangeCalled);
         }
     }
 }

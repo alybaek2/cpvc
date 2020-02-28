@@ -147,109 +147,109 @@ namespace CPvC.UI
             _resetCommand = new ViewModelCommand(
                 p => Reset(),
                 p => (ActiveMachine as IInteractiveMachine) != null,
-                this, "ActiveMachine"
+                this, "ActiveMachine", null
             );
 
             _driveACommand = new ViewModelCommand(
                 p => LoadDisc(0, fileSystem, promptForFile, selectItem),
                 p => (ActiveMachine as IInteractiveMachine) != null,
-                this, "ActiveMachine"
+                this, "ActiveMachine", null
             );
 
             _driveAEjectCommand = new ViewModelCommand(
                 p => EjectDisc(0),
                 p => (ActiveMachine as IInteractiveMachine) != null,
-                this, "ActiveMachine"
+                this, "ActiveMachine", null
             );
 
             _driveBCommand = new ViewModelCommand(
                 p => LoadDisc(1, fileSystem, promptForFile, selectItem),
                 p => (ActiveMachine as IInteractiveMachine) != null,
-                this, "ActiveMachine"
+                this, "ActiveMachine", null
             );
 
             _driveBEjectCommand = new ViewModelCommand(
                 p => EjectDisc(1),
                 p => (ActiveMachine as IInteractiveMachine) != null,
-                this, "ActiveMachine"
+                this, "ActiveMachine", null
             );
 
             _tapeCommand = new ViewModelCommand(
                 p => LoadTape(fileSystem, promptForFile, selectItem),
                 p => (ActiveMachine as IInteractiveMachine) != null,
-                this, "ActiveMachine"
+                this, "ActiveMachine", null
             );
 
             _tapeEjectCommand = new ViewModelCommand(
                 p => EjectTape(),
                 p => (ActiveMachine as IInteractiveMachine) != null,
-                this, "ActiveMachine"
+                this, "ActiveMachine", null
             );
 
             _pauseCommand = new ViewModelCommand(
                 p => Pause(),
                 p => (ActiveMachine as IPausableMachine) != null && ((ActiveMachine as ICoreMachine)?.Running ?? false),
-                this, "ActiveMachine"
+                this, "ActiveMachine", "Running"
             );
 
             _resumeCommand = new ViewModelCommand(
                 p => Resume(),
                 p => (ActiveMachine as IPausableMachine) != null && !(((ActiveMachine as ICoreMachine)?.Running ?? true)),
-                this, "ActiveMachine"
+                this, "ActiveMachine", "Running"
             );
 
             _toggleRunningCommand = new ViewModelCommand(
                 p => ToggleRunning(p as IPausableMachine),
                 p => (ActiveMachine as IPausableMachine) != null,
-                this, "ActiveMachine"
+                this, "ActiveMachine", null
             );
 
             _addBookmarkCommand = new ViewModelCommand(
                 p => AddBookmark(),
                 p => (ActiveMachine as IBookmarkableMachine) != null,
-                this, "ActiveMachine"
+                this, "ActiveMachine", null
             );
 
             _jumpToMostRecentBookmarkCommand = new ViewModelCommand(
                 p => JumpToMostRecentBookmark(),
                 p => (ActiveMachine as IBookmarkableMachine) != null,
-                this, "ActiveMachine"
+                this, "ActiveMachine", null
             );
 
             _browseBookmarksCommand = new ViewModelCommand(
                 p => SelectBookmark(promptForBookmark),
                 p => (ActiveMachine as IBookmarkableMachine) != null,
-                this, "ActiveMachine"
+                this, "ActiveMachine", null
             );
 
             _compactCommand = new ViewModelCommand(
                 p => CompactFile(),
                 p => (ActiveMachine as ICompactableMachine) != null,
-                this, "ActiveMachine"
+                this, "ActiveMachine", null
             );
 
             _renameCommand = new ViewModelCommand(
                 p => RenameMachine(promptForName),
                 p => (ActiveMachine as ICoreMachine) != null,
-                this, "ActiveMachine"
+                this, "ActiveMachine", null
             );
 
             _seekToNextBookmarkCommand = new ViewModelCommand(
                 p => SeekToNextBookmark(),
                 p => (ActiveMachine as IPrerecordedMachine) != null,
-                this, "ActiveMachine"
+                this, "ActiveMachine", null
             );
 
             _seekToPrevBookmarkCommand = new ViewModelCommand(
                 p => SeekToPrevBookmark(),
                 p => (ActiveMachine as IPrerecordedMachine) != null,
-                this, "ActiveMachine"
+                this, "ActiveMachine", null
             );
 
             _seekToStartCommand = new ViewModelCommand(
                 p => SeekToBegin(),
                 p => (ActiveMachine as IPrerecordedMachine) != null,
-                this, "ActiveMachine"
+                this, "ActiveMachine", null
             );
         }
 
