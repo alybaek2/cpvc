@@ -33,8 +33,11 @@ namespace CPvC
         }
 
         private ICore _coreCLR;
+        private int _version;
         private readonly List<CoreRequest> _requests;
+        private object _lockObject;
 
+        private bool _running;
         private bool _quitThread;
         private Thread _coreThread;
 
@@ -85,17 +88,28 @@ namespace CPvC
             }
         }
 
+        public int Version
+        {
+            get
+            {
+                return _version;
+            }
+        }
+
         private Core(int version)
         {
+            _version = version;
             _coreCLR = CreateVersionedCore(version);
             _requests = new List<CoreRequest>();
+            _lockObject = new object();
 
             _quitThread = false;
             _coreThread = null;
+            _running = false;
 
             BeginVSync = null;
 
-            SetScreenBuffer(IntPtr.Zero);
+            SetScreen(IntPtr.Zero);
 
             _audioSamplingFrequency = 48000;
             _volume = 80;
@@ -157,6 +171,11 @@ namespace CPvC
             PushRequest(CoreRequest.Reset());
         }
 
+        public void Quit()
+        {
+            PushRequest(CoreRequest.Quit());
+        }
+
         /// <summary>
         /// Asynchronously loads a disc.
         /// </summary>
@@ -182,7 +201,10 @@ namespace CPvC
         /// <param name="samples"></param>
         public void AdvancePlayback(int samples)
         {
-            _coreCLR.GetAudioBuffers(samples, null, null, null);
+            lock (_lockObject)
+            {
+                _coreCLR.GetAudioBuffers(samples, null, null, null);
+            }
         }
 
         /// <summary>
@@ -195,15 +217,29 @@ namespace CPvC
         /// <returns>The number of samples copied to each array.</returns>
         public int GetAudioBuffers(int samples, byte[] channelA, byte[] channelB, byte[] channelC)
         {
-            return _coreCLR.GetAudioBuffers(samples, channelA, channelB, channelC);
+            lock (_lockObject)
+            {
+                return _coreCLR.GetAudioBuffers(samples, channelA, channelB, channelC);
+            }
         }
 
         /// <summary>
         /// Sets a Pointer to a block of unmanaged memory to be used by the core for video rendering.
         /// </summary>
-        public void SetScreenBuffer(IntPtr screenBuffer)
+        public void SetScreen(IntPtr screenBuffer)
         {
-            _coreCLR.SetScreen(screenBuffer, Display.Pitch, Display.Height, Display.Width);
+            lock (_lockObject)
+            {
+                _coreCLR.SetScreen(screenBuffer, Display.Pitch, Display.Height, Display.Width);
+            }
+        }
+
+        public IntPtr GetScreen()
+        {
+            lock (_lockObject)
+            {
+                return _coreCLR.GetScreen();
+            }
         }
 
         /// <summary>
@@ -213,7 +249,14 @@ namespace CPvC
         {
             get
             {
-                return (_coreThread != null);
+                return _running;
+            }
+
+            private set
+            {
+                _running = value;
+
+                OnPropertyChanged("Running");
             }
         }
 
@@ -224,16 +267,11 @@ namespace CPvC
         {
             get
             {
-                return _coreCLR.Ticks();
+                lock (_lockObject)
+                {
+                    return _coreCLR.Ticks();
+                }
             }
-        }
-
-        /// <summary>
-        /// Waits for all outstanding requests in the core's queue to be processed, and then returns.
-        /// </summary>
-        public void WaitForRequestQueueEmpty()
-        {
-            while (_coreThread.IsAlive && !_requestQueueEmpty.WaitOne(10)) { }
         }
 
         /// <summary>
@@ -242,7 +280,7 @@ namespace CPvC
         /// <returns>A byte array containing the serialized core.</returns>
         public byte[] GetState()
         {
-            lock (_coreCLR)
+            lock (_lockObject)
             {
                 return _coreCLR.GetState();
             }
@@ -254,7 +292,7 @@ namespace CPvC
         /// <param name="state">A byte array created by <c>GetState</c>.</param>
         public void LoadState(byte[] state)
         {
-            lock (_coreCLR)
+            lock (_lockObject)
             {
                 _coreCLR.LoadState(state);
             }
@@ -326,7 +364,10 @@ namespace CPvC
         /// <returns>A bitmask specifying why the execution stopped. See <c>StopReasons</c> for a list of values.</returns>
         public byte RunUntil(UInt64 ticks, byte stopReason)
         {
-            return _coreCLR.RunUntil(ticks, stopReason);
+            lock (_lockObject)
+            {
+                return _coreCLR.RunUntil(ticks, stopReason);
+            }
         }
 
         /// <summary>
@@ -355,32 +396,10 @@ namespace CPvC
         /// </remarks>
         public void CoreThread()
         {
-            while (!_quitThread)
-            {
-                lock (_coreCLR)
-                {
-                    CoreRequest request = PopRequest() ?? CoreRequest.RunUntil(Ticks + 20000, (byte)(StopReasons.AudioOverrun | StopReasons.VSync));
-
-                    CoreAction action = ProcessRequest(request);
-                    if (action?.Type == CoreAction.Types.RunUntil)
-                    {
-                        if ((action.StopReason & StopReasons.AudioOverrun) != 0)
-                        {
-                            // Wait for audio buffer to not be full...
-                            _audioReady.WaitOne(20);
-                        }
-
-                        if ((action.StopReason & StopReasons.VSync) != 0)
-                        {
-                            BeginVSync?.Invoke(this);
-                        }
-                    }
-
-                    Auditors?.Invoke(this, request, action);
-                }
-            }
+            while (!_quitThread && !ProcessNextRequest()) { }
 
             _quitThread = false;
+            Running = false;
         }
 
         /// <summary>Takes the amplitude levels from the three PSG audio channels and converts them to 16-bit stereo samples that can be played by NAudio.</summary>
@@ -448,13 +467,13 @@ namespace CPvC
             // For now, hard-code turbo mode to 10 times normal speed.
             UInt32 frequency = enabled ? (_audioSamplingFrequency / 10) : _audioSamplingFrequency;
 
-            lock (_coreCLR)
+            lock (_lockObject)
             {
                 _coreCLR.AudioSampleFrequency(frequency);
             }
         }
 
-        private void PushRequest(CoreRequest request)
+        public void PushRequest(CoreRequest request)
         {
             lock (_requests)
             {
@@ -463,88 +482,178 @@ namespace CPvC
             }
         }
 
-        private CoreRequest PopRequest()
+        private CoreRequest FirstRequest()
         {
-            CoreRequest request = null;
-
             lock (_requests)
             {
                 if (_requests.Count > 0)
                 {
-                    request = _requests[0];
-                    _requests.RemoveAt(0);
+                    return _requests[0];
                 }
-                else
+
+                return null;
+            }
+        }
+
+        private void RemoveFirstRequest()
+        {
+            lock (_requests)
+            {
+                if (_requests.Count > 0)
                 {
-                    _requestQueueEmpty.Set();
+                    _requests.RemoveAt(0);
+
+                    if (_requests.Count == 0)
+                    {
+                        _requestQueueEmpty.Set();
+                    }
                 }
             }
-
-            return request;
         }
 
         private void SetRunning(bool running)
         {
             if (running)
             {
-                if (_coreThread == null)
+                if (!Running)
                 {
+                    Running = true;
+
                     _coreThread = new Thread(CoreThread);
                     _coreThread.Start();
-
-                    OnPropertyChanged("Running");
                 }
             }
             else
             {
-                if (_coreThread != null)
+                if (Running)
                 {
                     _quitThread = true;
                     _coreThread.Join();
                     _coreThread = null;
-
-                    OnPropertyChanged("Running");
                 }
             }
         }
 
-        private CoreAction ProcessRequest(CoreRequest request)
+        private bool ProcessNextRequest()
         {
-            UInt64 ticks = Ticks;
+            bool success = true;
+
+            CoreRequest request = FirstRequest();
             CoreAction action = null;
-            switch (request.Type)
+
+            if (request == null)
             {
-                case CoreActionBase.Types.KeyPress:
-                    if (_coreCLR.KeyPress(request.KeyCode, request.KeyDown))
-                    {
-                        action = CoreAction.KeyPress(ticks, request.KeyCode, request.KeyDown);
-                    }
-                    break;
-                case CoreActionBase.Types.Reset:
-                    _coreCLR.Reset();
-                    action = CoreAction.Reset(ticks);
-                    break;
-                case CoreActionBase.Types.LoadDisc:
-                    _coreCLR.LoadDisc(request.Drive, request.MediaBuffer.GetBytes());
-                    action = CoreAction.LoadDisc(ticks, request.Drive, request.MediaBuffer);
-                    break;
-                case CoreActionBase.Types.LoadTape:
-                    _coreCLR.LoadTape(request.MediaBuffer.GetBytes());
-                    action = CoreAction.LoadTape(ticks, request.MediaBuffer);
-                    break;
-                case CoreActionBase.Types.RunUntil:
-                    {
-                        byte stopReason = RunUntil(request.StopTicks, request.StopReason);
-                        action = CoreAction.RunUntil(ticks, Ticks, stopReason);
-                        if (Ticks > ticks)
+                action = RunForAWhile(Ticks + 20000);
+            }
+            else
+            {
+                UInt64 ticks = Ticks;
+                switch (request.Type)
+                {
+                    case CoreRequest.Types.KeyPress:
+                        lock (_lockObject)
                         {
-                            OnPropertyChanged("Ticks");
+                            if (_coreCLR.KeyPress(request.KeyCode, request.KeyDown))
+                            {
+                                action = CoreAction.KeyPress(ticks, request.KeyCode, request.KeyDown);
+                            }
                         }
-                    }
-                    break;
+                        break;
+                    case CoreRequest.Types.Reset:
+                        lock (_lockObject)
+                        {
+                            _coreCLR.Reset();
+                        }
+                        action = CoreAction.Reset(ticks);
+                        break;
+                    case CoreRequest.Types.LoadDisc:
+                        lock (_lockObject)
+                        {
+                            _coreCLR.LoadDisc(request.Drive, request.MediaBuffer.GetBytes());
+                        }
+                        action = CoreAction.LoadDisc(ticks, request.Drive, request.MediaBuffer);
+                        break;
+                    case CoreRequest.Types.LoadTape:
+                        lock (_lockObject)
+                        {
+                            _coreCLR.LoadTape(request.MediaBuffer.GetBytes());
+                        }
+                        action = CoreAction.LoadTape(ticks, request.MediaBuffer);
+                        break;
+                    case CoreRequest.Types.RunUntilForce:
+                        {
+                            while (Ticks < request.StopTicks)
+                            {
+                                RunForAWhile(request.StopTicks);
+
+                                if (_quitThread)
+                                {
+                                    success = false;
+                                    break;
+                                }
+                            }
+
+                            action = CoreAction.RunUntilForce(ticks, Ticks);
+                        }
+                        break;
+                    case CoreRequest.Types.CoreVersion:
+                        lock (_lockObject)
+                        {
+                            byte[] state = GetState();
+
+                            ICore newCore = Core.CreateVersionedCore(request.Version);
+                            newCore.LoadState(state);
+
+                            IntPtr pScr = _coreCLR.GetScreen();
+
+                            _coreCLR.Dispose();
+                            _coreCLR = newCore;
+
+                            SetScreen(pScr);
+                        }
+                        break;
+                    case CoreRequest.Types.Quit:
+                        RemoveFirstRequest();
+                        return true;
+                    default:
+                        Diagnostics.Trace(String.Format("Unknown core request type {0}. Ignoring request.", request.Type));
+                        break;
+                }
             }
 
-            return action;
+            Auditors?.Invoke(this, request, action);
+
+            if (request != null && success)
+            {
+                RemoveFirstRequest();
+            }
+
+            return false;
+        }
+
+        private CoreAction RunForAWhile(UInt64 stopTicks)
+        {
+            UInt64 ticks = Ticks;
+
+            byte stopReason = RunUntil(stopTicks, (byte)(StopReasons.AudioOverrun | StopReasons.VSync));
+
+            if ((stopReason & StopReasons.AudioOverrun) != 0)
+            {
+                // Wait for audio buffer to not be full...
+                _audioReady.WaitOne(20);
+            }
+
+            if ((stopReason & StopReasons.VSync) != 0)
+            {
+                BeginVSync?.Invoke(this);
+            }
+
+            if (Ticks > ticks)
+            {
+                OnPropertyChanged("Ticks");
+            }
+
+            return CoreAction.RunUntilForce(ticks, stopTicks);
         }
     }
 }

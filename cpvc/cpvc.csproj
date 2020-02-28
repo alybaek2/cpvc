@@ -114,7 +114,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Core\CoreActionBase.cs" />
+    <Compile Include="CoreMachine.cs" />
     <Compile Include="Core\ICore.cs" />
     <Compile Include="IO\BinaryFile.cs" />
     <Compile Include="IO\FileByteStream.cs" />
@@ -125,9 +125,20 @@
     <Compile Include="IO\IStreamDiffBlob.cs" />
     <Compile Include="ISettings.cs" />
     <Compile Include="Machine\IBlob.cs" />
+    <Compile Include="Machine\IBookmarkableMachine.cs" />
+    <Compile Include="Machine\IClosableMachine.cs" />
+    <Compile Include="Machine\IInteractiveMachine.cs" />
+    <Compile Include="Machine\ICoreMachine.cs" />
     <Compile Include="Machine\IMachineFileReader.cs" />
+    <Compile Include="Machine\IPausableMachine.cs" />
+    <Compile Include="Machine\ICompactableMachine.cs" />
+    <Compile Include="Machine\IPrerecordedMachine.cs" />
+    <Compile Include="Machine\IRewindableMachine.cs" />
+    <Compile Include="Machine\ITurboableMachine.cs" />
     <Compile Include="Machine\MachineFile.cs" />
     <Compile Include="Machine\MemoryBlob.cs" />
+    <Compile Include="Machine\ReplayMachine.cs" />
+    <Compile Include="Machine\ViewModelCommand.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

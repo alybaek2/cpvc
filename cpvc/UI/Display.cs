@@ -196,6 +196,7 @@ namespace CPvC
             {
                 // Assume a blank screen if no bookmark provided.
                 Buffer.Clear(CPCColour.Black._hwColourNumber);
+                CopyFromBuffer();
             }
             else
             {
@@ -210,7 +211,7 @@ namespace CPvC
 
         protected virtual void Dispose(bool disposing)
         {
-            Buffer?.Dispose();
+            Buffer.Dispose();
         }
 
         private void OnPropertyChanged(string name)

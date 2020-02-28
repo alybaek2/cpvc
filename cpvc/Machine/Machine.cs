@@ -11,42 +11,29 @@ namespace CPvC
     /// The Machine class, in addition to encapsulating a running Core object, also maintains a file which contains the state of the machine.
     /// This allows a machine to be closed, and then resumed where it left off the next time it's opened.
     /// </remarks>
-    public sealed class Machine : IMachineFileReader, INotifyPropertyChanged, IDisposable
+    public sealed class Machine : CoreMachine,
+        IInteractiveMachine,
+        IBookmarkableMachine,
+        IPausableMachine,
+        ITurboableMachine,
+        ICompactableMachine,
+        IClosableMachine,
+        IMachineFileReader,
+        INotifyPropertyChanged,
+        IDisposable
     {
         private string _name;
-        private Core _core;
         private bool _running;
         private int _autoPauseCount;
 
-        public Display Display { get; private set; }
         public HistoryEvent CurrentEvent { get; private set; }
         public HistoryEvent RootEvent { get; private set; }
         private Dictionary<int, HistoryEvent> _historyEventById;
-
-        public string Filepath { get; }
 
         private int _nextEventId;
 
         private readonly IFileSystem _fileSystem;
         private MachineFile _file;
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        private string _status;
-
-        public string Status
-        {
-            get
-            {
-                return _status;
-            }
-
-            set
-            {
-                _status = value;
-                OnPropertyChanged("Status");
-            }
-        }
 
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
@@ -92,15 +79,15 @@ namespace CPvC
                 {
                     machine.Close();
                 }
+
+                return machine;
             }
             catch (Exception)
             {
-                machine?.Dispose();
+                machine.Dispose();
 
                 throw;
             }
-
-            return machine;
         }
 
         /// <summary>
@@ -123,20 +110,21 @@ namespace CPvC
 
                 // Rewind from the current event to the most recent one with a bookmark...
                 HistoryEvent bookmarkEvent = CurrentEvent;
-                while (bookmarkEvent.Parent != null && bookmarkEvent.Bookmark == null)
+                while (bookmarkEvent != null && bookmarkEvent.Bookmark == null)
                 {
                     bookmarkEvent = bookmarkEvent.Parent;
                 }
 
-                core = GetCore(bookmarkEvent);
+                core = GetCore(bookmarkEvent?.Bookmark);
 
-                CurrentEvent = bookmarkEvent;
+                CurrentEvent = bookmarkEvent ?? RootEvent;
 
                 Display.EnableGreyscale(false);
-                Display.GetFromBookmark(bookmarkEvent.Bookmark);
-                Core = core;
+                Display.GetFromBookmark(bookmarkEvent?.Bookmark);
+                SetCore(core);
 
-                AddEvent(HistoryEvent.CreateVersion(NextEventId(), Core.Ticks, Core.LatestVersion), true);
+                CoreAction action = CoreAction.CoreVersion(Core.Ticks, Core.LatestVersion);
+                AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true); // Core.Ticks, Core.LatestVersion), true);
             }
             catch (Exception)
             {
@@ -159,24 +147,25 @@ namespace CPvC
             Machine machine = null;
             try
             {
-                fileSystem.DeleteFile(machineFilepath);
                 machine = new Machine(null, machineFilepath, fileSystem);
+                fileSystem.DeleteFile(machineFilepath);
 
                 machine._file = new MachineFile(fileSystem, machine.Filepath);
                 machine.Name = name;
 
-                machine.RootEvent = HistoryEvent.CreateVersion(machine.NextEventId(), 0, Core.LatestVersion);
+                machine.SetCore(Core.Create(Core.LatestVersion, Core.Type.CPC6128));
+
+                CoreAction action = CoreAction.CoreVersion(machine.Core.Ticks, Core.LatestVersion);
+                machine.RootEvent = HistoryEvent.CreateCoreAction(machine.NextEventId(), action);
                 machine._file.WriteHistoryEvent(machine.RootEvent);
 
                 machine.CurrentEvent = machine.RootEvent;
-
-                machine.Core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
 
                 return machine;
             }
             catch (Exception)
             {
-                machine?.Dispose();
+                machine.Dispose();
 
                 throw;
             }
@@ -193,8 +182,9 @@ namespace CPvC
                 {
                     // Create a system bookmark so the machine can resume from where it left off the next time it's loaded, but don't
                     // create one if we already have a system bookmark at the current event, or we're at the root event.
-                    bool ticksDifferent = (Core != null && CurrentEvent.Ticks != Core.Ticks);
-                    if (ticksDifferent || (CurrentEvent.Bookmark == null && CurrentEvent != RootEvent) || (CurrentEvent.Bookmark != null && !CurrentEvent.Bookmark.System))
+                    if ((CurrentEvent.Ticks != Ticks) ||
+                        (CurrentEvent.Bookmark == null && CurrentEvent != RootEvent) ||
+                        (CurrentEvent.Bookmark != null && !CurrentEvent.Bookmark.System))
                     {
                         AddCheckpointWithBookmarkEvent(true);
                     }
@@ -205,7 +195,7 @@ namespace CPvC
                 }
             }
 
-            Core = null;
+            SetCore(null);
 
             _running = false;
             _autoPauseCount = 0;
@@ -228,55 +218,22 @@ namespace CPvC
         /// <param name="action">The action taken.</param>
         private void RequestProcessed(Core core, CoreRequest request, CoreAction action)
         {
-            if (core == _core && action != null && action.Type != CoreAction.Types.RunUntil)
+            if (core == _core && action != null && action.Type != CoreAction.Types.RunUntilForce)
             {
                 AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
 
                 switch (action.Type)
                 {
-                    case CoreActionBase.Types.LoadDisc:
+                    case CoreRequest.Types.LoadDisc:
                         Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded disc" : "Ejected disc";
                         break;
-                    case CoreActionBase.Types.LoadTape:
+                    case CoreRequest.Types.LoadTape:
                         Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded tape" : "Ejected tape";
                         break;
-                    case CoreActionBase.Types.Reset:
+                    case CoreRequest.Types.Reset:
                         Status = "Reset";
                         break;
                 }
-            }
-        }
-
-        public Core Core
-        {
-            get
-            {
-                return _core;
-            }
-
-            private set
-            {
-                if (_core == value)
-                {
-                    return;
-                }
-
-                if (_core != null)
-                {
-                    _core.Dispose();
-                }
-
-                if (value != null)
-                {
-                    value.SetScreenBuffer(Display.Buffer);
-                    value.Auditors += RequestProcessed;
-                    value.BeginVSync = BeginVSync;
-                }
-
-                _core = value;
-
-                OnPropertyChanged("Core");
-                OnPropertyChanged("RequiresOpen");
             }
         }
 
@@ -286,6 +243,27 @@ namespace CPvC
             {
                 return _core == null;
             }
+        }
+
+        private void SetCore(Core core)
+        {
+            if (Core == core)
+            {
+                return;
+            }
+
+            if (core == null)
+            {
+                Core.Auditors -= RequestProcessed;
+                Core = null;
+            }
+            else
+            {
+                Core = core;
+                Core.Auditors += RequestProcessed;
+            }
+
+            OnPropertyChanged("RequiresOpen");
         }
 
         /// <summary>
@@ -331,22 +309,9 @@ namespace CPvC
             set
             {
                 _name = value;
-                _file?.WriteName(_name);
+                _file.WriteName(_name);
 
                 OnPropertyChanged("Name");
-            }
-        }
-
-        /// <summary>
-        /// Delegate for VSync events.
-        /// </summary>
-        /// <param name="core">Core whose VSync signal went form low to high.</param>
-        private void BeginVSync(Core core)
-        {
-            // Only copy to the display if the VSync is from a core we're interesting in.
-            if (core != null && _core == core)
-            {
-                Display.CopyFromBufferAsync();
             }
         }
 
@@ -387,16 +352,6 @@ namespace CPvC
             }
         }
 
-        public void AdvancePlayback(int samples)
-        {
-            _core?.AdvancePlayback(samples);
-        }
-
-        public int ReadAudio(byte[] buffer, int offset, int samplesRequested)
-        {
-            return _core?.ReadAudio16BitStereo(buffer, offset, samplesRequested) ?? 0;
-        }
-
         public void AddBookmark(bool system)
         {
             using (AutoPause())
@@ -411,7 +366,7 @@ namespace CPvC
         /// <summary>
         /// Rewind from the current event in the timeline to the most recent bookmark, and begin a new timeline branch from there.
         /// </summary>
-        public void SeekToLastBookmark()
+        public void JumpToMostRecentBookmark()
         {
             HistoryEvent lastBookmarkEvent = CurrentEvent;
             while (lastBookmarkEvent != null)
@@ -443,18 +398,6 @@ namespace CPvC
             _core.LoadTape(tapeBuffer);
         }
 
-        private void OnPropertyChanged(string name)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
-
-        public void EnableTurbo(bool enabled)
-        {
-            _core.EnableTurbo(enabled);
-
-            Status = enabled ? "Turbo enabled" : "Turbo disabled";
-        }
-
         /// <summary>
         /// Changes the current position in the timeline.
         /// </summary>
@@ -467,7 +410,7 @@ namespace CPvC
             byte volume = Core.Volume;
 
             Display.GetFromBookmark(bookmarkEvent.Bookmark);
-            Core = Machine.GetCore(bookmarkEvent);
+            SetCore(Machine.GetCore(bookmarkEvent.Bookmark));
             Core.Volume = volume;
 
             _file.WriteCurrent(bookmarkEvent);
@@ -553,7 +496,7 @@ namespace CPvC
         /// This is useful for compacting the size of the machine file, due to the fact that bookmark and timeline deletions don't actually
         /// remove anything from the machine file, but simply log the fact they happened.
         /// </remarks>
-        public void RewriteMachineFile()
+        public void Compact()
         {
             using (AutoPause())
             {
@@ -677,7 +620,7 @@ namespace CPvC
                 byte[] screen = Display.GetBitmapBytes();
                 byte[] core = _core.GetState();
 
-                return new Bookmark(system, core, screen);
+                return new Bookmark(system, _core.Version, core, screen);
             }
         }
 
@@ -721,37 +664,24 @@ namespace CPvC
         /// <summary>
         /// Returns a new core based on a HistoryEvent.
         /// </summary>
-        /// <param name="historyEvent">HistoryEvent to create the core from.</param>
-        /// <returns>If the HistoryEvent contains a bookmark, returns a core based on that bookmark. If the HistoryEvent is the root event, a newly-instantiated core is returned. Otherwise, null is returned.</returns>
-        static private Core GetCore(HistoryEvent historyEvent)
+        /// <param name="bookmark">Bookmark to create the core from. If null, then a new core is created.</param>
+        /// <returns>If <c>bookmark</c> is not null, returns a core based on that bookmark. If the HistoryEvent is null, a newly-instantiated core is returned.</returns>
+        static private Core GetCore(Bookmark bookmark)
         {
-            Core core = null;
-            try
+            if (bookmark != null)
             {
-                if (historyEvent.Parent == null)
-                {
-                    // A history event with no parent is assumed to be the root.
-                    core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-                }
-                else if (historyEvent.Bookmark != null)
-                {
-                    core = Core.Create(Core.LatestVersion, historyEvent.Bookmark.State.GetBytes());
+                Core core = Core.Create(Core.LatestVersion, bookmark.State.GetBytes());
 
-                    // Ensure all keys are in an "up" state.
-                    for (byte keycode = 0; keycode < 80; keycode++)
-                    {
-                        core.KeyPress(keycode, false);
-                    }
+                // Ensure all keys are in an "up" state.
+                for (byte keycode = 0; keycode < 80; keycode++)
+                {
+                    core.KeyPress(keycode, false);
                 }
 
                 return core;
             }
-            catch (Exception)
-            {
-                core?.Dispose();
 
-                throw;
-            }
+            return Core.Create(Core.LatestVersion, Core.Type.CPC6128);
         }
 
         private int NextEventId()

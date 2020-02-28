@@ -17,6 +17,7 @@ namespace CPvC
         void LoadUpperROM(byte slotIndex, byte[] upperRom);
         int GetAudioBuffers(int samples, byte[] channelA, byte[] channelB, byte[] channelC);
         void SetScreen(IntPtr screenBuffer, UInt16 pitch, UInt16 height, UInt16 width);
+        IntPtr GetScreen();
         UInt64 Ticks();
         void AudioSampleFrequency(UInt32 frequency);
         byte[] GetState();

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 
 namespace CPvC.Test
 {
@@ -25,60 +26,55 @@ namespace CPvC.Test
 
         static public CoreRequest KeyRequest(byte keycode, bool down)
         {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.KeyPress && r.KeyCode == keycode && r.KeyDown == down);
+            return It.Is<CoreRequest>(r => r != null && r.Type == CoreRequest.Types.KeyPress && r.KeyCode == keycode && r.KeyDown == down);
         }
 
         static public CoreAction KeyAction(byte keycode, bool down)
         {
-            return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.KeyPress && r.KeyCode == keycode && r.KeyDown == down);
+            return It.Is<CoreAction>(r => r != null && r.Type == CoreRequest.Types.KeyPress && r.KeyCode == keycode && r.KeyDown == down);
         }
 
         static public CoreRequest DiscRequest()
         {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.LoadDisc);
+            return It.Is<CoreRequest>(r => r != null && r.Type == CoreRequest.Types.LoadDisc);
         }
 
         static public CoreAction DiscAction()
         {
-            return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.LoadDisc);
+            return It.Is<CoreAction>(r => r != null && r.Type == CoreRequest.Types.LoadDisc);
         }
 
         static public CoreRequest TapeRequest()
         {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.LoadTape);
+            return It.Is<CoreRequest>(r => r != null && r.Type == CoreRequest.Types.LoadTape);
         }
 
         static public CoreAction TapeAction()
         {
-            return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.LoadTape);
+            return It.Is<CoreAction>(r => r != null && r.Type == CoreRequest.Types.LoadTape);
         }
 
-        static public CoreRequest RunUntilRequest()
+        static public CoreAction RunUntilActionForce()
         {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.RunUntil);
-        }
-
-        static public CoreAction RunUntilAction()
-        {
-            return It.Is<CoreAction>(r => r == null || r.Type == CoreActionBase.Types.RunUntil);
+            return It.Is<CoreAction>(r => r == null || r.Type == CoreRequest.Types.RunUntilForce);
         }
 
         static public CoreRequest ResetRequest()
         {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreActionBase.Types.Reset);
+            return It.Is<CoreRequest>(r => r != null && r.Type == CoreRequest.Types.Reset);
         }
 
         static public CoreAction ResetAction()
         {
-            return It.Is<CoreAction>(r => r != null && r.Type == CoreActionBase.Types.Reset);
+            return It.Is<CoreAction>(r => r != null && r.Type == CoreRequest.Types.Reset);
         }
 
-        static public HistoryEvent CoreActionEvent(int id, CoreActionBase.Types type)
+        static public HistoryEvent CoreActionEvent(int id, CoreRequest.Types type)
         {
             return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction.Type == type && h.Id == id);
         }
 
-        static public HistoryEvent CoreActionEvent(int id, UInt64 ticks, CoreActionBase.Types type)
+        static public HistoryEvent CoreActionEvent(int id, UInt64 ticks, CoreRequest.Types type)
         {
             return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction.Type == type && h.Ticks == ticks && h.Id == id);
         }
@@ -87,7 +83,7 @@ namespace CPvC.Test
         {
             return It.Is<HistoryEvent>(h => h != null &&
                                             h.Type == HistoryEvent.Types.CoreAction &&
-                                            h.CoreAction.Type == CoreActionBase.Types.KeyPress &&
+                                            h.CoreAction.Type == CoreRequest.Types.KeyPress &&
                                             h.CoreAction.KeyCode == keyCode &&
                                             h.CoreAction.KeyDown == keyDown &&
                                             h.Ticks == ticks &&
@@ -98,7 +94,7 @@ namespace CPvC.Test
         {
             return It.Is<HistoryEvent>(h => h != null &&
                                             h.Type == HistoryEvent.Types.CoreAction &&
-                                            h.CoreAction.Type == CoreActionBase.Types.LoadDisc &&
+                                            h.CoreAction.Type == CoreRequest.Types.LoadDisc &&
                                             h.CoreAction.Drive == drive &&
                                             h.CoreAction.MediaBuffer.GetBytes().SequenceEqual(disc) &&
                                             h.Ticks == ticks &&
@@ -109,24 +105,25 @@ namespace CPvC.Test
         {
             return It.Is<HistoryEvent>(h => h != null &&
                                             h.Type == HistoryEvent.Types.CoreAction &&
-                                            h.CoreAction.Type == CoreActionBase.Types.LoadTape &&
+                                            h.CoreAction.Type == CoreRequest.Types.LoadTape &&
                                             h.CoreAction.MediaBuffer.GetBytes().SequenceEqual(tape) &&
                                             h.Ticks == ticks &&
                                             h.Id == id);
         }
 
-        static public Bookmark BookmarkMatch(bool system, int statePos, int screenPos)
+        static public Bookmark BookmarkMatch(bool system, int version, int statePos, int screenPos)
         {
             return It.Is<Bookmark>(
                 b => b != null &&
                 b.System == system &&
+                b.Version == version &&
                 ((IStreamBlob)(b.State)).Position == statePos &&
                 ((IStreamBlob)(b.Screen)).Position == screenPos);
         }
 
         static public HistoryEvent VersionEvent(int id)
         {
-            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Version && h.Id == id);
+            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction != null && h.CoreAction.Type == CoreRequest.Types.CoreVersion && h.Id == id);
         }
 
         static public HistoryEvent CheckpointEvent(int id)
@@ -134,7 +131,7 @@ namespace CPvC.Test
             return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id);
         }
 
-        static public HistoryEvent CheckpointWithBookmarkEvent(int id, UInt64 ticks, bool system, int stateBlobPos, int screenBlobPos)
+        static public HistoryEvent CheckpointWithBookmarkEvent(int id, UInt64 ticks, bool system, int version, int stateBlobPos, int screenBlobPos)
         {
             return It.Is<HistoryEvent>(h => h != null &&
                                             h.Type == HistoryEvent.Types.Checkpoint &&
@@ -142,8 +139,9 @@ namespace CPvC.Test
                                             h.Ticks == ticks &&
                                             h.Bookmark != null &&
                                             h.Bookmark.System == system &&
-                                            ((IStreamBlob) (h.Bookmark.State)).Position == stateBlobPos &&
-                                            ((IStreamBlob) (h.Bookmark.Screen)).Position == screenBlobPos);
+                                            h.Bookmark.Version == version &&
+                                            ((IStreamBlob)(h.Bookmark.State)).Position == stateBlobPos &&
+                                            ((IStreamBlob)(h.Bookmark.Screen)).Position == screenBlobPos);
         }
 
         static public HistoryEvent CheckpointWithoutBookmarkEvent(int id, UInt64 ticks)
@@ -193,7 +191,7 @@ namespace CPvC.Test
         /// <param name="ticks">The number of ticks to run the machine for.</param>
         /// <param name="stopOnAudioOverrun">Indicates if the machine should stop in the event of an audio overrun.</param>
         /// <returns>The total number of ticks that the machine ran for. Note this may be slightly larger than <c>ticks</c>, since Z80 instructions take at least 4 ticks.</returns>
-        static public UInt64 Run(Machine machine, UInt64 ticks, bool stopOnAudioOverrun)
+        static public UInt64 Run(ICoreMachine machine, UInt64 ticks, bool stopOnAudioOverrun)
         {
             UInt64 beforeTicks = machine.Core.Ticks;
             machine.Core.RunUntil(beforeTicks + ticks, stopOnAudioOverrun ? StopReasons.AudioOverrun : StopReasons.None);
@@ -205,19 +203,19 @@ namespace CPvC.Test
         /// Runs a machine for at least one instruction cycle.
         /// </summary>
         /// <param name="machine">The machine to run.</param>
-        static public void RunForAWhile(Machine machine)
+        static public void RunForAWhile(IPausableMachine machine)
         {
-            UInt64 startTicks = machine.Core.Ticks;
+            UInt64 startTicks = machine.Ticks;
             UInt64 endTicks = startTicks + 1;
 
             int timeWaited = 0;
             int sleepTime = 10;
             machine.Start();
-            while (machine.Core.Ticks < endTicks)
+            while (machine.Ticks < endTicks)
             {
                 if (timeWaited > 1000)
                 {
-                    throw new Exception(String.Format("Waited too long for Machine to run! {0} {1}", machine.Core.Ticks, machine.Core.Running));
+                    throw new Exception(String.Format("Waited too long for Machine to run! {0} {1}", machine.Ticks, machine.Running));
                 }
 
                 System.Threading.Thread.Sleep(sleepTime);
@@ -230,9 +228,81 @@ namespace CPvC.Test
             machine.Stop();
         }
 
+        static public void RunForAWhile(Core core, UInt64 duration)
+        {
+            UInt64 endTicks = core.Ticks + duration;
+            core.Start();
+            while (core.Ticks < endTicks)
+            {
+                // Empty out the audio buffer just in case on an overrun.
+                core.AdvancePlayback(10000);
+            }
+
+            core.Stop();
+        }
+
         static public string GetTempFilepath(string filename)
         {
             return String.Format("{0}\\{1}", System.IO.Path.GetTempPath(), filename);
+        }
+
+        static public void ProcessQueueAndStop(Core core)
+        {
+            core.Quit();
+            core.Start();
+
+            int timeout = 30000;
+            while (timeout > 0)
+            {
+                if (!core.Running)
+                {
+                    break;
+                }
+
+                Thread.Sleep(20);
+                timeout -= 20;
+            }
+
+            // This seems to be necessary for some tests to succeed. For example, MainViewModelTests.Reset sometimes
+            // fails without this because resetCalled is set only after it's tested in an assertion. Need to investigate
+            // this more to understand what's going on.
+            Thread.Sleep(500);
+        }
+
+        static public Machine CreateTestMachine()
+        {
+            Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
+            mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(AnyString()));
+            mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
+            mockFileSystem.Setup(fileSystem => fileSystem.FileLength(AnyString())).Returns(100);
+
+            MockFileByteStream mockBinaryWriter = new MockFileByteStream();
+
+            mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream("test.cpvc")).Returns(mockBinaryWriter.Object);
+
+            Machine machine = Machine.New("test", "test.cpvc", mockFileSystem.Object);
+
+            // For consistency with automated builds, use all zero ROMs.
+            byte[] zeroROM = new byte[0x4000];
+            machine.Core.SetLowerROM(zeroROM);
+            machine.Core.SetUpperROM(0, zeroROM);
+            machine.Core.SetUpperROM(7, zeroROM);
+
+            RunForAWhile(machine);
+            machine.Key(Keys.A, true);
+            RunForAWhile(machine);
+            machine.Key(Keys.A, false);
+            RunForAWhile(machine);
+            machine.LoadDisc(0, null);
+            RunForAWhile(machine);
+            machine.LoadTape(null);
+            RunForAWhile(machine);
+            machine.AddBookmark(false);
+            RunForAWhile(machine);
+            machine.AddBookmark(false);
+            RunForAWhile(machine);
+
+            return machine;
         }
     }
 }

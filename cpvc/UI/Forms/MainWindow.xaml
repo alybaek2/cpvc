@@ -12,9 +12,6 @@
         <converters:IsNotNull x:Key="isNotNullConverter" />
         <converters:RunningIcon x:Key="runningIconConverter" />
         <converters:BooleanInverter x:Key="booleanInverterConverter" />
-        <Style x:Key="MachineMenuItemStyle" TargetType="{x:Type MenuItem}">
-            <Setter Property="IsEnabled" Value="{Binding ActiveMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
-        </Style>
         <Style x:Key="MachineButtonStyle" TargetType="{x:Type Button}">
             <Style.Resources>
                 <Style TargetType="{x:Type Image}">
@@ -27,12 +24,36 @@
             </Style.Resources>
             <Setter Property="IsEnabled" Value="{Binding ActiveMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
         </Style>
+        <Style x:Key="RegularMachineButtonStyle" TargetType="{x:Type Button}">
+            <Style.Resources>
+                <Style TargetType="{x:Type Image}">
+                    <Style.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Style.Resources>
+        </Style>
+        <Style x:Key="PausableMachineButtonStyle" TargetType="{x:Type Button}">
+            <Style.Resources>
+                <Style TargetType="{x:Type Image}">
+                    <Style.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Style.Resources>
+            <Setter Property="IsEnabled" Value="{Binding ActivePausableMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
+        </Style>
         <CollectionViewSource x:Key="Machines" Source="{Binding Machines}"/>
         <CollectionViewSource x:Key="OpenMachines" Source="{Binding Machines}" Filter="OpenMachines_Filter" IsLiveFilteringRequested="True">
             <CollectionViewSource.LiveFilteringProperties>
                 <System:String>RequiresOpen</System:String>
             </CollectionViewSource.LiveFilteringProperties>
         </CollectionViewSource>
+        <CollectionViewSource x:Key="ReplayMachines" Source="{Binding ReplayMachines}"/>
     </Window.Resources>
     <Grid AllowDrop="True" Margin="0,0,0,0" Background="#FFF0F0F0">
         <Grid.RowDefinitions>
@@ -45,117 +66,117 @@
             <MenuItem Header="File">
                 <MenuItem x:Name="_newMenuItem" Header="New..." Click="NewMenuItem_Click"/>
                 <MenuItem x:Name="_openMenuItem" Header="Open..." Click="OpenMenuItem_Click"/>
-                <MenuItem x:Name="_closeMenuItem" Header="Close" Click="CloseMenuItem_Click" Style="{StaticResource MachineMenuItemStyle}"/>
+                <MenuItem x:Name="_closeMenuItem" Header="Close" Click="CloseMenuItem_Click"/>
                 <Separator/>
                 <MenuItem x:Name="_exitMenuItem" Header="Exit" Click="ExitMenuItem_Click"/>
             </MenuItem>
-            <MenuItem x:Name="_machineMenuItem" Header="Machine" Style="{StaticResource MachineMenuItemStyle}">
+            <MenuItem x:Name="_machineMenuItem" Header="Machine">
                 <MenuItem Header="Drive A:">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
-                    <MenuItem x:Name="_driveAMenuItem" Header="Load..." Click="DriveAMenuItem_Click"/>
-                    <MenuItem x:Name="_driveAEjectMenuItem" Header="Eject" Click="DriveAEjectMenuItem_Click"/>
+                    <MenuItem x:Name="_driveAMenuItem" Header="Load..." Command="{Binding DriveACommand}"/>
+                    <MenuItem x:Name="_driveAEjectMenuItem" Header="Eject" Command="{Binding DriveAEjectCommand}"/>
                 </MenuItem>
                 <MenuItem Header="Drive B:">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
-                    <MenuItem x:Name="_driveBMenuItem" Header="Load..." Click="DriveBMenuItem_Click"/>
-                    <MenuItem x:Name="_driveBEjectMenuItem" Header="Eject" Click="DriveBEjectMenuItem_Click"/>
+                    <MenuItem x:Name="_driveBMenuItem" Header="Load..." Command="{Binding DriveBCommand}"/>
+                    <MenuItem x:Name="_driveBEjectMenuItem" Header="Eject" Command="{Binding DriveBEjectCommand}"/>
                 </MenuItem>
                 <MenuItem Header="Tape">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/tape16.png" />
                     </MenuItem.Icon>
-                    <MenuItem x:Name="_tapeMenuItem" Header="Load..." Click="TapeMenuItem_Click"/>
-                    <MenuItem x:Name="_tapeEjectMenuItem" Header="Eject" Click="TapeEjectMenuItem_Click"/>
+                    <MenuItem x:Name="_tapeMenuItem" Header="Load..." Command="{Binding TapeCommand}"/>
+                    <MenuItem x:Name="_tapeEjectMenuItem" Header="Eject" Command="{Binding TapeEjectCommand}"/>
                 </MenuItem>
                 <Separator/>
-                <MenuItem x:Name="_pauseMenuItem" Header="Pause" Click="PauseMenuItem_Click">
+                <MenuItem x:Name="_pauseMenuItem" Header="Pause" Command="{Binding PauseCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/pause16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem x:Name="_resumeMenuItem" Header="Resume" Click="ResumeMenuItem_Click">
+                <MenuItem x:Name="_resumeMenuItem" Header="Resume" Command="{Binding ResumeCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/resume16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem x:Name="_resetMenuItem" Header="Reset" Click="ResetMenuItem_Click">
+                <MenuItem x:Name="_resetMenuItem" Header="Reset" Command="{Binding ResetCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/reset16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem x:Name="_addBookmarkMenuItem" Header="Add Bookmark" Click="AddBookmarkMenuItem_Click">
+                <MenuItem x:Name="_addBookmarkMenuItem" Header="Add Bookmark" Command="{Binding AddBookmarkCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmarkadd16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem x:Name="_previousBookmarkMenuItem" Header="Back to Previous Bookmark" Click="PreviousBookmarkMenuItem_Click">
+                <MenuItem x:Name="_previousBookmarkMenuItem" Header="Back to Previous Bookmark" Command="{Binding SeekToPreviousBookmarkCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmarkprev16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem x:Name="_jumpToBookmarkMenuItem" Header="Bookmarks..." Click="JumpToBookmarkMenuItem_Click">
+                <MenuItem x:Name="_jumpToBookmarkMenuItem" Header="Bookmarks..." Command="{Binding BrowseBookmarksCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmark16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem x:Name="_renameFileMenuItem" Header="Rename machine..." Click="RenameFileMenuItem_Click"/>
-                <MenuItem x:Name="_compactFileMenuItem" Header="Compact machine file" Click="CompactFileMenuItem_Click"/>
+                <MenuItem x:Name="_renameFileMenuItem" Header="Rename machine..." Command="{Binding RenameCommand}"/>
+                <MenuItem x:Name="_compactFileMenuItem" Header="Compact machine file" Command="{Binding CompactCommand}"/>
             </MenuItem>
         </Menu>
         <ToolBarTray x:Name="toolBarTray" Margin="0" VerticalAlignment="Top" Grid.Row="1" Background="#FFF0F0F0">
             <ToolBar x:Name="toolBar" ToolBarTray.IsLocked="True" HorizontalContentAlignment="Left" VerticalAlignment="Center" VerticalContentAlignment="Center" Background="#FFF0F0F0">
-                <Button x:Name="_driveAButton" Height="25" VerticalAlignment="Top" Width="40" Click="DriveAButton_Click" Style="{StaticResource MachineButtonStyle}">
+                <Button x:Name="_driveAButton" Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding DriveACommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/floppy.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                         <TextBlock><Run Text="A:"/></TextBlock>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_driveBButton" Height="25" VerticalAlignment="Top" Width="40" Click="DriveBButton_Click" Style="{StaticResource MachineButtonStyle}">
+                <Button x:Name="_driveBButton" Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding DriveBCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/floppy.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                         <TextBlock><Run Text="B:"/></TextBlock>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_tapeButton" Height="25" VerticalAlignment="Top" Width="25" Click="TapeButton_Click" Style="{StaticResource MachineButtonStyle}">
+                <Button x:Name="_tapeButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding TapeCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/tape16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
                 <Separator/>
-                <Button x:Name="_pauseButton" Height="25" VerticalAlignment="Top" Width="25" Click="PauseButton_Click" Style="{StaticResource MachineButtonStyle}">
+                <Button x:Name="_pauseButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding PauseCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/pause16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_resumeButton" Height="25" VerticalAlignment="Top" Width="25" Click="ResumeButton_Click" Style="{StaticResource MachineButtonStyle}">
+                <Button x:Name="_resumeButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ResumeCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/resume16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_resetButton" Height="25" VerticalAlignment="Top" Width="25" Click="ResetButton_Click" Style="{StaticResource MachineButtonStyle}">
+                <Button x:Name="_resetButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ResetCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/reset16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
                 <Separator/>
-                <Button x:Name="_addBookmarkButton" Height="25" VerticalAlignment="Top" Width="25" Click="AddBookmarkButton_Click" Style="{StaticResource MachineButtonStyle}">
+                <Button x:Name="_addBookmarkButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding AddBookmarkCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmarkadd16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_seekToLastBookmarkButton" Height="25" VerticalAlignment="Top" Width="25" Click="SeekToLastBookmarkButton_Click" Style="{StaticResource MachineButtonStyle}">
+                <Button x:Name="_seekToLastBookmarkButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding JumpToMostRecentBookmarkCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmarkprev16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_browseBookmarksButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Click="BrowseBookmarksButton_Click">
+                <Button x:Name="_browseBookmarksButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding BrowseBookmarksCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmark16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
@@ -265,13 +286,18 @@
                         </TabItem.ContentTemplate>
                     </TabItem>
                     <CollectionContainer Collection="{Binding Source={StaticResource OpenMachines}}" />
+                    <CollectionContainer Collection="{Binding Source={StaticResource ReplayMachines}}" />
                 </CompositeCollection>
             </TabControl.ItemsSource>
         </TabControl>
         <StatusBar x:Name="_statusBar" Height="30" Grid.Row="3" VerticalAlignment="Top">
-            <TextBlock x:Name="_clockTextBlock" TextWrapping="Wrap" Text="{Binding ActiveMachine.Core.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
+            <TextBlock x:Name="_clockTextBlock" TextWrapping="Wrap" Text="{Binding ActiveMachine.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
             <Separator/>
-            <Slider x:Name="_volumeSlider" Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding ActiveMachine.Core.Volume, Mode=TwoWay}" ToolTip="{Binding ActiveMachine.Core.Volume}" />
+            <Slider x:Name="_volumeSlider" Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding ActiveMachine.Volume, Mode=TwoWay}" ToolTip="{Binding ActiveMachine.Core.Volume}" />
+            <Button x:Name="_previousBookmark" Content="&lt;&lt;" Command="{Binding SeekToPrevBookmarkCommand}"/>
+            <Button x:Name="_nextBookmark" Content=">>" Command="{Binding SeekToNextBookmarkCommand}"/>
+            <Button x:Name="_beginButton" Content=" |&lt; " Command="{Binding SeekToStartCommand}"/>
+            <Slider x:Name="_timelineSlider" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right" Minimum="0" Maximum="{Binding ActiveMachine.EndTicks, Mode=OneWay}" Value="{Binding ActiveMachine.Ticks, Mode=OneWay}"/>
         </StatusBar>
     </Grid>
 </Window>

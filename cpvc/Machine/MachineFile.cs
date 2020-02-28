@@ -107,10 +107,11 @@ namespace CPvC
                 if (hasBookmark)
                 {
                     bool system = ReadBool();
+                    int version = ReadInt32();
                     IBlob stateBlob = ReadBlob();
                     IBlob screenBlob = ReadBlob();
 
-                    bookmark = new Bookmark(system, stateBlob, screenBlob);
+                    bookmark = new Bookmark(system, version, stateBlob, screenBlob);
                 }
 
                 reader.SetBookmark(id, bookmark);
@@ -131,6 +132,7 @@ namespace CPvC
                 WriteInt32(id);
                 WriteBool(true);
                 WriteBool(bookmark.System);
+                WriteInt32(bookmark.Version);
                 WriteBytesBlob(bookmark.State.GetBytes());
                 WriteCompressedBlob(bookmark.Screen.GetBytes());
             }
@@ -145,9 +147,6 @@ namespace CPvC
                     break;
                 case HistoryEvent.Types.CoreAction:
                     WriteCoreAction(historyEvent.Id, historyEvent.Ticks, historyEvent.CoreAction);
-                    break;
-                case HistoryEvent.Types.Version:
-                    WriteVersion(historyEvent.Id, historyEvent.Ticks, historyEvent.Version);
                     break;
                 default:
                     throw new Exception(String.Format("Unrecognized history event type {0}.", historyEvent.Type));
@@ -171,17 +170,20 @@ namespace CPvC
         {
             switch (action.Type)
             {
-                case CoreActionBase.Types.KeyPress:
+                case CoreRequest.Types.KeyPress:
                     WriteKey(id, ticks, action.KeyCode, action.KeyDown);
                     break;
-                case CoreActionBase.Types.Reset:
+                case CoreRequest.Types.Reset:
                     WriteReset(id, ticks);
                     break;
-                case CoreActionBase.Types.LoadDisc:
+                case CoreRequest.Types.LoadDisc:
                     WriteLoadDisc(id, ticks, action.Drive, action.MediaBuffer.GetBytes());
                     break;
-                case CoreActionBase.Types.LoadTape:
+                case CoreRequest.Types.LoadTape:
                     WriteLoadTape(id, ticks, action.MediaBuffer.GetBytes());
+                    break;
+                case CoreRequest.Types.CoreVersion:
+                    WriteVersion(id, ticks, action.Version);
                     break;
                 default:
                     throw new Exception(String.Format("Unrecognized core action type {0}.", action.Type));
@@ -201,7 +203,7 @@ namespace CPvC
                 CoreAction action = CoreAction.KeyPress(ticks, keyCode, keyDown);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                Diagnostics.Trace("{0} {1}: Key {2} {3}", id, ticks, keyCode, keyDown?"down":"up");
+                //Diagnostics.Trace("{0} {1}: Key {2} {3}", id, ticks, keyCode, keyDown?"down":"up");
 
                 reader.AddHistoryEvent(historyEvent);
             }
@@ -228,7 +230,7 @@ namespace CPvC
                 CoreAction action = CoreAction.Reset(ticks);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                Diagnostics.Trace("{0} {1}: Reset", id, ticks);
+                //Diagnostics.Trace("{0} {1}: Reset", id, ticks);
 
                 reader.AddHistoryEvent(historyEvent);
             }
@@ -253,7 +255,7 @@ namespace CPvC
                 CoreAction action = CoreAction.LoadDisc(ticks, drive, mediaBlob);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                Diagnostics.Trace("{0} {1}: Load disc (drive {2}, {3} byte tape image)", id, ticks, (drive == 0) ? "A:" : "B:", mediaBlob.GetBytes()?.Length ?? 0);
+                //Diagnostics.Trace("{0} {1}: Load disc (drive {2}, {3} byte tape image)", id, ticks, (drive == 0) ? "A:" : "B:", mediaBlob.GetBytes()?.Length ?? 0);
 
                 reader.AddHistoryEvent(historyEvent);
             }
@@ -276,9 +278,10 @@ namespace CPvC
                 UInt64 ticks = ReadUInt64();
                 int version = ReadInt32();
 
-                HistoryEvent historyEvent = HistoryEvent.CreateVersion(id, ticks, version);
+                CoreAction action = CoreAction.CoreVersion(ticks, version);
+                HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                Diagnostics.Trace("{0} {1}: Version {2}", id, ticks, version);
+                //Diagnostics.Trace("{0} {1}: Version {2}", id, ticks, version);
 
                 reader.AddHistoryEvent(historyEvent);
             }
@@ -306,7 +309,7 @@ namespace CPvC
                 CoreAction action = CoreAction.LoadTape(ticks, mediaBlob);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                Diagnostics.Trace("{0} {1}: Load tape ({2} byte tape image)", id, ticks, mediaBlob.GetBytes()?.Length ?? 0);
+                //Diagnostics.Trace("{0} {1}: Load tape ({2} byte tape image)", id, ticks, mediaBlob.GetBytes()?.Length ?? 0);
 
                 reader.AddHistoryEvent(historyEvent);
             }
@@ -333,22 +336,23 @@ namespace CPvC
                 if (hasBookmark)
                 {
                     bool system = ReadBool();
+                    int version = ReadInt32();
                     IBlob stateBlob = ReadBlob();
                     IBlob screenBlob = ReadBlob();
 
-                    bookmark = new Bookmark(system, stateBlob, screenBlob);
+                    bookmark = new Bookmark(system, version, stateBlob, screenBlob);
                 }
 
                 HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(id, ticks, created, bookmark);
 
-                if (bookmark == null)
-                {
-                    Diagnostics.Trace("{0} {1}: Checkpoint (no bookmark)", id, ticks);
-                }
-                else
-                {
-                    Diagnostics.Trace("{0} {1}: Checkpoint (with {2} bookmark)", id, ticks, bookmark.System ? "system" : "user");
-                }
+                //if (bookmark == null)
+                //{
+                //    Diagnostics.Trace("{0} {1}: Checkpoint (no bookmark)", id, ticks);
+                //}
+                //else
+                //{
+                //    Diagnostics.Trace("{0} {1}: Checkpoint (with {2} bookmark)", id, ticks, bookmark.System ? "system" : "user");
+                //}
 
                 reader.AddHistoryEvent(historyEvent);
             }
@@ -379,6 +383,7 @@ namespace CPvC
             {
                 WriteBool(true);
                 WriteBool(historyEvent.Bookmark.System);
+                WriteInt32(historyEvent.Bookmark.Version);
 
                 byte[] bookmarkBytes = historyEvent.Bookmark.State.GetBytes();
 
@@ -402,7 +407,7 @@ namespace CPvC
         {
             int id = ReadInt32();
 
-            Diagnostics.Trace("{0}: Delete", id);
+            //Diagnostics.Trace("{0}: Delete", id);
 
             reader.DeleteEvent(id);
         }

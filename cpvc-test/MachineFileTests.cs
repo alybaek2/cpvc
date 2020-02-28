@@ -88,13 +88,14 @@ namespace CPvC.Test
         public void WriteBookmark()
         {
             // Setup
-            Bookmark bookmark = new Bookmark(false, new byte[] { 0x01, 0x02 }, null);
+            Bookmark bookmark = new Bookmark(false, 5, new byte[] { 0x01, 0x02 }, null);
             byte[] expected = new byte[]
             {
                 0x08,
                       0x19, 0x00, 0x00, 0x00,
                       0x01,
                       0x00,
+                      0x05, 0x00, 0x00, 0x00,
                       0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
                       0x00
             };
@@ -152,7 +153,7 @@ namespace CPvC.Test
         {
             // Setup
             DateTime timestamp = Helpers.NumberToDateTime(0);
-            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, new Bookmark(system, new byte[] { 0x01, 0x02 }, null));
+            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, new Bookmark(system, 5, new byte[] { 0x01, 0x02 }, null));
             byte[] expected = new byte[]
             {
                 0x05,
@@ -161,6 +162,7 @@ namespace CPvC.Test
                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                       0x01,
                       (byte)(system ? 0x01 : 0x00),
+                      0x05, 0x00, 0x00, 0x00,
                       0x03, 0x04, 0x00, 0x00, 0x00, 0x63, 0x64, 0x02, 0x00,
                       0x00
             };
@@ -217,7 +219,7 @@ namespace CPvC.Test
         public void WriteDisc(byte drive)
         {
             // Setup
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.LoadDisc(100, drive, new byte[] { 0x01, 0x02 }));
+            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.LoadDisc(100, drive, new MemoryBlob(new byte[] { 0x01, 0x02 })));
             byte[] expected = new byte[]
             {
                 0x03,
@@ -238,7 +240,7 @@ namespace CPvC.Test
         public void WriteTape()
         {
             // Setup
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.LoadTape(100, new byte[] { 0x01, 0x02 }));
+            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.LoadTape(100, new MemoryBlob(new byte[]{ 0x01, 0x02 })));
             byte[] expected = new byte[]
             {
                 0x04,
@@ -268,7 +270,7 @@ namespace CPvC.Test
         public void WriteInvalidCoreActionType()
         {
             // Setup
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, new CoreAction((CoreActionBase.Types)99, 100));
+            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, new CoreAction((CoreRequest.Types)99, 100));
 
             // Act and Verify
             Assert.Throws<Exception>(() => _file.WriteHistoryEvent(historyEvent));
@@ -291,7 +293,7 @@ namespace CPvC.Test
             file.ReadFile(mockFileReader.Object);
 
             // Verify
-            mockFileReader.Verify(reader => reader.AddHistoryEvent(CoreActionEvent(0x19, 100, CoreActionBase.Types.Reset)));
+            mockFileReader.Verify(reader => reader.AddHistoryEvent(CoreActionEvent(0x19, 100, CoreRequest.Types.Reset)));
         }
 
         [TestCase(false)]
@@ -373,6 +375,7 @@ namespace CPvC.Test
                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                       0x01,
                       (byte)(system ? 0x01 : 0x00),
+                      0x05, 0x00, 0x00, 0x00,
                       0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
                       0x00
             });
@@ -383,7 +386,7 @@ namespace CPvC.Test
             file.ReadFile(mockFileReader.Object);
 
             // Verify
-            mockFileReader.Verify(reader => reader.AddHistoryEvent(CheckpointWithBookmarkEvent(0x19, 100, system, 23, 30)));
+            mockFileReader.Verify(reader => reader.AddHistoryEvent(CheckpointWithBookmarkEvent(0x19, 100, system, 5, 27, 34)));
         }
 
         [Test]
@@ -420,6 +423,7 @@ namespace CPvC.Test
                       0x19, 0x00, 0x00, 0x00,
                       0x01,
                       (byte) (system ? 0x01 : 0x00),
+                      0x05, 0x00, 0x00, 0x00,
                       0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
                       0x00
             });
@@ -430,7 +434,7 @@ namespace CPvC.Test
             file.ReadFile(mockFileReader.Object);
 
             // Verify
-            mockFileReader.Verify(reader => reader.SetBookmark(0x19, BookmarkMatch(system, 7, 14)));
+            mockFileReader.Verify(reader => reader.SetBookmark(0x19, BookmarkMatch(system, 5, 11, 18)));
         }
 
         [Test]

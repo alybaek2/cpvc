@@ -14,8 +14,7 @@ namespace CPvC
         public enum Types
         {
             Checkpoint,
-            CoreAction,
-            Version
+            CoreAction
         }
 
         public Types Type { get; }
@@ -26,7 +25,6 @@ namespace CPvC
         public CoreAction CoreAction { get; private set; }
         public HistoryEvent Parent { get; set; }
         public List<HistoryEvent> Children { get; }
-        public int Version { get; private set; }
 
         public HistoryEvent(int id, Types type, UInt64 ticks)
         {
@@ -109,16 +107,6 @@ namespace CPvC
             return historyEvent;
         }
 
-        static public HistoryEvent CreateVersion(int id, UInt64 ticks, int version)
-        {
-            HistoryEvent historyEvent = new HistoryEvent(id, Types.Version, ticks)
-            {
-                Version = version
-            };
-
-            return historyEvent;
-        }
-
         /// <summary>
         /// Returns the maximum ticks value of any given HistoryEvent's descendents. Used when sorting children in <c>AddEventToItem</c>.
         /// </summary>
@@ -132,6 +120,19 @@ namespace CPvC
             }
 
             return Children.Select(x => x.GetMaxDescendentTicks()).Max();
+        }
+
+        public HistoryEvent CloneWithoutChildren()
+        {
+            switch (Type)
+            {
+                case Types.CoreAction:
+                    return CreateCoreAction(Id, CoreAction.Clone());
+                case Types.Checkpoint:
+                    return CreateCheckpoint(Id, Ticks, CreateDate, Bookmark?.Clone() ?? null);
+            }
+
+            return null;
         }
     }
 }

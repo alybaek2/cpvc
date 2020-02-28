@@ -2,12 +2,21 @@
 using NUnit.Framework;
 using System;
 using System.ComponentModel;
+using System.Threading;
 using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
 {
     public class CoreTests
     {
+        private Mock<RequestProcessedDelegate> _mockRequestProcessed;
+
+        [SetUp]
+        public void Setup()
+        {
+            _mockRequestProcessed = new Mock<RequestProcessedDelegate>();
+        }
+
         static private Mock<IFileSystem> GetFileSystem(int size)
         {
             Mock<IFileSystem> mock = new Mock<IFileSystem>(MockBehavior.Strict);
@@ -38,16 +47,14 @@ namespace CPvC.Test
                 core.Auditors += mockRequestProcessed.Object;
 
                 // Act
-                core.Start();
                 core.KeyPress(Keys.Space, true);
                 core.KeyPress(Keys.Space, true);
-                core.WaitForRequestQueueEmpty();
-                core.Stop();
+
+                ProcessQueueAndStop(core);
 
                 // Verify
                 mockRequestProcessed.Verify(x => x(core, KeyRequest(Keys.Space, true), KeyAction(Keys.Space, true)), Times.Once);
                 mockRequestProcessed.Verify(x => x(core, KeyRequest(Keys.Space, true), null), Times.Once);
-                mockRequestProcessed.Verify(x => x(core, RunUntilRequest(), RunUntilAction()), AnyTimes());
                 mockRequestProcessed.VerifyNoOtherCalls();
             }
         }
@@ -97,16 +104,15 @@ namespace CPvC.Test
         public void ProcessesActionsInCorrectOrder()
         {
             // Setup
-            Mock<RequestProcessedDelegate> mockRequestProcessed = new Mock<RequestProcessedDelegate>();
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
-                core.Auditors += mockRequestProcessed.Object;
+                core.Auditors += _mockRequestProcessed.Object;
 
                 MockSequence sequence = new MockSequence();
-                mockRequestProcessed.InSequence(sequence).Setup(x => x(core, KeyRequest(Keys.Space, true), KeyAction(Keys.Space, true))).Verifiable();
-                mockRequestProcessed.InSequence(sequence).Setup(x => x(core, TapeRequest(), TapeAction())).Verifiable();
-                mockRequestProcessed.InSequence(sequence).Setup(x => x(core, DiscRequest(), DiscAction())).Verifiable();
-                mockRequestProcessed.InSequence(sequence).Setup(x => x(core, ResetRequest(), ResetAction())).Verifiable();
+                _mockRequestProcessed.InSequence(sequence).Setup(x => x(core, KeyRequest(Keys.Space, true), KeyAction(Keys.Space, true))).Verifiable();
+                _mockRequestProcessed.InSequence(sequence).Setup(x => x(core, TapeRequest(), TapeAction())).Verifiable();
+                _mockRequestProcessed.InSequence(sequence).Setup(x => x(core, DiscRequest(), DiscAction())).Verifiable();
+                _mockRequestProcessed.InSequence(sequence).Setup(x => x(core, ResetRequest(), ResetAction())).Verifiable();
 
                 // Act
                 core.KeyPress(Keys.Space, true);
@@ -114,14 +120,11 @@ namespace CPvC.Test
                 core.LoadDisc(0, null);
                 core.Reset();
 
-                core.Start();
-                core.WaitForRequestQueueEmpty();
-                core.Stop();
+                ProcessQueueAndStop(core);
 
                 // Verify
-                mockRequestProcessed.Verify();
-                mockRequestProcessed.Verify(x => x(core, RunUntilRequest(), RunUntilAction()), AnyTimes());
-                mockRequestProcessed.VerifyNoOtherCalls();
+                _mockRequestProcessed.Verify();
+                _mockRequestProcessed.VerifyNoOtherCalls();
             }
         }
 
@@ -200,12 +203,46 @@ namespace CPvC.Test
             Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
 
             // Act
-            core.RunForVSync(10);
+            core.RunForVSync(2);
 
-            // Verify - running for 10 VSyncs means we should have completed at
-            //          least 9 full frames, each of which should last approximately
+            // Verify - running for 2 VSyncs means we should have completed at
+            //          least 1 full frames, each of which should last approximately
             //          80000 (4000000 ticks / 50 frames) ticks each.
-            Assert.Greater(core.Ticks, 9 * 80000);
+            Assert.Greater(core.Ticks, 1 * 80000);
+        }
+
+        [Test]
+        public void RunForVSyncWithHandler()
+        {
+            // Setup
+            bool beginVSyncCalled = false;
+            BeginVSyncDelegate beginVSync = _ => { beginVSyncCalled = true; };
+            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            core.BeginVSync += beginVSync;
+
+            // Act
+            RunForAWhile(core, 100000);
+
+            // Verify
+            Assert.True(beginVSyncCalled);
+        }
+
+        [Test]
+        public void CoreVersion()
+        {
+            // Setup
+            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            UnmanagedMemory screen = new UnmanagedMemory(Display.Width * Display.Pitch, 0);
+            core.SetScreen(screen);
+            RunForAWhile(core, 4);
+
+            // Act
+            core.PushRequest(CoreRequest.CoreVersion(1));
+            RunForAWhile(core, 4);
+
+            // Verify - this isn't the greatest test since we only have 1 version to test with.
+            //          Once we have a new version, this test can be updated.
+            Assert.AreEqual((IntPtr)screen, core.GetScreen());
         }
 
         [Test]
@@ -213,6 +250,81 @@ namespace CPvC.Test
         {
             // Setup and Verify
             Assert.Throws<Exception>(() => Core.Create(2, Core.Type.CPC6128));
+        }
+
+        [Test]
+        public void SetScreenBuffer()
+        {
+            // Setup
+            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            IntPtr scrPtr = (IntPtr)1234;
+
+            // Act
+            core.SetScreen(scrPtr);
+
+            // Verify
+            Assert.AreEqual(scrPtr, core.GetScreen());
+        }
+
+        /// <summary>
+        /// Tests that the core doesn't throw an exception when there are no PropertyChanged
+        /// handlers registered and a property is changed.
+        /// </summary>
+        [Test]
+        public void NoPropertyChangedHandlers()
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                // Act and Verify
+                Assert.DoesNotThrow(() => core.Volume = 100);
+            }
+        }
+
+        [Test]
+        public void ProcessInvalidRequest()
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                CoreRequest request = new CoreRequest((CoreRequest.Types)999);
+
+                Core auditorCore = null;
+                CoreRequest auditorRequest = null;
+                CoreAction auditorAction = null;
+                RequestProcessedDelegate auditor = (c, r, a) => {
+                    auditorCore = c;
+                    auditorRequest = r;
+                    auditorAction = a;
+                };
+                core.Auditors += auditor;
+
+                // Act
+                core.PushRequest(request);
+                core.PushRequest(CoreRequest.Quit());
+                core.CoreThread();
+
+                // Verify
+                Assert.AreEqual(core, auditorCore);
+                Assert.AreEqual(request, auditorRequest);
+                Assert.IsNull(auditorAction);
+            }
+        }
+
+        [Test]
+        public void StartTwice()
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                core.Start();
+
+                // Act
+                core.Start();
+
+                // Verify
+                Assert.True(core.Running);
+            }
         }
     }
 }

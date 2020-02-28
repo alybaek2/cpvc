@@ -12,7 +12,7 @@ namespace CPvC.Test
         private Mock<IFileSystem> _mockFileSystem;
         private MockFileByteStream _mockBinaryWriter;
 
-        private Machine CreateMachine()
+        public Machine CreateMachine()
         {
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
 
@@ -157,7 +157,7 @@ namespace CPvC.Test
                 RunForAWhile(machine);
 
                 // Act
-                machine.SeekToLastBookmark();
+                machine.JumpToMostRecentBookmark();
 
                 // Verify
                 Assert.AreEqual(machine.CurrentEvent.Id, bookmarkId);
@@ -245,7 +245,7 @@ namespace CPvC.Test
                 machine.AddBookmark(false);
                 HistoryEvent bookmarkEvent = machine.CurrentEvent;
                 RunForAWhile(machine);
-                machine.SeekToLastBookmark();
+                machine.JumpToMostRecentBookmark();
                 HistoryEvent eventToDelete = bookmarkEvent.Children[0];
                 RunForAWhile(machine);
                 machine.SetBookmark(bookmarkEvent, null);
@@ -259,32 +259,33 @@ namespace CPvC.Test
                 Assert.AreEqual(machine.Filepath, "test.cpvc");
                 Assert.AreEqual(machine.Name, "test");
 
-                Assert.AreEqual(HistoryEvent.Types.Version, machine.RootEvent.Type);
+                Assert.AreEqual(HistoryEvent.Types.CoreAction, machine.RootEvent.Type);
+                Assert.AreEqual(CoreRequest.Types.CoreVersion, machine.RootEvent.CoreAction.Type);
                 Assert.AreEqual(1, machine.RootEvent.Children.Count);
 
                 HistoryEvent historyEvent = machine.RootEvent.Children[0];
                 Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
-                Assert.AreEqual(CoreActionBase.Types.KeyPress, historyEvent.CoreAction.Type);
+                Assert.AreEqual(CoreRequest.Types.KeyPress, historyEvent.CoreAction.Type);
                 Assert.AreEqual(Keys.A, historyEvent.CoreAction.KeyCode);
                 Assert.IsTrue(historyEvent.CoreAction.KeyDown);
                 Assert.AreEqual(1, historyEvent.Children.Count);
 
                 historyEvent = historyEvent.Children[0];
                 Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
-                Assert.AreEqual(CoreActionBase.Types.LoadDisc, historyEvent.CoreAction.Type);
+                Assert.AreEqual(CoreRequest.Types.LoadDisc, historyEvent.CoreAction.Type);
                 Assert.AreEqual(0, historyEvent.CoreAction.Drive);
                 Assert.IsNull(historyEvent.CoreAction.MediaBuffer.GetBytes());
                 Assert.AreEqual(1, historyEvent.Children.Count);
 
                 historyEvent = historyEvent.Children[0];
                 Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
-                Assert.AreEqual(CoreActionBase.Types.LoadTape, historyEvent.CoreAction.Type);
+                Assert.AreEqual(CoreRequest.Types.LoadTape, historyEvent.CoreAction.Type);
                 Assert.IsNull(historyEvent.CoreAction.MediaBuffer.GetBytes());
                 Assert.AreEqual(1, historyEvent.Children.Count);
 
                 historyEvent = historyEvent.Children[0];
                 Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
-                Assert.AreEqual(CoreActionBase.Types.Reset, historyEvent.CoreAction.Type);
+                Assert.AreEqual(CoreRequest.Types.Reset, historyEvent.CoreAction.Type);
                 Assert.AreEqual(1, historyEvent.Children.Count);
 
                 historyEvent = historyEvent.Children[0];
@@ -303,7 +304,8 @@ namespace CPvC.Test
 
                 // Opening the machine should add a "Version" event.
                 historyEvent = historyEvent.Children[0];
-                Assert.AreEqual(HistoryEvent.Types.Version, historyEvent.Type);
+                Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
+                Assert.AreEqual(CoreRequest.Types.CoreVersion, historyEvent.CoreAction.Type);
 
                 Assert.AreEqual(historyEvent, machine.CurrentEvent);
             }
@@ -341,7 +343,8 @@ namespace CPvC.Test
                 HistoryEvent bookmarkEvent = machine.RootEvent.Children[0];
                 Assert.AreEqual(2, bookmarkEvent.Children.Count);
                 Assert.AreEqual(machine.CurrentEvent, bookmarkEvent.Children[1]);
-                Assert.AreEqual(HistoryEvent.Types.Version, bookmarkEvent.Children[1].Type);
+                Assert.AreEqual(HistoryEvent.Types.CoreAction, bookmarkEvent.Children[1].Type);
+                Assert.AreEqual(CoreRequest.Types.CoreVersion, bookmarkEvent.Children[1].CoreAction.Type);
             }
         }
 
@@ -358,7 +361,7 @@ namespace CPvC.Test
                 RunForAWhile(machine);
                 machine.AddBookmark(true);
 
-                Bookmark corruptedBookmark = new Bookmark(true, new byte[] { }, new byte[] { });
+                Bookmark corruptedBookmark = new Bookmark(true, 5, new byte[] { }, new byte[] { });
                 machine.SetBookmark(machine.CurrentEvent, corruptedBookmark);
             }
 
@@ -441,10 +444,10 @@ namespace CPvC.Test
 
                 HistoryEvent eventToDelete = machine.CurrentEvent;
 
-                machine.SeekToLastBookmark();
+                machine.JumpToMostRecentBookmark();
                 machine.LoadDisc(0, null);
                 RunForAWhile(machine);
-                machine.SeekToLastBookmark();
+                machine.JumpToMostRecentBookmark();
                 machine.LoadTape(null);
                 RunForAWhile(machine);
                 machine.TrimTimeline(eventToDelete.Children[0]);
@@ -461,18 +464,18 @@ namespace CPvC.Test
                 MockSequence sequence = new MockSequence();
                 mockFileReader.InSequence(sequence).Setup(x => x.SetName("test")).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(VersionEvent(0))).Verifiable();
-                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(1, CoreActionBase.Types.LoadDisc))).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(1, CoreRequest.Types.LoadDisc))).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CheckpointEvent(2))).Verifiable();
-                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(5, CoreActionBase.Types.LoadDisc))).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(5, CoreRequest.Types.LoadDisc))).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CheckpointEvent(6))).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.SetCurrentEvent(2)).Verifiable();
-                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(7, CoreActionBase.Types.LoadTape))).Verifiable();
+                mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CoreActionEvent(7, CoreRequest.Types.LoadTape))).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(CheckpointEvent(9))).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.AddHistoryEvent(VersionEvent(10))).Verifiable();
                 mockFileReader.InSequence(sequence).Setup(x => x.SetCurrentEvent(10)).Verifiable();
 
                 // Act
-                machine.RewriteMachineFile();
+                machine.Compact();
 
                 MachineFile file2 = new MachineFile(rewriteTempFile.Object);
                 file2.ReadFile(mockFileReader.Object);
@@ -497,14 +500,14 @@ namespace CPvC.Test
                 machine.EnableTurbo(true);
 
                 // Run long enough to fill the audio buffer.
-                Run(machine, 10000000, true);
+                Run(machine, 8000000, true);
                 turboDuration = machine.Core.Ticks;
 
                 // Empty out the audio buffer.
                 machine.AdvancePlayback(1000000);
 
                 machine.EnableTurbo(false);
-                Run(machine, 10000000, true);
+                Run(machine, 8000000, true);
                 normalDuration = machine.Core.Ticks - turboDuration;
             }
 
@@ -620,6 +623,179 @@ namespace CPvC.Test
                 Assert.IsNotNull(machine.RootEvent);
                 Assert.IsEmpty(machine.RootEvent.Children);
                 Assert.AreEqual(pos, _mockBinaryWriter.Content.Count);
+            }
+        }
+
+        [Test]
+        public void Volume()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                // Act
+                machine.Volume = 100;
+
+                // Verify
+                Assert.AreEqual(100, machine.Volume);
+            }
+        }
+
+        [Test]
+        public void VolumeNoCore()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                // Act
+                machine.Volume = 100;
+                machine.Close();
+
+                // Verify
+                Assert.Zero(machine.Volume);
+            }
+        }
+
+        [Test]
+        public void RunningNoCore()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                // Act
+                machine.Close();
+
+                // Verify
+                Assert.False(machine.Running);
+            }
+        }
+
+        [Test]
+        public void TicksNoCore()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                // Act
+                RunForAWhile(machine);
+                machine.Close();
+
+                // Verify
+                Assert.Zero(machine.Ticks);
+            }
+        }
+
+        [Test]
+        public void AdvancePlaybackNoCore()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                machine.Close();
+
+                // Act and Verify
+                Assert.DoesNotThrow(() => machine.AdvancePlayback(1));
+            }
+        }
+
+        [Test]
+        public void ReadAudioNoCore()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                machine.Close();
+
+                // Act and Verify
+                Assert.DoesNotThrow(() => machine.ReadAudio(null, 0, 1));
+            }
+        }
+
+        [Test]
+        public void SetSameCore()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                // Act and Verify - note that if CoreMachine.Core_set didn't do a check for reference
+                //                  equality between the new core and current core, an exception would
+                //                  later be thrown due to Dispose() being called.
+                Assert.DoesNotThrow(() => {
+                    machine.Core = machine.Core;
+                });
+            }
+        }
+
+        [Test]
+        public void SetCurrentEvent()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                for (byte k = 0; k < 80; k++)
+                {
+                    machine.Key(k, true);
+                }
+
+                RunForAWhile(machine);
+
+                machine.AddBookmark(true);
+                HistoryEvent bookmarkEvent = machine.CurrentEvent;
+                RunForAWhile(machine);
+
+                // Act and Verify
+                machine.SetCurrentEvent(bookmarkEvent);
+                Assert.AreEqual(bookmarkEvent, machine.CurrentEvent);
+
+                bool[] keys = new bool[80];
+                Array.Clear(keys, 0, keys.Length);
+                RequestProcessedDelegate auditor = (core, request, action) =>
+                {
+                    if (request != null && request.Type == CoreRequest.Types.KeyPress)
+                    {
+                        keys[request.KeyCode] = request.KeyDown;
+                    }
+                };
+
+                machine.Core.Auditors += auditor;
+                ProcessQueueAndStop(machine.Core);
+
+                for (byte j = 0; j < 80; j++)
+                {
+                    Assert.IsFalse(keys[j]);
+                }
+            }
+        }
+
+        [Test]
+        public void DeleteEventInvalidId()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                // Act and Verify - probably better to verify that the history is unchanged...
+                Assert.DoesNotThrow(() => machine.DeleteEvent(9999));
+            }
+        }
+
+        [Test]
+        public void SetBookmarkInvalidId()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                // Act and Verify
+                Assert.DoesNotThrow(() => machine.SetBookmark(9999, null));
+            }
+        }
+
+        [Test]
+        public void SetCurrentEventInvalidId()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                // Act and Verify
+                Assert.DoesNotThrow(() => machine.SetCurrentEvent(9999));
             }
         }
     }

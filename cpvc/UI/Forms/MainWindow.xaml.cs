@@ -22,7 +22,7 @@ namespace CPvC.UI.Forms
         {
             _settings = new Settings();
             _fileSystem = new FileSystem();
-            _mainViewModel = new MainViewModel(_settings, _fileSystem);
+            _mainViewModel = new MainViewModel(_settings, _fileSystem, SelectItem, PromptForFile, PromptForBookmark, PromptForName);
             _audio = new Audio(_mainViewModel.ReadAudio);
 
             InitializeComponent();
@@ -159,36 +159,6 @@ namespace CPvC.UI.Forms
             Close();
         }
 
-        private void DriveAButton_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.LoadDisc(0, _fileSystem, PromptForFile, SelectItem);
-        }
-
-        private void DriveBButton_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.LoadDisc(1, _fileSystem, PromptForFile, SelectItem);
-        }
-
-        private void TapeButton_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.LoadTape(_fileSystem, PromptForFile, SelectItem);
-        }
-
-        private void PauseButton_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.Pause(null);
-        }
-
-        private void ResumeButton_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.Resume(null);
-        }
-
-        private void ResetButton_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.Reset(null);
-        }
-
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.OemTilde)
@@ -217,16 +187,6 @@ namespace CPvC.UI.Forms
             }
         }
 
-        private void AddBookmarkButton_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.AddBookmark();
-        }
-
-        private void SeekToLastBookmarkButton_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.SeekToLastBookmark();
-        }
-
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             _mainViewModel.Close(null);
@@ -247,46 +207,6 @@ namespace CPvC.UI.Forms
         private void CloseMenuItem_Click(object sender, RoutedEventArgs e)
         {
             _mainViewModel.Close(null);
-        }
-
-        private void PauseMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.Pause(null);
-        }
-
-        private void ResumeMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.Resume(null);
-        }
-
-        private void ResetMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.Reset(null);
-        }
-
-        private void AddBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.AddBookmark();
-        }
-
-        private void PreviousBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.SeekToLastBookmark();
-        }
-
-        private void DriveAMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.LoadDisc(0, _fileSystem, PromptForFile, SelectItem);
-        }
-
-        private void DriveBMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.LoadDisc(1, _fileSystem, PromptForFile, SelectItem);
-        }
-
-        private void TapeMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.LoadTape(_fileSystem, PromptForFile, SelectItem);
         }
 
         private string PromptForFile(FileTypes type, bool existing)
@@ -353,7 +273,7 @@ namespace CPvC.UI.Forms
 
         private HistoryEvent PromptForBookmark()
         {
-            Machine machine = _mainViewModel.ActiveMachine;
+            Machine machine = _mainViewModel.ActiveMachine as Machine;
 
             using (machine.AutoPause())
             {
@@ -363,9 +283,20 @@ namespace CPvC.UI.Forms
                 using (BookmarkSelectWindow dialog = new BookmarkSelectWindow(this, machine))
                 {
                     bool? result = dialog.ShowDialog();
-                    if (result.HasValue && result.Value && dialog.SelectedEvent?.Bookmark != null)
+                    if (result.HasValue && result.Value)
                     {
-                        return dialog.SelectedEvent;
+                        if (dialog.SelectedReplayEvent != null)
+                        {
+                            ReplayMachine replayMachine = new ReplayMachine(dialog.SelectedReplayEvent);
+                            replayMachine.Name = String.Format("{0} (Replay)", machine.Name);
+                            _mainViewModel.ReplayMachines.Add(replayMachine);
+                            _mainViewModel.ActiveMachine = replayMachine;
+                            return null;
+                        }
+                        else if (dialog.SelectedJumpEvent?.Bookmark != null)
+                        {
+                            return dialog.SelectedJumpEvent;
+                        }
                     }
 
                     return null;
@@ -404,36 +335,6 @@ namespace CPvC.UI.Forms
             }
         }
 
-        private void JumpToBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.SelectBookmark(PromptForBookmark);
-        }
-
-        private void DriveAEjectMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.EjectDisc(0);
-        }
-
-        private void DriveBEjectMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.EjectDisc(1);
-        }
-
-        private void TapeEjectMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.EjectTape();
-        }
-
-        private void CompactFileMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.CompactFile();
-        }
-
-        private void RenameFileMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.RenameMachine(PromptForName);
-        }
-
         private void MachinePreviewGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (sender is FrameworkElement element && element.DataContext is Machine machine)
@@ -451,9 +352,9 @@ namespace CPvC.UI.Forms
 
         private void ScreenGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is Machine machine)
+            if (sender is FrameworkElement element && element.DataContext is ICoreMachine machine)
             {
-                _mainViewModel.ToggleRunning(machine);
+                _mainViewModel.ToggleRunningCommand.Execute(machine);
             }
         }
 
@@ -512,11 +413,6 @@ namespace CPvC.UI.Forms
             {
                 e.Accepted = false;
             }
-        }
-
-        private void BrowseBookmarksButton_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.SelectBookmark(PromptForBookmark);
         }
     }
 }
