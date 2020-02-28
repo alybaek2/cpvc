@@ -44,7 +44,6 @@ namespace CPvC.UI
             get { return _replayTimelineCommand; }
         }
 
-
         public HistoryEvent SelectedJumpEvent { get; private set; }
         public HistoryEvent SelectedReplayEvent { get; private set; }
 
