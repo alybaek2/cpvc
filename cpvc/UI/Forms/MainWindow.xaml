@@ -115,7 +115,7 @@
                         <Image Width="16" Height="16" Source="../Resources/bookmarkadd16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem x:Name="_previousBookmarkMenuItem" Header="Back to Previous Bookmark" Command="{Binding SeekToPreviousBookmarkCommand}">
+                <MenuItem x:Name="_jumpToMostRecentBookmarkMenuItem" Header="Jump to Most Recent Bookmark" Command="{Binding JumpToMostRecentBookmarkCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmarkprev16.png" />
                     </MenuItem.Icon>
