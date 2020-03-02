@@ -130,6 +130,7 @@ namespace CPvC
             }
         }
 
+        private UInt64 _lastTicksNotified = 0;
         public event PropertyChangedEventHandler PropertyChanged;
 
         private void OnPropertyChanged(string name)
@@ -648,9 +649,13 @@ namespace CPvC
                 BeginVSync?.Invoke(this);
             }
 
-            if (Ticks > ticks)
+            // Don't fire a Ticks notification more than once a second. Otherwise, this can fire
+            // a hundred times per second, consuming a lot of CPU and causing the machine to 
+            // lock up whenever turbo mode is enabled.
+            if (Ticks > (_lastTicksNotified + 4000000))
             {
                 OnPropertyChanged("Ticks");
+                _lastTicksNotified = Ticks;
             }
 
             return CoreAction.RunUntilForce(ticks, stopTicks);
