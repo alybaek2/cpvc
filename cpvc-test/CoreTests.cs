@@ -337,15 +337,15 @@ namespace CPvC.Test
 
                 // Act
                 core.Start();
-                while (core.Ticks < 4100000)
+                while (core.Ticks < 10000000)
                 {
-                    core.AdvancePlayback(1000);
+                    core.AdvancePlayback(10000);
                 }
 
                 core.Stop();
 
                 // Verify
-                mockPropChanged.Verify(p => p(core, It.Is<PropertyChangedEventArgs>(a => a != null && a.PropertyName == "Ticks")), Times.Once);
+                mockPropChanged.Verify(p => p(core, It.Is<PropertyChangedEventArgs>(a => a != null && a.PropertyName == "Ticks")), Times.Exactly((int) (core.Ticks / 4000000)));
             }
         }
     }
