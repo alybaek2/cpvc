@@ -337,10 +337,9 @@ namespace CPvC.Test
 
                 // Act
                 core.Start();
-                while (core.Ticks < 5000000)
+                while (core.Ticks < 4100000)
                 {
-                    core.AdvancePlayback(100000);
-                    Thread.Sleep(10);
+                    core.AdvancePlayback(1000);
                 }
 
                 core.Stop();
