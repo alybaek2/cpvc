@@ -215,16 +215,15 @@ namespace CPvC.Test
         public void RunForVSyncWithHandler()
         {
             // Setup
-            bool beginVSyncCalled = false;
-            BeginVSyncDelegate beginVSync = _ => { beginVSyncCalled = true; };
+            Mock<BeginVSyncDelegate> mock = new Mock<BeginVSyncDelegate>();
             Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-            core.BeginVSync += beginVSync;
+            core.BeginVSync += mock.Object;
 
             // Act
             RunForAWhile(core, 100000);
 
             // Verify
-            Assert.True(beginVSyncCalled);
+            mock.Verify(v => v(core), Times.Once);
         }
 
         [Test]
@@ -324,6 +323,30 @@ namespace CPvC.Test
 
                 // Verify
                 Assert.True(core.Running);
+            }
+        }
+
+        [Test]
+        public void TicksNotifyLimit()
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                Mock<PropertyChangedEventHandler> mockPropChanged = new Mock<PropertyChangedEventHandler>();
+                core.PropertyChanged += mockPropChanged.Object;
+
+                // Act
+                core.Start();
+                while (core.Ticks < 5000000)
+                {
+                    core.AdvancePlayback(100000);
+                    Thread.Sleep(10);
+                }
+
+                core.Stop();
+
+                // Verify
+                mockPropChanged.Verify(p => p(core, It.Is<PropertyChangedEventArgs>(a => a != null && a.PropertyName == "Ticks")), Times.Once);
             }
         }
     }
