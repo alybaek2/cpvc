@@ -177,6 +177,11 @@ namespace CPvC
             PushRequest(CoreRequest.Quit());
         }
 
+        public void LoadCoreState(IBlob state)
+        {
+            PushRequest(CoreRequest.LoadCore(state));
+        }
+
         /// <summary>
         /// Asynchronously loads a disc.
         /// </summary>
@@ -612,6 +617,20 @@ namespace CPvC
 
                             SetScreen(pScr);
                         }
+                        break;
+                    case CoreRequest.Types.LoadCore:
+                        lock (_lockObject)
+                        {
+                            _coreCLR.LoadState(request.CoreState.GetBytes());
+
+                            // Ensure all keys are in an "up" state.
+                            for (byte keycode = 0; keycode < 80; keycode++)
+                            {
+                                KeyPress(keycode, false);
+                            }
+                        }
+
+                        action = CoreAction.LoadCore(ticks, request.CoreState);
                         break;
                     case CoreRequest.Types.Quit:
                         RemoveFirstRequest();

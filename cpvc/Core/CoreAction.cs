@@ -64,6 +64,16 @@ namespace CPvC
             return action;
         }
 
+        static public CoreAction LoadCore(UInt64 ticks, IBlob state)
+        {
+            CoreAction action = new CoreAction(Types.LoadCore, ticks)
+            {
+                CoreState = state
+            };
+
+            return action;
+        }
+
         static public CoreAction CoreVersion(UInt64 ticks, int version)
         {
             CoreAction action = new CoreAction(Types.CoreVersion, ticks)
@@ -92,6 +102,8 @@ namespace CPvC
                     return CoreAction.Reset(Ticks);
                 case Types.RunUntilForce:
                     return CoreAction.RunUntilForce(Ticks, StopTicks);
+                case Types.LoadCore:
+                    return CoreAction.LoadCore(Ticks, CoreState);
                 default:
                     return null;
             }

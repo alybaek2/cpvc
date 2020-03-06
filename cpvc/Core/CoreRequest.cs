@@ -20,6 +20,7 @@ namespace CPvC
             LoadTape,
             CoreVersion,
             RunUntilForce,
+            LoadCore,
             Quit
         }
 
@@ -54,6 +55,11 @@ namespace CPvC
         /// For an action, this indicates the version of the core to switch to.
         /// </summary>
         public int Version { get; protected set; }
+
+        /// <summary>
+        /// For a request, this indicates the Core to be loaded. For an action represents the core than was actually loaded.
+        /// </summary>
+        public IBlob CoreState { get; protected set; }
 
         static public CoreRequest Reset()
         {
@@ -104,12 +110,22 @@ namespace CPvC
 
         static public CoreRequest CoreVersion(int version)
         {
-            CoreRequest action = new CoreRequest(Types.CoreVersion)
+            CoreRequest request = new CoreRequest(Types.CoreVersion)
             {
                 Version = version
             };
 
-            return action;
+            return request;
+        }
+
+        static public CoreRequest LoadCore(IBlob state)
+        {
+            CoreRequest request = new CoreRequest(Types.LoadCore)
+            {
+                CoreState = state
+            };
+
+            return request;
         }
 
         static public CoreRequest Quit()

@@ -11,10 +11,12 @@ namespace CPvC.Test
     {
         private Mock<IFileSystem> _mockFileSystem;
         private MockFileByteStream _mockBinaryWriter;
+        private Mock<RequestProcessedDelegate> _mockAuditor;
 
         public Machine CreateMachine()
         {
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
+            machine.Auditors += _mockAuditor.Object;
 
             // For consistency with automated builds, use all zero ROMs.
             byte[] zeroROM = new byte[0x4000];
@@ -36,6 +38,8 @@ namespace CPvC.Test
             _mockBinaryWriter = new MockFileByteStream();
 
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream("test.cpvc")).Returns(_mockBinaryWriter.Object);
+
+            _mockAuditor = new Mock<RequestProcessedDelegate>();
         }
 
         [TearDown]
@@ -144,6 +148,8 @@ namespace CPvC.Test
             // Setup
             using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
             {
+                machine.Auditors += _mockAuditor.Object;
+
                 if (createBookmark)
                 {
                     RunForAWhile(machine);
@@ -163,6 +169,15 @@ namespace CPvC.Test
                 Assert.AreEqual(machine.CurrentEvent.Id, bookmarkId);
                 Assert.AreEqual(machine.Core.Ticks, ticks);
                 Assert.AreEqual(state, machine.Core.GetState());
+
+                if (createBookmark)
+                {
+                    _mockAuditor.Verify(a => a(machine.Core, null, It.Is<CoreAction>(c => c.Type == CoreRequest.Types.LoadCore && c.Ticks == ticks)), Times.Once);
+                }
+                else
+                {
+                    _mockAuditor.Verify(a => a(machine.Core, null, It.Is<CoreAction>(c => c.Type == CoreRequest.Types.Reset && c.Ticks == 0)), Times.Once);
+                }
             }
         }
 
@@ -308,6 +323,8 @@ namespace CPvC.Test
                 Assert.AreEqual(CoreRequest.Types.CoreVersion, historyEvent.CoreAction.Type);
 
                 Assert.AreEqual(historyEvent, machine.CurrentEvent);
+
+                _mockAuditor.Verify(a => a(It.IsAny<Core>(), null, It.Is<CoreAction>(c => c.Type == CoreRequest.Types.LoadCore)), Times.Once);
             }
         }
 
@@ -798,5 +815,8 @@ namespace CPvC.Test
                 Assert.DoesNotThrow(() => machine.SetCurrentEvent(9999));
             }
         }
+
+        //[Test]
+        //public void 
     }
 }

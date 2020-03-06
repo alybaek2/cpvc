@@ -26,6 +26,9 @@ namespace CPvC
         private bool _running;
         private int _autoPauseCount;
 
+        // This really should be an event, so multiple subscribers can be supported. Or is this already supprted? Test this!
+        public RequestProcessedDelegate Auditors { get; set; }
+
         public HistoryEvent CurrentEvent { get; private set; }
         public HistoryEvent RootEvent { get; private set; }
         private Dictionary<int, HistoryEvent> _historyEventById;
@@ -122,6 +125,11 @@ namespace CPvC
                 Display.EnableGreyscale(false);
                 Display.GetFromBookmark(bookmarkEvent?.Bookmark);
                 SetCore(core);
+
+                if (bookmarkEvent?.Bookmark != null)
+                {
+                    Auditors?.Invoke(core, null, CoreAction.LoadCore(bookmarkEvent.Ticks, bookmarkEvent.Bookmark.State));
+                }
 
                 CoreAction action = CoreAction.CoreVersion(Core.Ticks, Core.LatestVersion);
                 AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true); // Core.Ticks, Core.LatestVersion), true);
@@ -220,6 +228,8 @@ namespace CPvC
         {
             if (core == _core && action != null && action.Type != CoreAction.Types.RunUntilForce)
             {
+                Auditors?.Invoke(core, request, action);
+
                 AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
 
                 switch (action.Type)
@@ -412,6 +422,16 @@ namespace CPvC
             Display.GetFromBookmark(bookmarkEvent.Bookmark);
             SetCore(Machine.GetCore(bookmarkEvent.Bookmark));
             Core.Volume = volume;
+
+            if (bookmarkEvent.Bookmark != null)
+            {
+                Auditors?.Invoke(_core, null, CoreAction.LoadCore(bookmarkEvent.Ticks, bookmarkEvent.Bookmark.State));
+            }
+            else
+            {
+                Auditors?.Invoke(_core, null, CoreAction.Reset(bookmarkEvent.Ticks));
+            }
+
 
             _file.WriteCurrent(bookmarkEvent);
             CurrentEvent = bookmarkEvent;
