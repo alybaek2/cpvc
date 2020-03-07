@@ -288,16 +288,8 @@ namespace CPvC.Test
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
                 CoreRequest request = new CoreRequest((CoreRequest.Types)999);
-
-                Core auditorCore = null;
-                CoreRequest auditorRequest = null;
-                CoreAction auditorAction = null;
-                RequestProcessedDelegate auditor = (c, r, a) => {
-                    auditorCore = c;
-                    auditorRequest = r;
-                    auditorAction = a;
-                };
-                core.Auditors += auditor;
+                Mock<RequestProcessedDelegate> mockAuditor = new Mock<RequestProcessedDelegate>();
+                core.Auditors += mockAuditor.Object;
 
                 // Act
                 core.PushRequest(request);
@@ -305,9 +297,7 @@ namespace CPvC.Test
                 core.CoreThread();
 
                 // Verify
-                Assert.AreEqual(core, auditorCore);
-                Assert.AreEqual(request, auditorRequest);
-                Assert.IsNull(auditorAction);
+                mockAuditor.Verify(a => a(core, request, null));
             }
         }
 
@@ -346,7 +336,28 @@ namespace CPvC.Test
                 core.Stop();
 
                 // Verify
-                mockPropChanged.Verify(p => p(core, It.Is<PropertyChangedEventArgs>(a => a != null && a.PropertyName == "Ticks")), Times.Exactly((int) (core.Ticks / 4000000)));
+                mockPropChanged.Verify(p => p(core, It.Is<PropertyChangedEventArgs>(a => a != null && a.PropertyName == "Ticks")), Times.Exactly((int)(core.Ticks / 4000000)));
+            }
+        }
+
+        [Test]
+        public void LoadCore()
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                core.KeyPress(Keys.A, true);
+                RunForAWhile(core, 100000);
+                byte[] state = core.GetState();
+                RunForAWhile(core, 100000);
+
+                // Act
+                core.LoadCoreState(new MemoryBlob(state));
+                ProcessQueueAndStop(core);
+
+                // Verify
+                byte[] loadedState = core.GetState();
+                Assert.AreEqual(state, loadedState);
             }
         }
     }

@@ -273,10 +273,8 @@ namespace CPvC
         {
             get
             {
-                lock (_lockObject)
-                {
-                    return _coreCLR.Ticks();
-                }
+                // No need to lock _coreCLR just to get the ticks.
+                return _coreCLR.Ticks();
             }
         }
 
@@ -622,12 +620,6 @@ namespace CPvC
                         lock (_lockObject)
                         {
                             _coreCLR.LoadState(request.CoreState.GetBytes());
-
-                            // Ensure all keys are in an "up" state.
-                            for (byte keycode = 0; keycode < 80; keycode++)
-                            {
-                                KeyPress(keycode, false);
-                            }
                         }
 
                         action = CoreAction.LoadCore(ticks, request.CoreState);
