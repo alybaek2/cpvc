@@ -137,6 +137,27 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void CloneLoadCore()
+        {
+            // Setup
+            byte[] state = new byte[1000];
+            for (int i = 0; i < state.Length; i++)
+            {
+                state[i] = (byte)(i % 0xff);
+            }
+
+            CoreAction action = CoreAction.LoadCore(100, new MemoryBlob(state));
+
+            // Act
+            CoreAction clone = action.Clone();
+
+            // Verify
+            Assert.AreEqual(CoreRequest.Types.LoadCore, clone.Type);
+            Assert.AreEqual(100, clone.Ticks);
+            Assert.AreEqual(state, clone.CoreState.GetBytes());
+        }
+
+        [Test]
         public void CloneInvalidType()
         {
             // Setup
