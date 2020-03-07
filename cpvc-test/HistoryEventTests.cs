@@ -62,5 +62,18 @@ namespace CPvC.Test
             Assert.IsFalse(parent.IsEqualToOrAncestorOf(null));
             Assert.IsFalse(child.IsEqualToOrAncestorOf(child2));
         }
+
+        [Test]
+        public void CheckInvalidTypeClone()
+        {
+            // Setup
+            HistoryEvent historyEvent = new HistoryEvent(0, (HistoryEvent.Types)99, 100);
+
+            // Act
+            HistoryEvent clone = historyEvent.CloneWithoutChildren();
+
+            // Verify
+            Assert.Null(clone);
+        }
     }
 }
