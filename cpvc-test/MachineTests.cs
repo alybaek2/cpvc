@@ -492,7 +492,7 @@ namespace CPvC.Test
                 mockFileReader.InSequence(sequence).Setup(x => x.SetCurrentEvent(10)).Verifiable();
 
                 // Act
-                machine.Compact();
+                machine.Compact(false);
 
                 MachineFile file2 = new MachineFile(rewriteTempFile.Object);
                 file2.ReadFile(mockFileReader.Object);

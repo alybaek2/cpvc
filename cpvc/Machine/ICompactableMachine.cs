@@ -8,6 +8,6 @@ namespace CPvC
 {
     public interface ICompactableMachine : ICoreMachine
     {
-        void Compact();
+        void Compact(bool enableDiffs);
     }
 }

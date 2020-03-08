@@ -24,7 +24,7 @@ namespace CPvC.UI
         private ViewModelCommand _driveBEjectCommand;
         private ViewModelCommand _tapeCommand;
         private ViewModelCommand _tapeEjectCommand;
-        private ViewModelCommand _resetCommand;
+        //private ViewModelCommand _resetCommand;
         private ViewModelCommand _pauseCommand;
         private ViewModelCommand _resumeCommand;
         private ViewModelCommand _toggleRunningCommand;
@@ -37,80 +37,75 @@ namespace CPvC.UI
         private ViewModelCommand _seekToPrevBookmarkCommand;
         private ViewModelCommand _seekToStartCommand;
 
-        public ICommand ResetCommand
-        {
-            get { return _resetCommand; }
-        }
+        //public ICommand DriveACommand
+        //{
+        //    get { return _driveACommand; }
+        //}
 
-        public ICommand DriveACommand
-        {
-            get { return _driveACommand; }
-        }
+        //public ICommand DriveBCommand
+        //{
+        //    get { return _driveBCommand; }
+        //}
 
-        public ICommand DriveBCommand
-        {
-            get { return _driveBCommand; }
-        }
+        //public ICommand DriveAEjectCommand
+        //{
+        //    get { return _driveAEjectCommand; }
+        //}
 
-        public ICommand DriveAEjectCommand
-        {
-            get { return _driveAEjectCommand; }
-        }
+        //public ICommand DriveBEjectCommand
+        //{
+        //    get { return _driveBEjectCommand; }
+        //}
 
-        public ICommand DriveBEjectCommand
-        {
-            get { return _driveBEjectCommand; }
-        }
+        //public ICommand TapeCommand
+        //{
+        //    get { return _tapeCommand; }
+        //}
 
-        public ICommand TapeCommand
-        {
-            get { return _tapeCommand; }
-        }
+        //public ICommand TapeEjectCommand
+        //{
+        //    get { return _tapeEjectCommand; }
+        //}
 
-        public ICommand TapeEjectCommand
-        {
-            get { return _tapeEjectCommand; }
-        }
+        //public ICommand PauseCommand
+        //{
+        //    get { return _pauseCommand; }
+        //}
 
-        public ICommand PauseCommand
-        {
-            get { return _pauseCommand; }
-        }
-
-        public ICommand ResumeCommand
-        {
-            get { return _resumeCommand; }
-        }
+        //public ICommand ResumeCommand
+        //{
+        //    get { return _resumeCommand; }
+        //}
 
         public ICommand ToggleRunningCommand
         {
             get { return _toggleRunningCommand; }
         }
 
-        public ICommand AddBookmarkCommand
-        {
-            get { return _addBookmarkCommand; }
-        }
+        //public ICommand AddBookmarkCommand
+        //{
+        //    get { return _addBookmarkCommand; }
+        //}
 
-        public ICommand JumpToMostRecentBookmarkCommand
-        {
-            get { return _jumpToMostRecentBookmarkCommand; }
-        }
+        //public ICommand JumpToMostRecentBookmarkCommand
+        //{
+        //    get { return _jumpToMostRecentBookmarkCommand; }
+        //}
 
-        public ICommand BrowseBookmarksCommand
-        {
-            get { return _browseBookmarksCommand; }
-        }
+        //public ICommand BrowseBookmarksCommand
+        //{
+        //    get { return _browseBookmarksCommand; }
+        //}
 
-        public ICommand CompactCommand
-        {
-            get { return _compactCommand; }
-        }
+        //public ICommand CompactCommand
+        //{
+        //    get { return _compactCommand; }
+        //}
 
-        public ICommand RenameCommand
-        {
-            get { return _renameCommand; }
-        }
+        //public ICommand RenameCommand
+        //{
+        //    get { return _renameCommand; }
+        //}
 
         public ICommand SeekToNextBookmarkCommand
         {
@@ -132,23 +127,42 @@ namespace CPvC.UI
         /// </summary>
         private readonly MainModel _model;
 
+        private ObservableCollection<MachineViewModel> _machineViewModels;
+
         /// <summary>
         /// The currently active item. Will be either this instance (the Home tab) or a Machine.
         /// </summary>
         private object _active;
 
+        private IFileSystem _fileSystem;
+        private SelectItemDelegate _selectItem;
+        private PromptForFileDelegate _promptForFile;
+        private PromptForBookmarkDelegate _promptForBookmark;
+        private PromptForNameDelegate _promptForName;
+
+        private MachineViewModel _nullMachineViewModel;
         public event PropertyChangedEventHandler PropertyChanged;
 
         public MainViewModel(ISettings settings, IFileSystem fileSystem, SelectItemDelegate selectItem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName)
         {
-            _model = new MainModel(settings, fileSystem);
-            ActiveItem = this;
 
-            _resetCommand = new ViewModelCommand(
-                p => Reset(),
-                p => (ActiveMachine as IInteractiveMachine) != null,
-                this, "ActiveMachine", null
-            );
+            _fileSystem = fileSystem;
+            _selectItem = selectItem;
+            _promptForFile = promptForFile;
+            _promptForBookmark = promptForBookmark;
+            _promptForName = promptForName;
+
+            _nullMachineViewModel = new MachineViewModel(null, null, null, null, null, null);
+
+            _model = new MainModel(settings, fileSystem);
+
+            _machineViewModels = new ObservableCollection<MachineViewModel>();
+            for (int i = 0; i < _model.Machines.Count; i++)
+            {
+                _machineViewModels.Add(new MachineViewModel(_model.Machines[i], fileSystem, promptForFile, promptForBookmark, promptForName, selectItem));
+            }
+
+            ActiveItem = this;
 
             _driveACommand = new ViewModelCommand(
                 p => LoadDisc(0, fileSystem, promptForFile, selectItem),
@@ -261,11 +275,35 @@ namespace CPvC.UI
             }
         }
 
+        public ObservableCollection<MachineViewModel> MachineViewModels
+        {
+            get
+            {
+                return _machineViewModels;
+            }
+        }
+
         public ObservableCollection<ReplayMachine> ReplayMachines
         {
             get
             {
                 return _model.ReplayMachines;
+            }
+        }
+
+        public MachineViewModel ActiveMachineViewModel
+        {
+            get
+            {
+                for (int i = 0; i < _machineViewModels.Count; i++)
+                {
+                    if (_machineViewModels[i].Machine == (_active as Machine))
+                    {
+                        return _machineViewModels[i];
+                    }
+                }
+
+                return _nullMachineViewModel;
             }
         }
 
@@ -285,6 +323,7 @@ namespace CPvC.UI
                 _active = value;
                 OnPropertyChanged("ActiveItem");
                 OnPropertyChanged("ActiveMachine");
+                OnPropertyChanged("ActiveMachineViewModel");
             }
         }
 
@@ -309,6 +348,7 @@ namespace CPvC.UI
 
                 OnPropertyChanged("ActiveItem");
                 OnPropertyChanged("ActiveMachine");
+                OnPropertyChanged("ActiveMachineViewModel");
             }
         }
 
@@ -321,6 +361,7 @@ namespace CPvC.UI
             {
                 machine.Start();
                 ActiveMachine = machine;
+                _machineViewModels.Add(new MachineViewModel(machine, _fileSystem, _promptForFile, _promptForBookmark, _promptForName, _selectItem));
             }
 
             return machine;
@@ -337,6 +378,7 @@ namespace CPvC.UI
             if (machine != null)
             {
                 ActiveMachine = machine;
+                _machineViewModels.Add(new MachineViewModel(machine, _fileSystem, _promptForFile, _promptForBookmark, _promptForName, _selectItem));
             }
 
             return machine;
@@ -436,13 +478,14 @@ namespace CPvC.UI
 
         private void CompactFile()
         {
-            (ActiveMachine as Machine)?.Compact();
+            (ActiveMachine as Machine)?.Compact(false);
         }
 
-        public void Remove(Machine machine)
+        public void Remove(MachineViewModel viewModel)
         {
-            _model.Remove(machine);
-            machine.Close();
+            _model.Remove(viewModel.Machine);
+            _machineViewModels.Remove(viewModel);
+            viewModel.Machine?.Close();
         }
 
         public void CloseAll()

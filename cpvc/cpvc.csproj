@@ -124,6 +124,7 @@
     <Compile Include="IO\IStreamBlob.cs" />
     <Compile Include="IO\IStreamDiffBlob.cs" />
     <Compile Include="ISettings.cs" />
+    <Compile Include="Machine\Command.cs" />
     <Compile Include="Machine\IBlob.cs" />
     <Compile Include="Machine\IBookmarkableMachine.cs" />
     <Compile Include="Machine\IClosableMachine.cs" />
@@ -172,6 +173,7 @@
       <DependentUpon>BookmarksWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="UI\HistoryViewItem.cs" />
+    <Compile Include="UI\MachineViewModel.cs" />
     <Compile Include="UI\MainModel.cs" />
     <Compile Include="UI\MainViewModel.cs" />
     <Compile Include="UnmanagedMemory.cs" />

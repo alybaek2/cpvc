@@ -273,7 +273,7 @@ namespace CPvC.UI.Forms
 
         private HistoryEvent PromptForBookmark()
         {
-            Machine machine = _mainViewModel.ActiveMachine as Machine;
+            Machine machine = _mainViewModel?.ActiveMachineViewModel?.Machine as Machine;
 
             using (machine.AutoPause())
             {
@@ -363,43 +363,11 @@ namespace CPvC.UI.Forms
             MachinePreviewGrid_MouseLeftButtonUp(sender, null);
         }
 
-        private void RemovePreviewMenuItem_Click(object sender, RoutedEventArgs e)
+        private void RemoveMachineMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is Machine machine)
+            if (sender is FrameworkElement element && element.DataContext is MachineViewModel viewModel)
             {
-                _mainViewModel.Remove(machine);
-            }
-        }
-
-        private void RemoveOpenMachineMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is FrameworkElement element && element.DataContext is Machine machine)
-            {
-                _mainViewModel.Remove(machine);
-            }
-        }
-
-        private void ClosePreviewMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is FrameworkElement element && element.DataContext is Machine machine)
-            {
-                machine.Close();
-            }
-        }
-
-        private void PausePreviewMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is FrameworkElement element && element.DataContext is Machine machine)
-            {
-                machine.Stop();
-            }
-        }
-
-        private void ResumePreviewMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is FrameworkElement element && element.DataContext is Machine machine)
-            {
-                machine.Start();
+                _mainViewModel.Remove(viewModel);
             }
         }
 
