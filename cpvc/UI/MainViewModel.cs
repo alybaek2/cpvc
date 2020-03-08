@@ -18,94 +18,15 @@ namespace CPvC.UI
         public delegate HistoryEvent PromptForBookmarkDelegate();
         public delegate string PromptForNameDelegate(string existingName);
 
-        private ViewModelCommand _driveACommand;
-        private ViewModelCommand _driveAEjectCommand;
-        private ViewModelCommand _driveBCommand;
-        private ViewModelCommand _driveBEjectCommand;
-        private ViewModelCommand _tapeCommand;
-        private ViewModelCommand _tapeEjectCommand;
-        //private ViewModelCommand _resetCommand;
-        private ViewModelCommand _pauseCommand;
-        private ViewModelCommand _resumeCommand;
         private ViewModelCommand _toggleRunningCommand;
-        private ViewModelCommand _addBookmarkCommand;
-        private ViewModelCommand _jumpToMostRecentBookmarkCommand;
-        private ViewModelCommand _browseBookmarksCommand;
-        private ViewModelCommand _compactCommand;
-        private ViewModelCommand _renameCommand;
         private ViewModelCommand _seekToNextBookmarkCommand;
         private ViewModelCommand _seekToPrevBookmarkCommand;
         private ViewModelCommand _seekToStartCommand;
-
-        //public ICommand DriveACommand
-        //{
-        //    get { return _driveACommand; }
-        //}
-
-        //public ICommand DriveBCommand
-        //{
-        //    get { return _driveBCommand; }
-        //}
-
-        //public ICommand DriveAEjectCommand
-        //{
-        //    get { return _driveAEjectCommand; }
-        //}
-
-        //public ICommand DriveBEjectCommand
-        //{
-        //    get { return _driveBEjectCommand; }
-        //}
-
-        //public ICommand TapeCommand
-        //{
-        //    get { return _tapeCommand; }
-        //}
-
-        //public ICommand TapeEjectCommand
-        //{
-        //    get { return _tapeEjectCommand; }
-        //}
-
-        //public ICommand PauseCommand
-        //{
-        //    get { return _pauseCommand; }
-        //}
-
-        //public ICommand ResumeCommand
-        //{
-        //    get { return _resumeCommand; }
-        //}
 
         public ICommand ToggleRunningCommand
         {
             get { return _toggleRunningCommand; }
         }
-
-        //public ICommand AddBookmarkCommand
-        //{
-        //    get { return _addBookmarkCommand; }
-        //}
-
-        //public ICommand JumpToMostRecentBookmarkCommand
-        //{
-        //    get { return _jumpToMostRecentBookmarkCommand; }
-        //}
-
-        //public ICommand BrowseBookmarksCommand
-        //{
-        //    get { return _browseBookmarksCommand; }
-        //}
-
-        //public ICommand CompactCommand
-        //{
-        //    get { return _compactCommand; }
-        //}
-
-        //public ICommand RenameCommand
-        //{
-        //    get { return _renameCommand; }
-        //}
 
         public ICommand SeekToNextBookmarkCommand
         {
@@ -164,107 +85,29 @@ namespace CPvC.UI
 
             ActiveItem = this;
 
-            _driveACommand = new ViewModelCommand(
-                p => LoadDisc(0, fileSystem, promptForFile, selectItem),
-                p => (ActiveMachine as IInteractiveMachine) != null,
-                this, "ActiveMachine", null
-            );
-
-            _driveAEjectCommand = new ViewModelCommand(
-                p => EjectDisc(0),
-                p => (ActiveMachine as IInteractiveMachine) != null,
-                this, "ActiveMachine", null
-            );
-
-            _driveBCommand = new ViewModelCommand(
-                p => LoadDisc(1, fileSystem, promptForFile, selectItem),
-                p => (ActiveMachine as IInteractiveMachine) != null,
-                this, "ActiveMachine", null
-            );
-
-            _driveBEjectCommand = new ViewModelCommand(
-                p => EjectDisc(1),
-                p => (ActiveMachine as IInteractiveMachine) != null,
-                this, "ActiveMachine", null
-            );
-
-            _tapeCommand = new ViewModelCommand(
-                p => LoadTape(fileSystem, promptForFile, selectItem),
-                p => (ActiveMachine as IInteractiveMachine) != null,
-                this, "ActiveMachine", null
-            );
-
-            _tapeEjectCommand = new ViewModelCommand(
-                p => EjectTape(),
-                p => (ActiveMachine as IInteractiveMachine) != null,
-                this, "ActiveMachine", null
-            );
-
-            _pauseCommand = new ViewModelCommand(
-                p => Pause(),
-                p => (ActiveMachine as IPausableMachine) != null && ((ActiveMachine as ICoreMachine)?.Running ?? false),
-                this, "ActiveMachine", "Running"
-            );
-
-            _resumeCommand = new ViewModelCommand(
-                p => Resume(),
-                p => (ActiveMachine as IPausableMachine) != null && !(((ActiveMachine as ICoreMachine)?.Running ?? true)),
-                this, "ActiveMachine", "Running"
-            );
-
             _toggleRunningCommand = new ViewModelCommand(
                 p => ToggleRunning(p as IPausableMachine),
                 p => (ActiveMachine as IPausableMachine) != null,
                 this, "ActiveMachine", null
             );
 
-            _addBookmarkCommand = new ViewModelCommand(
-                p => AddBookmark(),
-                p => (ActiveMachine as IBookmarkableMachine) != null,
-                this, "ActiveMachine", null
-            );
+            //_seekToNextBookmarkCommand = new ViewModelCommand(
+            //    p => SeekToNextBookmark(),
+            //    p => (ActiveMachine as IPrerecordedMachine) != null,
+            //    this, "ActiveMachine", null
+            //);
 
-            _jumpToMostRecentBookmarkCommand = new ViewModelCommand(
-                p => JumpToMostRecentBookmark(),
-                p => (ActiveMachine as IBookmarkableMachine) != null,
-                this, "ActiveMachine", null
-            );
+            //_seekToPrevBookmarkCommand = new ViewModelCommand(
+            //    p => SeekToPrevBookmark(),
+            //    p => (ActiveMachine as IPrerecordedMachine) != null,
+            //    this, "ActiveMachine", null
+            //);
 
-            _browseBookmarksCommand = new ViewModelCommand(
-                p => SelectBookmark(promptForBookmark),
-                p => (ActiveMachine as IBookmarkableMachine) != null,
-                this, "ActiveMachine", null
-            );
-
-            _compactCommand = new ViewModelCommand(
-                p => CompactFile(),
-                p => (ActiveMachine as ICompactableMachine) != null,
-                this, "ActiveMachine", null
-            );
-
-            _renameCommand = new ViewModelCommand(
-                p => RenameMachine(promptForName),
-                p => (ActiveMachine as ICoreMachine) != null,
-                this, "ActiveMachine", null
-            );
-
-            _seekToNextBookmarkCommand = new ViewModelCommand(
-                p => SeekToNextBookmark(),
-                p => (ActiveMachine as IPrerecordedMachine) != null,
-                this, "ActiveMachine", null
-            );
-
-            _seekToPrevBookmarkCommand = new ViewModelCommand(
-                p => SeekToPrevBookmark(),
-                p => (ActiveMachine as IPrerecordedMachine) != null,
-                this, "ActiveMachine", null
-            );
-
-            _seekToStartCommand = new ViewModelCommand(
-                p => SeekToBegin(),
-                p => (ActiveMachine as IPrerecordedMachine) != null,
-                this, "ActiveMachine", null
-            );
+            //_seekToStartCommand = new ViewModelCommand(
+            //    p => SeekToBegin(),
+            //    p => (ActiveMachine as IPrerecordedMachine) != null,
+            //    this, "ActiveMachine", null
+            //);
         }
 
         public ObservableCollection<Machine> Machines
@@ -426,21 +269,6 @@ namespace CPvC.UI
             (ActiveMachine as ITurboableMachine)?.EnableTurbo(enabled);
         }
 
-        private void Resume()
-        {
-            (ActiveMachine as IPausableMachine)?.Start();
-        }
-
-        private void Pause()
-        {
-            (ActiveMachine as IPausableMachine)?.Stop();
-        }
-
-        private void Reset()
-        {
-            (ActiveMachine as IInteractiveMachine)?.Reset();
-        }
-
         public void Close(ICoreMachine machine)
         {
             ((machine ?? ActiveMachine) as IClosableMachine)?.Close();
@@ -451,35 +279,35 @@ namespace CPvC.UI
             (ActiveMachine as IInteractiveMachine)?.Key(key, down);
         }
 
-        private void AddBookmark()
-        {
-            (ActiveMachine as Machine)?.AddBookmark(false);
-        }
+        //private void AddBookmark()
+        //{
+        //    (ActiveMachine as Machine)?.AddBookmark(false);
+        //}
 
-        private void SeekToNextBookmark()
-        {
-            (ActiveMachine as IPrerecordedMachine)?.SeekToNextBookmark();
-        }
+        //private void SeekToNextBookmark()
+        //{
+        //    (ActiveMachine as IPrerecordedMachine)?.SeekToNextBookmark();
+        //}
 
-        private void SeekToPrevBookmark()
-        {
-            (ActiveMachine as IPrerecordedMachine)?.SeekToPreviousBookmark();
-        }
+        //private void SeekToPrevBookmark()
+        //{
+        //    (ActiveMachine as IPrerecordedMachine)?.SeekToPreviousBookmark();
+        //}
 
-        private void SeekToBegin()
-        {
-            (ActiveMachine as IPrerecordedMachine)?.SeekToStart();
-        }
+        //private void SeekToBegin()
+        //{
+        //    (ActiveMachine as IPrerecordedMachine)?.SeekToStart();
+        //}
 
-        private void JumpToMostRecentBookmark()
-        {
-            (ActiveMachine as IBookmarkableMachine)?.JumpToMostRecentBookmark();
-        }
+        //private void JumpToMostRecentBookmark()
+        //{
+        //    (ActiveMachine as IBookmarkableMachine)?.JumpToMostRecentBookmark();
+        //}
 
-        private void CompactFile()
-        {
-            (ActiveMachine as Machine)?.Compact(false);
-        }
+        //private void CompactFile()
+        //{
+        //    (ActiveMachine as Machine)?.Compact(false);
+        //}
 
         public void Remove(MachineViewModel viewModel)
         {
@@ -499,52 +327,6 @@ namespace CPvC.UI
             {
                 machine.Close();
             }
-        }
-
-        private void LoadDisc(byte drive, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
-        {
-            Machine machine = ActiveMachine as Machine;
-            if (machine == null)
-            {
-                return;
-            }
-
-            using (machine.AutoPause())
-            {
-                byte[] image = PromptForMedia(true, fileSystem, promptForFile, selectItem);
-                if (image != null)
-                {
-                    machine.LoadDisc(drive, image);
-                }
-            }
-        }
-
-        private void EjectDisc(byte drive)
-        {
-            (ActiveMachine as IInteractiveMachine)?.LoadDisc(drive, null);
-        }
-
-        private void LoadTape(IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
-        {
-            Machine machine = ActiveMachine as Machine;
-            if (machine == null)
-            {
-                return;
-            }
-
-            using (machine.AutoPause())
-            {
-                byte[] image = PromptForMedia(false, fileSystem, promptForFile, selectItem);
-                if (image != null)
-                {
-                    machine.LoadTape(image);
-                }
-            }
-        }
-
-        private void EjectTape()
-        {
-            (ActiveMachine as IInteractiveMachine)?.LoadTape(null);
         }
 
         private void ToggleRunning(IPausableMachine machine)
@@ -586,59 +368,6 @@ namespace CPvC.UI
 
                 return samplesWritten;
             }
-        }
-
-        private byte[] PromptForMedia(bool disc, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
-        {
-            string expectedExt = disc ? ".dsk" : ".cdt";
-            FileTypes type = disc ? FileTypes.Disc : FileTypes.Tape;
-
-            string filename = promptForFile(type, true);
-            if (filename == null)
-            {
-                // Action was cancelled by the user.
-                return null;
-            }
-
-            byte[] buffer = null;
-            string ext = System.IO.Path.GetExtension(filename);
-            if (ext.ToLower() == ".zip")
-            {
-                string entry = null;
-                List<string> entries = fileSystem.GetZipFileEntryNames(filename);
-                List<string> extEntries = entries.Where(x => System.IO.Path.GetExtension(x).ToLower() == expectedExt).ToList();
-                if (extEntries.Count == 0)
-                {
-                    // No images available.
-                    Diagnostics.Trace("No files with the extension \"{0}\" found in zip archive \"{1}\".", expectedExt, filename);
-
-                    return null;
-                }
-                else if (extEntries.Count == 1)
-                {
-                    // Don't bother prompting the user, since there's only one!
-                    entry = extEntries[0];
-                }
-                else
-                {
-                    entry = selectItem(extEntries);
-                    if (entry == null)
-                    {
-                        // Action was cancelled by the user.
-                        return null;
-                    }
-                }
-
-                Diagnostics.Trace("Loading \"{0}\" from zip archive \"{1}\"", entry, filename);
-                buffer = fileSystem.GetZipFileEntry(filename, entry);
-            }
-            else
-            {
-                Diagnostics.Trace("Loading \"{0}\"", filename);
-                buffer = fileSystem.ReadBytes(filename);
-            }
-
-            return buffer;
         }
 
         protected void OnPropertyChanged(string name)
