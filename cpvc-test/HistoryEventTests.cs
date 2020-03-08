@@ -64,7 +64,61 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void CheckInvalidTypeClone()
+        public void CloneCoreAction()
+        {
+            // Setup
+            CoreAction coreAction = CoreAction.Reset(100);
+            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(0, coreAction);
+
+            // Act
+            HistoryEvent clone = historyEvent.CloneWithoutChildren();
+
+            // Verify
+            Assert.IsNotNull(clone);
+            Assert.AreEqual(100, clone.Ticks);
+            Assert.Zero(clone.Children.Count);
+            Assert.AreEqual(coreAction.Type, clone.CoreAction.Type);
+        }
+
+        [Test]
+        public void CloneCheckpoint()
+        {
+            // Setup
+            Bookmark bookmark = new Bookmark(true, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 });
+            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(0, 100, DateTime.UtcNow, bookmark);
+
+            // Act
+            HistoryEvent clone = historyEvent.CloneWithoutChildren();
+
+            // Verify
+            Assert.IsNotNull(clone);
+            Assert.AreEqual(100, clone.Ticks);
+            Assert.Zero(clone.Children.Count);
+            Assert.AreEqual(bookmark.Screen.GetBytes(), clone.Bookmark.Screen.GetBytes());
+            Assert.AreEqual(bookmark.State.GetBytes(), clone.Bookmark.State.GetBytes());
+            Assert.AreEqual(bookmark.System, clone.Bookmark.System);
+            Assert.AreEqual(bookmark.Version, clone.Bookmark.Version);
+        }
+
+        [Test]
+        public void CloneCheckpointWithoutBookmark()
+        {
+            // Setup
+            Bookmark bookmark = new Bookmark(true, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 });
+            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(0, 100, DateTime.UtcNow, null);
+
+            // Act
+            HistoryEvent clone = historyEvent.CloneWithoutChildren();
+
+            // Verify
+            Assert.IsNotNull(clone);
+            Assert.AreEqual(100, clone.Ticks);
+            Assert.Zero(clone.Children.Count);
+            Assert.Null(clone.Bookmark);
+        }
+
+        [Test]
+        public void CloneInvalidType()
         {
             // Setup
             HistoryEvent historyEvent = new HistoryEvent(0, (HistoryEvent.Types)99, 100);
