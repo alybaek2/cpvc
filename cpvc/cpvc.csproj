@@ -131,6 +131,7 @@
     <Compile Include="Machine\IInteractiveMachine.cs" />
     <Compile Include="Machine\ICoreMachine.cs" />
     <Compile Include="Machine\IMachineFileReader.cs" />
+    <Compile Include="Machine\IOpenableMachine.cs" />
     <Compile Include="Machine\IPausableMachine.cs" />
     <Compile Include="Machine\ICompactableMachine.cs" />
     <Compile Include="Machine\IPrerecordedMachine.cs" />

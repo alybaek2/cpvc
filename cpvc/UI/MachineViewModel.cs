@@ -11,7 +11,7 @@ namespace CPvC
 {
     public class MachineViewModel : INotifyPropertyChanged
     {
-        private CoreMachine _machine;
+        private ICoreMachine _machine;
 
         private Command _driveACommand;
         private Command _driveAEjectCommand;
@@ -36,7 +36,7 @@ namespace CPvC
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public MachineViewModel(CoreMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, SelectItemDelegate selectItem)
+        public MachineViewModel(ICoreMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, SelectItemDelegate selectItem)
         {
             _machine = machine;
             if (machine != null)
@@ -45,13 +45,13 @@ namespace CPvC
             }
 
             _openCommand = new Command(
-                p => (machine as Machine)?.Open(),
-                p => ((machine as Machine)?.RequiresOpen ?? false)
+                p => (machine as IOpenableMachine)?.Open(),
+                p => ((machine as IOpenableMachine)?.RequiresOpen ?? false)
             );
 
             _closeCommand = new Command(
-                p => (machine as Machine)?.Close(),
-                p => !((machine as Machine)?.RequiresOpen ?? true)
+                p => (machine as IOpenableMachine)?.Close(),
+                p => !((machine as IOpenableMachine)?.RequiresOpen ?? true)
             );
 
             _pauseCommand = new Command(
@@ -63,8 +63,8 @@ namespace CPvC
                         return false;
                     }
 
-                    Machine m = machine as Machine;
-                    if (machine.Running && (m != null && !m.RequiresOpen))
+                    IOpenableMachine m = machine as IOpenableMachine;
+                    if (machine.Running && (m == null || !m.RequiresOpen))
                     {
                         return true;
                     }
@@ -82,8 +82,8 @@ namespace CPvC
                         return false;
                     }
 
-                    Machine m = machine as Machine;
-                    if (!machine.Running && (m != null && !m.RequiresOpen))
+                    IOpenableMachine m = machine as IOpenableMachine;
+                    if (!machine.Running && (m == null || !m.RequiresOpen))
                     {
                         return true;
                     }
@@ -103,7 +103,7 @@ namespace CPvC
             );
 
             _driveAEjectCommand = new Command(
-                p => EjectDisc(machine as Machine, 0),
+                p => EjectDisc(machine as IInteractiveMachine, 0),
                 p => (machine as IInteractiveMachine) != null
             );
 
@@ -154,28 +154,28 @@ namespace CPvC
 
             _renameCommand = new Command(
                 p => RenameMachine(machine as Machine, promptForName),
-                p => (machine as ICoreMachine) != null
+                p => machine != null
             );
 
             _seekToNextBookmarkCommand = new Command(
-                p => (machine as ICoreMachine as IPrerecordedMachine)?.SeekToNextBookmark(),
-                p => (machine as ICoreMachine as IPrerecordedMachine) != null
+                p => (machine as IPrerecordedMachine)?.SeekToNextBookmark(),
+                p => (machine as IPrerecordedMachine) != null
             );
 
             _seekToPrevBookmarkCommand = new Command(
-                p => (machine as ICoreMachine as IPrerecordedMachine)?.SeekToPreviousBookmark(),
-                p => (machine as ICoreMachine as IPrerecordedMachine) != null
+                p => (machine as IPrerecordedMachine)?.SeekToPreviousBookmark(),
+                p => (machine as IPrerecordedMachine) != null
             );
 
             _seekToStartCommand = new Command(
-                p => (machine as ICoreMachine as IPrerecordedMachine)?.SeekToStart(),
-                p => (machine as ICoreMachine as IPrerecordedMachine) != null
+                p => (machine as IPrerecordedMachine)?.SeekToStart(),
+                p => (machine as IPrerecordedMachine) != null
             );
         }
 
-        public Machine Machine
+        public ICoreMachine Machine
         {
-            get { return _machine as Machine; }
+            get { return _machine; }
         }
 
         public ICommand ResetCommand
@@ -292,7 +292,7 @@ namespace CPvC
             }
         }
 
-        private void LoadDisc(Machine machine, byte drive, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
+        private void LoadDisc(IInteractiveMachine machine, byte drive, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
         {
             if (machine == null)
             {
@@ -309,12 +309,12 @@ namespace CPvC
             }
         }
 
-        private void EjectDisc(Machine machine, byte drive)
+        private void EjectDisc(IInteractiveMachine machine, byte drive)
         {
-            (machine as IInteractiveMachine)?.LoadDisc(drive, null);
+            machine?.LoadDisc(drive, null);
         }
 
-        private void LoadTape(Machine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
+        private void LoadTape(IInteractiveMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
         {
             if (machine == null)
             {
@@ -331,9 +331,9 @@ namespace CPvC
             }
         }
 
-        private void EjectTape(Machine machine)
+        private void EjectTape(IInteractiveMachine machine)
         {
-            (machine as IInteractiveMachine)?.LoadTape(null);
+            machine?.LoadTape(null);
         }
 
         private byte[] PromptForMedia(bool disc, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
@@ -389,7 +389,7 @@ namespace CPvC
             return buffer;
         }
 
-        private void SelectBookmark(Machine machine, PromptForBookmarkDelegate promptForBookmark)
+        private void SelectBookmark(IInteractiveMachine machine, PromptForBookmarkDelegate promptForBookmark)
         {
             if (machine == null)
             {
@@ -407,7 +407,7 @@ namespace CPvC
             }
         }
 
-        private void RenameMachine(Machine machine, PromptForNameDelegate promptForName)
+        private void RenameMachine(IInteractiveMachine machine, PromptForNameDelegate promptForName)
         {
             if (machine == null)
             {

@@ -18,31 +18,6 @@ namespace CPvC.UI
         public delegate HistoryEvent PromptForBookmarkDelegate();
         public delegate string PromptForNameDelegate(string existingName);
 
-        private ViewModelCommand _toggleRunningCommand;
-        private ViewModelCommand _seekToNextBookmarkCommand;
-        private ViewModelCommand _seekToPrevBookmarkCommand;
-        private ViewModelCommand _seekToStartCommand;
-
-        public ICommand ToggleRunningCommand
-        {
-            get { return _toggleRunningCommand; }
-        }
-
-        public ICommand SeekToNextBookmarkCommand
-        {
-            get { return _seekToNextBookmarkCommand; }
-        }
-
-        public ICommand SeekToPrevBookmarkCommand
-        {
-            get { return _seekToPrevBookmarkCommand; }
-        }
-
-        public ICommand SeekToStartCommand
-        {
-            get { return _seekToStartCommand; }
-        }
-
         /// <summary>
         /// The data model associated with this view model.
         /// </summary>
@@ -84,30 +59,6 @@ namespace CPvC.UI
             }
 
             ActiveItem = this;
-
-            _toggleRunningCommand = new ViewModelCommand(
-                p => ToggleRunning(p as IPausableMachine),
-                p => (ActiveMachine as IPausableMachine) != null,
-                this, "ActiveMachine", null
-            );
-
-            //_seekToNextBookmarkCommand = new ViewModelCommand(
-            //    p => SeekToNextBookmark(),
-            //    p => (ActiveMachine as IPrerecordedMachine) != null,
-            //    this, "ActiveMachine", null
-            //);
-
-            //_seekToPrevBookmarkCommand = new ViewModelCommand(
-            //    p => SeekToPrevBookmark(),
-            //    p => (ActiveMachine as IPrerecordedMachine) != null,
-            //    this, "ActiveMachine", null
-            //);
-
-            //_seekToStartCommand = new ViewModelCommand(
-            //    p => SeekToBegin(),
-            //    p => (ActiveMachine as IPrerecordedMachine) != null,
-            //    this, "ActiveMachine", null
-            //);
         }
 
         public ObservableCollection<Machine> Machines
@@ -140,7 +91,7 @@ namespace CPvC.UI
             {
                 for (int i = 0; i < _machineViewModels.Count; i++)
                 {
-                    if (_machineViewModels[i].Machine == (_active as Machine))
+                    if (_machineViewModels[i].Machine == (_active as ICoreMachine))
                     {
                         return _machineViewModels[i];
                     }
@@ -195,6 +146,18 @@ namespace CPvC.UI
             }
         }
 
+        public void OpenReplayMachine(Machine machine, HistoryEvent finalEvent)
+        {
+            ReplayMachine replayMachine = new ReplayMachine(finalEvent);
+            replayMachine.Name = String.Format("{0} (Replay)", machine.Name);
+            ReplayMachines.Add(replayMachine);
+
+            MachineViewModel machineViewModel = new MachineViewModel(replayMachine, _fileSystem, null, null, null, null);
+            _machineViewModels.Add(machineViewModel);
+
+            ActiveMachine = replayMachine;
+        }
+
         public Machine NewMachine(PromptForFileDelegate promptForFile, IFileSystem fileSystem)
         {
             string filepath = promptForFile(FileTypes.Machine, false);
@@ -203,8 +166,8 @@ namespace CPvC.UI
             if (machine != null)
             {
                 machine.Start();
-                ActiveMachine = machine;
                 _machineViewModels.Add(new MachineViewModel(machine, _fileSystem, _promptForFile, _promptForBookmark, _promptForName, _selectItem));
+                ActiveMachine = machine;
             }
 
             return machine;
@@ -220,48 +183,11 @@ namespace CPvC.UI
             Machine machine = _model.Add(filepath, fileSystem);
             if (machine != null)
             {
-                ActiveMachine = machine;
                 _machineViewModels.Add(new MachineViewModel(machine, _fileSystem, _promptForFile, _promptForBookmark, _promptForName, _selectItem));
+                ActiveMachine = machine;
             }
 
             return machine;
-        }
-
-        private void SelectBookmark(PromptForBookmarkDelegate promptForBookmark)
-        {
-            Machine machine = ActiveMachine as Machine;
-            if (machine == null)
-            {
-                return;
-            }
-
-            using (machine.AutoPause())
-            {
-                HistoryEvent historyEvent = promptForBookmark();
-                if (historyEvent != null)
-                {
-                    machine.SetCurrentEvent(historyEvent);
-                    machine.Status = String.Format("Jumped to {0}", Helpers.GetTimeSpanFromTicks(machine.Core.Ticks).ToString(@"hh\:mm\:ss"));
-                }
-            }
-        }
-
-        private void RenameMachine(PromptForNameDelegate promptForName)
-        {
-            Machine machine = ActiveMachine as Machine;
-            if (machine == null)
-            {
-                return;
-            }
-
-            using (machine.AutoPause())
-            {
-                string newName = promptForName(machine.Name);
-                if (newName != null)
-                {
-                    machine.Name = newName;
-                }
-            }
         }
 
         public void EnableTurbo(bool enabled)
@@ -279,41 +205,11 @@ namespace CPvC.UI
             (ActiveMachine as IInteractiveMachine)?.Key(key, down);
         }
 
-        //private void AddBookmark()
-        //{
-        //    (ActiveMachine as Machine)?.AddBookmark(false);
-        //}
-
-        //private void SeekToNextBookmark()
-        //{
-        //    (ActiveMachine as IPrerecordedMachine)?.SeekToNextBookmark();
-        //}
-
-        //private void SeekToPrevBookmark()
-        //{
-        //    (ActiveMachine as IPrerecordedMachine)?.SeekToPreviousBookmark();
-        //}
-
-        //private void SeekToBegin()
-        //{
-        //    (ActiveMachine as IPrerecordedMachine)?.SeekToStart();
-        //}
-
-        //private void JumpToMostRecentBookmark()
-        //{
-        //    (ActiveMachine as IBookmarkableMachine)?.JumpToMostRecentBookmark();
-        //}
-
-        //private void CompactFile()
-        //{
-        //    (ActiveMachine as Machine)?.Compact(false);
-        //}
-
         public void Remove(MachineViewModel viewModel)
         {
-            _model.Remove(viewModel.Machine);
+            _model.Remove(viewModel.Machine as Machine);
             _machineViewModels.Remove(viewModel);
-            viewModel.Machine?.Close();
+            viewModel.CloseCommand.Execute(null);
         }
 
         public void CloseAll()
@@ -327,11 +223,6 @@ namespace CPvC.UI
             {
                 machine.Close();
             }
-        }
-
-        private void ToggleRunning(IPausableMachine machine)
-        {
-            machine?.ToggleRunning();
         }
 
         public int ReadAudio(byte[] buffer, int offset, int samplesRequested)

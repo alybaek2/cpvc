@@ -452,7 +452,7 @@ namespace CPvC.Test
             // Act and Verify
             Assert.DoesNotThrow(() =>
             {
-                machineViewModel.Machine?.Key(Keys.A, true);
+                (machineViewModel.Machine as IInteractiveMachine)?.Key(Keys.A, true);
                 machineViewModel.ResetCommand.Execute(null);
                 machineViewModel.PauseCommand.Execute(null);
                 machineViewModel.ResumeCommand.Execute(null);
@@ -462,7 +462,7 @@ namespace CPvC.Test
                 machineViewModel.TapeEjectCommand.Execute(null);
                 machineViewModel.AddBookmarkCommand.Execute(null);
                 machineViewModel.JumpToMostRecentBookmarkCommand.Execute(null);
-                machineViewModel.Machine?.EnableTurbo(true);
+                (machineViewModel.Machine as ITurboableMachine)?.EnableTurbo(true);
                 machineViewModel.CompactCommand.Execute(null);
                 machineViewModel.SeekToNextBookmarkCommand.Execute(null);
                 machineViewModel.SeekToPrevBookmarkCommand.Execute(null);
@@ -590,7 +590,7 @@ namespace CPvC.Test
             // Setup
             MainViewModel viewModel = SetupViewModel(1, null, null, null);
             MachineViewModel machineViewModel = viewModel.MachineViewModels[0];
-            machineViewModel.Machine.Open();
+            (machineViewModel.Machine as IOpenableMachine)?.Open();
 
             // Act
             viewModel.Remove(machineViewModel);
@@ -625,14 +625,15 @@ namespace CPvC.Test
             // Setup
             MainViewModel viewModel = SetupViewModel(1, null, null, null);
             Machine machine = viewModel.Machines[0];
+            MachineViewModel machineViewModel = viewModel.MachineViewModels[0];
             machine.Open();
 
             // Act
-            bool runningState1 = machine.Core.Running;
-            viewModel.ToggleRunningCommand.Execute(machine);
-            bool runningState2 = machine.Core.Running;
-            viewModel.ToggleRunningCommand.Execute(machine);
-            bool runningState3 = machine.Core.Running;
+            bool runningState1 = machineViewModel.Machine.Running;
+            machineViewModel.ToggleRunningCommand.Execute(null);
+            bool runningState2 = machineViewModel.Machine.Running;
+            machineViewModel.ToggleRunningCommand.Execute(null);
+            bool runningState3 = machineViewModel.Machine.Running;
 
             // Verify
             Assert.AreEqual(runningState1, runningState3);
@@ -646,7 +647,7 @@ namespace CPvC.Test
             MainViewModel viewModel = SetupViewModel(0, null, null, null);
 
             // Act and Verify
-            Assert.DoesNotThrow(() => viewModel.ToggleRunningCommand.Execute(null));
+            Assert.DoesNotThrow(() => viewModel.ActiveMachineViewModel.ToggleRunningCommand.Execute(null));
         }
 
         [Test]

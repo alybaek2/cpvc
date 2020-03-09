@@ -287,10 +287,8 @@ namespace CPvC.UI.Forms
                     {
                         if (dialog.SelectedReplayEvent != null)
                         {
-                            ReplayMachine replayMachine = new ReplayMachine(dialog.SelectedReplayEvent);
-                            replayMachine.Name = String.Format("{0} (Replay)", machine.Name);
-                            _mainViewModel.ReplayMachines.Add(replayMachine);
-                            _mainViewModel.ActiveMachine = replayMachine;
+                            _mainViewModel.OpenReplayMachine(machine, dialog.SelectedReplayEvent);
+
                             return null;
                         }
                         else if (dialog.SelectedJumpEvent?.Bookmark != null)
@@ -354,7 +352,7 @@ namespace CPvC.UI.Forms
         {
             if (sender is FrameworkElement element && element.DataContext is ICoreMachine machine)
             {
-                _mainViewModel.ToggleRunningCommand.Execute(machine);
+                _mainViewModel.ActiveMachineViewModel.ToggleRunningCommand.Execute(null);
             }
         }
 

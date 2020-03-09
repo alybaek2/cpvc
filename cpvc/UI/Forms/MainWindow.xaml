@@ -294,11 +294,11 @@
         <StatusBar x:Name="_statusBar" Height="30" Grid.Row="3" VerticalAlignment="Top">
             <TextBlock x:Name="_clockTextBlock" TextWrapping="Wrap" Text="{Binding ActiveMachineViewModel.Machine.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
             <Separator/>
-            <Slider x:Name="_volumeSlider" Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding ActiveMachineViewModel.Machine.Volume, Mode=TwoWay}" ToolTip="{Binding ActiveMachine.Core.Volume}" />
+            <Slider x:Name="_volumeSlider" Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding ActiveMachineViewModel.Machine.Volume, Mode=TwoWay}" ToolTip="{Binding ActiveMachineViewModel.Machine.Volume}" />
             <Button x:Name="_previousBookmark" Content="&lt;&lt;" Command="{Binding ActiveMachineViewModel.SeekToPrevBookmarkCommand}"/>
             <Button x:Name="_nextBookmark" Content=">>" Command="{Binding ActiveMachineViewModel.SeekToNextBookmarkCommand}"/>
             <Button x:Name="_beginButton" Content=" |&lt; " Command="{Binding ActiveMachineViewModel.SeekToStartCommand}"/>
-            <Slider x:Name="_timelineSlider" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right" Minimum="0" Maximum="{Binding ActiveMachineViewModel.Machine.EndTicks, Mode=OneWay}" Value="{Binding ActiveMachine.Ticks, Mode=OneWay}"/>
+            <Slider x:Name="_timelineSlider" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right" Minimum="0" Maximum="{Binding ActiveMachineViewModel.Machine.EndTicks, Mode=OneWay}" Value="{Binding ActiveMachineViewModel.Machine.Ticks, Mode=OneWay}"/>
         </StatusBar>
     </Grid>
 </Window>
