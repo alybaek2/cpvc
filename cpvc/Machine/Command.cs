@@ -34,17 +34,6 @@ namespace CPvC
 
         public void InvokeCanExecuteChanged(object sender, PropertyChangedEventArgs e)
         {
-            //if (CanExecuteChanged == null)
-            //{
-            //    return;
-            //}
-
-            //foreach (var del in CanExecuteChanged?.GetInvocationList())
-            //{
-            //    del.
-            //    del.DynamicInvoke(new object[] { sender, e });
-            //}
-
             if (Application.Current == null)
             {
                 CanExecuteChanged?.Invoke(sender, e);
@@ -53,8 +42,6 @@ namespace CPvC
             {
                 Application.Current.Dispatcher.BeginInvoke(new Action(() => CanExecuteChanged?.Invoke(sender, e)));
             }
-
-            //CanExecuteChanged?.BeginInvoke(sender, e, null, null);
         }
     }
 }

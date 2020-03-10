@@ -131,7 +131,7 @@
     <Compile Include="SettingsTests.cs" />
     <Compile Include="TestHelpers.cs" />
     <Compile Include="UnmanagedMemoryTests.cs" />
-    <Compile Include="ViewModelCommandTests.cs" />
+    <Compile Include="CommandTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

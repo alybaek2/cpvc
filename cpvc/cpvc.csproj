@@ -140,7 +140,6 @@
     <Compile Include="Machine\MachineFile.cs" />
     <Compile Include="Machine\MemoryBlob.cs" />
     <Compile Include="Machine\ReplayMachine.cs" />
-    <Compile Include="Machine\ViewModelCommand.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
