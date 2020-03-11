@@ -50,21 +50,21 @@ namespace CPvC.Test
             Assert.AreEqual(!nullMachine && !requiresOpen, model.CloseCommand.CanExecute(null));
         }
 
-        [TestCase(false, false, false)]
-        [TestCase(true, false, false)]
-        [TestCase(false, true, false)]
-        [TestCase(true, true, false)]
-        [TestCase(false, false, true)]
-        [TestCase(true, false, true)]
-        [TestCase(false, true, true)]
-        [TestCase(true, true, true)]
-        public void Pause(bool nullMachine, bool requiresOpen, bool running)
+        [Test]
+        public void Pause(
+            [Values(false, true)] bool nullMachine,
+            [Values(false, true)] bool requiresOpen,
+            [Values(false, true)] bool running,
+            [Values(false, true)] bool isOpenable)
         {
             // Setup
             Mock<ICoreMachine> mockMachine = new Mock<ICoreMachine>();
-            Mock<IOpenableMachine> mockOpenableMachine = mockMachine.As<IOpenableMachine>();
+            if (isOpenable)
+            {
+                Mock<IOpenableMachine> mockOpenableMachine = mockMachine.As<IOpenableMachine>();
+                mockOpenableMachine.SetupGet(x => x.RequiresOpen).Returns(requiresOpen);
+            }
             Mock<IPausableMachine> mockPausableMachine = mockMachine.As<IPausableMachine>();
-            mockOpenableMachine.SetupGet(x => x.RequiresOpen).Returns(requiresOpen);
             mockMachine.SetupGet(x => x.Running).Returns(running);
             MachineViewModel model = new MachineViewModel(nullMachine ? null : mockMachine.Object, null, null, null, null, null);
 
@@ -73,24 +73,24 @@ namespace CPvC.Test
 
             // Verify
             mockPausableMachine.Verify(m => m.Stop(), nullMachine ? Times.Never() : Times.Once());
-            Assert.AreEqual(!nullMachine && !requiresOpen && running, model.PauseCommand.CanExecute(null));
+            Assert.AreEqual(!nullMachine && (!isOpenable || !requiresOpen) && running, model.PauseCommand.CanExecute(null));
         }
 
-        [TestCase(false, false, false)]
-        [TestCase(true, false, false)]
-        [TestCase(false, true, false)]
-        [TestCase(true, true, false)]
-        [TestCase(false, false, true)]
-        [TestCase(true, false, true)]
-        [TestCase(false, true, true)]
-        [TestCase(true, true, true)]
-        public void Resume(bool nullMachine, bool requiresOpen, bool running)
+        [Test]
+        public void Resume(
+            [Values(false, true)] bool nullMachine,
+            [Values(false, true)] bool requiresOpen,
+            [Values(false, true)] bool running,
+            [Values(false, true)] bool isOpenable)
         {
             // Setup
             Mock<ICoreMachine> mockMachine = new Mock<ICoreMachine>();
-            Mock<IOpenableMachine> mockOpenableMachine = mockMachine.As<IOpenableMachine>();
+            if (isOpenable)
+            {
+                Mock<IOpenableMachine> mockOpenableMachine = mockMachine.As<IOpenableMachine>();
+                mockOpenableMachine.SetupGet(x => x.RequiresOpen).Returns(requiresOpen);
+            }
             Mock<IPausableMachine> mockPausableMachine = mockMachine.As<IPausableMachine>();
-            mockOpenableMachine.SetupGet(x => x.RequiresOpen).Returns(requiresOpen);
             mockMachine.SetupGet(x => x.Running).Returns(running);
             MachineViewModel model = new MachineViewModel(nullMachine ? null : mockMachine.Object, null, null, null, null, null);
 
@@ -99,7 +99,7 @@ namespace CPvC.Test
 
             // Verify
             mockPausableMachine.Verify(m => m.Start(), nullMachine ? Times.Never() : Times.Once());
-            Assert.AreEqual(!nullMachine && !requiresOpen && !running, model.ResumeCommand.CanExecute(null));
+            Assert.AreEqual(!nullMachine && (!isOpenable || !requiresOpen) && !running, model.ResumeCommand.CanExecute(null));
         }
     }
 }
