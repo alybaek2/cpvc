@@ -433,7 +433,6 @@ namespace CPvC
                 Auditors?.Invoke(_core, null, CoreAction.Reset(bookmarkEvent.Ticks));
             }
 
-
             _file.WriteCurrent(bookmarkEvent);
             CurrentEvent = bookmarkEvent;
 

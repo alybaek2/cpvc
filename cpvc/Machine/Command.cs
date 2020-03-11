@@ -34,14 +34,7 @@ namespace CPvC
 
         public void InvokeCanExecuteChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (Application.Current == null)
-            {
-                CanExecuteChanged?.Invoke(sender, e);
-            }
-            else
-            {
-                Application.Current.Dispatcher.BeginInvoke(new Action(() => CanExecuteChanged?.Invoke(sender, e)));
-            }
+            CanExecuteChanged?.Invoke(sender, e);
         }
     }
 }

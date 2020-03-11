@@ -41,7 +41,6 @@ namespace CPvC.UI
 
         public MainViewModel(ISettings settings, IFileSystem fileSystem, SelectItemDelegate selectItem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName)
         {
-
             _fileSystem = fileSystem;
             _selectItem = selectItem;
             _promptForFile = promptForFile;
