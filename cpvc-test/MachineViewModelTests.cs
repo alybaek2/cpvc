@@ -101,5 +101,37 @@ namespace CPvC.Test
             mockPausableMachine.Verify(m => m.Start(), nullMachine ? Times.Never() : Times.Once());
             Assert.AreEqual(!nullMachine && (!isOpenable || !requiresOpen) && !running, model.ResumeCommand.CanExecute(null));
         }
+
+        [Test]
+        public void Reset([Values(false, true)] bool nullMachine)
+        {
+            // Setup
+            Mock<ICoreMachine> mockMachine = new Mock<ICoreMachine>();
+            Mock<IInteractiveMachine> mockOpenableMachine = mockMachine.As<IInteractiveMachine>();
+            MachineViewModel model = new MachineViewModel(nullMachine ? null : mockMachine.Object, null, null, null, null, null);
+
+            // Act
+            model.ResetCommand.Execute(null);
+
+            // Verify
+            mockOpenableMachine.Verify(m => m.Reset(), nullMachine ? Times.Never() : Times.Once());
+            Assert.AreEqual(!nullMachine, model.ResetCommand.CanExecute(null));
+        }
+
+        [Test]
+        public void ToggleRunning([Values(false, true)] bool nullMachine)
+        {
+            // Setup
+            Mock<ICoreMachine> mockMachine = new Mock<ICoreMachine>();
+            Mock<IPausableMachine> mockOpenableMachine = mockMachine.As<IPausableMachine>();
+            MachineViewModel model = new MachineViewModel(nullMachine ? null : mockMachine.Object, null, null, null, null, null);
+
+            // Act
+            model.ToggleRunningCommand.Execute(null);
+
+            // Verify
+            mockOpenableMachine.Verify(m => m.ToggleRunning(), nullMachine ? Times.Never() : Times.Once());
+            Assert.AreEqual(!nullMachine, model.ToggleRunningCommand.CanExecute(null));
+        }
     }
 }
