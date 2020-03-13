@@ -216,6 +216,24 @@ namespace CPvC.Test
             TestLoadMedia(nullMachine, FileTypes.Disc, isZipped, entryCount, selectFile, machineViewModel => machineViewModel.DriveACommand, mediaImage => { return m => m.LoadDisc(0, mediaImage); });
         }
 
+        [Test]
+        public void EjectDriveA([Values(false, true)] bool nullMachine)
+        {
+            TestCommand<IInteractiveMachine>(nullMachine, m => m.DriveAEjectCommand, m => m.LoadDisc(0, null));
+        }
+
+        [Test]
+        public void EjectDriveB([Values(false, true)] bool nullMachine)
+        {
+            TestCommand<IInteractiveMachine>(nullMachine, m => m.DriveBEjectCommand, m => m.LoadDisc(1, null));
+        }
+
+        [Test]
+        public void EjectTape([Values(false, true)] bool nullMachine)
+        {
+            TestCommand<IInteractiveMachine>(nullMachine, m => m.TapeEjectCommand, m => m.LoadTape(null));
+        }
+
         [TestCase(true, false, 0, false)]
         [TestCase(false, false, 0, false)]
         [TestCase(false, true, 0, true)]

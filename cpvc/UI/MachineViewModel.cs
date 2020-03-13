@@ -103,7 +103,7 @@ namespace CPvC
             );
 
             _driveAEjectCommand = new Command(
-                p => EjectDisc(machine as IInteractiveMachine, 0),
+                p => (machine as IInteractiveMachine)?.LoadDisc(0, null),
                 p => (machine as IInteractiveMachine) != null
             );
 
@@ -113,7 +113,7 @@ namespace CPvC
             );
 
             _driveBEjectCommand = new Command(
-                p => EjectDisc(machine as IInteractiveMachine, 1),
+                p => (machine as IInteractiveMachine)?.LoadDisc(1, null),
                 p => (machine as IInteractiveMachine) != null
             );
 
@@ -123,7 +123,7 @@ namespace CPvC
             );
 
             _tapeEjectCommand = new Command(
-                p => EjectTape(machine as IInteractiveMachine),
+                p => (machine as IInteractiveMachine)?.LoadTape(null),
                 p => (machine as IInteractiveMachine) != null
             );
 
@@ -309,11 +309,6 @@ namespace CPvC
             }
         }
 
-        private void EjectDisc(IInteractiveMachine machine, byte drive)
-        {
-            machine?.LoadDisc(drive, null);
-        }
-
         private void LoadTape(IInteractiveMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
         {
             if (machine == null)
@@ -329,11 +324,6 @@ namespace CPvC
                     machine.LoadTape(image);
                 }
             }
-        }
-
-        private void EjectTape(IInteractiveMachine machine)
-        {
-            machine?.LoadTape(null);
         }
 
         private byte[] PromptForMedia(bool disc, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
