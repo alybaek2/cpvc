@@ -98,7 +98,7 @@ namespace CPvC
             );
 
             _driveACommand = new Command(
-                p => LoadDisc(machine as Machine, 0, fileSystem, promptForFile, selectItem),
+                p => LoadDisc(machine as IInteractiveMachine, 0, fileSystem, promptForFile, selectItem),
                 p => (machine as IInteractiveMachine) != null
             );
 
@@ -108,22 +108,22 @@ namespace CPvC
             );
 
             _driveBCommand = new Command(
-                p => LoadDisc(machine as Machine, 1, fileSystem, promptForFile, selectItem),
+                p => LoadDisc(machine as IInteractiveMachine, 1, fileSystem, promptForFile, selectItem),
                 p => (machine as IInteractiveMachine) != null
             );
 
             _driveBEjectCommand = new Command(
-                p => EjectDisc(machine as Machine, 1),
+                p => EjectDisc(machine as IInteractiveMachine, 1),
                 p => (machine as IInteractiveMachine) != null
             );
 
             _tapeCommand = new Command(
-                p => LoadTape(machine as Machine, fileSystem, promptForFile, selectItem),
+                p => LoadTape(machine as IInteractiveMachine, fileSystem, promptForFile, selectItem),
                 p => (machine as IInteractiveMachine) != null
             );
 
             _tapeEjectCommand = new Command(
-                p => EjectTape(machine as Machine),
+                p => EjectTape(machine as IInteractiveMachine),
                 p => (machine as IInteractiveMachine) != null
             );
 
