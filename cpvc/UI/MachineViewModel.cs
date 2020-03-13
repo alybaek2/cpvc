@@ -9,10 +9,8 @@ using static CPvC.UI.MainViewModel;
 
 namespace CPvC
 {
-    public class MachineViewModel : INotifyPropertyChanged
+    public class MachineViewModel
     {
-        private ICoreMachine _machine;
-
         private Command _driveACommand;
         private Command _driveAEjectCommand;
         private Command _driveBCommand;
@@ -38,10 +36,10 @@ namespace CPvC
 
         public MachineViewModel(ICoreMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, SelectItemDelegate selectItem)
         {
-            _machine = machine;
+            Machine = machine;
             if (machine != null)
             {
-                _machine.PropertyChanged += MachinePropChanged;
+                Machine.PropertyChanged += MachinePropChanged;
             }
 
             _openCommand = new Command(
@@ -173,10 +171,7 @@ namespace CPvC
             );
         }
 
-        public ICoreMachine Machine
-        {
-            get { return _machine; }
-        }
+        public ICoreMachine Machine { get; }
 
         public ICommand ResetCommand
         {
@@ -412,11 +407,6 @@ namespace CPvC
                     machine.Name = newName;
                 }
             }
-        }
-
-        protected void OnPropertyChanged(string name)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
     }
 }
