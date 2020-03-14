@@ -15,6 +15,7 @@ namespace CPvC.Test
         static private void TestLoadMedia(
             bool nullMachine,
             FileTypes fileType,
+            bool nullFilename,
             bool isZipped,
             int entryCount,
             bool selectFile,
@@ -29,7 +30,7 @@ namespace CPvC.Test
             Mock<MainViewModel.SelectItemDelegate> mockSelect = new Mock<MainViewModel.SelectItemDelegate>();
 
             string ext = (fileType == FileTypes.Tape) ? "cdt" : "dsk";
-            string filename = isZipped ? "test.zip" : String.Format("test.{0}", ext);
+            string filename = nullFilename ? null : (isZipped ? "test.zip" : String.Format("test.{0}", ext));
 
             mockPrompt.Setup(p => p(fileType, true)).Returns(filename);
 
@@ -78,7 +79,7 @@ namespace CPvC.Test
                 mockInteractiveMachine.Verify(m => m.AutoPause());
             }
 
-            if (selectFile && isZipped && !nullMachine)
+            if (selectFile && isZipped && !nullMachine && !nullFilename)
             {
                 if (entryCount > 0)
                 {
@@ -89,7 +90,7 @@ namespace CPvC.Test
                     mockInteractiveMachine.Verify(verifyLoad(It.IsAny<byte[]>()), Times.Never());
                 }
             }
-            else if (!isZipped && !nullMachine)
+            else if (!isZipped && !nullMachine && !nullFilename)
             {
                 mockInteractiveMachine.Verify(verifyLoad(new byte[1] { 0x02 }), Times.Once());
             }
@@ -99,7 +100,7 @@ namespace CPvC.Test
             Assert.AreEqual(!nullMachine, command.CanExecute(null));
         }
 
-        static private void TestCommand<T>(bool nullMachine, Func<MachineViewModel, ICommand> getCommand, System.Linq.Expressions.Expression<Action<T>> verifyCall) where T : class
+        static private void TestCommand<T>(bool nullMachine, Func<MachineViewModel, ICommand> getCommand, object parameter, System.Linq.Expressions.Expression<Action<T>> verifyCall) where T : class
         {
             // Setup
             Mock<ICoreMachine> mockMachine = new Mock<ICoreMachine>();
@@ -107,7 +108,7 @@ namespace CPvC.Test
             MachineViewModel model = new MachineViewModel(nullMachine ? null : mockMachine.Object, null, null, null, null, null);
 
             // Act
-            getCommand(model).Execute(null);
+            getCommand(model).Execute(parameter);
 
             // Verify
             mockOpenableMachine.Verify(verifyCall, nullMachine ? Times.Never() : Times.Once());
@@ -206,94 +207,109 @@ namespace CPvC.Test
             Assert.AreEqual(!nullMachine && (!isOpenable || !requiresOpen) && !running, model.ResumeCommand.CanExecute(null));
         }
 
-        [TestCase(true, false, 0, false)]
-        [TestCase(false, false, 0, false)]
-        [TestCase(false, true, 0, true)]
-        [TestCase(false, true, 1, true)]
-        [TestCase(false, true, 2, true)]
-        public void LoadDriveA(bool nullMachine, bool isZipped, int entryCount, bool selectFile)
+        [TestCase(true, true, false, 0, false)]
+        [TestCase(true, false, false, 0, false)]
+        [TestCase(false, false, false, 0, false)]
+        [TestCase(false, false, true, 0, true)]
+        [TestCase(false, false, true, 1, true)]
+        [TestCase(false, false, true, 2, true)]
+        public void LoadDriveA(bool nullMachine, bool nullFilename, bool isZipped, int entryCount, bool selectFile)
         {
-            TestLoadMedia(nullMachine, FileTypes.Disc, isZipped, entryCount, selectFile, machineViewModel => machineViewModel.DriveACommand, mediaImage => { return m => m.LoadDisc(0, mediaImage); });
+            TestLoadMedia(nullMachine, FileTypes.Disc, nullFilename, isZipped, entryCount, selectFile, machineViewModel => machineViewModel.DriveACommand, mediaImage => { return m => m.LoadDisc(0, mediaImage); });
         }
 
         [Test]
         public void EjectDriveA([Values(false, true)] bool nullMachine)
         {
-            TestCommand<IInteractiveMachine>(nullMachine, m => m.DriveAEjectCommand, m => m.LoadDisc(0, null));
+            TestCommand<IInteractiveMachine>(nullMachine, m => m.DriveAEjectCommand, null, m => m.LoadDisc(0, null));
         }
 
         [Test]
         public void EjectDriveB([Values(false, true)] bool nullMachine)
         {
-            TestCommand<IInteractiveMachine>(nullMachine, m => m.DriveBEjectCommand, m => m.LoadDisc(1, null));
+            TestCommand<IInteractiveMachine>(nullMachine, m => m.DriveBEjectCommand, null, m => m.LoadDisc(1, null));
         }
 
         [Test]
         public void EjectTape([Values(false, true)] bool nullMachine)
         {
-            TestCommand<IInteractiveMachine>(nullMachine, m => m.TapeEjectCommand, m => m.LoadTape(null));
+            TestCommand<IInteractiveMachine>(nullMachine, m => m.TapeEjectCommand, null, m => m.LoadTape(null));
         }
 
-        [TestCase(true, false, 0, false)]
-        [TestCase(false, false, 0, false)]
-        [TestCase(false, true, 0, true)]
-        [TestCase(false, true, 1, true)]
-        [TestCase(false, true, 2, true)]
-        public void LoadDriveB(bool nullMachine, bool isZipped, int entryCount, bool selectFile)
+        [TestCase(true, true, false, 0, false)]
+        [TestCase(true, false, false, 0, false)]
+        [TestCase(false, false, false, 0, false)]
+        [TestCase(false, false, true, 0, true)]
+        [TestCase(false, false, true, 1, true)]
+        [TestCase(false, false, true, 2, true)]
+        public void LoadDriveB(bool nullMachine, bool nullFilename, bool isZipped, int entryCount, bool selectFile)
         {
-            TestLoadMedia(nullMachine, FileTypes.Disc, isZipped, entryCount, selectFile, machineViewModel => machineViewModel.DriveBCommand, mediaImage => { return m => m.LoadDisc(1, mediaImage); });
+            TestLoadMedia(nullMachine, FileTypes.Disc, nullFilename, isZipped, entryCount, selectFile, machineViewModel => machineViewModel.DriveBCommand, mediaImage => { return m => m.LoadDisc(1, mediaImage); });
         }
 
-        [TestCase(true, false, 0, false)]
-        [TestCase(false, false, 0, false)]
-        [TestCase(false, true, 0, true)]
-        [TestCase(false, true, 1, true)]
-        [TestCase(false, true, 2, true)]
-        public void LoadTape(bool nullMachine, bool isZipped, int entryCount, bool selectFile)
+        [TestCase(true, true, false, 0, false)]
+        [TestCase(true, false, false, 0, false)]
+        [TestCase(false, false, false, 0, false)]
+        [TestCase(false, false, true, 0, true)]
+        [TestCase(false, false, true, 1, true)]
+        [TestCase(false, false, true, 2, true)]
+        public void LoadTape(bool nullMachine, bool nullFilename, bool isZipped, int entryCount, bool selectFile)
         {
-            TestLoadMedia(nullMachine, FileTypes.Tape, isZipped, entryCount, selectFile, machineViewModel => machineViewModel.TapeCommand, mediaImage => { return m => m.LoadTape(mediaImage); });
+            TestLoadMedia(nullMachine, FileTypes.Tape, nullFilename, isZipped, entryCount, selectFile, machineViewModel => machineViewModel.TapeCommand, mediaImage => { return m => m.LoadTape(mediaImage); });
         }
 
         [Test]
         public void Reset([Values(false, true)] bool nullMachine)
         {
-            TestCommand<IInteractiveMachine>(nullMachine, m => m.ResetCommand, m => m.Reset());
+            TestCommand<IInteractiveMachine>(nullMachine, m => m.ResetCommand, null, m => m.Reset());
         }
 
         [Test]
         public void ToggleRunning([Values(false, true)] bool nullMachine)
         {
-            TestCommand<IPausableMachine>(nullMachine, m => m.ToggleRunningCommand, m => m.ToggleRunning());
+            TestCommand<IPausableMachine>(nullMachine, m => m.ToggleRunningCommand, null, m => m.ToggleRunning());
         }
 
         [Test]
         public void JumpToMostRecentBookmark([Values(false, true)] bool nullMachine)
         {
-            TestCommand<IBookmarkableMachine>(nullMachine, m => m.JumpToMostRecentBookmarkCommand, m => m.JumpToMostRecentBookmark());
+            TestCommand<IBookmarkableMachine>(nullMachine, m => m.JumpToMostRecentBookmarkCommand, null, m => m.JumpToMostRecentBookmark());
         }
 
         [Test]
         public void Compact([Values(false, true)] bool nullMachine)
         {
-            TestCommand<ICompactableMachine>(nullMachine, m => m.CompactCommand, m => m.Compact(false));
+            TestCommand<ICompactableMachine>(nullMachine, m => m.CompactCommand, null, m => m.Compact(false));
         }
 
         [Test]
         public void SeekToNextBookmark([Values(false, true)] bool nullMachine)
         {
-            TestCommand<IPrerecordedMachine>(nullMachine, m => m.SeekToNextBookmarkCommand, m => m.SeekToNextBookmark());
+            TestCommand<IPrerecordedMachine>(nullMachine, m => m.SeekToNextBookmarkCommand, null, m => m.SeekToNextBookmark());
         }
 
         [Test]
         public void SeekToPreviousBookmark([Values(false, true)] bool nullMachine)
         {
-            TestCommand<IPrerecordedMachine>(nullMachine, m => m.SeekToPrevBookmarkCommand, m => m.SeekToPreviousBookmark());
+            TestCommand<IPrerecordedMachine>(nullMachine, m => m.SeekToPrevBookmarkCommand, null, m => m.SeekToPreviousBookmark());
         }
 
         [Test]
         public void SeekToStart([Values(false, true)] bool nullMachine)
         {
-            TestCommand<IPrerecordedMachine>(nullMachine, m => m.SeekToStartCommand, m => m.SeekToStart());
+            TestCommand<IPrerecordedMachine>(nullMachine, m => m.SeekToStartCommand, null, m => m.SeekToStart());
+        }
+
+        [Test]
+        public void KeyDown([Values(false, true)] bool nullMachine)
+        {
+            TestCommand<IInteractiveMachine>(nullMachine, m => m.KeyDownCommand, Keys.A, m => m.Key(Keys.A, true));
+        }
+
+        [Test]
+        public void KeyUp([Values(false, true)] bool nullMachine)
+        {
+            TestCommand<IInteractiveMachine>(nullMachine, m => m.KeyUpCommand, Keys.A, m => m.Key(Keys.A, false));
         }
     }
 }
