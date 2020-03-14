@@ -207,7 +207,7 @@ namespace CPvC.Test
             Assert.AreEqual(!nullMachine && (!isOpenable || !requiresOpen) && !running, model.ResumeCommand.CanExecute(null));
         }
 
-        [TestCase(true, true, false, 0, false)]
+        [TestCase(false, true, false, 0, false)]
         [TestCase(true, false, false, 0, false)]
         [TestCase(false, false, false, 0, false)]
         [TestCase(false, false, true, 0, true)]
@@ -236,7 +236,7 @@ namespace CPvC.Test
             TestCommand<IInteractiveMachine>(nullMachine, m => m.TapeEjectCommand, null, m => m.LoadTape(null));
         }
 
-        [TestCase(true, true, false, 0, false)]
+        [TestCase(false, true, false, 0, false)]
         [TestCase(true, false, false, 0, false)]
         [TestCase(false, false, false, 0, false)]
         [TestCase(false, false, true, 0, true)]
@@ -247,7 +247,7 @@ namespace CPvC.Test
             TestLoadMedia(nullMachine, FileTypes.Disc, nullFilename, isZipped, entryCount, selectFile, machineViewModel => machineViewModel.DriveBCommand, mediaImage => { return m => m.LoadDisc(1, mediaImage); });
         }
 
-        [TestCase(true, true, false, 0, false)]
+        [TestCase(false, true, false, 0, false)]
         [TestCase(true, false, false, 0, false)]
         [TestCase(false, false, false, 0, false)]
         [TestCase(false, false, true, 0, true)]
