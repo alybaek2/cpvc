@@ -49,9 +49,9 @@
         </Style>
         <CollectionViewSource x:Key="Machines" Source="{Binding Machines}"/>
         <CollectionViewSource x:Key="MachineViewModels" Source="{Binding MachineViewModels}"/>
-        <CollectionViewSource x:Key="OpenMachines" Source="{Binding Machines}" Filter="OpenMachines_Filter" IsLiveFilteringRequested="True">
+        <CollectionViewSource x:Key="OpenMachines" Source="{Binding MachineViewModels}" Filter="OpenMachineViewModels_Filter" IsLiveFilteringRequested="True">
             <CollectionViewSource.LiveFilteringProperties>
-                <System:String>RequiresOpen</System:String>
+                <System:String>Machine.RequiresOpen</System:String>
             </CollectionViewSource.LiveFilteringProperties>
         </CollectionViewSource>
         <CollectionViewSource x:Key="ReplayMachines" Source="{Binding ReplayMachines}"/>
@@ -188,8 +188,8 @@
             <TabControl.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                        <Image Width="16" Height="16" Stretch="None" Source="{Binding Running, Converter={StaticResource runningIconConverter}, Mode=OneWay}"/>
-                        <TextBlock Text="{Binding Name, Mode=OneWay}"/>
+                        <Image Width="16" Height="16" Stretch="None" Source="{Binding Machine.Running, Converter={StaticResource runningIconConverter}, Mode=OneWay}"/>
+                        <TextBlock Text="{Binding Machine.Name, Mode=OneWay}"/>
                     </StackPanel>
                 </DataTemplate>
             </TabControl.ItemTemplate>
@@ -201,17 +201,17 @@
                                 <Style TargetType="Rectangle">
                                     <Setter Property="Visibility" Value="Hidden"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Running}" Value="False">
+                                        <DataTrigger Binding="{Binding Machine.Running}" Value="False">
                                             <Setter Property="Visibility" Value="Visible"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Rectangle.Style>
                         </Rectangle>
-                        <Image Width="768" Height="576" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" Source="{Binding Display.Bitmap}" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill"/>
+                        <Image Width="768" Height="576" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" Source="{Binding Machine.Display.Bitmap}" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill"/>
                         <Grid Margin="0,0,20,20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Panel.ZIndex="2" Opacity="1.0">
                             <Rectangle HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.7" Panel.ZIndex="0" Fill="Black" RadiusX="8" RadiusY="8"/>
-                            <Label Content="{Binding Status, NotifyOnTargetUpdated=True}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="24" Panel.ZIndex="1">
+                            <Label Content="{Binding Machine.Status, NotifyOnTargetUpdated=True}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="24" Panel.ZIndex="1">
                                 <Label.Effect>
                                     <DropShadowEffect Direction="315" ShadowDepth="4" Color="Black" Opacity="1.0" BlurRadius="0.0"/>
                                 </Label.Effect>

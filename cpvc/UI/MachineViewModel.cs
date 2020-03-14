@@ -31,8 +31,9 @@ namespace CPvC
         private Command _seekToNextBookmarkCommand;
         private Command _seekToPrevBookmarkCommand;
         private Command _seekToStartCommand;
-
-        public event PropertyChangedEventHandler PropertyChanged;
+        private Command _keyDownCommand;
+        private Command _keyUpCommand;
+        private Command _turboCommand;
 
         public MachineViewModel(ICoreMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, SelectItemDelegate selectItem)
         {
@@ -169,6 +170,21 @@ namespace CPvC
                 p => (machine as IPrerecordedMachine)?.SeekToStart(),
                 p => (machine as IPrerecordedMachine) != null
             );
+
+            _keyDownCommand = new Command(
+                p => (machine as IInteractiveMachine)?.Key((byte)p, true),
+                p => (machine as IInteractiveMachine) != null
+            );
+
+            _keyUpCommand = new Command(
+                p => (machine as IInteractiveMachine)?.Key((byte)p, false),
+                p => (machine as IInteractiveMachine) != null
+            );
+
+            _turboCommand = new Command(
+                p => (machine as ITurboableMachine)?.EnableTurbo((bool)p),
+                p => (machine as ITurboableMachine) != null
+            );
         }
 
         public ICoreMachine Machine { get; }
@@ -271,6 +287,21 @@ namespace CPvC
         public ICommand SeekToStartCommand
         {
             get { return _seekToStartCommand; }
+        }
+
+        public ICommand KeyDownCommand
+        {
+            get { return _keyDownCommand; }
+        }
+
+        public ICommand KeyUpCommand
+        {
+            get { return _keyUpCommand; }
+        }
+
+        public ICommand TurboCommand
+        {
+            get { return _turboCommand; }
         }
 
         private void MachinePropChanged(object sender, PropertyChangedEventArgs args)

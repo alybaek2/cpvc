@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Windows.Input;
 using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
@@ -70,8 +69,7 @@ namespace CPvC.Test
                 historyEvent = machine.CurrentEvent;
             }
 
-            ReplayMachine replayMachine = new ReplayMachine(historyEvent);
-            viewModel.ReplayMachines.Add(replayMachine);
+            viewModel.OpenReplayMachine("Test Replay", historyEvent);
 
             return viewModel;
         }
@@ -287,12 +285,17 @@ namespace CPvC.Test
             Mock<MainViewModel.PromptForNameDelegate> mockNamePrompt = new Mock<MainViewModel.PromptForNameDelegate>(MockBehavior.Loose);
             MainViewModel viewModel = SetupViewModel(1, null, null, mockNamePrompt);
             Machine machine = viewModel.Machines[0];
+            MachineViewModel machineViewModel = viewModel.MachineViewModels[0];
             string oldName = machine.Name;
             mockNamePrompt.Setup(x => x(oldName)).Returns(newName);
 
             if (active)
             {
-                viewModel.ActiveMachine = machine;
+                viewModel.ActiveMachineViewModel = machineViewModel;
+            }
+            else
+            {
+                viewModel.ActiveMachineViewModel = null;
             }
 
             // Act
@@ -309,134 +312,6 @@ namespace CPvC.Test
             }
         }
 
-        //[TestCase(0)]
-        //[TestCase(1)]
-        //[TestCase(2)]
-        //public void LoadNonZipMedia(byte drive)
-        //{
-        //    // Setup
-        //    string filename = (drive == 2) ? "test.cdt" : "test.dsk";
-        //    FileTypes fileType = (drive == 2) ? FileTypes.Tape : FileTypes.Disc;
-        //    Mock<MainViewModel.PromptForFileDelegate> mockPrompt = SetupPrompt(fileType, true, filename);
-
-        //    MainViewModel viewModel = SetupViewModel(1, mockPrompt, null, null);
-        //    MachineViewModel machineViewModel = viewModel.MachineViewModels[0];
-        //    Machine machine = viewModel.Machines[0];
-        //    machine.Open();
-        //    viewModel.ActiveMachine = machine;
-
-        //    // Act
-        //    if (fileType == FileTypes.Tape)
-        //    {
-        //        machineViewModel.TapeCommand.Execute(null);
-        //    }
-        //    else
-        //    {
-        //        ICommand command = (drive == 0) ? machineViewModel.DriveACommand : machineViewModel.DriveBCommand;
-        //        command.Execute(null);
-        //    }
-
-        //    // Verify
-        //    mockPrompt.Verify(x => x(fileType, true), Times.Once());
-        //    mockPrompt.VerifyNoOtherCalls();
-        //    _mockFileSystem.Verify(ReadBytes(filename), Times.Once());
-        //}
-
-        //[TestCase(null, 0, 0, false)]
-        //[TestCase("test.zip", 0, 0, false)]
-        //[TestCase("test.zip", 1, 0, false)]
-        //[TestCase("test.zip", 2, 0, false)]
-        //[TestCase("test.zip", 0, 1, false)]
-        //[TestCase("test.zip", 1, 1, false)]
-        //[TestCase("test.zip", 2, 1, false)]
-        //[TestCase("test.zip", 0, 2, false)]
-        //[TestCase("test.zip", 1, 2, false)]
-        //[TestCase("test.zip", 2, 2, false)]
-        //[TestCase("test.zip", 0, 2, true)]
-        //[TestCase("test.zip", 1, 2, true)]
-        //[TestCase("test.zip", 2, 2, true)]
-        //public void LoadZipMedia(string zipFilename, byte drive, int entryCount, bool selectFile)
-        //{
-        //    // Setup
-        //    FileTypes fileType = (drive == 2) ? FileTypes.Tape : FileTypes.Disc;
-
-        //    List<string> entries = new List<string>();
-        //    for (int e = 0; e < entryCount; e++)
-        //    {
-        //        entries.Add(String.Format("test{0}.{1}", e, (drive == 2) ? "cdt" : "dsk"));
-        //    }
-
-        //    // Throw in a file with a different extension in order to verify it isn't shown
-        //    // in the Select Item window.
-        //    List<string> entriesWithExtraneousFile = new List<string>(entries)
-        //    {
-        //        "test.txt"
-        //    };
-
-        //    _mockFileSystem.Setup(GetZipFileEntryNames(zipFilename)).Returns(entriesWithExtraneousFile);
-
-        //    Mock<MainViewModel.PromptForFileDelegate> mockPrompt = SetupPrompt(fileType, true, zipFilename);
-        //    Mock<MainViewModel.SelectItemDelegate> mockSelect = new Mock<MainViewModel.SelectItemDelegate>();
-
-        //    if (entryCount > 0)
-        //    {
-        //        _mockFileSystem.Setup(GetZipFileEntry(zipFilename, entries[0])).Returns(new byte[1]);
-
-        //        if (entryCount > 1)
-        //        {
-        //            mockSelect.Setup(x => x(entries)).Returns(selectFile ? entries[0] : null);
-        //        }
-        //    }
-
-        //    MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, mockSelect.Object, mockPrompt.Object, null, null);
-        //    Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
-        //    //viewModel.ActiveMachine = machine;
-
-
-
-        //    //viewModel.NewMachine()
-
-        //    MachineViewModel machineViewModel = new MachineViewModel(machine, _mockFileSystem.Object, mockPrompt.Object, null, null, mockSelect.Object);
-
-        //    // Act
-        //    if (drive == 2)
-        //    {
-        //        machineViewModel.TapeCommand.Execute(null);
-        //    }
-        //    else if (drive == 0)
-        //    {
-        //        machineViewModel.DriveACommand.Execute(null);
-        //    }
-        //    else if (drive == 1)
-        //    {
-        //        machineViewModel.DriveBCommand.Execute(null);
-        //    }
-
-        //    // Verify
-        //    mockPrompt.Verify(x => x(fileType, true), Times.Once());
-
-        //    if (entryCount == 0)
-        //    {
-        //        _mockFileSystem.Verify(GetZipFileEntry(zipFilename), Times.Never());
-        //    }
-        //    else if (entryCount == 1)
-        //    {
-        //        _mockFileSystem.Verify(GetZipFileEntry(zipFilename, entries[0]), Times.Once());
-        //    }
-        //    else if (entryCount > 1)
-        //    {
-        //        _mockFileSystem.Verify(GetZipFileEntry(zipFilename, entries[0]), selectFile ? Times.Once() : Times.Never());
-        //        mockSelect.Verify(x => x(entries), Times.Once());
-        //    }
-
-        //    if (zipFilename != null)
-        //    {
-        //        _mockFileSystem.Verify(GetZipFileEntryNames(zipFilename), Times.Once());
-        //    }
-
-        //    mockSelect.VerifyNoOtherCalls();
-        //}
-
         [Test]
         public void NullActiveMachine()
         {
@@ -445,29 +320,28 @@ namespace CPvC.Test
 
             MainViewModel viewModel = SetupViewModel(1, prompt, null, null);
             Machine machine = viewModel.Machines[0];
-            MachineViewModel machineViewModel = viewModel.MachineViewModels[0];
             machine.Open();
-            viewModel.ActiveMachine = null;
+            viewModel.ActiveMachineViewModel = null;
 
             // Act and Verify
             Assert.DoesNotThrow(() =>
             {
-                (machineViewModel.Machine as IInteractiveMachine)?.Key(Keys.A, true);
-                machineViewModel.ResetCommand.Execute(null);
-                machineViewModel.PauseCommand.Execute(null);
-                machineViewModel.ResumeCommand.Execute(null);
-                machineViewModel.DriveACommand.Execute(null);
-                machineViewModel.TapeCommand.Execute(null);
-                machineViewModel.DriveAEjectCommand.Execute(null);
-                machineViewModel.TapeEjectCommand.Execute(null);
-                machineViewModel.AddBookmarkCommand.Execute(null);
-                machineViewModel.JumpToMostRecentBookmarkCommand.Execute(null);
-                (machineViewModel.Machine as ITurboableMachine)?.EnableTurbo(true);
-                machineViewModel.CompactCommand.Execute(null);
-                machineViewModel.SeekToNextBookmarkCommand.Execute(null);
-                machineViewModel.SeekToPrevBookmarkCommand.Execute(null);
-                machineViewModel.SeekToStartCommand.Execute(null);
-                machineViewModel.CloseCommand.Execute(null);
+                viewModel.ActiveMachineViewModel.KeyDownCommand.Execute(Keys.A);
+                viewModel.ActiveMachineViewModel.ResetCommand.Execute(null);
+                viewModel.ActiveMachineViewModel.PauseCommand.Execute(null);
+                viewModel.ActiveMachineViewModel.ResumeCommand.Execute(null);
+                viewModel.ActiveMachineViewModel.DriveACommand.Execute(null);
+                viewModel.ActiveMachineViewModel.TapeCommand.Execute(null);
+                viewModel.ActiveMachineViewModel.DriveAEjectCommand.Execute(null);
+                viewModel.ActiveMachineViewModel.TapeEjectCommand.Execute(null);
+                viewModel.ActiveMachineViewModel.AddBookmarkCommand.Execute(null);
+                viewModel.ActiveMachineViewModel.JumpToMostRecentBookmarkCommand.Execute(null);
+                viewModel.ActiveMachineViewModel.TurboCommand.Execute(null);
+                viewModel.ActiveMachineViewModel.CompactCommand.Execute(null);
+                viewModel.ActiveMachineViewModel.SeekToNextBookmarkCommand.Execute(null);
+                viewModel.ActiveMachineViewModel.SeekToPrevBookmarkCommand.Execute(null);
+                viewModel.ActiveMachineViewModel.SeekToStartCommand.Execute(null);
+                viewModel.ActiveMachineViewModel.CloseCommand.Execute(null);
             });
         }
 
@@ -481,9 +355,10 @@ namespace CPvC.Test
             HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(0, 0, DateTime.Now, null);
             prompt.Setup(p => p()).Returns(selectEvent ? historyEvent : null);
             MainViewModel viewModel = SetupViewModel(1, null, prompt, null);
-            Machine machine = viewModel.Machines[0];
+            MachineViewModel machineViewModel = viewModel.MachineViewModels[0];
+            Machine machine = machineViewModel.Machine as Machine;
             machine.Open();
-            viewModel.ActiveMachine = active ? machine : null;
+            viewModel.ActiveMachineViewModel = active ? machineViewModel : null;
 
             // Act
             viewModel.ActiveMachineViewModel.BrowseBookmarksCommand.Execute(null);
@@ -517,11 +392,12 @@ namespace CPvC.Test
             MainViewModel viewModel = SetupViewModel(1, null, null, null);
             Machine machine = viewModel.Machines[0];
             machine.Open();
-            ICoreMachine coreMachine = replayMachine ? (ICoreMachine)viewModel.ReplayMachines[0] : (ICoreMachine)machine;
-            viewModel.ActiveMachine = active ? coreMachine : null;
+            MachineViewModel machineViewModel = replayMachine ? viewModel.MachineViewModels[1] : viewModel.MachineViewModels[0];
+
+            viewModel.ActiveMachineViewModel = active ? machineViewModel : null;
 
             // Run the machine enough to fill up the audio buffer.
-            Run(coreMachine, 200, true);
+            Run(machineViewModel.Machine, 200, true);
 
             // Act
             byte[] buffer = new byte[4];
@@ -545,24 +421,25 @@ namespace CPvC.Test
             Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
             MainViewModel viewModel = SetupViewModel(1, null, null, null);
             viewModel.PropertyChanged += propChanged.Object;
-            Machine machine = viewModel.Machines[0];
+            MachineViewModel machineViewModel = viewModel.MachineViewModels[0];
+            Machine machine = machineViewModel.Machine as Machine;
             if (closed)
             {
-                machine.Close();
+                machineViewModel.CloseCommand.Execute(null);
             }
             else
             {
-                machine.Open();
+                machineViewModel.OpenCommand.Execute(null);
             }
 
             // Act
-            viewModel.ActiveMachine = machine;
+            viewModel.ActiveMachineViewModel = machineViewModel;
 
             // Verify
             Assert.IsFalse(machine.RequiresOpen);
-            Assert.AreEqual(machine, viewModel.ActiveMachine);
+            Assert.AreEqual(machineViewModel, viewModel.ActiveMachineViewModel);
             propChanged.Verify(PropertyChanged(viewModel, "ActiveItem"), Times.Once);
-            propChanged.Verify(PropertyChanged(viewModel, "ActiveMachine"), Times.Once);
+            propChanged.Verify(PropertyChanged(viewModel, "ActiveMachineViewModel"), Times.Once);
         }
 
         [Test]
@@ -578,10 +455,10 @@ namespace CPvC.Test
             viewModel.ActiveItem = nonMachine;
 
             // Verify
-            Assert.IsNull(viewModel.ActiveMachine);
+            Assert.IsNull(viewModel.ActiveMachineViewModel.Machine);
             Assert.AreEqual(nonMachine, viewModel.ActiveItem);
             propChanged.Verify(PropertyChanged(viewModel, "ActiveItem"), Times.Once);
-            propChanged.Verify(PropertyChanged(viewModel, "ActiveMachine"), Times.Once);
+            propChanged.Verify(PropertyChanged(viewModel, "ActiveMachineViewModel"), Times.Once);
         }
 
         [Test]
@@ -619,27 +496,6 @@ namespace CPvC.Test
             Assert.IsTrue(viewModel.Machines[1].RequiresOpen);
         }
 
-        //[Test]
-        //public void Toggle()
-        //{
-        //    // Setup
-        //    MainViewModel viewModel = SetupViewModel(1, null, null, null);
-        //    Machine machine = viewModel.Machines[0];
-        //    MachineViewModel machineViewModel = viewModel.MachineViewModels[0];
-        //    machine.Open();
-
-        //    // Act
-        //    bool runningState1 = machineViewModel.Machine.Running;
-        //    machineViewModel.ToggleRunningCommand.Execute(null);
-        //    bool runningState2 = machineViewModel.Machine.Running;
-        //    machineViewModel.ToggleRunningCommand.Execute(null);
-        //    bool runningState3 = machineViewModel.Machine.Running;
-
-        //    // Verify
-        //    Assert.AreEqual(runningState1, runningState3);
-        //    Assert.AreNotEqual(runningState1, runningState2);
-        //}
-
         [Test]
         public void ToggleNull()
         {
@@ -656,12 +512,13 @@ namespace CPvC.Test
             // Setup
             MainViewModel viewModel = SetupViewModel(1, null, null, null);
             Machine machine = viewModel.Machines[0];
+            MachineViewModel machineViewModel = viewModel.MachineViewModels[0];
             machine.Open();
-            viewModel.ActiveMachine = machine;
+            viewModel.ActiveMachineViewModel = machineViewModel;
 
             // Act - enable turbo mode and run for enough ticks that should cause 10 audio
             //       samples to be written while in turbo mode.
-            viewModel.EnableTurbo(true);
+            viewModel.ActiveMachineViewModel.TurboCommand.Execute(true);
             Run(machine, 8300, true);
 
             // Verify
@@ -669,75 +526,6 @@ namespace CPvC.Test
             int samples = machine.ReadAudio(buffer, 0, buffer.Length);
             Assert.AreEqual(10, samples);
         }
-
-        //[Test]
-        //public void EjectTape()
-        //{
-        //    // Setup
-        //    MainViewModel viewModel = SetupViewModel(1, null, null, null);
-        //    Machine machine = viewModel.Machines[0];
-        //    machine.Open();
-        //    viewModel.ActiveMachine = machine;
-        //    MachineViewModel machineViewModel = new MachineViewModel(machine, _mockFileSystem.Object, null, null, null, null);
-
-        //    // Act
-        //    machineViewModel.TapeEjectCommand.Execute(null);
-
-        //    ProcessQueueAndStop(machine.Core);
-
-        //    // Verify - need a better way of checking this; perhaps play the tape and check no tones are generated.
-        //    Assert.False(machine.Core.Running);
-        //    Assert.AreEqual("Ejected tape", machine.Status);
-        //}
-
-        //[TestCase(0)]
-        //[TestCase(1)]
-        //public void EjectDisc(byte drive)
-        //{
-        //    // Setup
-        //    MainViewModel viewModel = SetupViewModel(1, null, null, null);
-        //    Machine machine = viewModel.Machines[0];
-        //    machine.Open();
-        //    MachineViewModel machineViewModel = new MachineViewModel(machine, _mockFileSystem.Object, null, null, null, null);
-
-        //    // Act
-        //    ICommand command = (drive == 0) ? machineViewModel.DriveAEjectCommand : machineViewModel.DriveBEjectCommand;
-        //    command.Execute(null);
-
-        //    ProcessQueueAndStop(machine.Core);
-
-        //    // Verify - need a better way of checking this; perhaps query the FDC main status register.
-        //    Assert.False(machine.Core.Running);
-        //    Assert.AreEqual("Ejected disc", machine.Status);
-        //}
-
-        ///// <summary>
-        ///// Ensures that Pause and Resume calls are passed through from the view model to the machine.
-        ///// </summary>
-        ///// <param name="active">Indicates whether the machine should be set as the view model's active machine.</param>
-        ///// <param nam="nullMachine">Indicates whether Pause and Resume should be called with a null parameter instead of a machine.</param>
-        //[TestCase(false)]
-        //[TestCase(true)]
-        //public void PauseAndResume(bool active)
-        //{
-        //    // Setup
-        //    MainViewModel viewModel = SetupViewModel(1, null, null, null);
-        //    Machine machine = viewModel.Machines[0];
-        //    machine.Open();
-        //    viewModel.ActiveMachine = active ? machine : null;
-
-        //    // Act
-        //    bool initialState = machine.Core.Running;
-        //    viewModel.ActiveMachineViewModel.PauseCommand.Execute(null);
-        //    bool pausedState = machine.Core.Running;
-        //    viewModel.ActiveMachineViewModel.ResumeCommand.Execute(null);
-        //    bool runningState = machine.Core.Running;
-
-        //    // Verify
-        //    Assert.IsFalse(initialState);
-        //    Assert.AreEqual(active, runningState);
-        //    Assert.IsFalse(pausedState);
-        //}
 
         /// <summary>
         /// Ensures that a Reset call is passed through from the view model to the machine.
@@ -774,11 +562,11 @@ namespace CPvC.Test
 
             machine.Open();
             machine.Core.Auditors += auditor;
-            viewModel.ActiveMachine = active ? machine : null;
+            viewModel.ActiveMachineViewModel = active ? machineViewModel : null;
 
             // Act
             machineViewModel.ResetCommand.Execute(null);
-            viewModel.Key(Keys.A, true);
+            machineViewModel.KeyDownCommand.Execute(Keys.A);
 
             ProcessQueueAndStop(machine.Core);
 
@@ -812,9 +600,10 @@ namespace CPvC.Test
         {
             // Setup
             MainViewModel viewModel = SetupViewModel(1, null, null, null);
+            MachineViewModel machineViewModel = viewModel.MachineViewModels[0];
             Machine machine = viewModel.Machines[0];
             machine.Open();
-            viewModel.ActiveMachine = active ? machine : null;
+            viewModel.ActiveMachineViewModel = active ? machineViewModel : null;
 
             // Act
             viewModel.ActiveMachineViewModel.AddBookmarkCommand.Execute(null);
@@ -830,128 +619,15 @@ namespace CPvC.Test
             }
         }
 
-        //[TestCase(false)]
-        //[TestCase(true)]
-        //public void SeekToBegin(bool active)
-        //{
-        //    // Setup
-        //    MainViewModel viewModel = SetupViewModel(1, null, null, null);
+        [Test]
+        public void OpenReplayMachine()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1, null, null, null);
 
-        //    Mock<IPrerecordedMachine> mockPrerecordedMachine = new Mock<IPrerecordedMachine>();
-        //    viewModel.ActiveMachine = active ? mockPrerecordedMachine.Object : null;
-
-        //    // Act
-        //    viewModel.SeekToStartCommand.Execute(null);
-
-        //    // Verify
-        //    mockPrerecordedMachine.Verify(m => m.SeekToStart(), active ? Times.Once() : Times.Never());
-        //}
-
-        //[TestCase(false)]
-        //[TestCase(true)]
-        //public void SeekToNextBookmark(bool active)
-        //{
-        //    // Setup
-        //    MainViewModel viewModel = SetupViewModel(1, null, null, null);
-
-        //    Mock<IPrerecordedMachine> mockPrerecordedMachine = new Mock<IPrerecordedMachine>();
-        //    viewModel.ActiveMachine = active ? mockPrerecordedMachine.Object : null;
-
-        //    // Act
-        //    viewModel.ActiveMachineViewModel.SeekToNextBookmarkCommand.Execute(null);
-
-        //    // Verify
-        //    mockPrerecordedMachine.Verify(m => m.SeekToNextBookmark(), active ? Times.Once() : Times.Never());
-        //}
-
-        //[TestCase(false)]
-        //[TestCase(true)]
-        //public void SeekToPrevBookmark(bool active)
-        //{
-        //    // Setup
-        //    MainViewModel viewModel = SetupViewModel(1, null, null, null);
-
-        //    Mock<IPrerecordedMachine> mockPrerecordedMachine = new Mock<IPrerecordedMachine>();
-        //    viewModel.ActiveMachine = active ? mockPrerecordedMachine.Object : null;
-
-        //    // Act
-        //    viewModel.SeekToPrevBookmarkCommand.Execute(null);
-
-        //    // Verify
-        //    mockPrerecordedMachine.Verify(m => m.SeekToPreviousBookmark(), active ? Times.Once() : Times.Never());
-        //}
-
-        ///// <summary>
-        ///// Ensures that a JumpToMostRecentBookmark call is passed through from the view model to the machine.
-        ///// </summary>
-        //[Test]
-        //public void JumpToMostRecentBookmark(bool active)
-        //{
-        //    // Setup
-        //    MainViewModel viewModel = SetupViewModel(1, null, null, null);
-
-        //    Mock<IBookmarkableMachine> mockPrerecordedMachine = new Mock<IBookmarkableMachine>();
-        //    viewModel.ActiveMachine = active ? mockPrerecordedMachine.Object : null;
-        //    MachineViewModel machineViewModel = new MachineViewModel(mockPrerecordedMachine.Object, _mockFileSystem.Object, null, null, null, null);
-
-        //    // Act
-        //    machineViewModel.JumpToMostRecentBookmarkCommand.Execute(null);
-
-        //    // Verify
-        //    mockPrerecordedMachine.Verify(m => m.JumpToMostRecentBookmark(), active ? Times.Once() : Times.Never());
-        //}
-
-        ///// <summary>
-        ///// Ensures that a CompactFile call is passed through from the view model to the machine.
-        ///// </summary>
-        ///// <param name="active">Indicates whether the machine should be set as the view model's active machine.</param>
-        //[TestCase(false)]
-        //[TestCase(true)]
-        //public void CompactMachineFile(bool active)
-        //{
-        //    // Setup
-        //    MainViewModel viewModel = SetupViewModel(1, null, null, null);
-        //    Machine machine = viewModel.Machines[0];
-        //    machine.Open();
-        //    viewModel.ActiveMachine = active ? machine : null;
-
-        //    // Act
-        //    viewModel.ActiveMachineViewModel.CompactCommand.Execute(null);
-
-        //    // Verify
-        //    if (active)
-        //    {
-        //        string expectedStatus = "Compacted";
-        //        Assert.AreEqual(expectedStatus, machine.Status.Substring(0, expectedStatus.Length));
-        //    }
-        //    else
-        //    {
-        //        Assert.IsNull(machine.Status);
-        //    }
-        //}
-
-        ///// <summary>
-        ///// Ensures that a Close call is passed through from the view model to the machine.
-        ///// </summary>
-        ///// <param name="active">Indicates whether the machine should be set as the view model's active machine.</param>
-        ///// <param name="nullMachine">Indicates whether Close should be called with a null parameter instead of a machine.</param>
-        //[TestCase(false, false)]
-        //[TestCase(true, false)]
-        //[TestCase(false, true)]
-        //[TestCase(true, true)]
-        //public void Close(bool active, bool nullMachine)
-        //{
-        //    // Setup
-        //    MainViewModel viewModel = SetupViewModel(1, null, null, null);
-        //    Machine machine = viewModel.Machines[0];
-        //    machine.Open();
-        //    viewModel.ActiveMachine = active ? machine : null;
-
-        //    // Act
-        //    viewModel.Close(nullMachine ? null : machine);
-
-        //    // Verify - a successfully closed machine should have its RequireOpen property set to true.
-        //    Assert.AreEqual(active || !nullMachine, machine.RequiresOpen);
-        //}
+            // Verify
+            Assert.AreEqual(1, viewModel.ReplayMachines.Count);
+            Assert.AreEqual("Test Replay", viewModel.ReplayMachines[0].Name);
+        }
     }
 }

@@ -163,13 +163,13 @@ namespace CPvC.UI.Forms
         {
             if (e.Key == Key.OemTilde)
             {
-                _mainViewModel.EnableTurbo(true);
+                _mainViewModel.ActiveMachineViewModel.TurboCommand.Execute(true);
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);
             if (cpcKey.HasValue)
             {
-                _mainViewModel.Key(cpcKey.Value, true);
+                _mainViewModel.ActiveMachineViewModel.KeyDownCommand.Execute(cpcKey.Value);
             }
         }
 
@@ -177,19 +177,19 @@ namespace CPvC.UI.Forms
         {
             if (e.Key == Key.OemTilde)
             {
-                _mainViewModel.EnableTurbo(false);
+                _mainViewModel.ActiveMachineViewModel.TurboCommand.Execute(false);
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);
             if (cpcKey.HasValue)
             {
-                _mainViewModel.Key(cpcKey.Value, false);
+                _mainViewModel.ActiveMachineViewModel.KeyUpCommand.Execute(cpcKey.Value);
             }
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.Close(null);
+            _mainViewModel.ActiveMachineViewModel.CloseCommand.Execute(null);
         }
 
         private void OpenMenuItem_Click(object sender, RoutedEventArgs e)
@@ -206,7 +206,7 @@ namespace CPvC.UI.Forms
 
         private void CloseMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.Close(null);
+            _mainViewModel.ActiveMachineViewModel.CloseCommand.Execute(null);
         }
 
         private string PromptForFile(FileTypes type, bool existing)
@@ -287,7 +287,8 @@ namespace CPvC.UI.Forms
                     {
                         if (dialog.SelectedReplayEvent != null)
                         {
-                            _mainViewModel.OpenReplayMachine(machine, dialog.SelectedReplayEvent);
+                            string name = String.Format("{0} (Replay)", machine.Name);
+                            _mainViewModel.OpenReplayMachine(name, dialog.SelectedReplayEvent);
 
                             return null;
                         }
@@ -335,24 +336,25 @@ namespace CPvC.UI.Forms
 
         private void MachinePreviewGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is Machine machine)
+            if (sender is FrameworkElement element && element.DataContext is MachineViewModel machineViewModel)
             {
+                ICoreMachine machine = machineViewModel.Machine as ICoreMachine;
                 try
                 {
-                    _mainViewModel.ActiveMachine = machine;
+                    _mainViewModel.ActiveMachineViewModel = machineViewModel;
                 }
                 catch (Exception ex)
                 {
-                    ReportError(String.Format("Unable to open {0}.\n\n{1}", machine.Name, ex.Message));
+                    ReportError(String.Format("Unable to open {0}.\n\n{1}", (machine as IInteractiveMachine).Name, ex.Message));
                 }
             }
         }
 
         private void ScreenGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is ICoreMachine machine)
+            if (sender is FrameworkElement element && element.DataContext is MachineViewModel machineViewModel)
             {
-                _mainViewModel.ActiveMachineViewModel.ToggleRunningCommand.Execute(null);
+                machineViewModel.ToggleRunningCommand.Execute(null);
             }
         }
 
@@ -369,11 +371,11 @@ namespace CPvC.UI.Forms
             }
         }
 
-        private void OpenMachines_Filter(object sender, System.Windows.Data.FilterEventArgs e)
+        private void OpenMachineViewModels_Filter(object sender, System.Windows.Data.FilterEventArgs e)
         {
-            if (e.Item is Machine machine)
+            if (e.Item is MachineViewModel machineViewModel)
             {
-                e.Accepted = !machine.RequiresOpen;
+                e.Accepted = !((machineViewModel.Machine as IOpenableMachine)?.RequiresOpen ?? true);
             }
             else
             {

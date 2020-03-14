@@ -84,22 +84,6 @@ namespace CPvC.UI
             }
         }
 
-        public MachineViewModel ActiveMachineViewModel
-        {
-            get
-            {
-                for (int i = 0; i < _machineViewModels.Count; i++)
-                {
-                    if (_machineViewModels[i].Machine == (_active as ICoreMachine))
-                    {
-                        return _machineViewModels[i];
-                    }
-                }
-
-                return _nullMachineViewModel;
-            }
-        }
-
         /// <summary>
         /// Represents the currently active item in the main window. Corresponds to the DataContext associated with the currently
         /// selected tab in the main window.
@@ -115,46 +99,48 @@ namespace CPvC.UI
             {
                 _active = value;
                 OnPropertyChanged("ActiveItem");
-                OnPropertyChanged("ActiveMachine");
                 OnPropertyChanged("ActiveMachineViewModel");
             }
         }
 
-        /// <summary>
-        /// If the currently selected tab corresponds to a Machine, this property will be a reference to that machine. Otherwise, this property is null.
-        /// </summary>
-        public ICoreMachine ActiveMachine
+        public MachineViewModel ActiveMachineViewModel
         {
             get
             {
-                return _active as ICoreMachine;
+                return _active as MachineViewModel ?? _nullMachineViewModel;
             }
 
             set
             {
-                _active = value;
-
-                if (_active is Machine machine && machine.RequiresOpen)
+                if (value == null)
                 {
-                    machine.Open();
+                    _active = null;
+                }
+                else
+                {
+                    _active = value;
+
+                    if (value.Machine is IOpenableMachine machine && machine.RequiresOpen)
+                    {
+                        machine.Open();
+                    }
                 }
 
                 OnPropertyChanged("ActiveItem");
-                OnPropertyChanged("ActiveMachine");
                 OnPropertyChanged("ActiveMachineViewModel");
             }
         }
 
-        public void OpenReplayMachine(Machine machine, HistoryEvent finalEvent)
+        public void OpenReplayMachine(string name, HistoryEvent finalEvent)
         {
             ReplayMachine replayMachine = new ReplayMachine(finalEvent);
-            replayMachine.Name = String.Format("{0} (Replay)", machine.Name);
+            replayMachine.Name = name;
             ReplayMachines.Add(replayMachine);
 
             MachineViewModel machineViewModel = new MachineViewModel(replayMachine, _fileSystem, null, null, null, null);
             _machineViewModels.Add(machineViewModel);
 
-            ActiveMachine = replayMachine;
+            ActiveMachineViewModel = machineViewModel;
         }
 
         public Machine NewMachine(PromptForFileDelegate promptForFile, IFileSystem fileSystem)
@@ -165,8 +151,9 @@ namespace CPvC.UI
             if (machine != null)
             {
                 machine.Start();
-                _machineViewModels.Add(new MachineViewModel(machine, _fileSystem, _promptForFile, _promptForBookmark, _promptForName, _selectItem));
-                ActiveMachine = machine;
+                MachineViewModel machineViewModel = new MachineViewModel(machine, _fileSystem, _promptForFile, _promptForBookmark, _promptForName, _selectItem);
+                _machineViewModels.Add(machineViewModel);
+                ActiveMachineViewModel = machineViewModel;
             }
 
             return machine;
@@ -182,26 +169,12 @@ namespace CPvC.UI
             Machine machine = _model.Add(filepath, fileSystem);
             if (machine != null)
             {
-                _machineViewModels.Add(new MachineViewModel(machine, _fileSystem, _promptForFile, _promptForBookmark, _promptForName, _selectItem));
-                ActiveMachine = machine;
+                MachineViewModel machineViewModel = new MachineViewModel(machine, _fileSystem, _promptForFile, _promptForBookmark, _promptForName, _selectItem);
+                _machineViewModels.Add(machineViewModel);
+                ActiveMachineViewModel = machineViewModel;
             }
 
             return machine;
-        }
-
-        public void EnableTurbo(bool enabled)
-        {
-            (ActiveMachine as ITurboableMachine)?.EnableTurbo(enabled);
-        }
-
-        public void Close(ICoreMachine machine)
-        {
-            ((machine ?? ActiveMachine) as IClosableMachine)?.Close();
-        }
-
-        public void Key(byte key, bool down)
-        {
-            (ActiveMachine as IInteractiveMachine)?.Key(key, down);
         }
 
         public void Remove(MachineViewModel viewModel)
@@ -233,7 +206,7 @@ namespace CPvC.UI
                 {
                     // Play audio only from the currently active machine; for the rest, just
                     // advance the audio playback position.
-                    if (machine == ActiveMachine)
+                    if (machine == ActiveMachineViewModel.Machine)
                     {
                         samplesWritten = machine.ReadAudio(buffer, offset, samplesRequested);
                     }
@@ -242,11 +215,12 @@ namespace CPvC.UI
                         machine.AdvancePlayback(samplesRequested);
                     }
                 }
+
                 foreach (ReplayMachine replayMachine in ReplayMachines)
                 {
                     // Play audio only from the currently active machine; for the rest, just
                     // advance the audio playback position.
-                    if (replayMachine == ActiveItem)
+                    if (replayMachine == ActiveMachineViewModel.Machine)
                     {
                         samplesWritten = replayMachine.ReadAudio(buffer, offset, samplesRequested);
                     }
