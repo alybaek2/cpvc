@@ -110,6 +110,7 @@
     <Compile Include="BookmarksViewModelTests.cs" />
     <Compile Include="ConvertersTests.cs" />
     <Compile Include="CoreActionTests.cs" />
+    <Compile Include="CoreRequestTests.cs" />
     <Compile Include="CoreTests.cs" />
     <Compile Include="DisplayTests.cs" />
     <Compile Include="FileSystemTests.cs" />
