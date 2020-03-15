@@ -67,7 +67,7 @@ namespace CPvC.UI
                     catch (Exception ex)
                     {
                         Diagnostics.Trace("Exception caught while opening {0}: {1}", filepath, ex.Message);
-                        machine?.Dispose();
+                        machine.Dispose();
 
                         throw;
                     }

@@ -1,6 +1,7 @@
 ﻿using CPvC.UI;
 using Moq;
 using NUnit.Framework;
+using System.ComponentModel;
 using System.Threading;
 using static CPvC.Test.TestHelpers;
 
@@ -324,6 +325,38 @@ namespace CPvC.Test
                 // Verify
                 Assert.That(viewModel.SelectedReplayEvent, Is.EqualTo(nullSelectedItem ? null : viewModel.SelectedReplayEvent));
                 mockItemSelected.Verify(s => s(), nullSelectedItem ? Times.Never() : Times.Once());
+            }
+        }
+
+        [Test]
+        public void PropertyChanged()
+        {
+            // Setup
+            using (Machine machine = CreateMachineWithHistory())
+            {
+                Mock<System.EventHandler> mockDeleteBookmarksHandler = new Mock<System.EventHandler>();
+                Mock<System.EventHandler> mockDeleteBranchesHandler = new Mock<System.EventHandler>();
+                Mock<System.EventHandler> mockJumpToBookmarkHandler = new Mock<System.EventHandler>();
+                Mock<System.EventHandler> mockReplayTimelineHandler = new Mock<System.EventHandler>();
+
+                BookmarksViewModel viewModel = new BookmarksViewModel(machine, null);
+                Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
+                viewModel.PropertyChanged += propChanged.Object;
+                viewModel.DeleteBookmarksCommand.CanExecuteChanged += mockDeleteBookmarksHandler.Object;
+                viewModel.DeleteBranchesCommand.CanExecuteChanged += mockDeleteBranchesHandler.Object;
+                viewModel.JumpToBookmarkCommand.CanExecuteChanged += mockJumpToBookmarkHandler.Object;
+                viewModel.ReplayTimelineCommand.CanExecuteChanged += mockReplayTimelineHandler.Object;
+
+                // Act
+                viewModel.SelectedItem = new HistoryViewItem(HistoryEvent.CreateCheckpoint(0, 100, System.DateTime.UtcNow, null));
+
+                // Verify
+                propChanged.Verify(p => p(viewModel, It.Is<PropertyChangedEventArgs>(e => e.PropertyName == "SelectedItem")));
+                propChanged.Verify(p => p(viewModel, It.Is<PropertyChangedEventArgs>(e => e.PropertyName == "Bitmap")));
+                mockDeleteBookmarksHandler.Verify(p => p(viewModel, It.IsAny<System.EventArgs>()), Times.Once());
+                mockDeleteBranchesHandler.Verify(p => p(viewModel, It.IsAny<System.EventArgs>()), Times.Once());
+                mockJumpToBookmarkHandler.Verify(p => p(viewModel, It.IsAny<System.EventArgs>()), Times.Once());
+                mockReplayTimelineHandler.Verify(p => p(viewModel, It.IsAny<System.EventArgs>()), Times.Once());
             }
         }
     }

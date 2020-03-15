@@ -59,9 +59,6 @@ namespace CPvC.UI
             Items = new ObservableCollection<HistoryViewItem>();
             RefreshHistoryViewItems();
 
-            // The initial selected item is set to the current event.
-            SelectedItem = Items.FirstOrDefault(i => i.HistoryEvent == _machine.CurrentEvent);
-
             _replayTimelineCommand = new Command(
                 p => ReplayTimeline(itemSelected),
                 p => (SelectedItem as HistoryViewItem)?.HistoryEvent != null
@@ -81,6 +78,9 @@ namespace CPvC.UI
                 p => DeleteBranches(),
                 p => (SelectedItem as HistoryViewItem)?.HistoryEvent != null
             );
+
+            // The initial selected item is set to the current event.
+            SelectedItem = Items.FirstOrDefault(i => i.HistoryEvent == _machine.CurrentEvent);
         }
 
         public void Dispose()
@@ -307,10 +307,13 @@ namespace CPvC.UI
         {
             PropertyChangedEventArgs args = new PropertyChangedEventArgs(name);
 
-            _deleteBookmarksCommand?.InvokeCanExecuteChanged(this, args);
-            _deleteBranchesCommand?.InvokeCanExecuteChanged(this, args);
-            _jumpToBookmarkCommand?.InvokeCanExecuteChanged(this, args);
-            _replayTimelineCommand?.InvokeCanExecuteChanged(this, args);
+            if (name == "SelectedItem")
+            {
+                _deleteBookmarksCommand?.InvokeCanExecuteChanged(this, args);
+                _deleteBranchesCommand?.InvokeCanExecuteChanged(this, args);
+                _jumpToBookmarkCommand?.InvokeCanExecuteChanged(this, args);
+                _replayTimelineCommand?.InvokeCanExecuteChanged(this, args);
+            }
 
             PropertyChanged?.Invoke(this, args);
         }
