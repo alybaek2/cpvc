@@ -329,7 +329,7 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void PropertyChanged()
+        public void PropertyChanged([Values(false, true)] bool subscribeToCanExecuteChanged)
         {
             // Setup
             using (Machine machine = CreateMachineWithHistory())
@@ -342,10 +342,14 @@ namespace CPvC.Test
                 BookmarksViewModel viewModel = new BookmarksViewModel(machine, null);
                 Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
                 viewModel.PropertyChanged += propChanged.Object;
-                viewModel.DeleteBookmarksCommand.CanExecuteChanged += mockDeleteBookmarksHandler.Object;
-                viewModel.DeleteBranchesCommand.CanExecuteChanged += mockDeleteBranchesHandler.Object;
-                viewModel.JumpToBookmarkCommand.CanExecuteChanged += mockJumpToBookmarkHandler.Object;
-                viewModel.ReplayTimelineCommand.CanExecuteChanged += mockReplayTimelineHandler.Object;
+
+                if (subscribeToCanExecuteChanged)
+                {
+                    viewModel.DeleteBookmarksCommand.CanExecuteChanged += mockDeleteBookmarksHandler.Object;
+                    viewModel.DeleteBranchesCommand.CanExecuteChanged += mockDeleteBranchesHandler.Object;
+                    viewModel.JumpToBookmarkCommand.CanExecuteChanged += mockJumpToBookmarkHandler.Object;
+                    viewModel.ReplayTimelineCommand.CanExecuteChanged += mockReplayTimelineHandler.Object;
+                }
 
                 // Act
                 viewModel.SelectedItem = new HistoryViewItem(HistoryEvent.CreateCheckpoint(0, 100, System.DateTime.UtcNow, null));
@@ -353,10 +357,12 @@ namespace CPvC.Test
                 // Verify
                 propChanged.Verify(p => p(viewModel, It.Is<PropertyChangedEventArgs>(e => e.PropertyName == "SelectedItem")));
                 propChanged.Verify(p => p(viewModel, It.Is<PropertyChangedEventArgs>(e => e.PropertyName == "Bitmap")));
-                mockDeleteBookmarksHandler.Verify(p => p(viewModel, It.IsAny<System.EventArgs>()), Times.Once());
-                mockDeleteBranchesHandler.Verify(p => p(viewModel, It.IsAny<System.EventArgs>()), Times.Once());
-                mockJumpToBookmarkHandler.Verify(p => p(viewModel, It.IsAny<System.EventArgs>()), Times.Once());
-                mockReplayTimelineHandler.Verify(p => p(viewModel, It.IsAny<System.EventArgs>()), Times.Once());
+
+                Times canExecuteTimes = subscribeToCanExecuteChanged ? Times.Once() : Times.Never();
+                mockDeleteBookmarksHandler.Verify(p => p(viewModel, It.IsAny<System.EventArgs>()), canExecuteTimes);
+                mockDeleteBranchesHandler.Verify(p => p(viewModel, It.IsAny<System.EventArgs>()), canExecuteTimes);
+                mockJumpToBookmarkHandler.Verify(p => p(viewModel, It.IsAny<System.EventArgs>()), canExecuteTimes);
+                mockReplayTimelineHandler.Verify(p => p(viewModel, It.IsAny<System.EventArgs>()), canExecuteTimes);
             }
         }
     }
