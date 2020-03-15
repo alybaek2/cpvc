@@ -163,13 +163,13 @@ namespace CPvC.UI.Forms
         {
             if (e.Key == Key.OemTilde)
             {
-                _mainViewModel.EnableTurbo(true);
+                _mainViewModel.ActiveMachineViewModel.TurboCommand.Execute(true);
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);
             if (cpcKey.HasValue)
             {
-                _mainViewModel.Key(cpcKey.Value, true);
+                _mainViewModel.ActiveMachineViewModel.KeyDownCommand.Execute(cpcKey.Value);
             }
         }
 
@@ -177,19 +177,19 @@ namespace CPvC.UI.Forms
         {
             if (e.Key == Key.OemTilde)
             {
-                _mainViewModel.EnableTurbo(false);
+                _mainViewModel.ActiveMachineViewModel.TurboCommand.Execute(false);
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);
             if (cpcKey.HasValue)
             {
-                _mainViewModel.Key(cpcKey.Value, false);
+                _mainViewModel.ActiveMachineViewModel.KeyUpCommand.Execute(cpcKey.Value);
             }
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.Close(null);
+            _mainViewModel.ActiveMachineViewModel.CloseCommand.Execute(null);
         }
 
         private void OpenMenuItem_Click(object sender, RoutedEventArgs e)
@@ -206,7 +206,7 @@ namespace CPvC.UI.Forms
 
         private void CloseMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            _mainViewModel.Close(null);
+            _mainViewModel.ActiveMachineViewModel.CloseCommand.Execute(null);
         }
 
         private string PromptForFile(FileTypes type, bool existing)
@@ -273,7 +273,7 @@ namespace CPvC.UI.Forms
 
         private HistoryEvent PromptForBookmark()
         {
-            Machine machine = _mainViewModel.ActiveMachine as Machine;
+            Machine machine = _mainViewModel?.ActiveMachineViewModel?.Machine as Machine;
 
             using (machine.AutoPause())
             {
@@ -287,10 +287,9 @@ namespace CPvC.UI.Forms
                     {
                         if (dialog.SelectedReplayEvent != null)
                         {
-                            ReplayMachine replayMachine = new ReplayMachine(dialog.SelectedReplayEvent);
-                            replayMachine.Name = String.Format("{0} (Replay)", machine.Name);
-                            _mainViewModel.ReplayMachines.Add(replayMachine);
-                            _mainViewModel.ActiveMachine = replayMachine;
+                            string name = String.Format("{0} (Replay)", machine.Name);
+                            _mainViewModel.OpenReplayMachine(name, dialog.SelectedReplayEvent);
+
                             return null;
                         }
                         else if (dialog.SelectedJumpEvent?.Bookmark != null)
@@ -337,24 +336,25 @@ namespace CPvC.UI.Forms
 
         private void MachinePreviewGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is Machine machine)
+            if (sender is FrameworkElement element && element.DataContext is MachineViewModel machineViewModel)
             {
+                ICoreMachine machine = machineViewModel.Machine as ICoreMachine;
                 try
                 {
-                    _mainViewModel.ActiveMachine = machine;
+                    _mainViewModel.ActiveMachineViewModel = machineViewModel;
                 }
                 catch (Exception ex)
                 {
-                    ReportError(String.Format("Unable to open {0}.\n\n{1}", machine.Name, ex.Message));
+                    ReportError(String.Format("Unable to open {0}.\n\n{1}", (machine as IInteractiveMachine).Name, ex.Message));
                 }
             }
         }
 
         private void ScreenGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is ICoreMachine machine)
+            if (sender is FrameworkElement element && element.DataContext is MachineViewModel machineViewModel)
             {
-                _mainViewModel.ToggleRunningCommand.Execute(machine);
+                machineViewModel.ToggleRunningCommand.Execute(null);
             }
         }
 
@@ -363,51 +363,19 @@ namespace CPvC.UI.Forms
             MachinePreviewGrid_MouseLeftButtonUp(sender, null);
         }
 
-        private void RemovePreviewMenuItem_Click(object sender, RoutedEventArgs e)
+        private void RemoveMachineMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is Machine machine)
+            if (sender is FrameworkElement element && element.DataContext is MachineViewModel viewModel)
             {
-                _mainViewModel.Remove(machine);
+                _mainViewModel.Remove(viewModel);
             }
         }
 
-        private void RemoveOpenMachineMenuItem_Click(object sender, RoutedEventArgs e)
+        private void OpenMachineViewModels_Filter(object sender, System.Windows.Data.FilterEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is Machine machine)
+            if (e.Item is MachineViewModel machineViewModel)
             {
-                _mainViewModel.Remove(machine);
-            }
-        }
-
-        private void ClosePreviewMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is FrameworkElement element && element.DataContext is Machine machine)
-            {
-                machine.Close();
-            }
-        }
-
-        private void PausePreviewMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is FrameworkElement element && element.DataContext is Machine machine)
-            {
-                machine.Stop();
-            }
-        }
-
-        private void ResumePreviewMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is FrameworkElement element && element.DataContext is Machine machine)
-            {
-                machine.Start();
-            }
-        }
-
-        private void OpenMachines_Filter(object sender, System.Windows.Data.FilterEventArgs e)
-        {
-            if (e.Item is Machine machine)
-            {
-                e.Accepted = !machine.RequiresOpen;
+                e.Accepted = !((machineViewModel.Machine as IOpenableMachine)?.RequiresOpen ?? true);
             }
             else
             {

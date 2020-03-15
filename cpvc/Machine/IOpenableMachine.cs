@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public interface ICompactableMachine : ICoreMachine
+    public interface IOpenableMachine
     {
-        void Compact(bool enableDiffs);
+        void Open();
+        void Close();
+
+        bool RequiresOpen { get; }
     }
 }

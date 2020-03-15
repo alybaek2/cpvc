@@ -12,5 +12,9 @@ namespace CPvC
         void Key(byte keycode, bool down);
         void LoadDisc(byte drive, byte[] diskBuffer);
         void LoadTape(byte[] tapeBuffer);
+        IDisposable AutoPause();
+        void SetCurrentEvent(HistoryEvent bookmarkEvent);
+
+        string Name { get; set; }
     }
 }

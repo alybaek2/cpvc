@@ -19,10 +19,10 @@ namespace CPvC.UI
         private HistoryViewItem _selectedItem;
         private Display _display;
 
-        private ViewModelCommand _deleteBookmarksCommand;
-        private ViewModelCommand _deleteBranchesCommand;
-        private ViewModelCommand _jumpToBookmarkCommand;
-        private ViewModelCommand _replayTimelineCommand;
+        private Command _deleteBookmarksCommand;
+        private Command _deleteBranchesCommand;
+        private Command _jumpToBookmarkCommand;
+        private Command _replayTimelineCommand;
 
         public ICommand DeleteBookmarksCommand
         {
@@ -54,6 +54,26 @@ namespace CPvC.UI
 
         public BookmarksViewModel(Machine machine, ItemSelectedDelegate itemSelected)
         {
+            _replayTimelineCommand = new Command(
+                p => ReplayTimeline(itemSelected),
+                p => (SelectedItem as HistoryViewItem)?.HistoryEvent != null
+            );
+
+            _jumpToBookmarkCommand = new Command(
+                p => JumpToBookmark(itemSelected),
+                p => (SelectedItem as HistoryViewItem)?.HistoryEvent.Bookmark != null
+            );
+
+            _deleteBookmarksCommand = new Command(
+                p => DeleteBookmarks(),
+                p => (SelectedItem as HistoryViewItem)?.HistoryEvent.Bookmark != null
+            );
+
+            _deleteBranchesCommand = new Command(
+                p => DeleteBranches(),
+                p => (SelectedItem as HistoryViewItem)?.HistoryEvent != null
+            );
+
             _display = new Display();
             _machine = machine;
             Items = new ObservableCollection<HistoryViewItem>();
@@ -61,30 +81,6 @@ namespace CPvC.UI
 
             // The initial selected item is set to the current event.
             SelectedItem = Items.FirstOrDefault(i => i.HistoryEvent == _machine.CurrentEvent);
-
-            _replayTimelineCommand = new ViewModelCommand(
-                p => ReplayTimeline(itemSelected),
-                p => (SelectedItem as HistoryViewItem)?.HistoryEvent != null,
-                this, "SelectedItem", null
-            );
-
-            _jumpToBookmarkCommand = new ViewModelCommand(
-                p => JumpToBookmark(itemSelected),
-                p => (SelectedItem as HistoryViewItem)?.HistoryEvent.Bookmark != null,
-                this, "SelectedItem", null
-            );
-
-            _deleteBookmarksCommand = new ViewModelCommand(
-                p => DeleteBookmarks(),
-                p => (SelectedItem as HistoryViewItem)?.HistoryEvent.Bookmark != null,
-                this, "SelectedItem", null
-            );
-
-            _deleteBranchesCommand = new ViewModelCommand(
-                p => DeleteBranches(),
-                p => (SelectedItem as HistoryViewItem)?.HistoryEvent != null,
-                this, "SelectedItem", null
-            );
         }
 
         public void Dispose()
@@ -309,7 +305,17 @@ namespace CPvC.UI
 
         protected void OnPropertyChanged(string name)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            PropertyChangedEventArgs args = new PropertyChangedEventArgs(name);
+
+            if (name == "SelectedItem")
+            {
+                _deleteBookmarksCommand.InvokeCanExecuteChanged(this, args);
+                _deleteBranchesCommand.InvokeCanExecuteChanged(this, args);
+                _jumpToBookmarkCommand.InvokeCanExecuteChanged(this, args);
+                _replayTimelineCommand.InvokeCanExecuteChanged(this, args);
+            }
+
+            PropertyChanged?.Invoke(this, args);
         }
     }
 }

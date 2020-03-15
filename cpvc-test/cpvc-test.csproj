@@ -110,6 +110,7 @@
     <Compile Include="BookmarksViewModelTests.cs" />
     <Compile Include="ConvertersTests.cs" />
     <Compile Include="CoreActionTests.cs" />
+    <Compile Include="CoreRequestTests.cs" />
     <Compile Include="CoreTests.cs" />
     <Compile Include="DisplayTests.cs" />
     <Compile Include="FileSystemTests.cs" />
@@ -119,6 +120,7 @@
     <Compile Include="KeyboardMappingTests.cs" />
     <Compile Include="MachineFileTests.cs" />
     <Compile Include="MachineTests.cs" />
+    <Compile Include="MachineViewModelTests.cs" />
     <Compile Include="MainViewModelTests.cs" />
     <Compile Include="MockFileByteStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -131,7 +133,7 @@
     <Compile Include="SettingsTests.cs" />
     <Compile Include="TestHelpers.cs" />
     <Compile Include="UnmanagedMemoryTests.cs" />
-    <Compile Include="ViewModelCommandTests.cs" />
+    <Compile Include="CommandTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

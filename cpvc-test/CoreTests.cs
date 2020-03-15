@@ -282,6 +282,38 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void PropertyChangedWithSynchronizationContext([Values(false, true)] bool useSyncContext)
+        {
+            // Setup
+            if (useSyncContext)
+            {
+                SynchronizationContext syncContext = new SynchronizationContext();
+                SynchronizationContext.SetSynchronizationContext(syncContext);
+            }
+
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                int threadId1 = Thread.CurrentThread.ManagedThreadId;
+                int threadId2 = useSyncContext ? threadId1 : -1;
+
+                ManualResetEvent e = new ManualResetEvent(false);
+
+                core.PropertyChanged += (o, a) =>
+                {
+                    threadId2 = Thread.CurrentThread.ManagedThreadId;
+                    e.Set();
+                };
+
+                // Act
+                core.Volume = 100;
+
+                // Verify
+                e.WaitOne(1000);
+                Assert.That(threadId2, useSyncContext ? Is.Not.EqualTo(threadId1) : Is.EqualTo(threadId2));
+            }
+        }
+
+        [Test]
         public void ProcessInvalidRequest()
         {
             // Setup

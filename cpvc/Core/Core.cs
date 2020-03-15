@@ -71,6 +71,8 @@ namespace CPvC
             10392, 16706, 23339, 29292, 36969, 46421, 55195, 65535
         };
 
+        private SynchronizationContext _syncContext;
+
         public byte Volume
         {
             get
@@ -117,6 +119,11 @@ namespace CPvC
 
             _audioReady = new AutoResetEvent(true);
             _requestQueueEmpty = new AutoResetEvent(true);
+
+            // Ensure any OnPropChanged calls are executed on the main thread. There may be a better way of
+            // doing this, such as wrapping add and remove for Command.CanExecuteChanged in a lambda that
+            // calls the target on its own SynchronizationContext.
+            _syncContext = SynchronizationContext.Current;
         }
 
         static private ICore CreateVersionedCore(int version)
@@ -135,7 +142,17 @@ namespace CPvC
 
         private void OnPropertyChanged(string name)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            if (PropertyChanged != null)
+            {
+                if (_syncContext != null)
+                {
+                    _syncContext.Post(_ => PropertyChanged(this, new PropertyChangedEventArgs(name)), null);
+                }
+                else
+                {
+                    PropertyChanged(this, new PropertyChangedEventArgs(name));
+                }
+            }
         }
 
         public void Dispose()
