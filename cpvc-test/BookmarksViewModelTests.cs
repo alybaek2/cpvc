@@ -238,7 +238,7 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void DeleteBookmark()
+        public void DeleteBookmark([Values(false, true)] bool nullSelectedItem)
         {
             // Setup
             using (Machine machine = CreateMachineWithHistory())
@@ -246,18 +246,18 @@ namespace CPvC.Test
                 Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
                 BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
                 HistoryViewItem bookmarkEventViewItem = viewModel.Items[3];
-                viewModel.SelectedItem = bookmarkEventViewItem;
+                viewModel.SelectedItem = nullSelectedItem ? null : bookmarkEventViewItem;
 
                 // Act
                 viewModel.DeleteBookmarksCommand.Execute(null);
 
                 // Verify
-                Assert.IsNull(bookmarkEventViewItem.HistoryEvent.Bookmark);
+                Assert.That(bookmarkEventViewItem.HistoryEvent.Bookmark, nullSelectedItem ? Is.Not.Null : Is.Null);
             }
         }
 
         [Test]
-        public void DeleteBranch()
+        public void DeleteBranch([Values(false, true)] bool nullSelectedItem)
         {
             // Setup
             using (Machine machine = CreateMachineWithHistory())
@@ -266,19 +266,29 @@ namespace CPvC.Test
                 BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
                 HistoryViewItem branchViewItem = viewModel.Items[1];
                 HistoryEvent parentEvent = branchViewItem.HistoryEvent.Parent;
-                viewModel.SelectedItem = branchViewItem;
+                viewModel.SelectedItem = nullSelectedItem ? null : branchViewItem;
                 int viewItemsCount = viewModel.Items.Count;
 
                 // Act
                 viewModel.DeleteBranchesCommand.Execute(null);
 
                 // Verify
-                Assert.AreEqual(1, parentEvent.Children.Count);
+                bool eventFound = false;
+                for (int i = 0; i < viewModel.Items.Count; i++)
+                {
+                    if (viewModel.Items[i].HistoryEvent == branchViewItem.HistoryEvent)
+                    {
+                        eventFound = true;
+                    }
+                }
+
+                Assert.AreEqual(nullSelectedItem, eventFound);
+                Assert.AreEqual(nullSelectedItem ? 2 : 1, parentEvent.Children.Count);
             }
         }
 
         [Test]
-        public void JumpToBookmark()
+        public void JumpToBookmark([Values(false, true)] bool nullSelectedItem)
         {
             // Setup
             using (Machine machine = CreateMachineWithHistory())
@@ -286,19 +296,19 @@ namespace CPvC.Test
                 Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
                 BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
                 HistoryViewItem bookmarkEventViewItem = viewModel.Items[3];
-                viewModel.SelectedItem = bookmarkEventViewItem;
+                viewModel.SelectedItem = nullSelectedItem ? null : bookmarkEventViewItem;
 
                 // Act
                 viewModel.JumpToBookmarkCommand.Execute(null);
 
                 // Verify
-                Assert.AreEqual(bookmarkEventViewItem.HistoryEvent, viewModel.SelectedJumpEvent);
-                mockItemSelected.Verify(s => s(), Times.Once());
+                Assert.That(viewModel.SelectedJumpEvent, Is.EqualTo(nullSelectedItem ? null : viewModel.SelectedJumpEvent));
+                mockItemSelected.Verify(s => s(), nullSelectedItem ? Times.Never() : Times.Once());
             }
         }
 
         [Test]
-        public void ReplayTimeline()
+        public void ReplayTimeline([Values(false, true)] bool nullSelectedItem)
         {
             // Setup
             using (Machine machine = CreateMachineWithHistory())
@@ -306,14 +316,14 @@ namespace CPvC.Test
                 Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
                 BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
                 HistoryViewItem historyEventViewItem = viewModel.Items[1];
-                viewModel.SelectedItem = historyEventViewItem;
+                viewModel.SelectedItem = nullSelectedItem ? null : historyEventViewItem;
 
                 // Act
                 viewModel.ReplayTimelineCommand.Execute(null);
 
                 // Verify
-                Assert.AreEqual(historyEventViewItem.HistoryEvent, viewModel.SelectedReplayEvent);
-                mockItemSelected.Verify(s => s(), Times.Once());
+                Assert.That(viewModel.SelectedReplayEvent, Is.EqualTo(nullSelectedItem ? null : viewModel.SelectedReplayEvent));
+                mockItemSelected.Verify(s => s(), nullSelectedItem ? Times.Never() : Times.Once());
             }
         }
     }
