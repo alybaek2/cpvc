@@ -217,12 +217,20 @@ namespace CPvC.UI
 
         public void CloseAll()
         {
-            foreach (Machine machine in _model.Machines)
+            Machine[] machines = _model.Machines.ToArray();
+            foreach (Machine machine in machines)
             {
                 machine.Close();
             }
 
-            foreach (ReplayMachine machine in _model.ReplayMachines)
+            ReplayMachine[] replayMachines = _model.ReplayMachines.ToArray();
+            foreach (ReplayMachine machine in replayMachines)
+            {
+                machine.Close();
+            }
+
+            RemoteMachine[] remoteMachines = _model.RemoteMachines.ToArray();
+            foreach (RemoteMachine machine in remoteMachines)
             {
                 machine.Close();
             }

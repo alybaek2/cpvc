@@ -139,20 +139,20 @@ namespace CPvC.Test
         [TestCase(true, false)]
         [TestCase(false, true)]
         [TestCase(true, true)]
-        public void Close(bool nullMachine, bool requiresOpen)
+        public void Close(bool nullMachine, bool canClose)
         {
             // Setup
             Mock<ICoreMachine> mockMachine = new Mock<ICoreMachine>();
-            Mock<IOpenableMachine> mockOpenableMachine = mockMachine.As<IOpenableMachine>();
-            mockOpenableMachine.SetupGet(x => x.RequiresOpen).Returns(requiresOpen);
+            Mock<IClosableMachine> mockClosableMachine = mockMachine.As<IClosableMachine>();
+            mockClosableMachine.Setup(x => x.CanClose()).Returns(canClose);
             MachineViewModel model = new MachineViewModel(nullMachine ? null : mockMachine.Object, null, null, null, null, null);
 
             // Act
             model.CloseCommand.Execute(null);
 
             // Verify
-            mockOpenableMachine.Verify(m => m.Close(), nullMachine ? Times.Never() : Times.Once());
-            Assert.AreEqual(!nullMachine && !requiresOpen, model.CloseCommand.CanExecute(null));
+            mockClosableMachine.Verify(m => m.Close(), nullMachine ? Times.Never() : Times.Once());
+            Assert.AreEqual(!nullMachine && canClose, model.CloseCommand.CanExecute(null));
         }
 
         [Test]

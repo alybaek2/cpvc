@@ -46,12 +46,12 @@ namespace CPvC
 
             _openCommand = new Command(
                 p => (machine as IOpenableMachine)?.Open(),
-                p => ((machine as IOpenableMachine)?.RequiresOpen ?? false)
+                p => (machine as IOpenableMachine)?.RequiresOpen ?? false
             );
 
             _closeCommand = new Command(
                 p => (machine as IClosableMachine)?.Close(),
-                p => (machine as IClosableMachine) != null
+                p => (machine as IClosableMachine)?.CanClose() ?? false
             );
 
             _pauseCommand = new Command(

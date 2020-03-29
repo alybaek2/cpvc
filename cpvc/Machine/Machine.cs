@@ -189,6 +189,11 @@ namespace CPvC
             }
         }
 
+        public bool CanClose()
+        {
+            return !RequiresOpen;
+        }
+
         public void Close()
         {
             // No need to do this if we're in a "lazy-loaded" state.
@@ -227,7 +232,7 @@ namespace CPvC
 
             Display?.EnableGreyscale(true);
 
-            OnClose.Invoke();
+            OnClose?.Invoke();
         }
 
         /// <summary>

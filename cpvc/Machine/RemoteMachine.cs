@@ -52,13 +52,18 @@ namespace CPvC
             Display = null;
         }
 
+        public bool CanClose()
+        {
+            return true;
+        }
+
         public void Close()
         {
             _client.Disconnect();
             _core.Stop();
             Core = null;
 
-            OnClose.Invoke();
+            OnClose?.Invoke();
         }
 
     }

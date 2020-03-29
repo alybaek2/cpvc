@@ -11,6 +11,7 @@ namespace CPvC
     public interface IClosableMachine
     {
         void Close();
+        bool CanClose();
 
         OnCloseDelegate OnClose { get; set; }
     }

@@ -62,11 +62,16 @@ namespace CPvC
             Display = null;
         }
 
+        public bool CanClose()
+        {
+            return true;
+        }
+
         public void Close()
         {
             Core = null;
 
-            OnClose.Invoke();
+            OnClose?.Invoke();
         }
 
         private void SeekToBookmark(int bookmarkEventIndex)
