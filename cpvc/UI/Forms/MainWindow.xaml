@@ -66,10 +66,10 @@
         </Grid.RowDefinitions>
         <Menu Height="30" Margin="0" VerticalAlignment="Top" VerticalContentAlignment="Center">
             <MenuItem Header="File">
-                <MenuItem x:Name="_newMenuItem" Header="New..." Click="NewMenuItem_Click"/>
-                <MenuItem x:Name="_openMenuItem" Header="Open..." Click="OpenMenuItem_Click"/>
+                <MenuItem x:Name="_newMenuItem" Header="New..." Command="{Binding NewMachineCommand}"/>
+                <MenuItem x:Name="_openMenuItem" Header="Open..." Command="{Binding OpenMachineCommand}"/>
                 <MenuItem x:Name="_connectMenuItem" Header="Connect" Click="_connectMenuItem_Click"/>
-                <MenuItem x:Name="_closeMenuItem" Header="Close" Click="CloseMenuItem_Click"/>
+                <MenuItem x:Name="_closeMenuItem" Header="Close" Command="{Binding ActiveMachineViewModel.CloseCommand}"/>
                 <Separator/>
                 <MenuItem x:Name="_exitMenuItem" Header="Exit" Click="ExitMenuItem_Click"/>
             </MenuItem>
@@ -273,7 +273,7 @@
                                                                     <MenuItem x:Name="_resumePreviewMenuItem" Header="Resume" Command="{Binding ResumeCommand}"/>
                                                                     <MenuItem x:Name="_openPreviewMenuItem" Header="Open" Command="{Binding OpenCommand}"/>
                                                                     <MenuItem x:Name="_closePreviewMenuItem" Header="Close" Command="{Binding CloseCommand}"/>
-                                                                    <MenuItem x:Name="_removeOpenMachineMenuItem" Header="Remove" Click="RemoveMachineMenuItem_Click"/>
+                                                                    <MenuItem x:Name="_removeOpenMachineMenuItem" Header="Remove" Command="{Binding RemoveCommand}"/>
                                                                 </ContextMenu>
                                                             </Grid.ContextMenu>
                                                             <StackPanel Margin="5">

@@ -22,7 +22,7 @@ namespace CPvC.UI.Forms
         {
             _settings = new Settings();
             _fileSystem = new FileSystem();
-            _mainViewModel = new MainViewModel(_settings, _fileSystem, SelectItem, PromptForFile, PromptForBookmark, PromptForName);
+            _mainViewModel = new MainViewModel(_settings, _fileSystem, SelectItem, PromptForFile, PromptForBookmark, PromptForName, ReportError);
             _audio = new Audio(_mainViewModel.ReadAudio);
 
             InitializeComponent();
@@ -187,28 +187,6 @@ namespace CPvC.UI.Forms
             }
         }
 
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.ActiveMachineViewModel.CloseCommand.Execute(null);
-        }
-
-        private void OpenMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                _mainViewModel.OpenMachine(PromptForFile, null, _fileSystem);
-            }
-            catch (Exception ex)
-            {
-                ReportError(ex.Message);
-            }
-        }
-
-        private void CloseMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.ActiveMachineViewModel.CloseCommand.Execute(null);
-        }
-
         private string PromptForFile(FileTypes type, bool existing)
         {
             using (System.Windows.Forms.FileDialog fileDialog = existing ? ((System.Windows.Forms.FileDialog)new System.Windows.Forms.OpenFileDialog()) : ((System.Windows.Forms.FileDialog)new System.Windows.Forms.SaveFileDialog()))
@@ -322,18 +300,6 @@ namespace CPvC.UI.Forms
             MessageBox.Show(this, message, "CPvC", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
-        private void NewMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                _mainViewModel.NewMachine(PromptForFile, _fileSystem);
-            }
-            catch (Exception ex)
-            {
-                ReportError(ex.Message);
-            }
-        }
-
         private void MachinePreviewGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (sender is FrameworkElement element && element.DataContext is MachineViewModel machineViewModel)
@@ -355,19 +321,6 @@ namespace CPvC.UI.Forms
             if (sender is FrameworkElement element && element.DataContext is MachineViewModel machineViewModel)
             {
                 machineViewModel.ToggleRunningCommand.Execute(null);
-            }
-        }
-
-        private void OpenPreviewMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            MachinePreviewGrid_MouseLeftButtonUp(sender, null);
-        }
-
-        private void RemoveMachineMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is FrameworkElement element && element.DataContext is MachineViewModel viewModel)
-            {
-                _mainViewModel.Remove(viewModel);
             }
         }
 

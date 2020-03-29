@@ -17,6 +17,7 @@ namespace CPvC.UI
         public delegate string PromptForFileDelegate(FileTypes type, bool existing);
         public delegate HistoryEvent PromptForBookmarkDelegate();
         public delegate string PromptForNameDelegate(string existingName);
+        public delegate void ReportErrorDelegate(string message);
 
         /// <summary>
         /// The data model associated with this view model.
@@ -36,10 +37,13 @@ namespace CPvC.UI
         private PromptForBookmarkDelegate _promptForBookmark;
         private PromptForNameDelegate _promptForName;
 
+        private Command _openMachineCommand;
+        private Command _newMachineCommand;
+
         private MachineViewModel _nullMachineViewModel;
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public MainViewModel(ISettings settings, IFileSystem fileSystem, SelectItemDelegate selectItem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName)
+        public MainViewModel(ISettings settings, IFileSystem fileSystem, SelectItemDelegate selectItem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, ReportErrorDelegate reportError)
         {
             _fileSystem = fileSystem;
             _selectItem = selectItem;
@@ -54,10 +58,47 @@ namespace CPvC.UI
             _machineViewModels = new ObservableCollection<MachineViewModel>();
             for (int i = 0; i < _model.Machines.Count; i++)
             {
-                _machineViewModels.Add(new MachineViewModel(_model.Machines[i], fileSystem, promptForFile, promptForBookmark, promptForName, selectItem));
+                MachineViewModel machineViewModel = CreateMachineViewModel(_model.Machines[i]);
+                _machineViewModels.Add(machineViewModel);
+
+                Command removeMachineCommand = new Command(
+                    p => Remove(machineViewModel),
+                    p => true
+                );
+
+                machineViewModel.RemoveCommand = removeMachineCommand;
             }
 
             ActiveItem = this;
+
+            _openMachineCommand = new Command(
+                p => {
+                    try
+                    {
+                        OpenMachine(promptForFile, null, _fileSystem);
+                    }
+                    catch (Exception ex)
+                    {
+                        reportError(ex.Message);
+                    }
+                },
+                p => true
+            );
+
+            _newMachineCommand = new Command(
+                p => {
+                    try
+                    {
+                        NewMachine(promptForFile, _fileSystem);
+                    }
+                    catch (Exception ex)
+                    {
+                        reportError(ex.Message);
+                    }
+                },
+                p => true
+            );
+
         }
 
         public ObservableCollection<Machine> Machines
@@ -89,6 +130,22 @@ namespace CPvC.UI
             get
             {
                 return _model.RemoteMachines;
+            }
+        }
+
+        public Command OpenMachineCommand
+        {
+            get
+            {
+                return _openMachineCommand;
+            }
+        }
+
+        public Command NewMachineCommand
+        {
+            get
+            {
+                return _newMachineCommand;
             }
         }
 
@@ -146,7 +203,7 @@ namespace CPvC.UI
 
             ReplayMachines.Add(replayMachine);
 
-            MachineViewModel machineViewModel = new MachineViewModel(replayMachine, _fileSystem, null, null, null, null);
+            MachineViewModel machineViewModel = CreateMachineViewModel(replayMachine);
             _machineViewModels.Add(machineViewModel);
             replayMachine.OnClose += () =>
             {
@@ -163,7 +220,7 @@ namespace CPvC.UI
 
             RemoteMachines.Add(remoteMachine);
 
-            MachineViewModel machineViewModel = new MachineViewModel(remoteMachine, _fileSystem, null, null, null, null);
+            MachineViewModel machineViewModel = CreateMachineViewModel(remoteMachine);
             _machineViewModels.Add(machineViewModel);
             remoteMachine.OnClose += () =>
             {
@@ -182,7 +239,7 @@ namespace CPvC.UI
             if (machine != null)
             {
                 machine.Start();
-                MachineViewModel machineViewModel = new MachineViewModel(machine, _fileSystem, _promptForFile, _promptForBookmark, _promptForName, _selectItem);
+                MachineViewModel machineViewModel = CreateMachineViewModel(machine);
                 _machineViewModels.Add(machineViewModel);
                 ActiveMachineViewModel = machineViewModel;
             }
@@ -200,7 +257,7 @@ namespace CPvC.UI
             Machine machine = _model.Add(filepath, fileSystem);
             if (machine != null)
             {
-                MachineViewModel machineViewModel = new MachineViewModel(machine, _fileSystem, _promptForFile, _promptForBookmark, _promptForName, _selectItem);
+                MachineViewModel machineViewModel = CreateMachineViewModel(machine);
                 _machineViewModels.Add(machineViewModel);
                 ActiveMachineViewModel = machineViewModel;
             }
@@ -285,6 +342,20 @@ namespace CPvC.UI
 
                 return samplesWritten;
             }
+        }
+
+        private MachineViewModel CreateMachineViewModel(ICoreMachine machine)
+        {
+            MachineViewModel machineViewModel = new MachineViewModel(machine, _fileSystem, _promptForFile, _promptForBookmark, _promptForName, _selectItem);
+
+            Command removeMachineCommand = new Command(
+                p => Remove(machineViewModel),
+                p => true
+            );
+
+            machineViewModel.RemoveCommand = removeMachineCommand;
+
+            return machineViewModel;
         }
 
         protected void OnPropertyChanged(string name)

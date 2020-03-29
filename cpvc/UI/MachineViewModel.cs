@@ -35,6 +35,7 @@ namespace CPvC
         private Command _keyUpCommand;
         private Command _turboCommand;
         private Command _startServerCommand;
+        private ICommand _removeCommand;
 
         public MachineViewModel(ICoreMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, SelectItemDelegate selectItem)
         {
@@ -313,6 +314,12 @@ namespace CPvC
         public ICommand StartServerCommand
         {
             get { return _startServerCommand; }
+        }
+
+        public ICommand RemoveCommand
+        {
+            get { return _removeCommand; }
+            set { _removeCommand = value; }
         }
 
         private void MachinePropChanged(object sender, PropertyChangedEventArgs args)

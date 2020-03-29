@@ -95,7 +95,7 @@ namespace CPvC
 
                 return machine;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 machine.Dispose();
 
@@ -144,7 +144,7 @@ namespace CPvC
                 CoreAction action = CoreAction.CoreVersion(Core.Ticks, Core.LatestVersion);
                 AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true); // Core.Ticks, Core.LatestVersion), true);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 core?.Dispose();
                 Dispose();
