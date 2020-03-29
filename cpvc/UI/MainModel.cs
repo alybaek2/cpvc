@@ -18,6 +18,7 @@ namespace CPvC.UI
 
             Machines = new ObservableCollection<Machine>();
             ReplayMachines = new ObservableCollection<ReplayMachine>();
+            RemoteMachines = new ObservableCollection<RemoteMachine>();
 
             LoadFromSettings(fileSystem);
         }
@@ -28,6 +29,8 @@ namespace CPvC.UI
         public ObservableCollection<Machine> Machines { get; }
 
         public ObservableCollection<ReplayMachine> ReplayMachines { get; }
+
+        public ObservableCollection<RemoteMachine> RemoteMachines { get; }
 
         /// <summary>
         /// Adds a machine to the model if it doesn't already exist.

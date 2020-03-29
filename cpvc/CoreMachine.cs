@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public class CoreMachine : ICoreMachine, ITurboableMachine
+    public class CoreMachine : ICoreMachine
     {
         protected Core _core;
         protected string _filepath;

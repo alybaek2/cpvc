@@ -375,12 +375,17 @@ namespace CPvC.UI.Forms
         {
             if (e.Item is MachineViewModel machineViewModel)
             {
-                e.Accepted = !((machineViewModel.Machine as IOpenableMachine)?.RequiresOpen ?? true);
+                e.Accepted = !((machineViewModel.Machine as IOpenableMachine)?.RequiresOpen ?? false);
             }
             else
             {
                 e.Accepted = false;
             }
+        }
+
+        private void _connectMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            _mainViewModel.ConnectRemoteMachine();
         }
     }
 }

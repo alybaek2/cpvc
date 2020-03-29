@@ -41,6 +41,8 @@ namespace CPvC
         private bool _quitThread;
         private Thread _coreThread;
 
+        private bool _keepRunning;
+
         /// <summary>
         /// Frequency (in samples per second) at which the Core will populate its audio buffers.
         /// </summary>
@@ -108,6 +110,7 @@ namespace CPvC
             _quitThread = false;
             _coreThread = null;
             _running = false;
+            _keepRunning = true;
 
             BeginVSync = null;
 
@@ -280,6 +283,19 @@ namespace CPvC
                 _running = value;
 
                 OnPropertyChanged("Running");
+            }
+        }
+
+        public bool KeepRunning
+        {
+            get
+            {
+                return _keepRunning;
+            }
+
+            set
+            {
+                _keepRunning = value;
             }
         }
 
@@ -564,7 +580,14 @@ namespace CPvC
 
             if (request == null)
             {
-                action = RunForAWhile(Ticks + 20000);
+                if (_keepRunning)
+                {
+                    action = RunForAWhile(Ticks + 20000);
+                }
+                else
+                {
+                    return false;
+                }
             }
             else
             {
@@ -664,7 +687,7 @@ namespace CPvC
         {
             UInt64 ticks = Ticks;
 
-            byte stopReason = RunUntil(stopTicks, (byte)(StopReasons.AudioOverrun | StopReasons.VSync));
+            byte stopReason = RunUntil(stopTicks, (byte)((_keepRunning ? StopReasons.AudioOverrun : 0) | StopReasons.VSync));
 
             if ((stopReason & StopReasons.AudioOverrun) != 0)
             {
@@ -686,7 +709,7 @@ namespace CPvC
                 _lastTicksNotified = Ticks;
             }
 
-            return CoreAction.RunUntilForce(ticks, stopTicks);
+            return CoreAction.RunUntilForce(ticks, Ticks);
         }
     }
 }

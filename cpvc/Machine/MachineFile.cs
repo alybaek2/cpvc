@@ -19,6 +19,8 @@ namespace CPvC
         public const byte _idCurrent = 7;
         public const byte _idBookmark = 8;
         public const byte _idVersion = 9;
+        public const byte _idLoadCore = 10;
+        public const byte _idRunUntil = 11;
 
         public MachineFile(IByteStream byteStream) : base(byteStream)
         {
@@ -74,6 +76,41 @@ namespace CPvC
                             throw new Exception("Unknown block type!");
                     }
                 }
+            }
+        }
+        public CoreAction ReadCoreAction()
+        {
+            lock (_byteStream)
+            {
+                HistoryEvent historyEvent = null;
+
+                byte blockType = ReadByte();
+
+                switch (blockType)
+                {
+                    case _idKey:
+                        historyEvent = ReadKey();
+                        break;
+                    case _idReset:
+                        historyEvent = ReadReset();
+                        break;
+                    case _idLoadDisc:
+                        historyEvent = ReadLoadDisc();
+                        break;
+                    case _idLoadTape:
+                        historyEvent = ReadLoadTape();
+                        break;
+                    case _idRunUntil:
+                        historyEvent = ReadRunUntil();                        
+                        break;
+                    case _idLoadCore:
+                        historyEvent = ReadLoadCore();
+                        break;
+                    default:
+                        throw new Exception("Unknown block type!");
+                }
+
+                return historyEvent?.CoreAction;
             }
         }
 
@@ -166,7 +203,19 @@ namespace CPvC
             WriteInt32(historyEvent.Id);
         }
 
-        private void WriteCoreAction(int id, UInt64 ticks, CoreAction action)
+        public void WriteLoadCore(int id, IBlob state)
+        {
+            WriteByte(_idLoadCore);
+            WriteBytesBlob(state.GetBytes());
+        }
+
+        public void WriteRunUntil(int id, UInt64 stopTicks)
+        {
+            WriteByte(_idRunUntil);
+            WriteUInt64(stopTicks);
+        }
+
+        public void WriteCoreAction(int id, UInt64 ticks, CoreAction action)
         {
             switch (action.Type)
             {
@@ -185,12 +234,18 @@ namespace CPvC
                 case CoreRequest.Types.CoreVersion:
                     WriteVersion(id, ticks, action.Version);
                     break;
+                case CoreRequest.Types.LoadCore:
+                    WriteLoadCore(id, action.CoreState);
+                    break;
+                case CoreRequest.Types.RunUntilForce:
+                    WriteRunUntil(id, action.StopTicks);
+                    break;
                 default:
                     throw new Exception(String.Format("Unrecognized core action type {0}.", action.Type));
             }
         }
 
-        private void ReadKey(IMachineFileReader reader)
+        private HistoryEvent ReadKey()
         {
             lock (_byteStream)
             {
@@ -203,10 +258,15 @@ namespace CPvC
                 CoreAction action = CoreAction.KeyPress(ticks, keyCode, keyDown);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                //Diagnostics.Trace("{0} {1}: Key {2} {3}", id, ticks, keyCode, keyDown?"down":"up");
-
-                reader.AddHistoryEvent(historyEvent);
+                return historyEvent;
             }
+        }
+
+        private void ReadKey(IMachineFileReader reader)
+        {
+            HistoryEvent historyEvent = ReadKey();
+
+            reader.AddHistoryEvent(historyEvent);
         }
 
         private void WriteKey(int id, UInt64 ticks, byte keyCode, bool keyDown)
@@ -221,7 +281,41 @@ namespace CPvC
             WriteByte(keyCodeAndDown);
         }
 
-        private void ReadReset(IMachineFileReader reader)
+        public HistoryEvent ReadLoadCore()
+        {
+            lock (_byteStream)
+            {
+                IStreamBlob blob = ReadBlob();
+
+                CoreAction action = CoreAction.LoadCore(0, blob);
+                HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(0, action);
+
+                return historyEvent;
+            }
+        }
+
+        public HistoryEvent ReadRunUntil()
+        {
+            lock (_byteStream)
+            {
+                UInt64 stopTicks = ReadUInt64();
+
+                CoreAction action = CoreAction.RunUntilForce(0, stopTicks);
+                HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(0, action);
+
+                return historyEvent;
+            }
+        }
+
+        private void ReadRunUntil(IMachineFileReader reader)
+        {
+            HistoryEvent historyEvent = ReadRunUntil();
+
+            reader.AddHistoryEvent(historyEvent);
+        }
+
+
+        private HistoryEvent ReadReset()
         {
             lock (_byteStream)
             {
@@ -230,10 +324,15 @@ namespace CPvC
                 CoreAction action = CoreAction.Reset(ticks);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                //Diagnostics.Trace("{0} {1}: Reset", id, ticks);
-
-                reader.AddHistoryEvent(historyEvent);
+                return historyEvent;
             }
+        }
+
+        private void ReadReset(IMachineFileReader reader)
+        {
+            HistoryEvent historyEvent = ReadReset();
+
+            reader.AddHistoryEvent(historyEvent);
         }
 
         private void WriteReset(int id, UInt64 ticks)
@@ -243,7 +342,7 @@ namespace CPvC
             WriteUInt64(ticks);
         }
 
-        private void ReadLoadDisc(IMachineFileReader reader)
+        private HistoryEvent ReadLoadDisc()
         {
             lock (_byteStream)
             {
@@ -257,8 +356,17 @@ namespace CPvC
 
                 //Diagnostics.Trace("{0} {1}: Load disc (drive {2}, {3} byte tape image)", id, ticks, (drive == 0) ? "A:" : "B:", mediaBlob.GetBytes()?.Length ?? 0);
 
-                reader.AddHistoryEvent(historyEvent);
+                //reader.AddHistoryEvent(historyEvent);
+
+                return historyEvent;
             }
+        }
+
+        private void ReadLoadDisc(IMachineFileReader reader)
+        {
+            HistoryEvent historyEvent = ReadLoadDisc();
+
+            reader.AddHistoryEvent(historyEvent);
         }
 
         private void WriteLoadDisc(int id, UInt64 ticks, byte drive, byte[] media)
@@ -298,7 +406,7 @@ namespace CPvC
             }
         }
 
-        private void ReadLoadTape(IMachineFileReader reader)
+        private HistoryEvent ReadLoadTape()
         {
             lock (_byteStream)
             {
@@ -309,7 +417,15 @@ namespace CPvC
                 CoreAction action = CoreAction.LoadTape(ticks, mediaBlob);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                //Diagnostics.Trace("{0} {1}: Load tape ({2} byte tape image)", id, ticks, mediaBlob.GetBytes()?.Length ?? 0);
+                return historyEvent;
+            }
+        }
+
+        private void ReadLoadTape(IMachineFileReader reader)
+        {
+            lock (_byteStream)
+            {
+                HistoryEvent historyEvent = ReadLoadTape();
 
                 reader.AddHistoryEvent(historyEvent);
             }

@@ -8,7 +8,13 @@ using System.Windows.Media;
 
 namespace CPvC
 {
-    public sealed class ReplayMachine : CoreMachine, IPausableMachine, ITurboableMachine, IPrerecordedMachine, IClosableMachine, INotifyPropertyChanged, IDisposable
+    public sealed class ReplayMachine : CoreMachine,
+        IPausableMachine,
+        ITurboableMachine,
+        IPrerecordedMachine,
+        IClosableMachine,
+        INotifyPropertyChanged,
+        IDisposable
     {
         private UInt64 _endTicks;
 
@@ -21,6 +27,8 @@ namespace CPvC
                 return _endTicks;
             }
         }
+
+        public OnCloseDelegate OnClose { get; set; }
 
         public ReplayMachine(HistoryEvent historyEvent)
         {
@@ -57,6 +65,8 @@ namespace CPvC
         public void Close()
         {
             Core = null;
+
+            OnClose.Invoke();
         }
 
         private void SeekToBookmark(int bookmarkEventIndex)

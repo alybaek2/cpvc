@@ -55,6 +55,7 @@
             </CollectionViewSource.LiveFilteringProperties>
         </CollectionViewSource>
         <CollectionViewSource x:Key="ReplayMachines" Source="{Binding ReplayMachines}"/>
+        <CollectionViewSource x:Key="RemoteMachines" Source="{Binding RemoteMachines}"/>
     </Window.Resources>
     <Grid AllowDrop="True" Margin="0,0,0,0" Background="#FFF0F0F0">
         <Grid.RowDefinitions>
@@ -67,6 +68,7 @@
             <MenuItem Header="File">
                 <MenuItem x:Name="_newMenuItem" Header="New..." Click="NewMenuItem_Click"/>
                 <MenuItem x:Name="_openMenuItem" Header="Open..." Click="OpenMenuItem_Click"/>
+                <MenuItem x:Name="_connectMenuItem" Header="Connect" Click="_connectMenuItem_Click"/>
                 <MenuItem x:Name="_closeMenuItem" Header="Close" Click="CloseMenuItem_Click"/>
                 <Separator/>
                 <MenuItem x:Name="_exitMenuItem" Header="Exit" Click="ExitMenuItem_Click"/>
@@ -126,6 +128,8 @@
                         <Image Width="16" Height="16" Source="../Resources/bookmark16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
+                <Separator/>
+                <MenuItem x:Name="_startServerMenuItem" Header="Start Server" Command="{Binding ActiveMachineViewModel.StartServerCommand}"/>
                 <Separator/>
                 <MenuItem x:Name="_renameFileMenuItem" Header="Rename machine..." Command="{Binding ActiveMachineViewModel.RenameCommand}"/>
                 <MenuItem x:Name="_compactFileMenuItem" Header="Compact machine file" Command="{Binding ActiveMachineViewModel.CompactCommand}"/>
@@ -287,7 +291,6 @@
                         </TabItem.ContentTemplate>
                     </TabItem>
                     <CollectionContainer Collection="{Binding Source={StaticResource OpenMachines}}" />
-                    <CollectionContainer Collection="{Binding Source={StaticResource ReplayMachines}}" />
                 </CompositeCollection>
             </TabControl.ItemsSource>
         </TabControl>

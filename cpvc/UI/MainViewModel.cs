@@ -84,6 +84,14 @@ namespace CPvC.UI
             }
         }
 
+        public ObservableCollection<RemoteMachine> RemoteMachines
+        {
+            get
+            {
+                return _model.RemoteMachines;
+            }
+        }
+
         /// <summary>
         /// Represents the currently active item in the main window. Corresponds to the DataContext associated with the currently
         /// selected tab in the main window.
@@ -135,10 +143,33 @@ namespace CPvC.UI
         {
             ReplayMachine replayMachine = new ReplayMachine(finalEvent);
             replayMachine.Name = name;
+
             ReplayMachines.Add(replayMachine);
 
             MachineViewModel machineViewModel = new MachineViewModel(replayMachine, _fileSystem, null, null, null, null);
             _machineViewModels.Add(machineViewModel);
+            replayMachine.OnClose += () =>
+            {
+                ReplayMachines.Remove(replayMachine);
+                MachineViewModels.Remove(machineViewModel);
+            };
+
+            ActiveMachineViewModel = machineViewModel;
+        }
+
+        public void ConnectRemoteMachine()
+        {
+            RemoteMachine remoteMachine = new RemoteMachine();
+
+            RemoteMachines.Add(remoteMachine);
+
+            MachineViewModel machineViewModel = new MachineViewModel(remoteMachine, _fileSystem, null, null, null, null);
+            _machineViewModels.Add(machineViewModel);
+            remoteMachine.OnClose += () =>
+            {
+                RemoteMachines.Remove(remoteMachine);
+                MachineViewModels.Remove(machineViewModel);
+            };
 
             ActiveMachineViewModel = machineViewModel;
         }
@@ -227,6 +258,20 @@ namespace CPvC.UI
                     else
                     {
                         replayMachine.Core.AdvancePlayback(samplesRequested);
+                    }
+                }
+
+                foreach (RemoteMachine remoteMachine in RemoteMachines)
+                {
+                    // Play audio only from the currently active machine; for the rest, just
+                    // advance the audio playback position.
+                    if (remoteMachine == ActiveMachineViewModel.Machine)
+                    {
+                        samplesWritten = remoteMachine.ReadAudio(buffer, offset, samplesRequested);
+                    }
+                    else
+                    {
+                        remoteMachine.Core.AdvancePlayback(samplesRequested);
                     }
                 }
 

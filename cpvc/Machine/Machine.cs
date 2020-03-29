@@ -4,6 +4,8 @@ using System.ComponentModel;
 
 namespace CPvC
 {
+    public delegate void MachineAuditorDelegate(CoreAction action);
+
     /// <summary>
     /// Represents a persistent instance of a CPvC machine.
     /// </summary>
@@ -19,6 +21,7 @@ namespace CPvC
         ITurboableMachine,
         ICompactableMachine,
         IClosableMachine,
+        IRemoteableMachine,
         IMachineFileReader,
         INotifyPropertyChanged,
         IDisposable
@@ -28,7 +31,9 @@ namespace CPvC
         private int _autoPauseCount;
 
         // This really should be an event, so multiple subscribers can be supported. Or is this already supprted? Test this!
-        public RequestProcessedDelegate Auditors { get; set; }
+        public MachineAuditorDelegate Auditors { get; set; }
+
+        public OnCloseDelegate OnClose { get; set; }
 
         public HistoryEvent CurrentEvent { get; private set; }
         public HistoryEvent RootEvent { get; private set; }
@@ -38,6 +43,8 @@ namespace CPvC
 
         private readonly IFileSystem _fileSystem;
         private MachineFile _file;
+
+        private MachineServer _server;
 
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
@@ -52,6 +59,8 @@ namespace CPvC
             _historyEventById = new Dictionary<int, HistoryEvent>();
 
             _fileSystem = fileSystem;
+
+            _server = new MachineServer(this);
         }
 
         public void Dispose()
@@ -86,7 +95,7 @@ namespace CPvC
 
                 return machine;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 machine.Dispose();
 
@@ -129,13 +138,13 @@ namespace CPvC
 
                 if (bookmarkEvent?.Bookmark != null)
                 {
-                    Auditors?.Invoke(core, null, CoreAction.LoadCore(bookmarkEvent.Ticks, bookmarkEvent.Bookmark.State));
+                    Auditors?.Invoke(CoreAction.LoadCore(bookmarkEvent.Ticks, bookmarkEvent.Bookmark.State));
                 }
 
                 CoreAction action = CoreAction.CoreVersion(Core.Ticks, Core.LatestVersion);
                 AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true); // Core.Ticks, Core.LatestVersion), true);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 core?.Dispose();
                 Dispose();
@@ -217,6 +226,8 @@ namespace CPvC
             _nextEventId = 0;
 
             Display?.EnableGreyscale(true);
+
+            OnClose.Invoke();
         }
 
         /// <summary>
@@ -227,23 +238,27 @@ namespace CPvC
         /// <param name="action">The action taken.</param>
         private void RequestProcessed(Core core, CoreRequest request, CoreAction action)
         {
-            if (core == _core && action != null && action.Type != CoreAction.Types.RunUntilForce)
+            if (core == _core && action != null)
             {
-                Auditors?.Invoke(core, request, action);
+                Auditors?.Invoke(action);
 
-                AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
-
-                switch (action.Type)
+                if (action.Type != CoreAction.Types.RunUntilForce)
                 {
-                    case CoreRequest.Types.LoadDisc:
-                        Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded disc" : "Ejected disc";
-                        break;
-                    case CoreRequest.Types.LoadTape:
-                        Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded tape" : "Ejected tape";
-                        break;
-                    case CoreRequest.Types.Reset:
-                        Status = "Reset";
-                        break;
+
+                    AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
+
+                    switch (action.Type)
+                    {
+                        case CoreRequest.Types.LoadDisc:
+                            Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded disc" : "Ejected disc";
+                            break;
+                        case CoreRequest.Types.LoadTape:
+                            Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded tape" : "Ejected tape";
+                            break;
+                        case CoreRequest.Types.Reset:
+                            Status = "Reset";
+                            break;
+                    }
                 }
             }
         }
@@ -426,11 +441,11 @@ namespace CPvC
 
             if (bookmarkEvent.Bookmark != null)
             {
-                Auditors?.Invoke(_core, null, CoreAction.LoadCore(bookmarkEvent.Ticks, bookmarkEvent.Bookmark.State));
+                Auditors?.Invoke(CoreAction.LoadCore(bookmarkEvent.Ticks, bookmarkEvent.Bookmark.State));
             }
             else
             {
-                Auditors?.Invoke(_core, null, CoreAction.Reset(bookmarkEvent.Ticks));
+                Auditors?.Invoke(CoreAction.Reset(bookmarkEvent.Ticks));
             }
 
             _file.WriteCurrent(bookmarkEvent);
@@ -746,6 +761,16 @@ namespace CPvC
             AddEvent(historyEvent, false);
 
             _nextEventId = Math.Max(_nextEventId, historyEvent.Id + 1);
+        }
+
+        public void StartServer(UInt16 port)
+        {
+            _server.Start(port);
+        }
+
+        public void StopServer()
+        {
+            _server.Stop();
         }
     }
 }
