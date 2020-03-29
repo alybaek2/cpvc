@@ -40,7 +40,8 @@ namespace CPvC
         {
             byte[] blob = SerializeAction(coreAction);
 
-            _server.SendMessage(blob);
+            //_server.SendMessage(blob);
+            _server.SendMessageASync(blob);
         }
 
         static public byte[] SerializeAction(CoreAction action)

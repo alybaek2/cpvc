@@ -21,12 +21,14 @@ namespace CPvC
         public NewMessageDelegate OnNewMessage { get; set; }
 
         protected byte[] _receiveData = new byte[1024];
+        protected List<byte> _sendData;
 
         protected System.Net.Sockets.Socket _remoteSocket;
 
         public SocketCommon()
         {
             _currentMessage = new List<byte>();
+            _sendData = new List<byte>();
         }
 
         private void ReceiveData(byte[] bytes, int count)
@@ -67,6 +69,61 @@ namespace CPvC
                 else
                 {
                     _currentMessage.Add(b);
+                }
+            }
+        }
+
+        public void SendMessageASync(byte[] msg)
+        {
+            byte[] escapedMsg = EscapeMessageForSending(msg);
+
+            lock (_sendData)
+            {
+                if (_remoteSocket == null)
+                {
+                    return;
+                }
+
+                bool isEmpty = (_sendData.Count == 0);
+                _sendData.AddRange(escapedMsg);
+
+                if (isEmpty)
+                {
+                    SendMessageASync();
+                }
+            }
+        }
+
+        private void SendMessageASync()
+        {
+            if (_remoteSocket == null)
+            {
+                // Nobody to send to!
+                return;
+            }
+
+            byte[] bytesToSend = _sendData.ToArray();
+            System.Net.Sockets.SocketAsyncEventArgs sendArgs = new System.Net.Sockets.SocketAsyncEventArgs();
+            sendArgs.SetBuffer(bytesToSend, 0, bytesToSend.Length);
+            sendArgs.Completed += new EventHandler<System.Net.Sockets.SocketAsyncEventArgs>(SendCallback);
+
+            _remoteSocket.SendAsync(sendArgs);
+        }
+
+        private void SendCallback(object sender, System.Net.Sockets.SocketAsyncEventArgs e)
+        {
+            if (e.SocketError == System.Net.Sockets.SocketError.Success)
+            {
+                int bytesSuccessfullySent = e.BytesTransferred;
+
+                lock (_sendData)
+                {
+                    _sendData.RemoveRange(0, bytesSuccessfullySent);
+
+                    if (_sendData.Count > 0)
+                    {
+                        SendMessageASync();
+                    }
                 }
             }
         }

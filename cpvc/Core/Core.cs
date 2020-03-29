@@ -61,6 +61,7 @@ namespace CPvC
 
         private AutoResetEvent _audioReady;
         private AutoResetEvent _requestQueueEmpty;
+        private AutoResetEvent _requestQueueNonEmpty;
 
         private const int _audioBufferSize = 1024;
         private readonly byte[] _audioChannelA = new byte[_audioBufferSize];
@@ -122,6 +123,7 @@ namespace CPvC
 
             _audioReady = new AutoResetEvent(true);
             _requestQueueEmpty = new AutoResetEvent(true);
+            _requestQueueNonEmpty = new AutoResetEvent(false);
 
             // Ensure any OnPropChanged calls are executed on the main thread. There may be a better way of
             // doing this, such as wrapping add and remove for Command.CanExecuteChanged in a lambda that
@@ -172,6 +174,9 @@ namespace CPvC
 
             _requestQueueEmpty?.Dispose();
             _requestQueueEmpty = null;
+
+            _requestQueueNonEmpty?.Dispose();
+            _requestQueueNonEmpty = null;
         }
 
         /// <summary>
@@ -516,6 +521,7 @@ namespace CPvC
             {
                 _requests.Add(request);
                 _requestQueueEmpty.Reset();
+                _requestQueueNonEmpty.Set();
             }
         }
 
@@ -543,6 +549,10 @@ namespace CPvC
                     if (_requests.Count == 0)
                     {
                         _requestQueueEmpty.Set();
+                    }
+                    else
+                    {
+                        _requestQueueNonEmpty.Set();
                     }
                 }
             }
@@ -586,6 +596,7 @@ namespace CPvC
                 }
                 else
                 {
+                    _requestQueueNonEmpty.WaitOne(10);
                     return false;
                 }
             }
