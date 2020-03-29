@@ -10,8 +10,6 @@ namespace CPvC
     {
         private Machine _machine;
 
-        private Queue<byte[]> _actions;
-
         private SocketServer _server;
 
         public MachineServer(Machine machine)
@@ -20,10 +18,7 @@ namespace CPvC
 
             _machine.Auditors += MachineAuditor;
 
-            _actions = new Queue<byte[]>();
-
             _server = new SocketServer();
-
         }
 
         private void MachineAuditor(CoreAction coreAction)
@@ -43,17 +38,9 @@ namespace CPvC
 
         private void SendAction(CoreAction coreAction)
         {
-            lock (_actions)
-            {
-                byte[] blob = SerializeAction(coreAction);
+            byte[] blob = SerializeAction(coreAction);
 
-                String msg = String.Format("Sending @{0}: {1} StopTicks {2}", coreAction.Ticks, coreAction.Type, coreAction.StopTicks);
-                Diagnostics.Trace(msg);
-
-                _server.SendMessage(blob);
-
-                _actions.Enqueue(blob);
-            }
+            _server.SendMessage(blob);
         }
 
         static public byte[] SerializeAction(CoreAction action)

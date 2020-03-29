@@ -84,12 +84,19 @@ namespace CPvC
             int bytesToSend = escapedMsg.Length;
             int offset = 0;
 
-            while (bytesToSend > 0)
+            try
             {
-                int bytesSent = _remoteSocket.Send(escapedMsg, offset, bytesToSend, System.Net.Sockets.SocketFlags.None);
+                while (bytesToSend > 0)
+                {
+                    int bytesSent = _remoteSocket.Send(escapedMsg, offset, bytesToSend, System.Net.Sockets.SocketFlags.None);
 
-                bytesToSend -= bytesSent;
-                offset += bytesSent;
+                    bytesToSend -= bytesSent;
+                    offset += bytesSent;
+                }
+            }
+            catch (System.Net.Sockets.SocketException)
+            {
+                _remoteSocket = null;
             }
         }
 
