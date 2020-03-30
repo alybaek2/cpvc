@@ -23,7 +23,7 @@ namespace CPvC
         protected byte[] _receiveData = new byte[1024];
         protected List<byte> _sendData;
 
-        protected System.Net.Sockets.Socket _remoteSocket;
+        protected System.Net.Sockets.Socket _socket;
 
         public SocketConnection()
         {
@@ -31,19 +31,35 @@ namespace CPvC
             _sendData = new List<byte>();
         }
 
-        public SocketConnection(System.Net.Sockets.Socket socket)
+        public SocketConnection(System.Net.Sockets.Socket socket) : this()
         {
-            _remoteSocket = socket;
+            _socket = socket;
 
+            BeginReceive();
+        }
+
+        static public SocketConnection ConnectToServer(string hostname, UInt16 port)
+        {
+            SocketConnection conn = new SocketConnection();
+            if (conn.Connect(hostname, port))
+            {
+                return conn;
+            }
+
+            return null;
+        }
+
+        private void BeginReceive()
+        {
             _currentMessage = new List<byte>();
             _sendData = new List<byte>();
 
-            _remoteSocket.BeginReceive(_receiveData, 0, _receiveData.Length, System.Net.Sockets.SocketFlags.None, new AsyncCallback(ReceiveData), null);
+            ResumeReceive();
         }
 
-        public SocketConnection(string hostname, UInt16 port)
+        private void ResumeReceive()
         {
-            Connect(hostname, port);
+            _socket.BeginReceive(_receiveData, 0, _receiveData.Length, System.Net.Sockets.SocketFlags.None, new AsyncCallback(ReceiveData), null);
         }
 
         private bool Connect(string hostname, UInt16 port)
@@ -69,20 +85,15 @@ namespace CPvC
                 return false;
             }
 
-            System.Net.Sockets.Socket remoteSocket = new System.Net.Sockets.Socket(System.Net.Sockets.AddressFamily.InterNetwork, System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
-
+            System.Net.Sockets.Socket socket = new System.Net.Sockets.Socket(System.Net.Sockets.AddressFamily.InterNetwork, System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
             System.Net.IPEndPoint ipEnd = new System.Net.IPEndPoint(ipAddr, port);
+            socket.Connect(ipEnd);
 
-            remoteSocket.Connect(ipEnd);
-
-            if (remoteSocket.Connected)
+            if (socket.Connected)
             {
-                _currentMessage = new List<byte>();
-                _sendData = new List<byte>();
+                _socket = socket;
 
-                remoteSocket.BeginReceive(_receiveData, 0, _receiveData.Length, System.Net.Sockets.SocketFlags.None, new AsyncCallback(ReceiveData), null);
-
-                _remoteSocket = remoteSocket;
+                BeginReceive();
 
                 return true;
             }
@@ -92,10 +103,10 @@ namespace CPvC
 
         public void Close()
         {
-            _remoteSocket.Close();
+            _socket.Close();
         }
 
-        private void ReceiveData(byte[] bytes, int count)
+        private void ProcessData(byte[] bytes, int count)
         {
             for (int i = 0; i < count; i++)
             {
@@ -143,7 +154,7 @@ namespace CPvC
 
             lock (_sendData)
             {
-                if (_remoteSocket == null)
+                if (_socket == null)
                 {
                     return;
                 }
@@ -160,7 +171,7 @@ namespace CPvC
 
         private void SendQueuedDataASync()
         {
-            if (_remoteSocket == null)
+            if (_socket == null)
             {
                 // Nobody to send to!
                 return;
@@ -171,7 +182,7 @@ namespace CPvC
             sendArgs.SetBuffer(bytesToSend, 0, bytesToSend.Length);
             sendArgs.Completed += new EventHandler<System.Net.Sockets.SocketAsyncEventArgs>(SendCallback);
 
-            _remoteSocket.SendAsync(sendArgs);
+            _socket.SendAsync(sendArgs);
         }
 
         private void SendCallback(object sender, System.Net.Sockets.SocketAsyncEventArgs e)
@@ -218,12 +229,12 @@ namespace CPvC
 
         protected void ReceiveData(IAsyncResult asyn)
         {
-            if (_remoteSocket == null)
+            if (_socket == null)
             {
                 return;
             }
 
-            if (!_remoteSocket.Connected)
+            if (!_socket.Connected)
             {
                 return;
             }
@@ -231,7 +242,7 @@ namespace CPvC
             int bytesReceived = 0;
             try
             {
-                bytesReceived = _remoteSocket.EndReceive(asyn);
+                bytesReceived = _socket.EndReceive(asyn);
             }
             catch (System.Net.Sockets.SocketException e)
             {
@@ -239,13 +250,13 @@ namespace CPvC
                 return;
             }
 
-            ReceiveData(_receiveData, bytesReceived);
+            ProcessData(_receiveData, bytesReceived);
 
-            if (_remoteSocket.Connected)
+            if (_socket.Connected)
             {
                 try
                 {
-                    _remoteSocket.BeginReceive(_receiveData, 0, _receiveData.Length, System.Net.Sockets.SocketFlags.None, new AsyncCallback(ReceiveData), null);
+                    ResumeReceive();
                 }
                 catch (System.Net.Sockets.SocketException e)
                 {

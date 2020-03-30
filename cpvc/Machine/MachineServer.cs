@@ -18,7 +18,6 @@ namespace CPvC
         public MachineServer(Machine machine)
         {
             _machine = machine;
-
             _machine.Auditors += MachineAuditor;
 
             _server = new SocketServer();

@@ -25,7 +25,7 @@ namespace CPvC
             _listeningSocket.Bind(ipEnd);
 
             // Accept only one connection for now...
-            _listeningSocket.Listen(1);
+            _listeningSocket.Listen(10);
 
             _listeningSocket.BeginAccept(new AsyncCallback(ClientConnect), null);
         }

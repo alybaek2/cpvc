@@ -31,7 +31,7 @@ namespace CPvC
             Core = core;
             core.Start();
 
-            _connection = new SocketConnection("localhost", 6128);
+            _connection = SocketConnection.ConnectToServer("localhost", 6128);
             _connection.OnNewMessage += NewMessage;
         }
 
