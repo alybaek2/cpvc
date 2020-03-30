@@ -12,7 +12,7 @@ namespace CPvC
         INotifyPropertyChanged,
         IDisposable
     {
-        private SocketClient _client;
+        private IConnection _connection;
 
         public string Name
         {
@@ -31,10 +31,8 @@ namespace CPvC
             Core = core;
             core.Start();
 
-            _client = new SocketClient();
-            _client.Connect("localhost", 6128);
-            _client.OnNewMessage += NewMessage;
-
+            _connection = new SocketConnection("localhost", 6128);
+            _connection.OnNewMessage += NewMessage;
         }
 
         public void NewMessage(byte[] message)
@@ -59,7 +57,7 @@ namespace CPvC
 
         public void Close()
         {
-            _client.Disconnect();
+            _connection.Close();
             _core.Stop();
             Core = null;
 

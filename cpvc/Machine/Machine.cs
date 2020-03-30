@@ -142,7 +142,7 @@ namespace CPvC
                 }
 
                 CoreAction action = CoreAction.CoreVersion(Core.Ticks, Core.LatestVersion);
-                AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true); // Core.Ticks, Core.LatestVersion), true);
+                AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
             }
             catch (Exception)
             {

@@ -12,6 +12,9 @@ namespace CPvC
 
         private SocketServer _server;
 
+        // Only one client allowed for now. Add more later?
+        private IConnection _client;
+
         public MachineServer(Machine machine)
         {
             _machine = machine;
@@ -19,6 +22,22 @@ namespace CPvC
             _machine.Auditors += MachineAuditor;
 
             _server = new SocketServer();
+            _server.OnClientConnect += ClientConnectDelegate;
+        }
+
+        private void ClientConnectDelegate(SocketConnection socket)
+        {
+            using (_machine.AutoPause())
+            {
+                byte[] state = _machine.Core.GetState();
+
+                CoreAction loadCoreAction = CoreAction.LoadCore(0, new MemoryBlob(state));
+
+                byte[] msg = MachineServer.SerializeAction(loadCoreAction);
+                socket.SendMessage(msg);
+
+                _client = socket;
+            }
         }
 
         private void MachineAuditor(CoreAction coreAction)
@@ -40,8 +59,7 @@ namespace CPvC
         {
             byte[] blob = SerializeAction(coreAction);
 
-            //_server.SendMessage(blob);
-            _server.SendMessageASync(blob);
+            _client?.SendMessage(blob);
         }
 
         static public byte[] SerializeAction(CoreAction action)

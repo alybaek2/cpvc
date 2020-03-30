@@ -6,9 +6,13 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public class SocketServer : SocketCommon
+    public delegate void ClientConnectDelegate(SocketConnection socket);
+
+    public class SocketServer
     {
         private System.Net.Sockets.Socket _listeningSocket;
+
+        public ClientConnectDelegate OnClientConnect { get; set; }
 
         public SocketServer()
         {
@@ -34,13 +38,6 @@ namespace CPvC
                 _listeningSocket = null;
                 socket.Close();
             }
-
-            if (_remoteSocket != null)
-            {
-                System.Net.Sockets.Socket socket = _remoteSocket;
-                _remoteSocket = null;
-                socket.Close();
-            }
         }
 
         public void ClientConnect(IAsyncResult asyn)
@@ -56,9 +53,8 @@ namespace CPvC
                 return;
             }
 
-            _remoteSocket = clientSocket;
-
-            _remoteSocket.BeginReceive(_receiveData, 0, _receiveData.Length, System.Net.Sockets.SocketFlags.None, new AsyncCallback(ReceiveData), null);
+            SocketConnection com = new SocketConnection(clientSocket);
+            OnClientConnect?.Invoke(com);
         }
     }
 }

@@ -8,7 +8,7 @@ namespace CPvC
 {
     public delegate void NewMessageDelegate(byte[] message);
 
-    public class SocketCommon
+    public class SocketConnection : IConnection
     {
         private const byte _delimByte = 0xff;
         private const byte _escapeByte = 0xfe;
@@ -25,10 +25,74 @@ namespace CPvC
 
         protected System.Net.Sockets.Socket _remoteSocket;
 
-        public SocketCommon()
+        public SocketConnection()
         {
             _currentMessage = new List<byte>();
             _sendData = new List<byte>();
+        }
+
+        public SocketConnection(System.Net.Sockets.Socket socket)
+        {
+            _remoteSocket = socket;
+
+            _currentMessage = new List<byte>();
+            _sendData = new List<byte>();
+
+            _remoteSocket.BeginReceive(_receiveData, 0, _receiveData.Length, System.Net.Sockets.SocketFlags.None, new AsyncCallback(ReceiveData), null);
+        }
+
+        public SocketConnection(string hostname, UInt16 port)
+        {
+            Connect(hostname, port);
+        }
+
+        private bool Connect(string hostname, UInt16 port)
+        {
+            System.Net.IPHostEntry host = System.Net.Dns.GetHostEntry(hostname);
+            if (host.AddressList.Length <= 0)
+            {
+                return false;
+            }
+
+            System.Net.IPAddress ipAddr = null;
+            for (int f = 0; f < host.AddressList.Length; f++)
+            {
+                if (host.AddressList[f].AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                {
+                    ipAddr = host.AddressList[f];
+                    break;
+                }
+            }
+
+            if (ipAddr == null)
+            {
+                return false;
+            }
+
+            System.Net.Sockets.Socket remoteSocket = new System.Net.Sockets.Socket(System.Net.Sockets.AddressFamily.InterNetwork, System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
+
+            System.Net.IPEndPoint ipEnd = new System.Net.IPEndPoint(ipAddr, port);
+
+            remoteSocket.Connect(ipEnd);
+
+            if (remoteSocket.Connected)
+            {
+                _currentMessage = new List<byte>();
+                _sendData = new List<byte>();
+
+                remoteSocket.BeginReceive(_receiveData, 0, _receiveData.Length, System.Net.Sockets.SocketFlags.None, new AsyncCallback(ReceiveData), null);
+
+                _remoteSocket = remoteSocket;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public void Close()
+        {
+            _remoteSocket.Close();
         }
 
         private void ReceiveData(byte[] bytes, int count)
@@ -73,7 +137,7 @@ namespace CPvC
             }
         }
 
-        public void SendMessageASync(byte[] msg)
+        public void SendMessage(byte[] msg)
         {
             byte[] escapedMsg = EscapeMessageForSending(msg);
 
@@ -89,12 +153,12 @@ namespace CPvC
 
                 if (isEmpty)
                 {
-                    SendMessageASync();
+                    SendQueuedDataASync();
                 }
             }
         }
 
-        private void SendMessageASync()
+        private void SendQueuedDataASync()
         {
             if (_remoteSocket == null)
             {
@@ -122,38 +186,9 @@ namespace CPvC
 
                     if (_sendData.Count > 0)
                     {
-                        SendMessageASync();
+                        SendQueuedDataASync();
                     }
                 }
-            }
-        }
-
-        public void SendMessage(byte[] msg)
-        {
-            if (_remoteSocket == null)
-            {
-                // Nobody to send to!
-                return;
-            }
-
-            byte[] escapedMsg = EscapeMessageForSending(msg);
-
-            int bytesToSend = escapedMsg.Length;
-            int offset = 0;
-
-            try
-            {
-                while (bytesToSend > 0)
-                {
-                    int bytesSent = _remoteSocket.Send(escapedMsg, offset, bytesToSend, System.Net.Sockets.SocketFlags.None);
-
-                    bytesToSend -= bytesSent;
-                    offset += bytesSent;
-                }
-            }
-            catch (System.Net.Sockets.SocketException)
-            {
-                _remoteSocket = null;
             }
         }
 
@@ -181,7 +216,7 @@ namespace CPvC
         }
 
 
-        public void ReceiveData(IAsyncResult asyn)
+        protected void ReceiveData(IAsyncResult asyn)
         {
             if (_remoteSocket == null)
             {
