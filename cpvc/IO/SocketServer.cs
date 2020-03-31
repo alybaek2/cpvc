@@ -25,7 +25,7 @@ namespace CPvC
             _listeningSocket.Bind(ipEnd);
 
             // Accept only one connection for now...
-            _listeningSocket.Listen(10);
+            _listeningSocket.Listen(1);
 
             _listeningSocket.BeginAccept(new AsyncCallback(ClientConnect), null);
         }
@@ -48,13 +48,13 @@ namespace CPvC
             }
 
             System.Net.Sockets.Socket clientSocket = _listeningSocket.EndAccept(asyn);
-            if (clientSocket == null)
+            if (clientSocket != null)
             {
-                return;
+                SocketConnection com = new SocketConnection(clientSocket);
+                OnClientConnect?.Invoke(com);
             }
 
-            SocketConnection com = new SocketConnection(clientSocket);
-            OnClientConnect?.Invoke(com);
+            _listeningSocket.BeginAccept(new AsyncCallback(ClientConnect), null);
         }
     }
 }

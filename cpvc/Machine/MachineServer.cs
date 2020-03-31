@@ -13,12 +13,14 @@ namespace CPvC
         private SocketServer _server;
 
         // Only one client allowed for now. Add more later?
-        private IConnection _client;
+        private List<IConnection> _clients;
 
         public MachineServer(Machine machine)
         {
             _machine = machine;
             _machine.Auditors += MachineAuditor;
+
+            _clients = new List<IConnection>();
 
             _server = new SocketServer();
             _server.OnClientConnect += ClientConnectDelegate;
@@ -35,7 +37,7 @@ namespace CPvC
                 byte[] msg = MachineServer.SerializeAction(loadCoreAction);
                 socket.SendMessage(msg);
 
-                _client = socket;
+                _clients.Add(socket);
             }
         }
 
@@ -58,7 +60,10 @@ namespace CPvC
         {
             byte[] blob = SerializeAction(coreAction);
 
-            _client?.SendMessage(blob);
+            foreach (IConnection client in _clients)
+            {
+                client.SendMessage(blob);
+            }
         }
 
         static public byte[] SerializeAction(CoreAction action)
