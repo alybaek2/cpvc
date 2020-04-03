@@ -17,7 +17,7 @@ namespace CPvC.Test
             IByteStream file = fs.OpenFileByteStream(filepath);
 
             // Act
-            file.WriteByte(0xfe);
+            file.Write(0xfe);
             file.Close();
 
             // Verify

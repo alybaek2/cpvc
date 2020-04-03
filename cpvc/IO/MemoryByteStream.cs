@@ -23,10 +23,108 @@ namespace CPvC
             _pos = 0;
         }
 
-        public void WriteByte(byte b)
+        public byte[] AsBytes()
+        {
+            return _bytes.ToArray();
+        }
+
+        public void Write(byte b)
         {
             _bytes.Add(b);
             _pos++;
+        }
+
+        public void Write(bool b)
+        {
+            Write((byte) (b ? 0xFF : 0x00));
+        }
+
+        public bool ReadBool()
+        {
+            int b = ReadByte();
+            if (b == -1)
+            {
+                throw new Exception("Unexpected end of stream.");
+            }
+
+            return (b == 0xFF);
+        }
+
+        public void Write(UInt16 u)
+        {
+            Write(BitConverter.GetBytes(u));
+        }
+
+        public UInt16 ReadUInt16()
+        {
+            UInt16 u = _bytes[_pos];
+            _pos++;
+            u += (UInt16)(0x100 * _bytes[_pos]);
+            _pos++;
+
+            return u;
+        }
+
+        public void Write(int i)
+        {
+            Write(BitConverter.GetBytes(i));
+        }
+
+        public Int32 ReadInt32()
+        {
+            return (Int32)ReadUInt32();
+        }
+
+        public void Write(UInt32 u)
+        {
+            Write(BitConverter.GetBytes(u));
+        }
+
+        public UInt32 ReadUInt32()
+        {
+            UInt32 u = _bytes[_pos];
+            _pos++;
+            u += (UInt32)(0x100 * _bytes[_pos]);
+            _pos++;
+            u += (UInt32)(0x10000 * _bytes[_pos]);
+            _pos++;
+            u += (UInt32)(0x1000000 * _bytes[_pos]);
+            _pos++;
+
+            return u;
+        }
+
+        public void Write(UInt64 u)
+        {
+            Write(BitConverter.GetBytes(u));
+        }
+
+        public UInt64 ReadUInt64()
+        {
+            UInt64 u = ReadUInt32();
+            u += (UInt64)(0x100000000 * (UInt64)ReadUInt32());
+
+            return u;
+        }
+
+        public void WriteArray(byte[] bytes)
+        {
+            Write(bytes.Length);
+            Write(bytes);
+        }
+
+        public byte[] ReadArray()
+        {
+            Int32 len = ReadInt32();
+            byte[] bytes = new byte[len];
+            int bytesRead = ReadBytes(bytes, len);
+
+            if (bytesRead != len)
+            {
+                throw new Exception("Unexpected end of stream.");
+            }
+
+            return bytes;
         }
 
         public void Write(byte[] b)
@@ -45,6 +143,11 @@ namespace CPvC
             return _bytes[_pos++];
         }
 
+        public byte ReadOneByte()
+        {
+            return _bytes[_pos++];
+        }
+
         public int ReadBytes(byte[] array, int count)
         {
             int bytesRead = 0;
@@ -57,6 +160,16 @@ namespace CPvC
             }
 
             return bytesRead;
+        }
+
+        public void Write(string str)
+        {
+            WriteArray(Encoding.UTF8.GetBytes(str));
+        }
+
+        public string ReadString()
+        {
+            return Encoding.UTF8.GetString(ReadArray());
         }
 
         public void Close()

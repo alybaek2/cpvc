@@ -21,7 +21,6 @@ namespace CPvC
         ITurboableMachine,
         ICompactableMachine,
         IClosableMachine,
-        IRemoteableMachine,
         IMachineFileReader,
         INotifyPropertyChanged,
         IDisposable
@@ -44,8 +43,6 @@ namespace CPvC
         private readonly IFileSystem _fileSystem;
         private MachineFile _file;
 
-        private MachineServer _server;
-
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
             _name = name;
@@ -59,8 +56,6 @@ namespace CPvC
             _historyEventById = new Dictionary<int, HistoryEvent>();
 
             _fileSystem = fileSystem;
-
-            _server = new MachineServer(this);
         }
 
         public void Dispose()
@@ -766,16 +761,6 @@ namespace CPvC
             AddEvent(historyEvent, false);
 
             _nextEventId = Math.Max(_nextEventId, historyEvent.Id + 1);
-        }
-
-        public void StartServer(UInt16 port)
-        {
-            _server.Start(port);
-        }
-
-        public void StopServer()
-        {
-            _server.Stop();
         }
     }
 }

@@ -68,7 +68,10 @@
             <MenuItem Header="File">
                 <MenuItem x:Name="_newMenuItem" Header="New..." Command="{Binding NewMachineCommand}"/>
                 <MenuItem x:Name="_openMenuItem" Header="Open..." Command="{Binding OpenMachineCommand}"/>
+                <Separator/>
+                <MenuItem x:Name="_startServerMenuItem" Header="Start Server" Command="{Binding StartServerCommand}"/>
                 <MenuItem x:Name="_connectMenuItem" Header="Connect" Click="_connectMenuItem_Click"/>
+                <Separator/>
                 <MenuItem x:Name="_closeMenuItem" Header="Close" Command="{Binding ActiveMachineViewModel.CloseCommand}"/>
                 <Separator/>
                 <MenuItem x:Name="_exitMenuItem" Header="Exit" Click="ExitMenuItem_Click"/>
@@ -128,8 +131,6 @@
                         <Image Width="16" Height="16" Source="../Resources/bookmark16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <Separator/>
-                <MenuItem x:Name="_startServerMenuItem" Header="Start Server" Command="{Binding ActiveMachineViewModel.StartServerCommand}"/>
                 <Separator/>
                 <MenuItem x:Name="_renameFileMenuItem" Header="Rename machine..." Command="{Binding ActiveMachineViewModel.RenameCommand}"/>
                 <MenuItem x:Name="_compactFileMenuItem" Header="Compact machine file" Command="{Binding ActiveMachineViewModel.CompactCommand}"/>

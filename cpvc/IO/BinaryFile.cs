@@ -42,7 +42,7 @@ namespace CPvC
         {
             lock (_byteStream)
             {
-                _byteStream.WriteByte(b);
+                _byteStream.Write(b);
             }
         }
 
@@ -50,7 +50,7 @@ namespace CPvC
         {
             lock (_byteStream)
             {
-                _byteStream.WriteByte((byte)(b ? 1 : 0));
+                _byteStream.Write((byte)(b ? 1 : 0));
             }
         }
 

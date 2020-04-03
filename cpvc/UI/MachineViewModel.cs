@@ -34,7 +34,6 @@ namespace CPvC
         private Command _keyDownCommand;
         private Command _keyUpCommand;
         private Command _turboCommand;
-        private Command _startServerCommand;
         private ICommand _removeCommand;
 
         public MachineViewModel(ICoreMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, SelectItemDelegate selectItem)
@@ -187,11 +186,6 @@ namespace CPvC
                 p => (machine as ITurboableMachine)?.EnableTurbo((bool)p),
                 p => (machine as ITurboableMachine) != null
             );
-
-            _startServerCommand = new Command(
-                p => (machine as IRemoteableMachine)?.StartServer(6128),
-                p => (machine as IRemoteableMachine) != null
-            );
         }
 
         public ICoreMachine Machine { get; }
@@ -309,11 +303,6 @@ namespace CPvC
         public ICommand TurboCommand
         {
             get { return _turboCommand; }
-        }
-
-        public ICommand StartServerCommand
-        {
-            get { return _startServerCommand; }
         }
 
         public ICommand RemoveCommand

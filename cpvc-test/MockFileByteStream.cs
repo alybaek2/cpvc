@@ -42,7 +42,7 @@ namespace CPvC.Test
         {
             _readPos = 0;
             Content = new List<byte>();
-            Setup(s => s.WriteByte(It.IsAny<byte>())).Callback<byte>(b => {
+            Setup(s => s.Write(It.IsAny<byte>())).Callback<byte>(b => {
                 Content.Add(b);
                 _readPos = Content.Count;
             });

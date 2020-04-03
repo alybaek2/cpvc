@@ -26,8 +26,6 @@ namespace CPvC
 
         public Types Type { get; protected set; }
 
-        public UInt64 ExpectedExecutionTime { get; set; }
-
         /// <summary>
         /// The key that has been pressed. Key codes are encoded as a two digit decimal number; the first digit is the key bit and the second is the key line.
         /// </summary>

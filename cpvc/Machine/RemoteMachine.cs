@@ -9,10 +9,12 @@ namespace CPvC
 {
     public sealed class RemoteMachine : CoreMachine,
         IClosableMachine,
+        IRemoteReceiver,
         INotifyPropertyChanged,
         IDisposable
     {
         private IConnection _connection;
+        private Remote _remote;
 
         public string Name
         {
@@ -32,16 +34,28 @@ namespace CPvC
             core.Start();
 
             _connection = SocketConnection.ConnectToServer("localhost", 6128);
-            _connection.OnNewMessage += NewMessage;
+
+            _remote = new Remote(_connection, this);            
         }
 
-        public void NewMessage(byte[] message)
+        public void ReceiveCoreAction(CoreAction coreAction)
         {
-            CoreAction action = MachineServer.Deserialize(message);
-            action.ExpectedExecutionTime = Ticks;
-
-            _core.PushRequest(action);
+            _core.PushRequest(coreAction);
         }
+
+        public void ReceiveSelectMachine(string machineName)
+        {
+
+        }
+
+        public void ReceiveAvailableMachines(List<string> availableMachines)
+        {
+            if (availableMachines.Count > 0)
+            {
+                _remote.SendSelectMachine(availableMachines[0]);
+            }
+        }
+
         public void Dispose()
         {
             Close();
@@ -63,6 +77,5 @@ namespace CPvC
 
             OnClose?.Invoke();
         }
-
     }
 }

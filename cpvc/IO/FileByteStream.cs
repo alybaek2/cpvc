@@ -41,7 +41,7 @@ namespace CPvC
             }
         }
 
-        public void WriteByte(byte b)
+        public void Write(byte b)
         {
             _fileStream.WriteByte(b);
         }

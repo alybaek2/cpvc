@@ -126,6 +126,8 @@
     <Compile Include="IO\IStreamBlob.cs" />
     <Compile Include="IO\IStreamDiffBlob.cs" />
     <Compile Include="IO\MemoryByteStream.cs" />
+    <Compile Include="IO\Remote.cs" />
+    <Compile Include="IO\Serializer.cs" />
     <Compile Include="IO\SocketConnection.cs" />
     <Compile Include="IO\SocketServer.cs" />
     <Compile Include="ISettings.cs" />
@@ -141,10 +143,12 @@
     <Compile Include="Machine\ICompactableMachine.cs" />
     <Compile Include="Machine\IPrerecordedMachine.cs" />
     <Compile Include="Machine\IRemoteableMachine.cs" />
+    <Compile Include="Machine\IRemoteReceiver.cs" />
     <Compile Include="Machine\IRewindableMachine.cs" />
     <Compile Include="Machine\ITurboableMachine.cs" />
     <Compile Include="Machine\MachineFile.cs" />
-    <Compile Include="Machine\MachineServer.cs" />
+    <Compile Include="Machine\MachineServerListener.cs" />
+    <Compile Include="Machine\MachineServerConnection.cs" />
     <Compile Include="Machine\MemoryBlob.cs" />
     <Compile Include="Machine\RemoteMachine.cs" />
     <Compile Include="Machine\ReplayMachine.cs" />

@@ -39,9 +39,12 @@ namespace CPvC.UI
 
         private Command _openMachineCommand;
         private Command _newMachineCommand;
+        private Command _startServerCommand;
 
         private MachineViewModel _nullMachineViewModel;
         public event PropertyChangedEventHandler PropertyChanged;
+
+        private MachineServerListener _machineServer;
 
         public MainViewModel(ISettings settings, IFileSystem fileSystem, SelectItemDelegate selectItem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, ReportErrorDelegate reportError)
         {
@@ -54,6 +57,8 @@ namespace CPvC.UI
             _nullMachineViewModel = new MachineViewModel(null, null, null, null, null, null);
 
             _model = new MainModel(settings, fileSystem);
+
+            _machineServer = new MachineServerListener(Machines);
 
             _machineViewModels = new ObservableCollection<MachineViewModel>();
             for (int i = 0; i < _model.Machines.Count; i++)
@@ -96,6 +101,11 @@ namespace CPvC.UI
                         reportError(ex.Message);
                     }
                 },
+                p => true
+            );
+
+            _startServerCommand = new Command(
+                p => StartServer(6128),
                 p => true
             );
 
@@ -147,6 +157,11 @@ namespace CPvC.UI
             {
                 return _newMachineCommand;
             }
+        }
+
+        public ICommand StartServerCommand
+        {
+            get { return _startServerCommand; }
         }
 
         /// <summary>
@@ -361,6 +376,16 @@ namespace CPvC.UI
         protected void OnPropertyChanged(string name)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
+        public void StartServer(UInt16 port)
+        {
+            _machineServer.Start(port);
+        }
+
+        public void StopServer()
+        {
+            _machineServer.Stop();
         }
     }
 }

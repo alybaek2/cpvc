@@ -86,9 +86,9 @@ namespace CPvC.Test
             IFileByteStream file = fileSystem.OpenFileByteStream(filepath);
 
             // Act
-            file.WriteByte(0x01);
-            file.WriteByte(0x02);
-            file.WriteByte(0x03);
+            file.Write(0x01);
+            file.Write(0x02);
+            file.Write(0x03);
             file.Write(new byte[] { 0x04, 0x05, 0x06 });
 
             // Verify

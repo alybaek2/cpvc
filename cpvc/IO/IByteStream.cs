@@ -8,7 +8,7 @@ namespace CPvC
 {
     public interface IByteStream
     {
-        void WriteByte(byte b);
+        void Write(byte b);
         void Write(byte[] b);
         int ReadByte();
         int ReadBytes(byte[] array, int count);
