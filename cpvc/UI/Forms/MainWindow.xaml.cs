@@ -335,10 +335,5 @@ namespace CPvC.UI.Forms
                 e.Accepted = false;
             }
         }
-
-        private void _connectMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.ConnectRemoteMachine();
-        }
     }
 }

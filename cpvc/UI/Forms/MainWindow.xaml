@@ -70,7 +70,7 @@
                 <MenuItem x:Name="_openMenuItem" Header="Open..." Command="{Binding OpenMachineCommand}"/>
                 <Separator/>
                 <MenuItem x:Name="_startServerMenuItem" Header="Start Server" Command="{Binding StartServerCommand}"/>
-                <MenuItem x:Name="_connectMenuItem" Header="Connect" Click="_connectMenuItem_Click"/>
+                <MenuItem x:Name="_connectMenuItem" Header="Connect" Command="{Binding ConnectCommand}"/>
                 <Separator/>
                 <MenuItem x:Name="_closeMenuItem" Header="Close" Command="{Binding ActiveMachineViewModel.CloseCommand}"/>
                 <Separator/>

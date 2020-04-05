@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public class MachineServerConnection : IRemoteReceiver
+    public class MachineServerConnection
     {
         private Machine _machine;
         private IEnumerable<Machine> _machines;
@@ -15,13 +15,11 @@ namespace CPvC
 
         public MachineServerConnection(SocketConnection socket, IEnumerable<Machine> machines)
         {
-            _remote = new Remote(socket, this);
+            _remote = new Remote(socket);
+            _remote.ReceiveSelectMachine = ReceiveSelectMachine;
+            _remote.ReceivePing = ReceivePing;
+
             _machines = machines;
-        }
-
-        public void ReceiveCoreAction(CoreAction coreAction)
-        {
-
         }
 
         public void ReceiveSelectMachine(string machineName)
@@ -37,6 +35,7 @@ namespace CPvC
 
                     CoreAction loadCoreAction = CoreAction.LoadCore(0, new MemoryBlob(state));
 
+                    _remote.SendName(_machine.Name);
                     _remote.SendCoreAction(loadCoreAction);
 
                     _machine.Auditors += MachineAuditor;
@@ -44,9 +43,12 @@ namespace CPvC
             }
         }
 
-        public void ReceiveAvailableMachines(List<string> availableMachines)
+        public void ReceivePing(bool response, UInt64 id)
         {
-
+            if (!response)
+            {
+                _remote.SendPing(true, id);
+            }
         }
 
         private void MachineAuditor(CoreAction coreAction)

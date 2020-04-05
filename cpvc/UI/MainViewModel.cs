@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading;
 using System.Windows.Input;
 
 namespace CPvC.UI
@@ -40,14 +41,20 @@ namespace CPvC.UI
         private Command _openMachineCommand;
         private Command _newMachineCommand;
         private Command _startServerCommand;
+        private Command _connectCommand;
 
         private MachineViewModel _nullMachineViewModel;
         public event PropertyChangedEventHandler PropertyChanged;
 
         private MachineServerListener _machineServer;
+        private Remote _remote;
+
+        private SynchronizationContext _syncContext;
 
         public MainViewModel(ISettings settings, IFileSystem fileSystem, SelectItemDelegate selectItem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, ReportErrorDelegate reportError)
         {
+            _syncContext = SynchronizationContext.Current;
+
             _fileSystem = fileSystem;
             _selectItem = selectItem;
             _promptForFile = promptForFile;
@@ -109,6 +116,10 @@ namespace CPvC.UI
                 p => true
             );
 
+            _connectCommand = new Command(
+                p => Connect(),
+                p => true
+            );
         }
 
         public ObservableCollection<Machine> Machines
@@ -162,6 +173,11 @@ namespace CPvC.UI
         public ICommand StartServerCommand
         {
             get { return _startServerCommand; }
+        }
+
+        public ICommand ConnectCommand
+        {
+            get { return _connectCommand; }
         }
 
         /// <summary>
@@ -223,23 +239,6 @@ namespace CPvC.UI
             replayMachine.OnClose += () =>
             {
                 ReplayMachines.Remove(replayMachine);
-                MachineViewModels.Remove(machineViewModel);
-            };
-
-            ActiveMachineViewModel = machineViewModel;
-        }
-
-        public void ConnectRemoteMachine()
-        {
-            RemoteMachine remoteMachine = new RemoteMachine();
-
-            RemoteMachines.Add(remoteMachine);
-
-            MachineViewModel machineViewModel = CreateMachineViewModel(remoteMachine);
-            _machineViewModels.Add(machineViewModel);
-            remoteMachine.OnClose += () =>
-            {
-                RemoteMachines.Remove(remoteMachine);
                 MachineViewModels.Remove(machineViewModel);
             };
 
@@ -310,11 +309,14 @@ namespace CPvC.UI
 
         public int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
-            lock (Machines)
+            lock (MachineViewModels)
             {
                 int samplesWritten = 0;
-                foreach (Machine machine in Machines)
+
+                foreach (MachineViewModel machineViewModel in MachineViewModels)
                 {
+                    ICoreMachine machine = machineViewModel.Machine;
+
                     // Play audio only from the currently active machine; for the rest, just
                     // advance the audio playback position.
                     if (machine == ActiveMachineViewModel.Machine)
@@ -324,34 +326,6 @@ namespace CPvC.UI
                     else
                     {
                         machine.AdvancePlayback(samplesRequested);
-                    }
-                }
-
-                foreach (ReplayMachine replayMachine in ReplayMachines)
-                {
-                    // Play audio only from the currently active machine; for the rest, just
-                    // advance the audio playback position.
-                    if (replayMachine == ActiveMachineViewModel.Machine)
-                    {
-                        samplesWritten = replayMachine.ReadAudio(buffer, offset, samplesRequested);
-                    }
-                    else
-                    {
-                        replayMachine.Core.AdvancePlayback(samplesRequested);
-                    }
-                }
-
-                foreach (RemoteMachine remoteMachine in RemoteMachines)
-                {
-                    // Play audio only from the currently active machine; for the rest, just
-                    // advance the audio playback position.
-                    if (remoteMachine == ActiveMachineViewModel.Machine)
-                    {
-                        samplesWritten = remoteMachine.ReadAudio(buffer, offset, samplesRequested);
-                    }
-                    else
-                    {
-                        remoteMachine.Core.AdvancePlayback(samplesRequested);
                     }
                 }
 
@@ -386,6 +360,50 @@ namespace CPvC.UI
         public void StopServer()
         {
             _machineServer.Stop();
+        }
+
+        public void Connect()
+        {
+            SocketConnection connection = SocketConnection.ConnectToServer("localhost", 6128);
+            _remote = new Remote(connection);
+            _remote.ReceiveAvailableMachines = ReceiveAvailableMachines;
+
+            _remote.SendRequestAvailableMachines();
+        }
+
+        public void ReceiveAvailableMachines(List<string> availableMachines)
+        {
+            if (_syncContext != null)
+            {
+                _syncContext.Post(_ => ReceiveAvailableMachinesAsync(availableMachines), null);
+            }
+            else
+            {
+                ReceiveAvailableMachinesAsync(availableMachines);
+            }
+
+        }
+
+        public void ReceiveAvailableMachinesAsync(List<string> availableMachines)
+        {
+            if (availableMachines.Count > 0)
+            {
+                RemoteMachine remoteMachine = new RemoteMachine(_remote);
+                _remote.SendSelectMachine(availableMachines[0]);
+                _remote = null;
+
+                RemoteMachines.Add(remoteMachine);
+
+                MachineViewModel machineViewModel = CreateMachineViewModel(remoteMachine);
+                _machineViewModels.Add(machineViewModel);
+                remoteMachine.OnClose += () =>
+                {
+                    RemoteMachines.Remove(remoteMachine);
+                    MachineViewModels.Remove(machineViewModel);
+                };
+
+                ActiveMachineViewModel = machineViewModel;
+            }
         }
     }
 }

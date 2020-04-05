@@ -8,25 +8,21 @@ namespace CPvC
 {
     public class Serializer
     {
-        public const byte _idKeyPress = 1;
-        public const byte _idReset = 2;
-        public const byte _idLoadDisc = 3;
-        public const byte _idLoadTape = 4;
-        public const byte _idRunUntil = 5;
-        public const byte _idLoadCore = 6;
-        public const byte _idCoreVersion = 7;
-        public const byte _idAvailableMachines = 8;
-        public const byte _idSelectMachine = 9;
+        public const byte _coreActionKeyPress = 1;
+        public const byte _coreActionReset = 2;
+        public const byte _coreActionLoadDisc = 3;
+        public const byte _coreActionLoadTape = 4;
+        public const byte _coreActionRunUntil = 5;
+        public const byte _coreActionLoadCore = 6;
+        public const byte _coreActionCoreVersion = 7;
 
         static public void SelectMachineToBytes(MemoryByteStream stream, string machineName)
         {
-            stream.Write(_idSelectMachine);
             stream.Write(machineName);
         }
 
         static public string SelectMachineFromBytes(MemoryByteStream stream)
         {
-            byte id = stream.ReadOneByte(); // Should be _idSelectMachine
             string machineName = stream.ReadString();
 
             return machineName;
@@ -34,8 +30,6 @@ namespace CPvC
 
         static public void AvailableMachinesToBytes(MemoryByteStream stream, IEnumerable<string> machines)
         {
-            stream.Write(_idAvailableMachines);
-
             int count = machines.Count();
             stream.Write(count);
 
@@ -47,8 +41,6 @@ namespace CPvC
 
         static public List<string> AvailableMachinesFromBytes(MemoryByteStream stream)
         {
-            byte id = stream.ReadOneByte(); // Should be _idAvailableMachines
-
             List<string> availableMachines = new List<string>();
 
             int count = stream.ReadInt32();
@@ -65,43 +57,43 @@ namespace CPvC
             switch (action.Type)
             {
                 case CoreRequest.Types.KeyPress:
-                    stream.Write(_idKeyPress);
+                    stream.Write(_coreActionKeyPress);
                     stream.Write(action.Ticks);
                     stream.Write(action.KeyCode);
                     stream.Write(action.KeyDown);
                     break;
                 case CoreRequest.Types.Reset:
-                    stream.Write(_idReset);
+                    stream.Write(_coreActionReset);
                     stream.Write(action.Ticks);
                     break;
                 case CoreRequest.Types.LoadDisc:
-                    stream.Write(_idLoadDisc);
+                    stream.Write(_coreActionLoadDisc);
                     stream.Write(action.Ticks);
                     stream.Write(action.Drive);
                     stream.WriteArray(action.MediaBuffer.GetBytes());
                     break;
                 case CoreRequest.Types.LoadTape:
-                    stream.Write(_idLoadTape);
+                    stream.Write(_coreActionLoadTape);
                     stream.Write(action.Ticks);
                     stream.WriteArray(action.MediaBuffer.GetBytes());
                     break;
                 case CoreRequest.Types.RunUntilForce:
-                    stream.Write(_idRunUntil);
+                    stream.Write(_coreActionRunUntil);
                     stream.Write(action.Ticks);
                     stream.Write(action.StopTicks);
                     break;
                 case CoreRequest.Types.LoadCore:
-                    stream.Write(_idLoadCore);
+                    stream.Write(_coreActionLoadCore);
                     stream.Write(action.Ticks);
                     stream.WriteArray(action.CoreState.GetBytes());
                     break;
                 case CoreRequest.Types.CoreVersion:
-                    stream.Write(_idCoreVersion);
+                    stream.Write(_coreActionCoreVersion);
                     stream.Write(action.Ticks);
                     stream.Write(action.Version);
                     break;
                 default:
-                    break;
+                    throw new Exception(String.Format("Unknown CoreAction type {0}!", action.Type));
             }
         }
 
@@ -110,7 +102,7 @@ namespace CPvC
             byte type = stream.ReadOneByte();
             switch (type)
             {
-                case _idKeyPress:
+                case _coreActionKeyPress:
                     {
                         UInt64 ticks = stream.ReadUInt64();
                         byte keyCode = stream.ReadOneByte();
@@ -118,13 +110,13 @@ namespace CPvC
 
                         return CoreAction.KeyPress(ticks, keyCode, keyDown);
                     }
-                case _idReset:
+                case _coreActionReset:
                     {
                         UInt64 ticks = stream.ReadUInt64();
 
                         return CoreAction.Reset(ticks);
                     }
-                case _idLoadDisc:
+                case _coreActionLoadDisc:
                     {
                         UInt64 ticks = stream.ReadUInt64();
                         byte drive = stream.ReadOneByte();
@@ -132,28 +124,28 @@ namespace CPvC
 
                         return CoreAction.LoadDisc(ticks, drive, new MemoryBlob(media));
                     }
-                case _idLoadTape:
+                case _coreActionLoadTape:
                     {
                         UInt64 ticks = stream.ReadUInt64();
                         byte[] media = stream.ReadArray();
 
                         return CoreAction.LoadTape(ticks, new MemoryBlob(media));
                     }
-                case _idRunUntil:
+                case _coreActionRunUntil:
                     {
                         UInt64 ticks = stream.ReadUInt64();
                         UInt64 stopTicks = stream.ReadUInt64();
 
                         return CoreAction.RunUntilForce(ticks, stopTicks);
                     }
-                case _idLoadCore:
+                case _coreActionLoadCore:
                     {
                         UInt64 ticks = stream.ReadUInt64();
                         byte[] state = stream.ReadArray();
 
                         return CoreAction.LoadCore(ticks, new MemoryBlob(state));
                     }
-                case _idCoreVersion:
+                case _coreActionCoreVersion:
                     {
                         UInt64 ticks = stream.ReadUInt64();
                         Int32 version = stream.ReadInt32();

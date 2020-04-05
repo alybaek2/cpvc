@@ -9,21 +9,35 @@ namespace CPvC
 {
     public sealed class RemoteMachine : CoreMachine,
         IClosableMachine,
-        IRemoteReceiver,
         INotifyPropertyChanged,
         IDisposable
     {
-        private IConnection _connection;
+        private string _name;
         private Remote _remote;
+        private int _lastPing;
+        private int _connectionLatency;
 
+        /// <summary>
+        /// The name of the machine.
+        /// </summary>
         public string Name
         {
-            get; set;
+            get
+            {
+                return _name;
+            }
+
+            set
+            {
+                _name = value;
+
+                OnPropertyChanged("Name");
+            }
         }
 
         public OnCloseDelegate OnClose { get; set; }
 
-        public RemoteMachine()
+        public RemoteMachine(Remote remote)
         {
             Display = new Display();
             Display.GetFromBookmark(null);
@@ -33,19 +47,33 @@ namespace CPvC
             Core = core;
             core.Start();
 
-            _connection = SocketConnection.ConnectToServer("localhost", 6128);
+            _remote = remote;
+            _remote.ReceiveCoreAction = ReceiveCoreAction;
+            _remote.ReceiveAvailableMachines = ReceiveAvailableMachines;
+            _remote.ReceivePing = ReceivePing;
+            _remote.ReceiveName = ReceiveName;
 
-            _remote = new Remote(_connection, this);            
+            _lastPing = 0;
+            _connectionLatency = 0;
         }
 
         public void ReceiveCoreAction(CoreAction coreAction)
         {
             _core.PushRequest(coreAction);
+
+            int ticks = System.Environment.TickCount;
+
+            if ((ticks - _lastPing) > 100)
+            {
+                _remote.SendPing(false, (UInt64)ticks);
+
+                _lastPing = ticks;
+            }
         }
 
-        public void ReceiveSelectMachine(string machineName)
+        public void ReceiveName(string machineName)
         {
-
+            Name = String.Format("{0} (remote)", machineName);
         }
 
         public void ReceiveAvailableMachines(List<string> availableMachines)
@@ -53,6 +81,18 @@ namespace CPvC
             if (availableMachines.Count > 0)
             {
                 _remote.SendSelectMachine(availableMachines[0]);
+            }
+        }
+
+        public void ReceivePing(bool response, UInt64 id)
+        {
+            if (response)
+            {
+                int ticks = System.Environment.TickCount;
+
+                int pingTicks = (int)id;
+
+                _connectionLatency = ticks - pingTicks;
             }
         }
 
@@ -71,7 +111,7 @@ namespace CPvC
 
         public void Close()
         {
-            _connection.Close();
+            _remote.Close();
             _core.Stop();
             Core = null;
 
