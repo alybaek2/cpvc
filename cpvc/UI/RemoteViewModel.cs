@@ -13,6 +13,12 @@ namespace CPvC
     {
         public ServerInfo ServerInfo { get; set; }
         public string MachineName { get; set; }
+
+        public RemoteMachineInfo(string name, ServerInfo server)
+        {
+            ServerInfo = server;
+            MachineName = name;
+        }
     }
 
     public class ServerInfo
@@ -33,6 +39,41 @@ namespace CPvC
 
         public string ServerName { get; set; }
         public UInt16 Port { get; set; }
+
+        public ServerInfo(string hostname, UInt16 port)
+        {
+            ServerName = hostname;
+            Port = port;
+
+            GetMachines(hostname, port);
+        }
+
+        private void GetMachines(string serverName, UInt16 port)
+        {
+            ManualResetEvent e = new ManualResetEvent(false);
+
+            ObservableCollection<RemoteMachineInfo> remoteMachines = new ObservableCollection<RemoteMachineInfo>();
+
+            IConnection connection = SocketConnection.ConnectToServer(serverName, port);
+            Remote remote = new Remote(connection);
+            remote.ReceiveAvailableMachines += machineNames =>
+            {
+                foreach (string machineName in machineNames)
+                {
+                    RemoteMachineInfo info = new RemoteMachineInfo(machineName, this);
+
+                    remoteMachines.Add(info);
+                }
+
+                e.Set();
+            };
+
+            remote.SendRequestAvailableMachines();
+
+            e.WaitOne(2000);
+
+            Machines = remoteMachines;
+        }
     }
 
     public class RemoteViewModel : INotifyPropertyChanged
@@ -73,21 +114,7 @@ namespace CPvC
             ServerInfo info = null;
             if (serverName.Length > 0 && !Servers.Any(s => s.ServerName == serverName)) //_serverComboBox.Items.Contains(serverName))
             {
-                info = new ServerInfo();
-                info.ServerName = serverName;
-                info.Port = port;
-                info.Machines = new ObservableCollection<RemoteMachineInfo>();
-
-                List<string> machineNames = GetMachines(serverName, port);
-
-                foreach (string machineName in machineNames)
-                {
-                    RemoteMachineInfo remoteMachineInfo = new RemoteMachineInfo();
-                    remoteMachineInfo.ServerInfo = info;
-                    remoteMachineInfo.MachineName = machineName;
-
-                    info.Machines.Add(remoteMachineInfo);
-                }
+                info = new ServerInfo(serverName, port);
 
                 Servers.Add(info);
 
@@ -95,26 +122,6 @@ namespace CPvC
             }
 
             return info;
-        }
-
-        private List<string> GetMachines(string serverName, UInt16 port)
-        {
-            ManualResetEvent e = new ManualResetEvent(false);
-
-            List<string> machineNames = new List<string>();
-            IConnection connection = SocketConnection.ConnectToServer(serverName, port);
-            Remote remote = new Remote(connection);
-            remote.ReceiveAvailableMachines += m =>
-            {
-                machineNames = m;
-                e.Set();
-            };
-
-            remote.SendRequestAvailableMachines();
-
-            e.WaitOne(2000);
-
-            return machineNames;
         }
 
         private void LoadFromSettings()
@@ -131,23 +138,8 @@ namespace CPvC
                         continue;
                     }
 
-                    ServerInfo info = new ServerInfo();
-                    info.ServerName = tokens[0];
-                    info.Port = System.Convert.ToUInt16(tokens[1]);
-                    info.Machines = new ObservableCollection<RemoteMachineInfo>();
-
-                    List<string> machineNames = GetMachines(info.ServerName, info.Port);
-
-                    foreach (string machineName in machineNames)
-                    {
-                        RemoteMachineInfo remoteMachineInfo = new RemoteMachineInfo();
-                        remoteMachineInfo.ServerInfo = info;
-                        remoteMachineInfo.MachineName = machineName;
-
-                        info.Machines.Add(remoteMachineInfo);
-                    }
-
-
+                    ServerInfo info = new ServerInfo(tokens[0], System.Convert.ToUInt16(tokens[1]));
+                    
                     Servers.Add(info);
                 }
             }
