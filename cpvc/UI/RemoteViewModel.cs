@@ -55,12 +55,17 @@ namespace CPvC
             }
         }
 
+        private ISettings _settings;
+
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public RemoteViewModel()
+        public RemoteViewModel(ISettings settings)
         {
             Servers = new ObservableCollection<ServerInfo>();
             SelectedServer = null;
+            _settings = settings;
+
+            LoadFromSettings();
         }
 
         public ServerInfo AddServer(string serverName, UInt16 port)
@@ -85,6 +90,8 @@ namespace CPvC
                 }
 
                 Servers.Add(info);
+
+                UpdateSettings();
             }
 
             return info;
@@ -108,6 +115,51 @@ namespace CPvC
             e.WaitOne(2000);
 
             return machineNames;
+        }
+
+        private void LoadFromSettings()
+        {
+            IEnumerable<string> serversAndPorts = Helpers.SplitWithEscape(';', _settings.RemoteServers);
+
+            lock (Servers)
+            {
+                foreach (string serverStr in serversAndPorts)
+                {
+                    List<string> tokens = Helpers.SplitWithEscape(':', serverStr);
+                    if (tokens.Count < 2)
+                    {
+                        continue;
+                    }
+
+                    ServerInfo info = new ServerInfo();
+                    info.ServerName = tokens[0];
+                    info.Port = System.Convert.ToUInt16(tokens[1]);
+                    info.Machines = new ObservableCollection<RemoteMachineInfo>();
+
+                    List<string> machineNames = GetMachines(info.ServerName, info.Port);
+
+                    foreach (string machineName in machineNames)
+                    {
+                        RemoteMachineInfo remoteMachineInfo = new RemoteMachineInfo();
+                        remoteMachineInfo.ServerInfo = info;
+                        remoteMachineInfo.MachineName = machineName;
+
+                        info.Machines.Add(remoteMachineInfo);
+                    }
+
+
+                    Servers.Add(info);
+                }
+            }
+        }
+
+        private void UpdateSettings()
+        {
+            IEnumerable<string> serversAndPorts = Servers.Select(s => Helpers.JoinWithEscape(':', new string[] { s.ServerName, s.Port.ToString() }));
+
+            string setting = Helpers.JoinWithEscape(';', serversAndPorts);
+
+            _settings.RemoteServers = setting;
         }
 
         protected void OnPropertyChanged(string name)

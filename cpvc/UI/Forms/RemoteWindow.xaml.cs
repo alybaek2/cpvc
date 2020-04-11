@@ -28,7 +28,7 @@ namespace CPvC.UI.Forms
         {
             InitializeComponent();
 
-            _viewModel = new RemoteViewModel();
+            _viewModel = new RemoteViewModel(new Settings());
             Owner = owner;
 
             DataContext = _viewModel;

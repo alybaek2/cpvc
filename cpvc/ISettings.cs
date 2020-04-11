@@ -1,4 +1,7 @@
-﻿namespace CPvC
+﻿using System;
+using System.Collections.Generic;
+
+namespace CPvC
 {
     /// <summary>
     /// Interface for application-wide configuration settings.
@@ -9,5 +12,7 @@
 
         string GetFolder(FileTypes fileType);
         void SetFolder(FileTypes fileType, string folder);
+
+        string RemoteServers { get; set; }
     }
 }
