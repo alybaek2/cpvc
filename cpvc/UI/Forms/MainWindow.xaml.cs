@@ -22,7 +22,7 @@ namespace CPvC.UI.Forms
         {
             _settings = new Settings();
             _fileSystem = new FileSystem();
-            _mainViewModel = new MainViewModel(_settings, _fileSystem, SelectItem, PromptForFile, PromptForBookmark, PromptForName, ReportError);
+            _mainViewModel = new MainViewModel(_settings, _fileSystem, SelectItem, PromptForFile, PromptForBookmark, PromptForName, ReportError, SelectRemoteMachine);
             _audio = new Audio(_mainViewModel.ReadAudio);
 
             InitializeComponent();
@@ -291,6 +291,14 @@ namespace CPvC.UI.Forms
             }
 
             return null;
+        }
+
+        private RemoteMachine SelectRemoteMachine()
+        {
+            RemoteWindow dialog = new RemoteWindow(this);
+            bool? result = dialog.ShowDialog();
+
+            return (result.HasValue && result.Value) ? dialog.RemoteMachine : null;
         }
 
         private void ReportError(string message)

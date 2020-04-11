@@ -60,7 +60,7 @@ namespace CPvC.Test
                       0x00
             };
 
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object, null, mockPromptForFile?.Object, mockPromptForBookmark?.Object, mockPromptForName?.Object, null);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object, null, mockPromptForFile?.Object, mockPromptForBookmark?.Object, mockPromptForName?.Object, null, null);
 
             // Create a Replay machine.
             HistoryEvent historyEvent = null;
@@ -115,7 +115,7 @@ namespace CPvC.Test
             // Act and Verify
             Exception ex = Assert.Throws<Exception>(() =>
             {
-                MainViewModel viewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object, null, null, null, null, null);
+                MainViewModel viewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object, null, null, null, null, null, null);
                 viewModel.NewMachine(prompt.Object, mockFileSystem.Object);
             });
             Assert.AreEqual(ex.Message, "File not found");
@@ -202,7 +202,7 @@ namespace CPvC.Test
         public void OpenInvalid()
         {
             // Setup
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, null, null, null, null, null);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, null, null, null, null, null, null);
             Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, "test.cpvc");
             _mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(true);
 
@@ -217,7 +217,7 @@ namespace CPvC.Test
             _settingGet = "Test;test.cpvc";
 
             // Act
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, null, null, null, null, null);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, null, null, null, null, null, null);
 
             // Verify
             Assert.AreEqual(0, viewModel.Machines.Count);

@@ -166,6 +166,9 @@
     <Compile Include="IO\FileSystem.cs" />
     <Compile Include="IO\IFileSystem.cs" />
     <Compile Include="Settings.cs" />
+    <Compile Include="UI\Forms\RemoteWindow.xaml.cs">
+      <DependentUpon>RemoteWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UI\Forms\RenameWindow.xaml.cs">
       <DependentUpon>RenameWindow.xaml</DependentUpon>
     </Compile>
@@ -187,6 +190,7 @@
     <Compile Include="UI\MachineViewModel.cs" />
     <Compile Include="UI\MainModel.cs" />
     <Compile Include="UI\MainViewModel.cs" />
+    <Compile Include="UI\RemoteViewModel.cs" />
     <Compile Include="UnmanagedMemory.cs" />
     <Page Include="UI\Forms\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -203,6 +207,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="UI\Forms\RemoteWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="UI\Forms\RenameWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

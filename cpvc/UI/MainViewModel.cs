@@ -19,6 +19,7 @@ namespace CPvC.UI
         public delegate HistoryEvent PromptForBookmarkDelegate();
         public delegate string PromptForNameDelegate(string existingName);
         public delegate void ReportErrorDelegate(string message);
+        public delegate RemoteMachine SelectRemoteMachineDelegate();
 
         /// <summary>
         /// The data model associated with this view model.
@@ -37,6 +38,7 @@ namespace CPvC.UI
         private PromptForFileDelegate _promptForFile;
         private PromptForBookmarkDelegate _promptForBookmark;
         private PromptForNameDelegate _promptForName;
+        private SelectRemoteMachineDelegate _selectRemoteMachine;
 
         private Command _openMachineCommand;
         private Command _newMachineCommand;
@@ -51,7 +53,7 @@ namespace CPvC.UI
 
         private SynchronizationContext _syncContext;
 
-        public MainViewModel(ISettings settings, IFileSystem fileSystem, SelectItemDelegate selectItem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, ReportErrorDelegate reportError)
+        public MainViewModel(ISettings settings, IFileSystem fileSystem, SelectItemDelegate selectItem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, ReportErrorDelegate reportError, SelectRemoteMachineDelegate selectRemoteMachine)
         {
             _syncContext = SynchronizationContext.Current;
 
@@ -60,6 +62,7 @@ namespace CPvC.UI
             _promptForFile = promptForFile;
             _promptForBookmark = promptForBookmark;
             _promptForName = promptForName;
+            _selectRemoteMachine = selectRemoteMachine;
 
             _nullMachineViewModel = new MachineViewModel(null, null, null, null, null, null);
 
@@ -71,7 +74,7 @@ namespace CPvC.UI
             for (int i = 0; i < _model.Machines.Count; i++)
             {
                 MachineViewModel machineViewModel = CreateMachineViewModel(_model.Machines[i]);
-                _machineViewModels.Add(machineViewModel);
+                AddMachineViewModel(machineViewModel);
 
                 Command removeMachineCommand = new Command(
                     p => Remove(machineViewModel),
@@ -235,11 +238,11 @@ namespace CPvC.UI
             ReplayMachines.Add(replayMachine);
 
             MachineViewModel machineViewModel = CreateMachineViewModel(replayMachine);
-            _machineViewModels.Add(machineViewModel);
+            AddMachineViewModel(machineViewModel);
             replayMachine.OnClose += () =>
             {
                 ReplayMachines.Remove(replayMachine);
-                MachineViewModels.Remove(machineViewModel);
+                RemoveMachineViewModel(machineViewModel);
             };
 
             ActiveMachineViewModel = machineViewModel;
@@ -254,7 +257,7 @@ namespace CPvC.UI
             {
                 machine.Start();
                 MachineViewModel machineViewModel = CreateMachineViewModel(machine);
-                _machineViewModels.Add(machineViewModel);
+                AddMachineViewModel(machineViewModel);
                 ActiveMachineViewModel = machineViewModel;
             }
 
@@ -272,7 +275,7 @@ namespace CPvC.UI
             if (machine != null)
             {
                 MachineViewModel machineViewModel = CreateMachineViewModel(machine);
-                _machineViewModels.Add(machineViewModel);
+                AddMachineViewModel(machineViewModel);
                 ActiveMachineViewModel = machineViewModel;
             }
 
@@ -282,7 +285,7 @@ namespace CPvC.UI
         public void Remove(MachineViewModel viewModel)
         {
             _model.Remove(viewModel.Machine as Machine);
-            _machineViewModels.Remove(viewModel);
+            RemoveMachineViewModel(viewModel);
             viewModel.CloseCommand.Execute(null);
         }
 
@@ -364,11 +367,23 @@ namespace CPvC.UI
 
         public void Connect()
         {
-            SocketConnection connection = SocketConnection.ConnectToServer("localhost", 6128);
-            _remote = new Remote(connection);
-            _remote.ReceiveAvailableMachines = ReceiveAvailableMachines;
+            RemoteMachine remoteMachine = _selectRemoteMachine();
+            if (remoteMachine == null)
+            {
+                return;
+            }
 
-            _remote.SendRequestAvailableMachines();
+            RemoteMachines.Add(remoteMachine);
+
+            MachineViewModel machineViewModel = CreateMachineViewModel(remoteMachine);
+            AddMachineViewModel(machineViewModel);
+            remoteMachine.OnClose += () =>
+            {
+                RemoteMachines.Remove(remoteMachine);
+                RemoveMachineViewModel(machineViewModel);
+            };
+
+            ActiveMachineViewModel = machineViewModel;
         }
 
         public void ReceiveAvailableMachines(List<string> availableMachines)
@@ -395,14 +410,30 @@ namespace CPvC.UI
                 RemoteMachines.Add(remoteMachine);
 
                 MachineViewModel machineViewModel = CreateMachineViewModel(remoteMachine);
-                _machineViewModels.Add(machineViewModel);
+                AddMachineViewModel(machineViewModel);
                 remoteMachine.OnClose += () =>
                 {
                     RemoteMachines.Remove(remoteMachine);
-                    MachineViewModels.Remove(machineViewModel);
+                    RemoveMachineViewModel(machineViewModel);
                 };
 
                 ActiveMachineViewModel = machineViewModel;
+            }
+        }
+
+        private void AddMachineViewModel(MachineViewModel machineViewModel)
+        {
+            lock (MachineViewModels)
+            {
+                MachineViewModels.Add(machineViewModel);
+            }
+        }
+
+        private void RemoveMachineViewModel(MachineViewModel machineViewModel)
+        {
+            lock (MachineViewModels)
+            {
+                MachineViewModels.Remove(machineViewModel);
             }
         }
     }

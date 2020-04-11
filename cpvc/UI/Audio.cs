@@ -1,4 +1,5 @@
 ﻿using NAudio.Wave;
+using System;
 
 namespace CPvC
 {
@@ -83,7 +84,16 @@ namespace CPvC
         public override int Read(byte[] buffer, int offset, int count)
         {
             int samplesRequested = count / 4;
-            int samplesWritten = _readAudio(buffer, offset, samplesRequested);
+            int samplesWritten = 0;
+
+            try
+            {
+                samplesWritten = _readAudio(buffer, offset, samplesRequested);
+            }
+            catch (Exception ex)
+            {
+                Diagnostics.Trace(String.Format("Exception thrown during audio callback: {0}.", ex.Message));
+            }
 
             // If no samples were written, ensure to write at least one empty sample.
             // This is necessary as returning 0 from this method will cause audio
