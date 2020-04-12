@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -47,14 +48,22 @@ namespace CPvC
                 return;
             }
 
-            System.Net.Sockets.Socket clientSocket = _listeningSocket.EndAccept(asyn);
-            if (clientSocket != null)
+            try
             {
-                SocketConnection com = new SocketConnection(clientSocket);
-                OnClientConnect?.Invoke(com);
-            }
+                System.Net.Sockets.Socket clientSocket = _listeningSocket.EndAccept(asyn);
+                if (clientSocket != null)
+                {
+                    SocketConnection com = new SocketConnection(clientSocket);
+                    OnClientConnect?.Invoke(com);
+                }
 
-            _listeningSocket.BeginAccept(new AsyncCallback(ClientConnect), null);
+                _listeningSocket.BeginAccept(new AsyncCallback(ClientConnect), null);
+            }
+            catch (SocketException ex)
+            {
+                Diagnostics.Trace("Exception during ClientConnect: {0}", ex.Message);
+                Stop();
+            }
         }
     }
 }

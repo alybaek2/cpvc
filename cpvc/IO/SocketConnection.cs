@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -59,7 +60,15 @@ namespace CPvC
 
         private void ResumeReceive()
         {
-            _socket.BeginReceive(_receiveData, 0, _receiveData.Length, System.Net.Sockets.SocketFlags.None, new AsyncCallback(ReceiveData), null);
+            try
+            {
+                _socket.BeginReceive(_receiveData, 0, _receiveData.Length, System.Net.Sockets.SocketFlags.None, new AsyncCallback(ReceiveData), null);
+            }
+            catch (SocketException ex)
+            {
+                Diagnostics.Trace("Exception during ResumeReceive: {0}", ex.Message);
+                Close();
+            }
         }
 
         private bool Connect(string hostname, UInt16 port)
@@ -104,6 +113,7 @@ namespace CPvC
         public void Close()
         {
             _socket.Close();
+            _socket = null;
         }
 
         private void ProcessData(byte[] bytes, int count)
