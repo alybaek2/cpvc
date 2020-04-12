@@ -13,6 +13,7 @@ namespace CPvC
     {
         public ServerInfo ServerInfo { get; set; }
         public string MachineName { get; set; }
+        public RemoteMachine Machine { get; set; }
 
         public RemoteMachineInfo(string name, ServerInfo server)
         {
@@ -24,6 +25,7 @@ namespace CPvC
     public class ServerInfo
     {
         private ObservableCollection<RemoteMachineInfo> _machines;
+
         public ObservableCollection<RemoteMachineInfo> Machines
         {
             get
@@ -44,17 +46,15 @@ namespace CPvC
         {
             ServerName = hostname;
             Port = port;
-
-            GetMachines(hostname, port);
         }
 
-        private void GetMachines(string serverName, UInt16 port)
+        public void GetMachines()
         {
             ManualResetEvent e = new ManualResetEvent(false);
 
             ObservableCollection<RemoteMachineInfo> remoteMachines = new ObservableCollection<RemoteMachineInfo>();
 
-            IConnection connection = SocketConnection.ConnectToServer(serverName, port);
+            IConnection connection = SocketConnection.ConnectToServer(ServerName, Port);
             Remote remote = new Remote(connection);
             remote.ReceiveAvailableMachines += machineNames =>
             {
@@ -78,21 +78,52 @@ namespace CPvC
 
     public class RemoteViewModel : INotifyPropertyChanged
     {
-        public ObservableCollection<ServerInfo> Servers { get; set; }
+        //public ObservableCollection<ServerInfo> Servers { get; set; }
 
-        private ServerInfo _selectedServer;
-        public ServerInfo SelectedServer
+        private RemoteMachineInfo _selectedMachine;
+        private ServerInfo _serverInfo;
+
+        public RemoteMachineInfo SelectedMachine
         {
             get
             {
-                return _selectedServer;
+                return _selectedMachine;
             }
 
             set
             {
-                _selectedServer = value;
+                if (_selectedMachine != null)
+                {
+                    _selectedMachine?.Machine.Close();
+                    _selectedMachine = null;
+                }
 
-                OnPropertyChanged("SelectedServer");
+                _selectedMachine = value;
+
+                if (_selectedMachine != null)
+                {
+                    IConnection connection = SocketConnection.ConnectToServer(_selectedMachine.ServerInfo.ServerName, _selectedMachine.ServerInfo.Port);
+                    Remote remote = new Remote(connection);
+                    RemoteMachine machine = new RemoteMachine(remote);
+                    remote.SendSelectMachine(_selectedMachine.MachineName);
+
+                    _selectedMachine.Machine = machine;
+                }
+
+                OnPropertyChanged("SelectedMachine");
+            }
+        }
+
+        public ServerInfo Server
+        {
+            get
+            {
+                return _serverInfo;
+            }
+
+            set
+            {
+                _serverInfo = value;
             }
         }
 
@@ -102,56 +133,8 @@ namespace CPvC
 
         public RemoteViewModel(ISettings settings)
         {
-            Servers = new ObservableCollection<ServerInfo>();
-            SelectedServer = null;
+            Server = null;
             _settings = settings;
-
-            LoadFromSettings();
-        }
-
-        public ServerInfo AddServer(string serverName, UInt16 port)
-        {
-            ServerInfo info = null;
-            if (serverName.Length > 0 && !Servers.Any(s => s.ServerName == serverName)) //_serverComboBox.Items.Contains(serverName))
-            {
-                info = new ServerInfo(serverName, port);
-
-                Servers.Add(info);
-
-                UpdateSettings();
-            }
-
-            return info;
-        }
-
-        private void LoadFromSettings()
-        {
-            IEnumerable<string> serversAndPorts = Helpers.SplitWithEscape(';', _settings.RemoteServers);
-
-            lock (Servers)
-            {
-                foreach (string serverStr in serversAndPorts)
-                {
-                    List<string> tokens = Helpers.SplitWithEscape(':', serverStr);
-                    if (tokens.Count < 2)
-                    {
-                        continue;
-                    }
-
-                    ServerInfo info = new ServerInfo(tokens[0], System.Convert.ToUInt16(tokens[1]));
-                    
-                    Servers.Add(info);
-                }
-            }
-        }
-
-        private void UpdateSettings()
-        {
-            IEnumerable<string> serversAndPorts = Servers.Select(s => Helpers.JoinWithEscape(':', new string[] { s.ServerName, s.Port.ToString() }));
-
-            string setting = Helpers.JoinWithEscape(';', serversAndPorts);
-
-            _settings.RemoteServers = setting;
         }
 
         protected void OnPropertyChanged(string name)

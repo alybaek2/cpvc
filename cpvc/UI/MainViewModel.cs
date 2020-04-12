@@ -19,13 +19,14 @@ namespace CPvC.UI
         public delegate HistoryEvent PromptForBookmarkDelegate();
         public delegate string PromptForNameDelegate(string existingName);
         public delegate void ReportErrorDelegate(string message);
-        public delegate RemoteMachine SelectRemoteMachineDelegate();
+        public delegate RemoteMachine SelectRemoteMachineDelegate(ServerInfo serverInfo);
 
         /// <summary>
         /// The data model associated with this view model.
         /// </summary>
         private readonly MainModel _model;
 
+        private ObservableCollection<ServerInfo> _recentServers;
         private ObservableCollection<MachineViewModel> _machineViewModels;
 
         /// <summary>
@@ -53,10 +54,13 @@ namespace CPvC.UI
 
         private SynchronizationContext _syncContext;
 
+        private ISettings _settings;
+
         public MainViewModel(ISettings settings, IFileSystem fileSystem, SelectItemDelegate selectItem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, ReportErrorDelegate reportError, SelectRemoteMachineDelegate selectRemoteMachine)
         {
             _syncContext = SynchronizationContext.Current;
 
+            _settings = settings;
             _fileSystem = fileSystem;
             _selectItem = selectItem;
             _promptForFile = promptForFile;
@@ -83,6 +87,28 @@ namespace CPvC.UI
 
                 machineViewModel.RemoveCommand = removeMachineCommand;
             }
+
+            //// Test!
+            //_recentServers = new ObservableCollection<ServerInfo>();
+            //IEnumerable<string> serversAndPorts = Helpers.SplitWithEscape(';', settings.RemoteServers);
+
+            //lock (RecentServers)
+            //{
+            //    foreach (string serverStr in serversAndPorts)
+            //    {
+            //        List<string> tokens = Helpers.SplitWithEscape(':', serverStr);
+            //        if (tokens.Count < 2)
+            //        {
+            //            continue;
+            //        }
+
+            //        ServerInfo info = new ServerInfo(tokens[0], System.Convert.ToUInt16(tokens[1]));
+
+            //        RecentServers.Add(info);
+            //    }
+            //}
+
+            LoadRecentServersSetting();
 
             ActiveItem = this;
 
@@ -120,9 +146,17 @@ namespace CPvC.UI
             );
 
             _connectCommand = new Command(
-                p => Connect(),
+                p => Connect(p as ServerInfo),
                 p => true
             );
+        }
+
+        public ObservableCollection<ServerInfo> RecentServers
+        {
+            get
+            {
+                return _recentServers;
+            }
         }
 
         public ObservableCollection<Machine> Machines
@@ -365,13 +399,15 @@ namespace CPvC.UI
             _machineServer.Stop();
         }
 
-        public void Connect()
+        public void Connect(ServerInfo serverInfo)
         {
-            RemoteMachine remoteMachine = _selectRemoteMachine();
+            RemoteMachine remoteMachine = _selectRemoteMachine(serverInfo);
             if (remoteMachine == null)
             {
                 return;
             }
+
+            UpdateRecentServersSettings();
 
             RemoteMachines.Add(remoteMachine);
 
@@ -434,6 +470,37 @@ namespace CPvC.UI
             lock (MachineViewModels)
             {
                 MachineViewModels.Remove(machineViewModel);
+            }
+        }
+
+        private void UpdateRecentServersSettings()
+        {
+            IEnumerable<string> serversAndPorts = RecentServers.Select(s => Helpers.JoinWithEscape(':', new string[] { s.ServerName, s.Port.ToString() }));
+
+            string setting = Helpers.JoinWithEscape(';', serversAndPorts);
+
+            _settings.RemoteServers = setting;
+        }
+
+        private void LoadRecentServersSetting()
+        {
+            _recentServers = new ObservableCollection<ServerInfo>();
+            IEnumerable<string> serversAndPorts = Helpers.SplitWithEscape(';', _settings.RemoteServers);
+
+            lock (RecentServers)
+            {
+                foreach (string serverStr in serversAndPorts)
+                {
+                    List<string> tokens = Helpers.SplitWithEscape(':', serverStr);
+                    if (tokens.Count < 2)
+                    {
+                        continue;
+                    }
+
+                    ServerInfo info = new ServerInfo(tokens[0], System.Convert.ToUInt16(tokens[1]));
+
+                    RecentServers.Add(info);
+                }
             }
         }
     }

@@ -166,6 +166,9 @@
     <Compile Include="IO\FileSystem.cs" />
     <Compile Include="IO\IFileSystem.cs" />
     <Compile Include="Settings.cs" />
+    <Compile Include="UI\Forms\ConnectWindow.xaml.cs">
+      <DependentUpon>ConnectWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UI\Forms\RemoteWindow.xaml.cs">
       <DependentUpon>RemoteWindow.xaml</DependentUpon>
     </Compile>
@@ -192,6 +195,10 @@
     <Compile Include="UI\MainViewModel.cs" />
     <Compile Include="UI\RemoteViewModel.cs" />
     <Compile Include="UnmanagedMemory.cs" />
+    <Page Include="UI\Forms\ConnectWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="UI\Forms\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

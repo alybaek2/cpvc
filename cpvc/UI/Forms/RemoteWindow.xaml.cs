@@ -24,11 +24,14 @@ namespace CPvC.UI.Forms
 
         private RemoteViewModel _viewModel;
 
-        public RemoteWindow(Window owner)
+        public RemoteWindow(Window owner, ServerInfo serverInfo)
         {
             InitializeComponent();
 
             _viewModel = new RemoteViewModel(new Settings());
+            _viewModel.Server = serverInfo;
+            serverInfo.GetMachines();
+
             Owner = owner;
 
             DataContext = _viewModel;
@@ -65,18 +68,14 @@ namespace CPvC.UI.Forms
             DialogResult = true;
         }
 
-        private void _addServerButton_Click(object sender, RoutedEventArgs e)
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            string serverName = _newServerTextBox.Text;
-            if (serverName == null || serverName.Length <= 0)
+            // Make sure we close any open live preview... might be better to handle this in Dispose()?
+            if (_viewModel.SelectedMachine?.Machine != null)
             {
-                return;
+                _viewModel.SelectedMachine.Machine.Close();
+                _viewModel.SelectedMachine.Machine = null;
             }
-
-            ServerInfo info = _viewModel.AddServer(serverName, 6128);
-            _viewModel.SelectedServer = info;
-
-            _newServerTextBox.Text = String.Empty;
         }
     }
 }

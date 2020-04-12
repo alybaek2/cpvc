@@ -69,9 +69,6 @@
                 <MenuItem x:Name="_newMenuItem" Header="New..." Command="{Binding NewMachineCommand}"/>
                 <MenuItem x:Name="_openMenuItem" Header="Open..." Command="{Binding OpenMachineCommand}"/>
                 <Separator/>
-                <MenuItem x:Name="_startServerMenuItem" Header="Start Server" Command="{Binding StartServerCommand}"/>
-                <MenuItem x:Name="_connectMenuItem" Header="Connect" Command="{Binding ConnectCommand}"/>
-                <Separator/>
                 <MenuItem x:Name="_closeMenuItem" Header="Close" Command="{Binding ActiveMachineViewModel.CloseCommand}"/>
                 <Separator/>
                 <MenuItem x:Name="_exitMenuItem" Header="Exit" Click="ExitMenuItem_Click"/>
@@ -134,6 +131,20 @@
                 <Separator/>
                 <MenuItem x:Name="_renameFileMenuItem" Header="Rename machine..." Command="{Binding ActiveMachineViewModel.RenameCommand}"/>
                 <MenuItem x:Name="_compactFileMenuItem" Header="Compact machine file" Command="{Binding ActiveMachineViewModel.CompactCommand}"/>
+            </MenuItem>
+            <MenuItem Header="Remote">
+                <MenuItem x:Name="_startServerMenuItem" Header="Start Server" Command="{Binding StartServerCommand}"/>
+                <MenuItem Header="Connect..." Command="{Binding ConnectCommand}"/>
+                <MenuItem Header="Recent Servers" ItemsSource="{Binding Path=RecentServers}">
+                    <ItemsControl.ItemContainerStyle>
+                        <Style TargetType="MenuItem">
+                            <Setter Property="Header" Value="{Binding ServerName}" />
+                            <Setter Property="Command" Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=MenuItem}, Path=DataContext.ConnectCommand}" />
+                            <Setter Property="CommandParameter" Value="{Binding}" />
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
+                </MenuItem>
+
             </MenuItem>
         </Menu>
         <ToolBarTray x:Name="toolBarTray" Margin="0" VerticalAlignment="Top" Grid.Row="1" Background="#FFF0F0F0">

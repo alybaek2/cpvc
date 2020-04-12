@@ -5,24 +5,25 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CPvC.UI.Forms"
         mc:Ignorable="d"
-        Title="Remote Connect" Height="450" Width="800" WindowStartupLocation="CenterOwner">
+        Title="Remote Connect" Height="296" Width="443" WindowStartupLocation="CenterOwner" Closing="Window_Closing">
     <Grid>
         <Button Content="Close" Margin="0,0,10,10" HorizontalAlignment="Right" Width="75" Height="20" VerticalAlignment="Bottom" Click="Button_Click"/>
-        <ComboBox x:Name="_serverComboBox" HorizontalAlignment="Left" Margin="43,84,0,0" VerticalAlignment="Top" Width="159" SelectedItem="{Binding SelectedServer, Mode=TwoWay}" ItemsSource="{Binding Servers}" IsEditable="False">
-            <ComboBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Text="{Binding ServerName}"/>
-                </DataTemplate>
-            </ComboBox.ItemTemplate>
-        </ComboBox>
-        <ListBox x:Name="_machineListBox" HorizontalAlignment="Left" Height="132" Margin="43,111,0,0" VerticalAlignment="Top" Width="159" ItemsSource="{Binding SelectedServer.Machines}" MouseDoubleClick="_machineListBox_MouseDoubleClick">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Text="{Binding MachineName}"/>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-        <TextBox x:Name="_newServerTextBox" HorizontalAlignment="Left" Height="23" Margin="43,56,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
-        <Button x:Name="_addServerButton" Content="+" HorizontalAlignment="Left" Margin="168,59,0,0" VerticalAlignment="Top" Width="34" Click="_addServerButton_Click"/>
+        <GroupBox Header="Machines" HorizontalAlignment="Left" Height="187" Margin="10,28,0,0" VerticalAlignment="Top" Width="188">
+            <ListBox x:Name="_machineListBox" HorizontalAlignment="Left" Height="132" Margin="4,14,-75,-69" VerticalAlignment="Top" Width="159" ItemsSource="{Binding Server.Machines}" MouseDoubleClick="_machineListBox_MouseDoubleClick" SelectedItem="{Binding SelectedMachine, Mode=TwoWay}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding MachineName}"/>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </GroupBox>
+        <GroupBox HorizontalAlignment="Left" Height="165" Margin="203,28,0,0" VerticalAlignment="Top" Width="222">
+            <GroupBox.Header>
+                <CheckBox Content="Live preview" />
+            </GroupBox.Header>
+            <Grid>
+                <Image Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" Source="{Binding SelectedMachine.Machine.Display.Bitmap}" ToolTip="{Binding SelectedMachine.Machine.Name}" Cursor="Hand"/>
+            </Grid>
+        </GroupBox>
     </Grid>
 </Window>

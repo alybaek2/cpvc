@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 
@@ -293,10 +294,36 @@ namespace CPvC.UI.Forms
             return null;
         }
 
-        private RemoteMachine SelectRemoteMachine()
+        private RemoteMachine SelectRemoteMachine(ServerInfo serverInfo)
         {
-            RemoteWindow dialog = new RemoteWindow(this);
-            bool? result = dialog.ShowDialog();
+            bool? result;
+            if (serverInfo == null)
+            {
+                ConnectWindow connectWindow = new ConnectWindow(this);
+                result = connectWindow.ShowDialog();
+
+                if ((result.HasValue && !result.Value) || connectWindow.ServerNameAndPort.Length <= 0)
+                {
+                    return null;
+                }
+
+                string[] tokens = connectWindow.ServerNameAndPort.Split(':');
+                UInt16 port = 6128;
+                if (tokens.Length > 1)
+                {
+                    port = Convert.ToUInt16(tokens[1]);
+                }
+
+                serverInfo = new ServerInfo(tokens[0], port);
+
+                if (!_mainViewModel.RecentServers.Any(s => s.ServerName == serverInfo.ServerName && s.Port == serverInfo.Port))
+                {
+                    _mainViewModel.RecentServers.Add(new ServerInfo(serverInfo.ServerName, serverInfo.Port));
+                }
+            }
+
+            RemoteWindow dialog = new RemoteWindow(this, serverInfo);
+            result = dialog.ShowDialog();
 
             return (result.HasValue && result.Value) ? dialog.RemoteMachine : null;
         }
