@@ -98,17 +98,17 @@ namespace CPvC
                     _selectedMachine = null;
                 }
 
-                _selectedMachine = value;
-
-                if (_selectedMachine != null)
+                if (value != null)
                 {
-                    IConnection connection = SocketConnection.ConnectToServer(_selectedMachine.ServerInfo.ServerName, _selectedMachine.ServerInfo.Port);
+                    IConnection connection = SocketConnection.ConnectToServer(value.ServerInfo.ServerName, value.ServerInfo.Port);
                     Remote remote = new Remote(connection);
                     RemoteMachine machine = new RemoteMachine(remote);
-                    remote.SendSelectMachine(_selectedMachine.MachineName);
+                    remote.SendSelectMachine(value.MachineName);
 
-                    _selectedMachine.Machine = machine;
+                    value.Machine = machine;
                 }
+
+                _selectedMachine = value;
 
                 OnPropertyChanged("SelectedMachine");
             }
