@@ -20,5 +20,5 @@ set COMMIT_MESSAGE=%COMMIT_MESSAGE:"=\"%
 REM Upload to Coveralls!
 %BUILD_COVERALLS% -i coverage-report-xml --reportgenerator --useRelativePaths --serviceName buildkite --serviceNumber %BUILDKITE_BUILD_NUMBER% --commitMessage "%COMMIT_MESSAGE%" --commitAuthor=%BUILDKITE_BUILD_CREATOR% --commitId %BUILDKITE_COMMIT% --commitBranch %BUILDKITE_BRANCH% --commitEmail %BUILDKITE_BUILD_CREATOR_EMAIL% --jobId=%BUILDKITE_JOB_ID% --repoToken=%CPVC_COVERALLS_REPO_TOKEN%
 
-REM Upload to Codecov... only do the OpenCover output; Codecov doesn't seem to be able to handle the OpenCppCoverage output, despite the fact it's supposed to be cobertura format.
+REM Upload to Codecov!
 %BUILD_CODECOV% --branch %BUILDKITE_BRANCH% --build %BUILDKITE_BUILD_NUMBER% --sha %BUILDKITE_COMMIT% --file "Cobertura.xml" --token %CPVC_CODECOV_TOKEN%
