@@ -13,7 +13,6 @@ namespace CPvC
     {
         public ServerInfo ServerInfo { get; set; }
         public string MachineName { get; set; }
-        public RemoteMachine Machine { get; set; }
 
         public RemoteMachineInfo(string name, ServerInfo server)
         {
@@ -48,13 +47,18 @@ namespace CPvC
             Port = port;
         }
 
-        public void GetMachines()
+        public bool GetMachines()
         {
             ManualResetEvent e = new ManualResetEvent(false);
 
             ObservableCollection<RemoteMachineInfo> remoteMachines = new ObservableCollection<RemoteMachineInfo>();
 
             IConnection connection = SocketConnection.ConnectToServer(ServerName, Port);
+            if (connection == null)
+            {
+                return false;
+            }
+
             Remote remote = new Remote(connection);
             remote.ReceiveAvailableMachines += machineNames =>
             {
@@ -73,15 +77,18 @@ namespace CPvC
             e.WaitOne(2000);
 
             Machines = remoteMachines;
+
+            return true;
         }
     }
 
     public class RemoteViewModel : INotifyPropertyChanged
     {
-        //public ObservableCollection<ServerInfo> Servers { get; set; }
-
         private RemoteMachineInfo _selectedMachine;
         private ServerInfo _serverInfo;
+        private IConnection _connection;
+        private Remote _remote;
+        private RemoteMachine _machine;
 
         public RemoteMachineInfo SelectedMachine
         {
@@ -92,21 +99,7 @@ namespace CPvC
 
             set
             {
-                if (_selectedMachine != null)
-                {
-                    _selectedMachine?.Machine.Close();
-                    _selectedMachine = null;
-                }
-
-                if (value != null)
-                {
-                    IConnection connection = SocketConnection.ConnectToServer(value.ServerInfo.ServerName, value.ServerInfo.Port);
-                    Remote remote = new Remote(connection);
-                    RemoteMachine machine = new RemoteMachine(remote);
-                    remote.SendSelectMachine(value.MachineName);
-
-                    value.Machine = machine;
-                }
+                _remote.SendSelectMachine(value.MachineName);
 
                 _selectedMachine = value;
 
@@ -127,14 +120,32 @@ namespace CPvC
             }
         }
 
+        public RemoteMachine Machine
+        {
+            get
+            {
+                return _machine;
+            }
+
+            set
+            {
+                _machine = value;
+            }
+        }
+
         private ISettings _settings;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public RemoteViewModel(ISettings settings)
+        public RemoteViewModel(ServerInfo serverInfo, ISettings settings)
         {
-            Server = null;
+            Server = serverInfo;
             _settings = settings;
+
+            _connection = SocketConnection.ConnectToServer(serverInfo.ServerName, serverInfo.Port);
+            _remote = new Remote(_connection);
+            _machine = new RemoteMachine(_remote);
+
         }
 
         protected void OnPropertyChanged(string name)

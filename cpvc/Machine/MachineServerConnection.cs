@@ -17,16 +17,27 @@ namespace CPvC
         {
             _remote = new Remote(socket);
             _remote.ReceiveSelectMachine = ReceiveSelectMachine;
+            _remote.ReceiveRequestAvailableMachines = ReceiveRequestAvailableMachines;
             _remote.ReceivePing = ReceivePing;
 
             _machines = machines;
         }
 
-        public void ReceiveSelectMachine(string machineName)
+        private void ReceiveRequestAvailableMachines()
+        {
+            _remote.SendAvailableMachines(_machines.Select(m => m.Name));
+        }
+
+        private void ReceiveSelectMachine(string machineName)
         {
             Machine machine = _machines.Where(m => m.Name == machineName).FirstOrDefault();
-            if (machine != null)
+            if (machine != null && _machine != machine)
             {
+                if (_machine != null)
+                {
+                    _machine.Auditors -= MachineAuditor;
+                }
+
                 _machine = machine;
 
                 using (_machine.AutoPause())
@@ -43,7 +54,7 @@ namespace CPvC
             }
         }
 
-        public void ReceivePing(bool response, UInt64 id)
+        private void ReceivePing(bool response, UInt64 id)
         {
             if (!response)
             {
@@ -54,11 +65,6 @@ namespace CPvC
         private void MachineAuditor(CoreAction coreAction)
         {
             _remote.SendCoreAction(coreAction);
-        }
-
-        public void StartHandshake()
-        {
-            _remote.SendAvailableMachines(_machines.Select(m => m.Name));
         }
     }
 }

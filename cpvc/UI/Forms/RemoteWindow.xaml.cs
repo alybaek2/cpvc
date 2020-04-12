@@ -28,16 +28,14 @@ namespace CPvC.UI.Forms
         {
             InitializeComponent();
 
-            _viewModel = new RemoteViewModel(new Settings());
-            _viewModel.Server = serverInfo;
-            serverInfo.GetMachines();
+            _viewModel = new RemoteViewModel(serverInfo, new Settings());
 
             Owner = owner;
 
             DataContext = _viewModel;
         }
 
-        public RemoteMachine RemoteMachine
+        public RemoteMachine Machine
         {
             get
             {
@@ -71,10 +69,10 @@ namespace CPvC.UI.Forms
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             // Make sure we close any open live preview... might be better to handle this in Dispose()?
-            if (_viewModel.SelectedMachine?.Machine != null)
+            if (_viewModel.Machine != null)
             {
-                _viewModel.SelectedMachine.Machine.Close();
-                _viewModel.SelectedMachine.Machine = null;
+                _viewModel.Machine.Close();
+                _viewModel.Machine = null;
             }
         }
     }

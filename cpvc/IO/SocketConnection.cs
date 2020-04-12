@@ -96,15 +96,25 @@ namespace CPvC
 
             System.Net.Sockets.Socket socket = new System.Net.Sockets.Socket(System.Net.Sockets.AddressFamily.InterNetwork, System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
             System.Net.IPEndPoint ipEnd = new System.Net.IPEndPoint(ipAddr, port);
-            socket.Connect(ipEnd);
 
-            if (socket.Connected)
+            try
             {
-                _socket = socket;
+                IAsyncResult result = socket.BeginConnect(ipEnd, null, null);
+                bool waitResult = result.AsyncWaitHandle.WaitOne(2000);
 
-                BeginReceive();
+                if (waitResult && socket.Connected)
+                {
+                    _socket = socket;
 
-                return true;
+                    BeginReceive();
+
+                    return true;
+                }
+            }
+            catch (SocketException ex)
+            {
+                Diagnostics.Trace("Exception during Connect: {0}", ex.Message);
+                Close();
             }
 
             return false;
@@ -112,7 +122,7 @@ namespace CPvC
 
         public void Close()
         {
-            _socket.Close();
+            _socket?.Close();
             _socket = null;
         }
 
@@ -237,7 +247,7 @@ namespace CPvC
         }
 
 
-        protected void ReceiveData(IAsyncResult asyn)
+        private void ReceiveData(IAsyncResult asyn)
         {
             if (_socket == null)
             {
@@ -262,7 +272,7 @@ namespace CPvC
 
             ProcessData(_receiveData, bytesReceived);
 
-            if (_socket.Connected)
+            if (_socket != null && _socket.Connected)
             {
                 try
                 {

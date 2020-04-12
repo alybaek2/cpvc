@@ -4,6 +4,7 @@ using System.ComponentModel;
 
 namespace CPvC
 {
+    // Should this also send the Machine, so the receiver can verify this event came from the right Machine?
     public delegate void MachineAuditorDelegate(CoreAction action);
 
     /// <summary>

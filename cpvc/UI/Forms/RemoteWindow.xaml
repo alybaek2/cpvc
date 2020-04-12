@@ -22,7 +22,7 @@
                 <CheckBox Content="Live preview" />
             </GroupBox.Header>
             <Grid>
-                <Image Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" Source="{Binding SelectedMachine.Machine.Display.Bitmap}" ToolTip="{Binding SelectedMachine.Machine.Name}" Cursor="Hand"/>
+                <Image Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" Source="{Binding Machine.Display.Bitmap}" ToolTip="{Binding Machine.Name}" Cursor="Hand"/>
             </Grid>
         </GroupBox>
     </Grid>

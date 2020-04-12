@@ -12,9 +12,12 @@ namespace CPvC
 
         private SocketServer _server;
 
+        private List<MachineServerConnection> _connections;
+
         public MachineServerListener(IEnumerable<Machine> machines)
         {
             _machines = machines;
+            _connections = new List<MachineServerConnection>();
 
             _server = new SocketServer();
             _server.OnClientConnect += ClientConnect;
@@ -24,7 +27,8 @@ namespace CPvC
         {
             List<Machine> openMachines = _machines.Where(m => !m.RequiresOpen).ToList();
             MachineServerConnection conn = new MachineServerConnection(socket, openMachines);
-            conn.StartHandshake();
+
+            _connections.Add(conn);
         }
 
         public void Start(UInt16 port)

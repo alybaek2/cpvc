@@ -49,7 +49,6 @@ namespace CPvC
 
             _remote = remote;
             _remote.ReceiveCoreAction = ReceiveCoreAction;
-            _remote.ReceiveAvailableMachines = ReceiveAvailableMachines;
             _remote.ReceivePing = ReceivePing;
             _remote.ReceiveName = ReceiveName;
 
@@ -59,6 +58,12 @@ namespace CPvC
 
         public void ReceiveCoreAction(CoreAction coreAction)
         {
+            if (_core == null)
+            {
+                Close();
+                return;
+            }
+
             _core.PushRequest(coreAction);
 
             int ticks = System.Environment.TickCount;
@@ -74,14 +79,6 @@ namespace CPvC
         public void ReceiveName(string machineName)
         {
             Name = String.Format("{0} (remote)", machineName);
-        }
-
-        public void ReceiveAvailableMachines(List<string> availableMachines)
-        {
-            if (availableMachines.Count > 0)
-            {
-                _remote.SendSelectMachine(availableMachines[0]);
-            }
         }
 
         public void ReceivePing(bool response, UInt64 id)
@@ -112,7 +109,7 @@ namespace CPvC
         public void Close()
         {
             _remote.Close();
-            _core.Stop();
+            _core?.Stop();
             Core = null;
 
             OnClose?.Invoke();
