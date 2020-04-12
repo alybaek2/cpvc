@@ -26,6 +26,7 @@ namespace CPvC.Test
             _mockSettings = new Mock<ISettings>(MockBehavior.Strict);
             _mockSettings.SetupGet(x => x.RecentlyOpened).Returns(() => _settingGet);
             _mockSettings.SetupSet(x => x.RecentlyOpened = It.IsAny<string>());
+            _mockSettings.SetupGet(x => x.RemoteServers).Returns(() => String.Empty);
 
             _mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
             _mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(AnyString()));

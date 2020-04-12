@@ -484,6 +484,11 @@ namespace CPvC.UI
 
         private void LoadRecentServersSetting()
         {
+            if (_settings.RemoteServers == null)
+            {
+                return;
+            }
+
             _recentServers = new ObservableCollection<ServerInfo>();
             IEnumerable<string> serversAndPorts = Helpers.SplitWithEscape(';', _settings.RemoteServers);
 
