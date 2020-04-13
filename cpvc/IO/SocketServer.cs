@@ -17,12 +17,17 @@ namespace CPvC
 
         public SocketServer()
         {
-            _listeningSocket = new System.Net.Sockets.Socket(System.Net.Sockets.AddressFamily.InterNetwork, System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
         }
 
         public void Start(UInt16 port)
         {
             System.Net.IPEndPoint ipEnd = new System.Net.IPEndPoint(System.Net.IPAddress.Any, port);
+
+            if (_listeningSocket == null)
+            {
+                _listeningSocket = new System.Net.Sockets.Socket(System.Net.Sockets.AddressFamily.InterNetwork, System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
+            }
+
             _listeningSocket.Bind(ipEnd);
 
             // Accept only one connection for now...
