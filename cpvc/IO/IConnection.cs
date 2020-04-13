@@ -12,5 +12,7 @@ namespace CPvC
         void Close();
 
         NewMessageDelegate OnNewMessage { get; set; }
+
+        bool IsConnected { get; }
     }
 }

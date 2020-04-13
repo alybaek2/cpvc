@@ -73,6 +73,7 @@ namespace CPvC.UI.Forms
             {
                 _viewModel.Machine.Close();
                 _viewModel.Machine = null;
+                _viewModel.SelectedMachine = null;
             }
         }
     }

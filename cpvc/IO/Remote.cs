@@ -39,7 +39,10 @@ namespace CPvC
 
         public void Close()
         {
-            _connection.Close();
+            lock (_connection)
+            {
+                _connection.Close();
+            }
         }
 
         public void SendCoreAction(CoreAction coreAction)
@@ -48,7 +51,7 @@ namespace CPvC
             bs.Write(_idCoreAction);
             Serializer.CoreActionToBytes(bs, coreAction);
 
-            _connection.SendMessage(bs.AsBytes());
+            SendMessage(bs.AsBytes());
         }
 
         public void SendSelectMachine(string machineName)
@@ -57,14 +60,14 @@ namespace CPvC
             bs.Write(_idSelectMachine);
             Serializer.SelectMachineToBytes(bs, machineName);
 
-            _connection.SendMessage(bs.AsBytes());
+            SendMessage(bs.AsBytes());
         }
 
         public void SendRequestAvailableMachines()
         {
             byte[] msg = { _idRequestAvailableMachines };
 
-            _connection.SendMessage(msg);
+            SendMessage(msg);
         }
 
         public void SendAvailableMachines(IEnumerable<string> availableMachines)
@@ -73,7 +76,7 @@ namespace CPvC
             bs.Write(_idAvailableMachines);
             Serializer.AvailableMachinesToBytes(bs, availableMachines);
 
-            _connection.SendMessage(bs.AsBytes());
+            SendMessage(bs.AsBytes());
         }
 
         public void SendPing(bool response, UInt64 id)
@@ -83,7 +86,7 @@ namespace CPvC
             bs.Write(response);
             bs.Write(id);
 
-            _connection.SendMessage(bs.AsBytes());
+            SendMessage(bs.AsBytes());
         }
 
         public void SendName(string name)
@@ -92,14 +95,32 @@ namespace CPvC
             bs.Write(_idName);
             bs.Write(name);
 
-            _connection.SendMessage(bs.AsBytes());
+            SendMessage(bs.AsBytes());
+        }
+
+        private void SendMessage(byte[] msg)
+        {
+            lock (_connection)
+            {
+                if (_connection.IsConnected)
+                {
+                    _connection.SendMessage(msg);
+                }
+            }
         }
 
         private void OnNewMessage(byte[] msg)
         {
+            if (_connection == null)
+            {
+                return;
+            }
+
             MemoryByteStream bs = new MemoryByteStream(msg);
 
             byte id = bs.ReadOneByte();
+
+            Diagnostics.Trace("Received message {0}...", id);
 
             switch (id)
             {

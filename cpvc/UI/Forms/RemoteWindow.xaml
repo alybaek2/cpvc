@@ -5,25 +5,38 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CPvC.UI.Forms"
         mc:Ignorable="d"
-        Title="Remote Connect" Height="296" Width="443" WindowStartupLocation="CenterOwner" Closing="Window_Closing">
+        Title="Remote Connect" WindowStartupLocation="CenterOwner" Closing="Window_Closing" SizeToContent="WidthAndHeight" ResizeMode="NoResize">
     <Grid>
-        <Button Content="Close" Margin="0,0,10,10" HorizontalAlignment="Right" Width="75" Height="20" VerticalAlignment="Bottom" Click="Button_Click"/>
-        <GroupBox Header="Machines" HorizontalAlignment="Left" Height="187" Margin="10,28,0,0" VerticalAlignment="Top" Width="188">
-            <ListBox x:Name="_machineListBox" HorizontalAlignment="Left" Height="132" Margin="4,14,-75,-69" VerticalAlignment="Top" Width="159" ItemsSource="{Binding Server.Machines}" MouseDoubleClick="_machineListBox_MouseDoubleClick" SelectedItem="{Binding SelectedMachine, Mode=TwoWay}">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding MachineName}"/>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-        </GroupBox>
-        <GroupBox HorizontalAlignment="Left" Height="165" Margin="203,28,0,0" VerticalAlignment="Top" Width="222">
-            <GroupBox.Header>
-                <CheckBox Content="Live preview" />
-            </GroupBox.Header>
-            <Grid>
-                <Image Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" Source="{Binding Machine.Display.Bitmap}" ToolTip="{Binding Machine.Name}" Cursor="Hand"/>
-            </Grid>
-        </GroupBox>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Button Grid.Row="1" Grid.Column="0" Content="Close" Margin="0,10,10,10" HorizontalAlignment="Right" Width="75" Height="20" VerticalAlignment="Bottom" Click="Button_Click"/>
+        <Grid Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" Margin="0,0,0,0" VerticalAlignment="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <GroupBox Grid.Row="0" Grid.Column="0" Header="Machines" Margin="10,10,10,10" Width="170" HorizontalAlignment="Left">
+                <ListBox x:Name="_machineListBox" Margin="10" ItemsSource="{Binding Server.Machines}" MouseDoubleClick="_machineListBox_MouseDoubleClick" SelectedItem="{Binding SelectedMachine, Mode=TwoWay}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding MachineName}"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </GroupBox>
+            <GroupBox Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" Margin="10,10,10,10" VerticalAlignment="Top">
+                <GroupBox.Header>
+                    <CheckBox Content="Live preview" />
+                </GroupBox.Header>
+                <Grid>
+                    <Image Width="192" Height="144" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="10" Source="{Binding Machine.Display.Bitmap}" ToolTip="{Binding Machine.Name}" Cursor="Hand"/>
+                </Grid>
+            </GroupBox>
+        </Grid>
     </Grid>
 </Window>

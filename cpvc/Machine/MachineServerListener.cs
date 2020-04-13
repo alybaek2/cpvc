@@ -9,9 +9,7 @@ namespace CPvC
     public class MachineServerListener
     {
         private IEnumerable<Machine> _machines;
-
         private SocketServer _server;
-
         private List<MachineServerConnection> _connections;
 
         public MachineServerListener(IEnumerable<Machine> machines)

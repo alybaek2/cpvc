@@ -31,15 +31,21 @@ namespace CPvC
         private void ReceiveSelectMachine(string machineName)
         {
             Machine machine = _machines.Where(m => m.Name == machineName).FirstOrDefault();
-            if (machine != null && _machine != machine)
+            if (machine == _machine)
             {
-                if (_machine != null)
-                {
-                    _machine.Auditors -= MachineAuditor;
-                }
+                return;
+            }
 
-                _machine = machine;
+            if (_machine != null)
+            {
+                // Quit sending to the client.
+                _machine.Auditors -= MachineAuditor;
+                _machine = null;
+            }
 
+            _machine = machine;
+            if (_machine != null)
+            {
                 using (_machine.AutoPause())
                 {
                     byte[] state = _machine.Core.GetState();

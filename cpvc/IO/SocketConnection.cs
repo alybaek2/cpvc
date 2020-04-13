@@ -24,7 +24,7 @@ namespace CPvC
         protected byte[] _receiveData = new byte[1024];
         protected List<byte> _sendData;
 
-        protected System.Net.Sockets.Socket _socket;
+        protected Socket _socket;
 
         public SocketConnection()
         {
@@ -32,11 +32,19 @@ namespace CPvC
             _sendData = new List<byte>();
         }
 
-        public SocketConnection(System.Net.Sockets.Socket socket) : this()
+        public SocketConnection(Socket socket) : this()
         {
             _socket = socket;
 
             BeginReceive();
+        }
+
+        public bool IsConnected
+        {
+            get
+            {
+                return _socket?.Connected ?? false;
+            }
         }
 
         static public SocketConnection ConnectToServer(string hostname, UInt16 port)
@@ -62,7 +70,7 @@ namespace CPvC
         {
             try
             {
-                _socket.BeginReceive(_receiveData, 0, _receiveData.Length, System.Net.Sockets.SocketFlags.None, new AsyncCallback(ReceiveData), null);
+                _socket.BeginReceive(_receiveData, 0, _receiveData.Length, SocketFlags.None, new AsyncCallback(ReceiveData), null);
             }
             catch (SocketException ex)
             {
@@ -82,7 +90,7 @@ namespace CPvC
             System.Net.IPAddress ipAddr = null;
             for (int f = 0; f < host.AddressList.Length; f++)
             {
-                if (host.AddressList[f].AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                if (host.AddressList[f].AddressFamily == AddressFamily.InterNetwork)
                 {
                     ipAddr = host.AddressList[f];
                     break;
@@ -94,7 +102,7 @@ namespace CPvC
                 return false;
             }
 
-            System.Net.Sockets.Socket socket = new System.Net.Sockets.Socket(System.Net.Sockets.AddressFamily.InterNetwork, System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
+            Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             System.Net.IPEndPoint ipEnd = new System.Net.IPEndPoint(ipAddr, port);
 
             try
@@ -170,6 +178,8 @@ namespace CPvC
 
         public void SendMessage(byte[] msg)
         {
+            Diagnostics.Trace("Sending message {0}...", msg[0]);
+
             byte[] escapedMsg = EscapeMessageForSending(msg);
 
             lock (_sendData)
@@ -198,16 +208,16 @@ namespace CPvC
             }
 
             byte[] bytesToSend = _sendData.ToArray();
-            System.Net.Sockets.SocketAsyncEventArgs sendArgs = new System.Net.Sockets.SocketAsyncEventArgs();
+            SocketAsyncEventArgs sendArgs = new SocketAsyncEventArgs();
             sendArgs.SetBuffer(bytesToSend, 0, bytesToSend.Length);
-            sendArgs.Completed += new EventHandler<System.Net.Sockets.SocketAsyncEventArgs>(SendCallback);
+            sendArgs.Completed += new EventHandler<SocketAsyncEventArgs>(SendCallback);
 
             _socket.SendAsync(sendArgs);
         }
 
-        private void SendCallback(object sender, System.Net.Sockets.SocketAsyncEventArgs e)
+        private void SendCallback(object sender, SocketAsyncEventArgs e)
         {
-            if (e.SocketError == System.Net.Sockets.SocketError.Success)
+            if (e.SocketError == SocketError.Success)
             {
                 int bytesSuccessfullySent = e.BytesTransferred;
 
@@ -264,7 +274,7 @@ namespace CPvC
             {
                 bytesReceived = _socket.EndReceive(asyn);
             }
-            catch (System.Net.Sockets.SocketException e)
+            catch (SocketException e)
             {
                 System.Diagnostics.Debug.WriteLine(e);
                 return;
@@ -278,7 +288,7 @@ namespace CPvC
                 {
                     ResumeReceive();
                 }
-                catch (System.Net.Sockets.SocketException e)
+                catch (SocketException e)
                 {
                     System.Diagnostics.Debug.WriteLine(e);
                 }

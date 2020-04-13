@@ -74,7 +74,7 @@ namespace CPvC
 
             remote.SendRequestAvailableMachines();
 
-            e.WaitOne(2000);
+            e.WaitOne(10000);
 
             Machines = remoteMachines;
 
@@ -99,7 +99,14 @@ namespace CPvC
 
             set
             {
-                _remote.SendSelectMachine(value.MachineName);
+                if (value != null)
+                {
+                    _remote.SendSelectMachine(value.MachineName);
+                }
+                else
+                {
+                    _remote.SendSelectMachine("");
+                }
 
                 _selectedMachine = value;
 
