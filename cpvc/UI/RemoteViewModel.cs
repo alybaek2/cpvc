@@ -89,6 +89,7 @@ namespace CPvC
         private IConnection _connection;
         private Remote _remote;
         private RemoteMachine _machine;
+        private bool _enableLivePreview;
 
         public RemoteMachineInfo SelectedMachine
         {
@@ -99,18 +100,7 @@ namespace CPvC
 
             set
             {
-                if (value != null)
-                {
-                    _remote.SendSelectMachine(value.MachineName);
-                }
-                else
-                {
-                    _remote.SendSelectMachine("");
-                }
-
-                _selectedMachine = value;
-
-                OnPropertyChanged("SelectedMachine");
+                SetLivePreview(_enableLivePreview, value);
             }
         }
 
@@ -140,6 +130,19 @@ namespace CPvC
             }
         }
 
+        public bool LivePreviewEnabled
+        {
+            get
+            {
+                return _enableLivePreview;
+            }
+
+            set
+            {
+                SetLivePreview(value, _selectedMachine);
+            }
+        }
+
         private ISettings _settings;
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -148,11 +151,33 @@ namespace CPvC
         {
             Server = serverInfo;
             _settings = settings;
+            _enableLivePreview = false;
 
             _connection = SocketConnection.ConnectToServer(serverInfo.ServerName, serverInfo.Port);
             _remote = new Remote(_connection);
             _machine = new RemoteMachine(_remote);
 
+        }
+
+        private void SetLivePreview(bool enableLivePreview, RemoteMachineInfo machineInfo)
+        {
+            bool previous = (_enableLivePreview && _selectedMachine != null);
+            bool current = (enableLivePreview && machineInfo != null);
+
+            if (current && (!previous || (_selectedMachine != machineInfo)))
+            {
+                _remote.SendSelectMachine(machineInfo?.MachineName ?? String.Empty);
+            }
+            else if (previous && !current)
+            {
+                _remote.SendSelectMachine(String.Empty);
+            }
+
+            _enableLivePreview = enableLivePreview;
+            _selectedMachine = machineInfo;
+
+            OnPropertyChanged("SelectedMachine");
+            OnPropertyChanged("LivePreviewEnabled");
         }
 
         protected void OnPropertyChanged(string name)

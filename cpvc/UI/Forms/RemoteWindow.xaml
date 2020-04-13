@@ -31,7 +31,7 @@
             </GroupBox>
             <GroupBox Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" Margin="10,10,10,10" VerticalAlignment="Top">
                 <GroupBox.Header>
-                    <CheckBox Content="Live preview" />
+                    <CheckBox Content="Live preview" IsChecked="{Binding LivePreviewEnabled}" />
                 </GroupBox.Header>
                 <Grid>
                     <Image Width="192" Height="144" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="10" Source="{Binding Machine.Display.Bitmap}" ToolTip="{Binding Machine.Name}" Cursor="Hand"/>

@@ -178,8 +178,6 @@ namespace CPvC
 
         public void SendMessage(byte[] msg)
         {
-            Diagnostics.Trace("Sending message {0}...", msg[0]);
-
             byte[] escapedMsg = EscapeMessageForSending(msg);
 
             lock (_sendData)

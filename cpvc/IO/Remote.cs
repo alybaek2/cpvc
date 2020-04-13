@@ -120,8 +120,6 @@ namespace CPvC
 
             byte id = bs.ReadOneByte();
 
-            Diagnostics.Trace("Received message {0}...", id);
-
             switch (id)
             {
                 case _idSelectMachine:
