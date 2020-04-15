@@ -35,6 +35,11 @@ namespace CPvC
             }
         }
 
+        public override string GetName()
+        {
+            return _name;
+        }
+
         public OnCloseDelegate OnClose { get; set; }
 
         public RemoteMachine(Remote remote)

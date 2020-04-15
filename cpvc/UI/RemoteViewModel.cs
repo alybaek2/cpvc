@@ -74,7 +74,7 @@ namespace CPvC
 
             remote.SendRequestAvailableMachines();
 
-            e.WaitOne(10000);
+            e.WaitOne(1000);
 
             Machines = remoteMachines;
 

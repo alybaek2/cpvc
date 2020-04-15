@@ -44,6 +44,7 @@ namespace CPvC.UI
         private Command _openMachineCommand;
         private Command _newMachineCommand;
         private Command _startServerCommand;
+        private Command _stopServerCommand;
         private Command _connectCommand;
 
         private MachineViewModel _nullMachineViewModel;
@@ -72,8 +73,6 @@ namespace CPvC.UI
 
             _model = new MainModel(settings, fileSystem);
 
-            _machineServer = new MachineServerListener(Machines);
-
             _machineViewModels = new ObservableCollection<MachineViewModel>();
             for (int i = 0; i < _model.Machines.Count; i++)
             {
@@ -88,25 +87,7 @@ namespace CPvC.UI
                 machineViewModel.RemoveCommand = removeMachineCommand;
             }
 
-            //// Test!
-            //_recentServers = new ObservableCollection<ServerInfo>();
-            //IEnumerable<string> serversAndPorts = Helpers.SplitWithEscape(';', settings.RemoteServers);
-
-            //lock (RecentServers)
-            //{
-            //    foreach (string serverStr in serversAndPorts)
-            //    {
-            //        List<string> tokens = Helpers.SplitWithEscape(':', serverStr);
-            //        if (tokens.Count < 2)
-            //        {
-            //            continue;
-            //        }
-
-            //        ServerInfo info = new ServerInfo(tokens[0], System.Convert.ToUInt16(tokens[1]));
-
-            //        RecentServers.Add(info);
-            //    }
-            //}
+            _machineServer = new MachineServerListener(MachineViewModels);
 
             LoadRecentServersSetting();
 
@@ -142,6 +123,11 @@ namespace CPvC.UI
 
             _startServerCommand = new Command(
                 p => StartServer(6128),
+                p => true
+            );
+
+            _stopServerCommand = new Command(
+                p => StopServer(),
                 p => true
             );
 
@@ -201,15 +187,17 @@ namespace CPvC.UI
 
         public Command NewMachineCommand
         {
-            get
-            {
-                return _newMachineCommand;
-            }
+            get { return _newMachineCommand; }
         }
 
         public ICommand StartServerCommand
         {
             get { return _startServerCommand; }
+        }
+
+        public ICommand StopServerCommand
+        {
+            get { return _stopServerCommand; }
         }
 
         public ICommand ConnectCommand

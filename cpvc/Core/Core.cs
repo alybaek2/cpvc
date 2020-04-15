@@ -637,17 +637,9 @@ namespace CPvC
                         break;
                     case CoreRequest.Types.RunUntilForce:
                         {
-                            while (Ticks < request.StopTicks)
-                            {
-                                RunForAWhile(request.StopTicks);
+                            RunForAWhile(request.StopTicks);
 
-                                if (_quitThread)
-                                {
-                                    success = false;
-                                    break;
-                                }
-                            }
-
+                            success = (request.StopTicks <= Ticks);
                             action = CoreAction.RunUntilForce(ticks, Ticks);
                         }
                         break;

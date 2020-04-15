@@ -8,12 +8,12 @@ namespace CPvC
 {
     public class MachineServerConnection
     {
-        private Machine _machine;
-        private IEnumerable<Machine> _machines;
+        private CoreMachine _machine;
+        private IEnumerable<CoreMachine> _machines;
 
         private Remote _remote;
 
-        public MachineServerConnection(SocketConnection socket, IEnumerable<Machine> machines)
+        public MachineServerConnection(SocketConnection socket, IEnumerable<CoreMachine> machines)
         {
             _remote = new Remote(socket);
             _remote.ReceiveSelectMachine = ReceiveSelectMachine;
@@ -25,12 +25,12 @@ namespace CPvC
 
         private void ReceiveRequestAvailableMachines()
         {
-            _remote.SendAvailableMachines(_machines.Select(m => m.Name));
+            _remote.SendAvailableMachines(_machines.Select(m => m.GetName()));
         }
 
         private void ReceiveSelectMachine(string machineName)
         {
-            Machine machine = _machines.Where(m => m.Name == machineName).FirstOrDefault();
+            CoreMachine machine = _machines.Where(m => m.GetName() == machineName).FirstOrDefault();
             if (machine == _machine)
             {
                 return;
@@ -43,16 +43,17 @@ namespace CPvC
                 _machine = null;
             }
 
+            ICoreMachine interactiveMachine = machine as ICoreMachine;
             _machine = machine;
-            if (_machine != null)
+            if (_machine != null && interactiveMachine != null)
             {
-                using (_machine.AutoPause())
+                using (interactiveMachine.AutoPause())
                 {
                     byte[] state = _machine.Core.GetState();
 
                     CoreAction loadCoreAction = CoreAction.LoadCore(0, new MemoryBlob(state));
 
-                    _remote.SendName(_machine.Name);
+                    _remote.SendName(_machine.GetName());
                     _remote.SendCoreAction(loadCoreAction);
 
                     _machine.Auditors += MachineAuditor;

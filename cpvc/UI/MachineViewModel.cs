@@ -430,7 +430,7 @@ namespace CPvC
             }
         }
 
-        private void RenameMachine(IInteractiveMachine machine, PromptForNameDelegate promptForName)
+        private void RenameMachine(Machine machine, PromptForNameDelegate promptForName)
         {
             if (machine == null)
             {
@@ -439,7 +439,7 @@ namespace CPvC
 
             using (machine.AutoPause())
             {
-                string newName = promptForName(machine.Name);
+                string newName = promptForName(machine.GetName());
                 if (newName != null)
                 {
                     machine.Name = newName;

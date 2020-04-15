@@ -7,13 +7,21 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public class CoreMachine : ICoreMachine
+    public abstract class CoreMachine : ICoreMachine
     {
         protected Core _core;
         protected string _filepath;
         private string _status;
+        protected bool _running;
+        protected int _autoPauseCount;
 
         public event PropertyChangedEventHandler PropertyChanged;
+
+        public CoreMachine()
+        {
+            _autoPauseCount = 0;
+            _running = false;
+        }
 
         public Core Core
         {
@@ -120,6 +128,11 @@ namespace CPvC
             }
         }
 
+        public abstract string GetName();
+
+        // This really should be an event, so multiple subscribers can be supported. Or is this already supprted? Test this!
+        public MachineAuditorDelegate Auditors { get; set; }
+
         public Display Display { get; protected set; }
 
         /// <summary>
@@ -139,6 +152,83 @@ namespace CPvC
         public void AdvancePlayback(int samples)
         {
             Core?.AdvancePlayback(samples);
+        }
+
+        /// <summary>
+        /// Sets the core to the appropriate running state, given the <c>_running</c> and <c>_autoPauseCount</c> members.
+        /// </summary>
+        protected void SetCoreRunning()
+        {
+            if (_core == null)
+            {
+                return;
+            }
+
+            bool shouldRun = (_running && _autoPauseCount == 0);
+            if (shouldRun && !_core.Running)
+            {
+                _core.Start();
+            }
+            else if (!shouldRun && _core.Running)
+            {
+                _core.Stop();
+            }
+        }
+
+        public void Start()
+        {
+            _running = true;
+            SetCoreRunning();
+            Status = "Resumed";
+        }
+
+        public void Stop()
+        {
+            _running = false;
+            SetCoreRunning();
+            Status = "Paused";
+        }
+
+        public void ToggleRunning()
+        {
+            if (_running)
+            {
+                Stop();
+            }
+            else
+            {
+                Start();
+            }
+        }
+
+        /// <summary>
+        /// Helper class that pauses the machine on creation and resumes the machine when the object is disposed.
+        /// </summary>
+        private class AutoPauser : IDisposable
+        {
+            private readonly CoreMachine _machine;
+
+            public AutoPauser(CoreMachine machine)
+            {
+                _machine = machine;
+                _machine._autoPauseCount++;
+                _machine.SetCoreRunning();
+            }
+
+            public void Dispose()
+            {
+                _machine._autoPauseCount--;
+                _machine.SetCoreRunning();
+            }
+        }
+
+        /// <summary>
+        /// Pauses the machine and returns an IDisposable which, when disposed of, causes the machine to resume (if it was running before).
+        /// </summary>
+        /// <returns>A IDisposable interface.</returns>
+        public IDisposable AutoPause()
+        {
+            return new AutoPauser(this);
         }
 
         protected void CorePropertyChanged(object sender, PropertyChangedEventArgs e)

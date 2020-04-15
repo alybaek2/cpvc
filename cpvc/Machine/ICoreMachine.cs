@@ -21,5 +21,8 @@ namespace CPvC
         string Status { get; set; }
 
         string Filepath { get; }
+        string GetName();
+        IDisposable AutoPause();
+
     }
 }

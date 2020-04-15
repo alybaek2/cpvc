@@ -27,11 +27,6 @@ namespace CPvC
         IDisposable
     {
         private string _name;
-        private bool _running;
-        private int _autoPauseCount;
-
-        // This really should be an event, so multiple subscribers can be supported. Or is this already supprted? Test this!
-        public MachineAuditorDelegate Auditors { get; set; }
 
         public OnCloseDelegate OnClose { get; set; }
 
@@ -48,8 +43,6 @@ namespace CPvC
         {
             _name = name;
             Filepath = machineFilepath;
-            _running = false;
-            _autoPauseCount = 0;
 
             Display = new Display();
 
@@ -216,9 +209,6 @@ namespace CPvC
 
             SetCore(null);
 
-            _running = false;
-            _autoPauseCount = 0;
-
             CurrentEvent = null;
             RootEvent = null;
 
@@ -294,36 +284,6 @@ namespace CPvC
         }
 
         /// <summary>
-        /// Helper class that pauses the machine on creation and resumes the machine when the object is disposed.
-        /// </summary>
-        private class AutoPauser : IDisposable
-        {
-            private readonly Machine _machine;
-
-            public AutoPauser(Machine machine)
-            {
-                _machine = machine;
-                _machine._autoPauseCount++;
-                _machine.SetCoreRunning();
-            }
-
-            public void Dispose()
-            {
-                _machine._autoPauseCount--;
-                _machine.SetCoreRunning();
-            }
-        }
-
-        /// <summary>
-        /// Pauses the machine and returns an IDisposable which, when disposed of, causes the machine to resume (if it was running before).
-        /// </summary>
-        /// <returns>A IDisposable interface.</returns>
-        public IDisposable AutoPause()
-        {
-            return new AutoPauser(this);
-        }
-
-        /// <summary>
         /// The name of the machine.
         /// </summary>
         public string Name
@@ -342,6 +302,11 @@ namespace CPvC
             }
         }
 
+        public override string GetName()
+        {
+            return _name;
+        }
+
         public void Reset()
         {
             _core.Reset();
@@ -351,32 +316,6 @@ namespace CPvC
         public void Key(byte keycode, bool down)
         {
             _core.KeyPress(keycode, down);
-        }
-
-        public void Start()
-        {
-            _running = true;
-            SetCoreRunning();
-            Status = "Resumed";
-        }
-
-        public void Stop()
-        {
-            _running = false;
-            SetCoreRunning();
-            Status = "Paused";
-        }
-
-        public void ToggleRunning()
-        {
-            if (_running)
-            {
-                Stop();
-            }
-            else
-            {
-                Start();
-            }
         }
 
         public void AddBookmark(bool system)
@@ -623,27 +562,6 @@ namespace CPvC
             }
 
             CurrentEvent = historyEvent;
-        }
-
-        /// <summary>
-        /// Sets the core to the appropriate running state, given the <c>_running</c> and <c>_autoPauseCount</c> members.
-        /// </summary>
-        private void SetCoreRunning()
-        {
-            if (_core == null)
-            {
-                return;
-            }
-
-            bool shouldRun = (_running && _autoPauseCount == 0);
-            if (shouldRun && !_core.Running)
-            {
-                _core.Start();
-            }
-            else if (!shouldRun && _core.Running)
-            {
-                _core.Stop();
-            }
         }
 
         /// <summary>

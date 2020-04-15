@@ -54,6 +54,11 @@ namespace CPvC
             get; set;
         }
 
+        public override string GetName()
+        {
+            return Name;
+        }
+
         public void Dispose()
         {
             Close();
@@ -109,35 +114,9 @@ namespace CPvC
 
             bool running = Core?.Running ?? false;
             Core = core;
-            if (running)
-            {
-                Core.Start();
-            }
-        }
+            Core.Auditors = RequestProcessed;
 
-        public void Start()
-        {
-            if (_core.Ticks < _endTicks)
-            {
-                _core.Start();
-            }
-        }
-
-        public void Stop()
-        {
-            _core.Stop();
-        }
-
-        public void ToggleRunning()
-        {
-            if (_core.Running)
-            {
-                Stop();
-            }
-            else
-            {
-                Start();
-            }
+            SetCoreRunning();
         }
 
         public void SeekToStart()
@@ -158,6 +137,17 @@ namespace CPvC
             {
                 SeekToBookmark(bookmarkIndex);
             }
+        }
+
+        /// <summary>
+        /// Delegate for logging core actions.
+        /// </summary>
+        /// <param name="core">The core the request was made for.</param>
+        /// <param name="request">The original request.</param>
+        /// <param name="action">The action taken.</param>
+        private void RequestProcessed(Core core, CoreRequest request, CoreAction action)
+        {
+            Auditors?.Invoke(action);
         }
     }
 }
