@@ -9,7 +9,7 @@ namespace CPvC
 {
     public delegate void NewMessageDelegate(byte[] message);
 
-    public class SocketConnection : IConnection
+    public class SocketConnection : IConnection, IDisposable
     {
         private const byte _delimByte = 0xff;
         private const byte _escapeByte = 0xfe;
@@ -45,6 +45,11 @@ namespace CPvC
             {
                 return _socket?.Connected ?? false;
             }
+        }
+
+        public void Dispose()
+        {
+            Close();
         }
 
         static public SocketConnection ConnectToServer(string hostname, UInt16 port)

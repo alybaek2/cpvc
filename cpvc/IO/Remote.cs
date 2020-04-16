@@ -13,7 +13,7 @@ namespace CPvC
     public delegate void ReceivePingDelegate(bool response, UInt64 id);
     public delegate void ReceiveNameDelegate(string name);
 
-    public class Remote
+    public class Remote: IDisposable
     {
         private const byte _idAvailableMachines = 0x01;
         private const byte _idSelectMachine = 0x02;
@@ -43,6 +43,11 @@ namespace CPvC
             {
                 _connection.Close();
             }
+        }
+
+        public void Dispose()
+        {
+            Close();
         }
 
         public void SendCoreAction(CoreAction coreAction)

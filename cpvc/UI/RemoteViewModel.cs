@@ -59,22 +59,24 @@ namespace CPvC
                 return false;
             }
 
-            Remote remote = new Remote(connection);
-            remote.ReceiveAvailableMachines += machineNames =>
+            using (Remote remote = new Remote(connection))
             {
-                foreach (string machineName in machineNames)
+                remote.ReceiveAvailableMachines += machineNames =>
                 {
-                    RemoteMachineInfo info = new RemoteMachineInfo(machineName, this);
+                    foreach (string machineName in machineNames)
+                    {
+                        RemoteMachineInfo info = new RemoteMachineInfo(machineName, this);
 
-                    remoteMachines.Add(info);
-                }
+                        remoteMachines.Add(info);
+                    }
 
-                e.Set();
-            };
+                    e.Set();
+                };
 
-            remote.SendRequestAvailableMachines();
+                remote.SendRequestAvailableMachines();
 
-            e.WaitOne(1000);
+                e.WaitOne(1000);
+            }
 
             Machines = remoteMachines;
 
