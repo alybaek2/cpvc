@@ -9,6 +9,7 @@ namespace CPvC
 {
     public sealed class RemoteMachine : CoreMachine,
         IClosableMachine,
+        IInteractiveMachine,
         INotifyPropertyChanged,
         IDisposable
     {
@@ -16,6 +17,7 @@ namespace CPvC
         private Remote _remote;
         private int _lastPing;
         private int _connectionLatency;
+        private UInt64 _emulationLatency;
 
         /// <summary>
         /// The name of the machine.
@@ -59,6 +61,7 @@ namespace CPvC
 
             _lastPing = 0;
             _connectionLatency = 0;
+            _emulationLatency = 0;
         }
 
         public void ReceiveCoreAction(CoreAction coreAction)
@@ -69,6 +72,8 @@ namespace CPvC
                 return;
             }
 
+            _emulationLatency = coreAction.Ticks - Ticks;
+            Status = String.Format("Emulation latency: {0} ms", _emulationLatency / 4000);
             _core.PushRequest(coreAction);
 
             int ticks = System.Environment.TickCount;
@@ -95,6 +100,8 @@ namespace CPvC
                 int pingTicks = (int)id;
 
                 _connectionLatency = ticks - pingTicks;
+
+                //Status = String.Format("Latency: {0} ms", _connectionLatency);
             }
         }
 
@@ -118,6 +125,31 @@ namespace CPvC
             Core = null;
 
             OnClose?.Invoke();
+        }
+
+        public void Key(byte keycode, bool down)
+        {
+            _remote.SendCoreRequest(CoreRequest.KeyPress(keycode, down));
+        }
+
+        public void LoadDisc(byte drive, byte[] diskBuffer)
+        {
+
+        }
+
+        public void LoadTape(byte[] tapeBuffer)
+        {
+
+        }
+
+        public void SetCurrentEvent(HistoryEvent bookmarkEvent)
+        {
+
+        }
+
+        public void Reset()
+        {
+
         }
     }
 }

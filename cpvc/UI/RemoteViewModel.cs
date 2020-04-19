@@ -158,7 +158,6 @@ namespace CPvC
             _connection = SocketConnection.ConnectToServer(serverInfo.ServerName, serverInfo.Port);
             _remote = new Remote(_connection);
             _machine = new RemoteMachine(_remote);
-
         }
 
         private void SetLivePreview(bool enableLivePreview, RemoteMachineInfo machineInfo)

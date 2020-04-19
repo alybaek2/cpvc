@@ -12,6 +12,7 @@ namespace CPvC
     public delegate void ReceiveAvailableMachinesDelegate(List<string> availableMachines);
     public delegate void ReceivePingDelegate(bool response, UInt64 id);
     public delegate void ReceiveNameDelegate(string name);
+    public delegate void ReceiveCoreRequestDelegate(CoreRequest request);
 
     public class Remote: IDisposable
     {
@@ -21,6 +22,7 @@ namespace CPvC
         private const byte _idPing = 0x04;
         private const byte _idRequestAvailableMachines = 0x05;
         private const byte _idName = 0x06;
+        private const byte _idCoreRequest = 0x07;
 
         private IConnection _connection;
 
@@ -36,6 +38,7 @@ namespace CPvC
         public ReceiveAvailableMachinesDelegate ReceiveAvailableMachines { get; set; }
         public ReceivePingDelegate ReceivePing { get; set; }
         public ReceiveNameDelegate ReceiveName { get; set; }
+        public ReceiveCoreRequestDelegate ReceiveCoreRequest { get; set; }
 
         public void Close()
         {
@@ -103,6 +106,15 @@ namespace CPvC
             SendMessage(bs.AsBytes());
         }
 
+        public void SendCoreRequest(CoreRequest coreRequest)
+        {
+            MemoryByteStream bs = new MemoryByteStream();
+            bs.Write(_idCoreRequest);
+            Serializer.CoreRequestToBytes(bs, coreRequest);
+
+            SendMessage(bs.AsBytes());
+        }
+
         private void SendMessage(byte[] msg)
         {
             lock (_connection)
@@ -161,6 +173,12 @@ namespace CPvC
                     {
                         string machineName = bs.ReadString();
                         ReceiveName?.Invoke(machineName);
+                    }
+                    break;
+                case _idCoreRequest:
+                    {
+                        CoreRequest coreRequest = Serializer.CoreRequestFromBytes(bs);
+                        ReceiveCoreRequest?.Invoke(coreRequest);
                     }
                     break;
             }

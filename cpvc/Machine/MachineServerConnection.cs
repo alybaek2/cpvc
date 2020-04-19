@@ -19,6 +19,7 @@ namespace CPvC
             _remote.ReceiveSelectMachine = ReceiveSelectMachine;
             _remote.ReceiveRequestAvailableMachines = ReceiveRequestAvailableMachines;
             _remote.ReceivePing = ReceivePing;
+            _remote.ReceiveCoreRequest = ReceiveCoreRequest;
 
             _machines = machines;
         }
@@ -67,6 +68,11 @@ namespace CPvC
             {
                 _remote.SendPing(true, id);
             }
+        }
+
+        private void ReceiveCoreRequest(CoreRequest request)
+        {
+            _machine.Core.PushRequest(request);
         }
 
         private void MachineAuditor(CoreAction coreAction)

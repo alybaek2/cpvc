@@ -12,6 +12,8 @@ namespace CPvC
         void Key(byte keycode, bool down);
         void LoadDisc(byte drive, byte[] diskBuffer);
         void LoadTape(byte[] tapeBuffer);
+
+        // Should this really be a part of this interface?
         void SetCurrentEvent(HistoryEvent bookmarkEvent);
 
         string Name { get; set; }

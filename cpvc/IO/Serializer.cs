@@ -52,6 +52,44 @@ namespace CPvC
             return availableMachines;
         }
 
+        static public void CoreRequestToBytes(MemoryByteStream stream, CoreRequest request)
+        {
+            switch (request.Type)
+            {
+                case CoreRequest.Types.KeyPress:
+                    stream.Write(_coreActionKeyPress);
+                    stream.Write(request.KeyCode);
+                    stream.Write(request.KeyDown);
+                    break;
+                case CoreRequest.Types.Reset:
+                    stream.Write(_coreActionReset);
+                    break;
+                case CoreRequest.Types.LoadDisc:
+                    stream.Write(_coreActionLoadDisc);
+                    stream.Write(request.Drive);
+                    stream.WriteArray(request.MediaBuffer.GetBytes());
+                    break;
+                case CoreRequest.Types.LoadTape:
+                    stream.Write(_coreActionLoadTape);
+                    stream.WriteArray(request.MediaBuffer.GetBytes());
+                    break;
+                case CoreRequest.Types.RunUntilForce:
+                    stream.Write(_coreActionRunUntil);
+                    stream.Write(request.StopTicks);
+                    break;
+                case CoreRequest.Types.LoadCore:
+                    stream.Write(_coreActionLoadCore);
+                    stream.WriteArray(request.CoreState.GetBytes());
+                    break;
+                case CoreRequest.Types.CoreVersion:
+                    stream.Write(_coreActionCoreVersion);
+                    stream.Write(request.Version);
+                    break;
+                default:
+                    throw new Exception(String.Format("Unknown CoreRequest type {0}!", request.Type));
+            }
+        }
+
         static public void CoreActionToBytes(MemoryByteStream stream, CoreAction action)
         {
             switch (action.Type)
@@ -151,6 +189,62 @@ namespace CPvC
                         Int32 version = stream.ReadInt32();
 
                         return CoreAction.CoreVersion(ticks, version);
+                    }
+                default:
+                    break;
+            }
+
+            // Should throw an exception?
+
+            return null;
+        }
+
+        static public CoreRequest CoreRequestFromBytes(MemoryByteStream stream)
+        {
+            byte type = stream.ReadOneByte();
+            switch (type)
+            {
+                case _coreActionKeyPress:
+                    {
+                        byte keyCode = stream.ReadOneByte();
+                        bool keyDown = stream.ReadBool();
+
+                        return CoreRequest.KeyPress(keyCode, keyDown);
+                    }
+                case _coreActionReset:
+                    {
+                        return CoreRequest.Reset();
+                    }
+                case _coreActionLoadDisc:
+                    {
+                        byte drive = stream.ReadOneByte();
+                        byte[] media = stream.ReadArray();
+
+                        return CoreRequest.LoadDisc(drive, media);
+                    }
+                case _coreActionLoadTape:
+                    {
+                        byte[] media = stream.ReadArray();
+
+                        return CoreRequest.LoadTape(media);
+                    }
+                case _coreActionRunUntil:
+                    {
+                        UInt64 stopTicks = stream.ReadUInt64();
+
+                        return CoreRequest.RunUntilForce(stopTicks);
+                    }
+                case _coreActionLoadCore:
+                    {
+                        byte[] state = stream.ReadArray();
+
+                        return CoreRequest.LoadCore(new MemoryBlob(state));
+                    }
+                case _coreActionCoreVersion:
+                    {
+                        Int32 version = stream.ReadInt32();
+
+                        return CoreRequest.CoreVersion(version);
                     }
                 default:
                     break;
