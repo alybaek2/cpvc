@@ -138,13 +138,13 @@ namespace CPvC
             );
 
             _jumpToMostRecentBookmarkCommand = new Command(
-                p => (machine as IBookmarkableMachine)?.JumpToMostRecentBookmark(),
-                p => (machine as IBookmarkableMachine) != null
+                p => (machine as IJumpableMachine)?.JumpToMostRecentBookmark(),
+                p => (machine as IJumpableMachine) != null
             );
 
             _browseBookmarksCommand = new Command(
-                p => SelectBookmark(machine as Machine, promptForBookmark),
-                p => (machine as IBookmarkableMachine) != null
+                p => SelectBookmark(machine as IJumpableMachine, promptForBookmark),
+                p => (machine as IJumpableMachine) != null
             );
 
             _compactCommand = new Command(
@@ -412,7 +412,7 @@ namespace CPvC
             return buffer;
         }
 
-        private void SelectBookmark(IInteractiveMachine machine, PromptForBookmarkDelegate promptForBookmark)
+        private void SelectBookmark(IJumpableMachine machine, PromptForBookmarkDelegate promptForBookmark)
         {
             if (machine == null)
             {
@@ -424,8 +424,8 @@ namespace CPvC
                 HistoryEvent historyEvent = promptForBookmark();
                 if (historyEvent != null)
                 {
-                    machine.SetCurrentEvent(historyEvent);
-                    machine.Status = String.Format("Jumped to {0}", Helpers.GetTimeSpanFromTicks(machine.Core.Ticks).ToString(@"hh\:mm\:ss"));
+                    machine.JumpToBookmark(historyEvent);
+                    machine.Status = String.Format("Jumped to {0}", Helpers.GetTimeSpanFromTicks(historyEvent.Ticks).ToString(@"hh\:mm\:ss"));
                 }
             }
         }

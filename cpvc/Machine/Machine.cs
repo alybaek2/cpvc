@@ -18,6 +18,7 @@ namespace CPvC
         IOpenableMachine,
         IInteractiveMachine,
         IBookmarkableMachine,
+        IJumpableMachine,
         IPausableMachine,
         ITurboableMachine,
         ICompactableMachine,
@@ -340,7 +341,7 @@ namespace CPvC
                 if (lastBookmarkEvent.Type == HistoryEvent.Types.Checkpoint && lastBookmarkEvent.Bookmark != null && !lastBookmarkEvent.Bookmark.System && lastBookmarkEvent.Ticks != Core.Ticks)
                 {
                     TimeSpan before = Helpers.GetTimeSpanFromTicks(Core.Ticks);
-                    SetCurrentEvent(lastBookmarkEvent);
+                    JumpToBookmark(lastBookmarkEvent);
                     TimeSpan after = Helpers.GetTimeSpanFromTicks(Core.Ticks);
                     Status = String.Format("Rewound to {0} (-{1})", after.ToString(@"hh\:mm\:ss"), (after - before).ToString(@"hh\:mm\:ss"));
                     return;
@@ -350,7 +351,7 @@ namespace CPvC
             }
 
             // No bookmarks? Go all the way back to the root!
-            SetCurrentEvent(RootEvent);
+            JumpToBookmark(RootEvent);
             Status = "Rewound to start";
         }
 
@@ -368,7 +369,7 @@ namespace CPvC
         /// Changes the current position in the timeline.
         /// </summary>
         /// <param name="bookmarkEvent">The event to become the current event in the timeline. This event must have a bookmark.</param>
-        public void SetCurrentEvent(HistoryEvent bookmarkEvent)
+        public void JumpToBookmark(HistoryEvent bookmarkEvent)
         {
             // Add a checkpoint at the current position to properly mark the end of this branch...
             Core.Stop();

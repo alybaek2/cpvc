@@ -134,22 +134,17 @@ namespace CPvC
 
         public void LoadDisc(byte drive, byte[] diskBuffer)
         {
-
+            _remote.SendCoreRequest(CoreRequest.LoadDisc(drive, diskBuffer));
         }
 
         public void LoadTape(byte[] tapeBuffer)
         {
-
-        }
-
-        public void SetCurrentEvent(HistoryEvent bookmarkEvent)
-        {
-
+            _remote.SendCoreRequest(CoreRequest.LoadTape(tapeBuffer));
         }
 
         public void Reset()
         {
-
+            _remote.SendCoreRequest(CoreRequest.Reset());
         }
     }
 }

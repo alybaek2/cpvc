@@ -353,7 +353,7 @@ namespace CPvC.UI.Forms
                 }
                 catch (Exception ex)
                 {
-                    ReportError(String.Format("Unable to open {0}.\n\n{1}", (machine as IInteractiveMachine).Name, ex.Message));
+                    ReportError(String.Format("Unable to open {0}.\n\n{1}", machine.GetName(), ex.Message));
                 }
             }
         }

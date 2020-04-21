@@ -760,7 +760,7 @@ namespace CPvC.Test
                 RunForAWhile(machine);
 
                 // Act and Verify
-                machine.SetCurrentEvent(bookmarkEvent);
+                machine.JumpToBookmark(bookmarkEvent);
                 Assert.AreEqual(bookmarkEvent, machine.CurrentEvent);
 
                 bool[] keys = new bool[80];

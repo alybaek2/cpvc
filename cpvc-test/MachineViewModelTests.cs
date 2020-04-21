@@ -276,7 +276,7 @@ namespace CPvC.Test
         [Test]
         public void JumpToMostRecentBookmark([Values(false, true)] bool nullMachine)
         {
-            TestCommand<IBookmarkableMachine>(nullMachine, m => m.JumpToMostRecentBookmarkCommand, null, m => m.JumpToMostRecentBookmark());
+            TestCommand<IJumpableMachine>(nullMachine, m => m.JumpToMostRecentBookmarkCommand, null, m => m.JumpToMostRecentBookmark());
         }
 
         [Test]

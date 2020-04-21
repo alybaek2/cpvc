@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public interface IBookmarkableMachine : ICoreMachine
+    public interface IJumpableMachine : ICoreMachine
     {
-        void AddBookmark(bool system);
         void JumpToMostRecentBookmark();
+        void JumpToBookmark(HistoryEvent bookmarkEvent);
     }
 }
