@@ -79,6 +79,15 @@ namespace CPvC
             OnClose?.Invoke();
         }
 
+        public new void Start()
+        {
+            // Would a better test be to see if the core has outstanding requests?
+            if (Ticks < _endTicks)
+            {
+                base.Start();
+            }
+        }
+
         private void SeekToBookmark(int bookmarkEventIndex)
         {
             Core core;
@@ -115,6 +124,7 @@ namespace CPvC
             bool running = Core?.Running ?? false;
             Core = core;
             Core.Auditors = RequestProcessed;
+            Core.KeepRunning = false;
 
             SetCoreRunning();
         }

@@ -169,16 +169,29 @@ namespace CPvC.Test
                 replayMachine.SeekToNextBookmark();
                 replayMachine.SeekToNextBookmark();
 
+                replayMachine.Start();
                 while (replayMachine.Running)
                 {
-                    RunForAWhile(replayMachine);
+                    Thread.Sleep(10);
                 }
 
                 // Act
+                Mock<MachineAuditorDelegate> auditor = new Mock<MachineAuditorDelegate>();
+                replayMachine.Auditors += auditor.Object;
                 replayMachine.Start();
+                while (replayMachine.Running)
+                {
+                    Thread.Sleep(10);
+                }
 
                 // Verify
-                Assert.False(replayMachine.Running);
+                auditor.VerifyNoOtherCalls();
+                if (replayMachine.Running)
+                {
+                    replayMachine.Stop();
+                    Assert.Fail();
+                }
+
                 Assert.AreEqual(replayMachine.EndTicks, replayMachine.Ticks);
             }
         }
