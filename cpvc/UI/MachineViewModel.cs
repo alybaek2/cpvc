@@ -439,7 +439,7 @@ namespace CPvC
 
             using (machine.AutoPause())
             {
-                string newName = promptForName(machine.GetName());
+                string newName = promptForName(machine.Name);
                 if (newName != null)
                 {
                     machine.Name = newName;

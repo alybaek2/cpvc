@@ -49,14 +49,9 @@ namespace CPvC
             SeekToBookmark(-1);
         }
 
-        public string Name
+        public override string Name
         {
             get; set;
-        }
-
-        public override string GetName()
-        {
-            return Name;
         }
 
         public void Dispose()

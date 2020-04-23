@@ -287,7 +287,7 @@ namespace CPvC
         /// <summary>
         /// The name of the machine.
         /// </summary>
-        public string Name
+        public override string Name
         {
             get
             {
@@ -301,11 +301,6 @@ namespace CPvC
 
                 OnPropertyChanged("Name");
             }
-        }
-
-        public override string GetName()
-        {
-            return _name;
         }
 
         public void Reset()

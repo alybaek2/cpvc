@@ -78,6 +78,8 @@ namespace CPvC
             }
         }
 
+        public abstract string Name { get; set; }
+
         public UInt64 Ticks
         {
             get
@@ -127,8 +129,6 @@ namespace CPvC
                 OnPropertyChanged("Status");
             }
         }
-
-        public abstract string GetName();
 
         // This really should be an event, so multiple subscribers can be supported. Or is this already supprted? Test this!
         public MachineAuditorDelegate Auditors { get; set; }

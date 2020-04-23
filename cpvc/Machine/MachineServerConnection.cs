@@ -26,12 +26,12 @@ namespace CPvC
 
         private void ReceiveRequestAvailableMachines()
         {
-            _remote.SendAvailableMachines(_machines.Select(m => m.GetName()));
+            _remote.SendAvailableMachines(_machines.Select(m => m.Name));
         }
 
         private void ReceiveSelectMachine(string machineName)
         {
-            CoreMachine machine = _machines.Where(m => m.GetName() == machineName).FirstOrDefault();
+            CoreMachine machine = _machines.Where(m => m.Name == machineName).FirstOrDefault();
             if (machine == _machine)
             {
                 return;
@@ -54,7 +54,7 @@ namespace CPvC
 
                     CoreAction loadCoreAction = CoreAction.LoadCore(0, new MemoryBlob(state));
 
-                    _remote.SendName(_machine.GetName());
+                    _remote.SendName(_machine.Name);
                     _remote.SendCoreAction(loadCoreAction);
 
                     _machine.Auditors += MachineAuditor;
