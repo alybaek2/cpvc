@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public interface IPrerecordedMachine : ICoreMachine
+    public interface IPrerecordedMachine
     {
         void SeekToStart();
         void SeekToPreviousBookmark();

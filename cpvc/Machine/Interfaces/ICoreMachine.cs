@@ -23,6 +23,5 @@ namespace CPvC
         string Name { get; set; }
         string Filepath { get; }
         IDisposable AutoPause();
-
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public interface ICompactableMachine : ICoreMachine
+    public interface ICompactableMachine
     {
         void Compact(bool enableDiffs);
     }
