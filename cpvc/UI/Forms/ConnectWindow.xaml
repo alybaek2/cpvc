@@ -10,6 +10,6 @@
         <Button x:Name="CancelButton" Content="Cancel" Margin="0,0,10,10" Click="CancelButton_Click" HorizontalAlignment="Right" Width="75" Height="20" VerticalAlignment="Bottom"/>
         <Button x:Name="OkButton" Content="OK" Margin="0,0,90,10" Click="OkButton_Click" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="75"/>
         <Label Content="Hostname" Margin="10,10,172,50"/>
-        <TextBox x:Name="_serverNameAndPortTextBox" Margin="82,14,12,49" TextWrapping="Wrap" Text="TextBox"/>
+        <TextBox x:Name="_serverNameAndPortTextBox" Margin="82,14,12,49" TextWrapping="Wrap"/>
     </Grid>
 </Window>

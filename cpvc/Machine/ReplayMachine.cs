@@ -119,7 +119,6 @@ namespace CPvC
             bool running = Core?.Running ?? false;
             Core = core;
             Core.Auditors = RequestProcessed;
-            Core.KeepRunning = false;
 
             SetCoreRunning();
         }
