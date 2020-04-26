@@ -23,7 +23,7 @@ namespace CPvC.UI.Forms
         {
             _settings = new Settings();
             _fileSystem = new FileSystem();
-            _mainViewModel = new MainViewModel(_settings, _fileSystem, SelectItem, PromptForFile, PromptForBookmark, PromptForName, ReportError, SelectRemoteMachine);
+            _mainViewModel = new MainViewModel(_settings, _fileSystem, SelectItem, PromptForFile, PromptForBookmark, PromptForName, ReportError, SelectRemoteMachine, SelectServerPort);
             _audio = new Audio(_mainViewModel.ReadAudio);
 
             InitializeComponent();
@@ -289,6 +289,18 @@ namespace CPvC.UI.Forms
             if (result.HasValue && result.Value)
             {
                 return dialog.NewName;
+            }
+
+            return null;
+        }
+
+        private UInt16? SelectServerPort(UInt16 defaultPort)
+        {
+            StartServerWindow dialog = new StartServerWindow(this, defaultPort);
+            bool? result = dialog.ShowDialog();
+            if (result.HasValue && result.Value)
+            {
+                return dialog.Port;
             }
 
             return null;

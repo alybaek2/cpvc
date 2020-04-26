@@ -188,6 +188,9 @@
     <Compile Include="UI\Forms\BookmarksWindow.xaml.cs">
       <DependentUpon>BookmarksWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UI\Forms\StartServerWindow.xaml.cs">
+      <DependentUpon>StartServerWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UI\HistoryViewItem.cs" />
     <Compile Include="UI\MachineViewModel.cs" />
     <Compile Include="UI\MainModel.cs" />
@@ -226,6 +229,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UI\Forms\BookmarksWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UI\Forms\StartServerWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

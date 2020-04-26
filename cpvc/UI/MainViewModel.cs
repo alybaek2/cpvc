@@ -20,6 +20,7 @@ namespace CPvC.UI
         public delegate string PromptForNameDelegate(string existingName);
         public delegate void ReportErrorDelegate(string message);
         public delegate RemoteMachine SelectRemoteMachineDelegate(ServerInfo serverInfo);
+        public delegate UInt16? SelectServerPortDelegate(UInt16 defaultPort);
 
         /// <summary>
         /// The data model associated with this view model.
@@ -40,6 +41,7 @@ namespace CPvC.UI
         private PromptForBookmarkDelegate _promptForBookmark;
         private PromptForNameDelegate _promptForName;
         private SelectRemoteMachineDelegate _selectRemoteMachine;
+        private SelectServerPortDelegate _selectServerPort;
 
         private Command _openMachineCommand;
         private Command _newMachineCommand;
@@ -57,7 +59,7 @@ namespace CPvC.UI
 
         private ISettings _settings;
 
-        public MainViewModel(ISettings settings, IFileSystem fileSystem, SelectItemDelegate selectItem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, ReportErrorDelegate reportError, SelectRemoteMachineDelegate selectRemoteMachine)
+        public MainViewModel(ISettings settings, IFileSystem fileSystem, SelectItemDelegate selectItem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, ReportErrorDelegate reportError, SelectRemoteMachineDelegate selectRemoteMachine, SelectServerPortDelegate selectServerPort)
         {
             _syncContext = SynchronizationContext.Current;
 
@@ -68,6 +70,7 @@ namespace CPvC.UI
             _promptForBookmark = promptForBookmark;
             _promptForName = promptForName;
             _selectRemoteMachine = selectRemoteMachine;
+            _selectServerPort = selectServerPort;
 
             _nullMachineViewModel = new MachineViewModel(null, null, null, null, null, null);
 
@@ -377,9 +380,13 @@ namespace CPvC.UI
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        public void StartServer(UInt16 port)
+        public void StartServer(UInt16 defaultPort)
         {
-            _machineServer.Start(port);
+            UInt16? port = _selectServerPort(defaultPort);
+            if (port.HasValue)
+            {
+                _machineServer.Start(port.Value);
+            }
         }
 
         public void StopServer()

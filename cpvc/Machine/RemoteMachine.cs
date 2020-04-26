@@ -47,7 +47,7 @@ namespace CPvC
             Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
             core.KeepRunning = false;
             Core = core;
-            core.Start();
+            Start();
 
             _remote = remote;
             _remote.ReceiveCoreAction = ReceiveCoreAction;
@@ -66,6 +66,8 @@ namespace CPvC
                 Close();
                 return;
             }
+
+            Auditors?.Invoke(coreAction);
 
             _emulationLatency = coreAction.Ticks - Ticks;
             Status = String.Format("Emulation latency: {0} ms", _emulationLatency / 4000);

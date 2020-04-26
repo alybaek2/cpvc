@@ -31,7 +31,7 @@ namespace CPvC
                     return !om.RequiresOpen;
                 }
 
-                if (cm is ICoreMachine)
+                if (cm is Machine)
                 {
                     return true;
                 }

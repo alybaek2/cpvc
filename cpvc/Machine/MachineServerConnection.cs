@@ -44,11 +44,11 @@ namespace CPvC
                 _machine = null;
             }
 
-            ICoreMachine interactiveMachine = machine as ICoreMachine;
+            ICoreMachine coreMachine = machine as ICoreMachine;
             _machine = machine;
-            if (_machine != null && interactiveMachine != null)
+            if (_machine != null && coreMachine != null)
             {
-                using (interactiveMachine.AutoPause())
+                using (coreMachine.AutoPause())
                 {
                     byte[] state = _machine.Core.GetState();
 
