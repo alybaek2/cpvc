@@ -90,13 +90,7 @@ namespace CPvC
         {
             lock (_byteStream)
             {
-                int b = _byteStream.ReadByte();
-                if (b == -1)
-                {
-                    throw new Exception("Insufficient bytes to read byte!");
-                }
-
-                return (byte)b;
+                return _byteStream.ReadByte();
             }
         }
 

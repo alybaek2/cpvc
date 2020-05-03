@@ -41,11 +41,7 @@ namespace CPvC
 
         public bool ReadBool()
         {
-            int b = ReadByte();
-            if (b == -1)
-            {
-                throw new Exception("Unexpected end of stream.");
-            }
+            byte b = ReadByte();
 
             return (b == 0xFF);
         }
@@ -57,10 +53,8 @@ namespace CPvC
 
         public UInt16 ReadUInt16()
         {
-            UInt16 u = _bytes[_pos];
-            _pos++;
-            u += (UInt16)(0x100 * _bytes[_pos]);
-            _pos++;
+            UInt16 u = ReadByte();
+            u += (UInt16)(0x100 * ReadByte());
 
             return u;
         }
@@ -82,14 +76,10 @@ namespace CPvC
 
         public UInt32 ReadUInt32()
         {
-            UInt32 u = _bytes[_pos];
-            _pos++;
-            u += (UInt32)(0x100 * _bytes[_pos]);
-            _pos++;
-            u += (UInt32)(0x10000 * _bytes[_pos]);
-            _pos++;
-            u += (UInt32)(0x1000000 * _bytes[_pos]);
-            _pos++;
+            UInt32 u = ReadByte();
+            u += (UInt32)(0x100 * ReadByte());
+            u += (UInt32)(0x10000 * ReadByte());
+            u += (UInt32)(0x1000000 * ReadByte());
 
             return u;
         }
@@ -133,18 +123,23 @@ namespace CPvC
             _pos += b.Length;
         }
 
-        public int ReadByte()
+        //public int ReadByte()
+        //{
+        //    if (_pos >= _bytes.Count)
+        //    {
+        //        return -1;
+        //    }
+
+        //    return _bytes[_pos++];
+        //}
+
+        public byte ReadByte()
         {
             if (_pos >= _bytes.Count)
             {
-                return -1;
+                throw new Exception("Unexpected end of stream.");
             }
 
-            return _bytes[_pos++];
-        }
-
-        public byte ReadOneByte()
-        {
             return _bytes[_pos++];
         }
 
@@ -153,9 +148,7 @@ namespace CPvC
             int bytesRead = 0;
             while (_pos < _bytes.Count && bytesRead < count)
             {
-                array[bytesRead] = _bytes[_pos];
-
-                _pos++;
+                array[bytesRead] = ReadByte();
                 bytesRead++;
             }
 

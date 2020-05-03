@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using System;
 
 namespace CPvC.Test
 {
@@ -102,7 +103,7 @@ namespace CPvC.Test
             Assert.AreEqual(new byte[] { 0x04, 0x05, 0x06 }, bytes);
 
             // Verify reading past the end of the file.
-            Assert.AreEqual(-1, file.ReadByte());
+            Assert.Throws<Exception>(() => file.ReadByte());
             Assert.AreEqual(0, file.ReadBytes(bytes, 1));
 
             Assert.AreEqual(6, file.Position);

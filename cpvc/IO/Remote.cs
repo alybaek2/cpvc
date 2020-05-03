@@ -135,7 +135,7 @@ namespace CPvC
 
             MemoryByteStream bs = new MemoryByteStream(msg);
 
-            byte id = bs.ReadOneByte();
+            byte id = bs.ReadByte();
 
             switch (id)
             {

@@ -137,13 +137,13 @@ namespace CPvC
 
         static public CoreAction CoreActionFromBytes(MemoryByteStream stream)
         {
-            byte type = stream.ReadOneByte();
+            byte type = stream.ReadByte();
             switch (type)
             {
                 case _coreActionKeyPress:
                     {
                         UInt64 ticks = stream.ReadUInt64();
-                        byte keyCode = stream.ReadOneByte();
+                        byte keyCode = stream.ReadByte();
                         bool keyDown = stream.ReadBool();
 
                         return CoreAction.KeyPress(ticks, keyCode, keyDown);
@@ -157,7 +157,7 @@ namespace CPvC
                 case _coreActionLoadDisc:
                     {
                         UInt64 ticks = stream.ReadUInt64();
-                        byte drive = stream.ReadOneByte();
+                        byte drive = stream.ReadByte();
                         byte[] media = stream.ReadArray();
 
                         return CoreAction.LoadDisc(ticks, drive, new MemoryBlob(media));
@@ -201,12 +201,12 @@ namespace CPvC
 
         static public CoreRequest CoreRequestFromBytes(MemoryByteStream stream)
         {
-            byte type = stream.ReadOneByte();
+            byte type = stream.ReadByte();
             switch (type)
             {
                 case _coreActionKeyPress:
                     {
-                        byte keyCode = stream.ReadOneByte();
+                        byte keyCode = stream.ReadByte();
                         bool keyDown = stream.ReadBool();
 
                         return CoreRequest.KeyPress(keyCode, keyDown);
@@ -217,7 +217,7 @@ namespace CPvC
                     }
                 case _coreActionLoadDisc:
                     {
-                        byte drive = stream.ReadOneByte();
+                        byte drive = stream.ReadByte();
                         byte[] media = stream.ReadArray();
 
                         return CoreRequest.LoadDisc(drive, media);

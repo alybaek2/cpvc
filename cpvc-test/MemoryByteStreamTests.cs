@@ -1,6 +1,8 @@
 ﻿using Moq;
 using NUnit.Framework;
 using System;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace CPvC.Test
 {
@@ -18,7 +20,7 @@ namespace CPvC.Test
 
             // Verify
             bs.Position = 0;
-            byte b = bs.ReadOneByte();
+            byte b = bs.ReadByte();
             Assert.AreEqual(expected, b);
             Assert.AreEqual(bs.Length, bs.Position);
         }
@@ -158,6 +160,84 @@ namespace CPvC.Test
             bool b = bs.ReadBool();
             Assert.AreEqual(expected, b);
             Assert.AreEqual(bs.Length, bs.Position);
+        }
+
+        [Test]
+        public void ReadByteTooShort()
+        {
+            // Setup
+            MemoryByteStream bs = new MemoryByteStream();
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => bs.ReadByte());
+        }
+
+        [Test]
+        public void ReadUInt16TooShort([Range(0, 1)] int size)
+        {
+            // Setup
+            MemoryByteStream bs = new MemoryByteStream(new byte[size]);
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => bs.ReadUInt16());
+        }
+
+        [Test]
+        public void ReadInt32TooShort([Range(0, 3)] int size)
+        {
+            // Setup
+            MemoryByteStream bs = new MemoryByteStream(new byte[size]);
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => bs.ReadInt32());
+        }
+
+        [Test]
+        public void ReadUInt32TooShort([Range(0, 3)] int size)
+        {
+            // Setup
+            MemoryByteStream bs = new MemoryByteStream(new byte[size]);
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => bs.ReadUInt32());
+        }
+
+        [Test]
+        public void ReadUInt64TooShort([Range(0, 7)] int size)
+        {
+            // Setup
+            MemoryByteStream bs = new MemoryByteStream(new byte[size]);
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => bs.ReadUInt64());
+        }
+
+        [Test]
+        public void ReadArrayTooShort()
+        {
+            // Setup
+            MemoryByteStream bs = new MemoryByteStream();
+            bs.Write(new byte[] { 0x01, 0x02, 0x03, 0x04 });
+            byte[] bytes = bs.AsBytes();
+            bytes = bytes.Take(bytes.Length - 1).ToArray();
+            bs = new MemoryByteStream(bytes);
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => bs.ReadArray());
+        }
+
+        [Test]
+        public void ReadStringTooShort()
+        {
+            // Setup
+            MemoryByteStream bs = new MemoryByteStream();
+            bs.Write("TestString!");
+            byte[] bytes = bs.AsBytes();
+            bytes = bytes.Take(bytes.Length - 1).ToArray();
+            bs = new MemoryByteStream(bytes);
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => bs.ReadString());
         }
     }
 }

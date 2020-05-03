@@ -51,9 +51,15 @@ namespace CPvC
             _fileStream.Write(b, 0, b.Length);
         }
 
-        public int ReadByte()
+        public byte ReadByte()
         {
-            return _fileStream.ReadByte();
+            int b = _fileStream.ReadByte();
+            if (b == -1)
+            {
+                throw new Exception("Reached end of file!");
+            }
+
+            return (byte)b;
         }
 
         public int ReadBytes(byte[] array, int count)

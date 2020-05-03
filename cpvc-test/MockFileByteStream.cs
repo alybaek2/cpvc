@@ -53,7 +53,7 @@ namespace CPvC.Test
             Setup(s => s.ReadByte()).Returns(() => {
                 if (_readPos >= Content.Count)
                 {
-                    return -1;
+                    throw new Exception("End of file reached!");
                 }
 
                 return Content[(int)_readPos++];

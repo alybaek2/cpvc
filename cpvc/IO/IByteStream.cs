@@ -10,7 +10,7 @@ namespace CPvC
     {
         void Write(byte b);
         void Write(byte[] b);
-        int ReadByte();
+        byte ReadByte();
         int ReadBytes(byte[] array, int count);
         void Close();
 
