@@ -8,10 +8,10 @@ namespace CPvC
 {
     public class BinaryFile : IBinaryFile
     {
-        public IByteStream _byteStream;
+        public IFileByteStream _byteStream;
         private bool _diffsEnabled;
 
-        public BinaryFile(IByteStream byteStream)
+        public BinaryFile(IFileByteStream byteStream)
         {
             _diffsEnabled = false;
             _byteStream = byteStream;

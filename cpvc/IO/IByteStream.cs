@@ -12,7 +12,6 @@ namespace CPvC
         void Write(byte[] b);
         byte ReadByte();
         int ReadBytes(byte[] array, int count);
-        void Close();
 
         long Length { get; }
         long Position { get; set; }

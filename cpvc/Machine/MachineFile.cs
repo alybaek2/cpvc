@@ -22,7 +22,7 @@ namespace CPvC
         public const byte _idLoadCore = 10;
         public const byte _idRunUntil = 11;
 
-        public MachineFile(IByteStream byteStream) : base(byteStream)
+        public MachineFile(IFileByteStream byteStream) : base(byteStream)
         {
         }
 

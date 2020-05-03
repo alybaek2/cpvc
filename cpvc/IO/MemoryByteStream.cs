@@ -123,16 +123,6 @@ namespace CPvC
             _pos += b.Length;
         }
 
-        //public int ReadByte()
-        //{
-        //    if (_pos >= _bytes.Count)
-        //    {
-        //        return -1;
-        //    }
-
-        //    return _bytes[_pos++];
-        //}
-
         public byte ReadByte()
         {
             if (_pos >= _bytes.Count)
@@ -163,11 +153,6 @@ namespace CPvC
         public string ReadString()
         {
             return Encoding.UTF8.GetString(ReadArray());
-        }
-
-        public void Close()
-        {
-
         }
 
         public long Length
