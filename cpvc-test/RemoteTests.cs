@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CPvC.Test
 {
@@ -43,7 +44,7 @@ namespace CPvC.Test
         private CoreRequest _coreRequest = CoreRequest.KeyPress(Keys.A, true);
         private byte[] _coreRequestMsg = new byte[] { 0x07, 0x01, 58, 0xFF };
 
-        private byte[] _requestAvailableMachines = new byte[] { 0x05 };
+        private byte[] _requestAvailableMachinesMsg = new byte[] { 0x05 };
 
         private bool CoreRequestsEqual(CoreRequest request1, CoreRequest request2)
         {
@@ -170,7 +171,7 @@ namespace CPvC.Test
             _remote.SendRequestAvailableMachines();
 
             // Verify
-            _mockConnection.Verify(c => c.SendMessage(_requestAvailableMachines));
+            _mockConnection.Verify(c => c.SendMessage(_requestAvailableMachinesMsg));
         }
 
         [Test]
@@ -224,53 +225,141 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void ReceivePing()
+        public void ReceivePing([Values(false, true)] bool handler)
         {
+            // Setup
+            if (!handler)
+            {
+                _remote.ReceivePing = null;
+            }
+
             // Act
             _mockConnection.Raise(c => c.OnNewMessage += null, _pingMsg);
 
             // Verify
-            _mockPing.Verify(p => p(_pingResponse, _pingId));
+            if (handler)
+            {
+                _mockPing.Verify(p => p(_pingResponse, _pingId));
+            }
+            else
+            {
+                _mockPing.VerifyNoOtherCalls();
+            }
         }
 
         [Test]
-        public void ReceiveName()
+        public void ReceiveName([Values(false, true)] bool handler)
         {
+            // Setup
+            if (!handler)
+            {
+                _remote.ReceiveName = null;
+            }
+
             // Act
             _mockConnection.Raise(c => c.OnNewMessage += null, _nameMsg);
 
             // Verify
-            _mockName.Verify(p => p(_name));
+            if (handler)
+            {
+                _mockName.Verify(p => p(_name));
+            }
+            else
+            {
+                _mockName.VerifyNoOtherCalls();
+            }
         }
 
         [Test]
-        public void ReceiveCoreAction()
+        public void ReceiveCoreAction([Values(false, true)] bool handler)
         {
+            // Setup
+            if (!handler)
+            {
+                _remote.ReceiveCoreAction = null;
+            }
+
             // Act
             _mockConnection.Raise(c => c.OnNewMessage += null, _coreActionMsg);
 
             // Verify
-            _mockCoreAction.Verify(p => p(It.Is<CoreAction>(a => CoreActionsEqual(a, _coreAction))));
+            if (handler)
+            {
+                _mockCoreAction.Verify(p => p(It.Is<CoreAction>(a => CoreActionsEqual(a, _coreAction))));
+            }
+            else
+            {
+                _mockCoreAction.VerifyNoOtherCalls();
+            }
         }
 
         [Test]
-        public void ReceiveCoreRequest()
+        public void ReceiveCoreRequest([Values(false, true)] bool handler)
         {
+            // Setup
+            if (!handler)
+            {
+                _remote.ReceiveCoreRequest = null;
+            }
+
             // Act
             _mockConnection.Raise(c => c.OnNewMessage += null, _coreRequestMsg);
 
             // Verify
-            _mockCoreRequest.Verify(p => p(It.Is<CoreRequest>(r => CoreRequestsEqual(r, _coreRequest))));
+            if (handler)
+            {
+                _mockCoreRequest.Verify(p => p(It.Is<CoreRequest>(r => CoreRequestsEqual(r, _coreRequest))));
+            }
+            else
+            {
+                _mockCoreRequest.VerifyNoOtherCalls();
+            }
         }
 
         [Test]
-        public void ReceiveRequestAvailableMachines()
+        public void ReceiveRequestAvailableMachines([Values(false, true)] bool handler)
         {
+            // Setup
+            if (!handler)
+            {
+                _remote.ReceiveRequestAvailableMachines = null;
+            }
+
             // Act
-            _mockConnection.Raise(c => c.OnNewMessage += null, _requestAvailableMachines);
+            _mockConnection.Raise(c => c.OnNewMessage += null, _requestAvailableMachinesMsg);
 
             // Verify
-            _mockRequestAvailableMachines.Verify(p => p());
+            if (handler)
+            {
+                _mockRequestAvailableMachines.Verify(p => p());
+            }
+            else
+            {
+                _mockRequestAvailableMachines.VerifyNoOtherCalls();
+            }
+        }
+
+        [Test]
+        public void ReceiveAvailableMachines([Values(false, true)] bool handler)
+        {
+            // Setup
+            if (!handler)
+            {
+                _remote.ReceiveAvailableMachines = null;
+            }
+
+            // Act
+            _mockConnection.Raise(c => c.OnNewMessage += null, _availableMachinesMsg);
+
+            // Verify
+            if (handler)
+            {
+                _mockAvailableMachines.Verify(a => a(It.Is<List<string>>(m => m.SequenceEqual(_availableMachines))));
+            }
+            else
+            {
+                _mockAvailableMachines.VerifyNoOtherCalls();
+            }
         }
     }
 }
