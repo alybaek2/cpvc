@@ -29,7 +29,10 @@ namespace CPvC
         public Remote(IConnection connection)
         {
             _connection = connection;
-            _connection.OnNewMessage += OnNewMessage;
+            if (_connection != null)
+            {
+                _connection.OnNewMessage += OnNewMessage;
+            }
         }
 
         public ReceiveCoreActionDelegate ReceiveCoreAction { get; set; }
@@ -128,11 +131,6 @@ namespace CPvC
 
         private void OnNewMessage(byte[] msg)
         {
-            if (_connection == null)
-            {
-                return;
-            }
-
             MemoryByteStream bs = new MemoryByteStream(msg);
 
             byte id = bs.ReadByte();

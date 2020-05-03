@@ -239,19 +239,6 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void ReceiveDisconnected()
-        {
-            // Setup
-            _mockConnection.SetupGet(c => c.IsConnected).Returns(false);
-
-            // Act
-            _mockConnection.Raise(c => c.OnNewMessage += null, _pingMsg);
-
-            // Verify
-            _mockPing.VerifyNoOtherCalls();
-        }
-
-        [Test]
         public void ReceiveUnknown([Values(false, true)] bool handler)
         {
             // Setup
