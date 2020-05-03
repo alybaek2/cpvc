@@ -19,7 +19,7 @@ namespace CPvC
         protected List<byte> _currentMessage;
         private bool _escaped;
 
-        public NewMessageDelegate OnNewMessage { get; set; }
+        public event NewMessageDelegate OnNewMessage;
 
         protected byte[] _receiveData = new byte[1024];
         protected List<byte> _sendData;

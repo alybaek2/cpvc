@@ -11,7 +11,7 @@ namespace CPvC
         void SendMessage(byte[] msg);
         void Close();
 
-        NewMessageDelegate OnNewMessage { get; set; }
+        event NewMessageDelegate OnNewMessage;
 
         bool IsConnected { get; }
     }
