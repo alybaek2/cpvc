@@ -225,6 +225,56 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void SendDisconnected()
+        {
+            // Setup
+            _mockConnection.SetupGet(c => c.IsConnected).Returns(false);
+
+            // Act
+            _remote.SendPing(_pingResponse, _pingId);
+
+            // Verify
+            _mockConnection.VerifyGet(c => c.IsConnected);
+            _mockConnection.VerifyNoOtherCalls();
+        }
+
+        [Test]
+        public void ReceiveDisconnected()
+        {
+            // Setup
+            _mockConnection.SetupGet(c => c.IsConnected).Returns(false);
+
+            // Act
+            _mockConnection.Raise(c => c.OnNewMessage += null, _pingMsg);
+
+            // Verify
+            _mockPing.VerifyNoOtherCalls();
+        }
+
+        [Test]
+        public void ReceiveUnknown([Values(false, true)] bool handler)
+        {
+            // Setup
+            if (!handler)
+            {
+                _remote.ReceivePing = null;
+            }
+
+            // Act
+            _mockConnection.Raise(c => c.OnNewMessage += null, new byte[] { 99 });
+
+            // Verify
+            _mockPing.VerifyNoOtherCalls();
+            _mockPing.VerifyNoOtherCalls();
+            _mockName.VerifyNoOtherCalls();
+            _mockCoreAction.VerifyNoOtherCalls();
+            _mockCoreRequest.VerifyNoOtherCalls();
+            _mockAvailableMachines.VerifyNoOtherCalls();
+            _mockSelectMachine.VerifyNoOtherCalls();
+            _mockRequestAvailableMachines.VerifyNoOtherCalls();
+        }
+
+        [Test]
         public void ReceivePing([Values(false, true)] bool handler)
         {
             // Setup
@@ -267,6 +317,29 @@ namespace CPvC.Test
             else
             {
                 _mockName.VerifyNoOtherCalls();
+            }
+        }
+
+        [Test]
+        public void ReceiveSelectMachine([Values(false, true)] bool handler)
+        {
+            // Setup
+            if (!handler)
+            {
+                _remote.ReceiveSelectMachine = null;
+            }
+
+            // Act
+            _mockConnection.Raise(c => c.OnNewMessage += null, _selectMachineMsg);
+
+            // Verify
+            if (handler)
+            {
+                _mockSelectMachine.Verify(s => s(_selectMachine));
+            }
+            else
+            {
+                _mockSelectMachine.VerifyNoOtherCalls();
             }
         }
 
@@ -360,6 +433,26 @@ namespace CPvC.Test
             {
                 _mockAvailableMachines.VerifyNoOtherCalls();
             }
+        }
+
+        [Test]
+        public void Close()
+        {
+            // Act
+            _remote.Close();
+
+            // Verify
+            _mockConnection.Verify(c => c.Close());
+        }
+
+        [Test]
+        public void Dispose()
+        {
+            // Act
+            _remote.Dispose();
+
+            // Verify
+            _mockConnection.Verify(c => c.Close());
         }
     }
 }
