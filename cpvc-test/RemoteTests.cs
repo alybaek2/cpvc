@@ -1,6 +1,7 @@
 ﻿using Moq;
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 
 namespace CPvC.Test
 {
@@ -13,6 +14,9 @@ namespace CPvC.Test
         private Mock<ReceiveNameDelegate> _mockName;
         private Mock<ReceiveCoreActionDelegate> _mockCoreAction;
         private Mock<ReceiveCoreRequestDelegate> _mockCoreRequest;
+        private Mock<ReceiveAvailableMachinesDelegate> _mockAvailableMachines;
+        private Mock<ReceiveSelectMachineDelegate> _mockSelectMachine;
+        private Mock<ReceiveRequestAvailableMachinesDelegate> _mockRequestAvailableMachines;
 
         private byte[] _nameMsg = new byte[] { 0x06, 0x03, 0x00, 0x00, 0x00, 0x61, 0x62, 0x63 };
         private string _name = "abc";
@@ -108,7 +112,6 @@ namespace CPvC.Test
                 return false;
             }
 
-
             return true;
         }
 
@@ -131,11 +134,23 @@ namespace CPvC.Test
             _mockPing = new Mock<ReceivePingDelegate>();
             _mockPing.Setup(p => p(It.IsAny<bool>(), It.IsAny<UInt64>()));
 
+            _mockAvailableMachines = new Mock<ReceiveAvailableMachinesDelegate>();
+            _mockAvailableMachines.Setup(a => a(It.IsAny<List<string>>()));
+
+            _mockSelectMachine = new Mock<ReceiveSelectMachineDelegate>();
+            _mockSelectMachine.Setup(s => s(It.IsAny<string>()));
+
+            _mockRequestAvailableMachines = new Mock<ReceiveRequestAvailableMachinesDelegate>();
+            _mockRequestAvailableMachines.Setup(r => r());
+
             _remote = new Remote(_mockConnection.Object);
             _remote.ReceiveName = _mockName.Object;
             _remote.ReceivePing = _mockPing.Object;
             _remote.ReceiveCoreAction = _mockCoreAction.Object;
             _remote.ReceiveCoreRequest = _mockCoreRequest.Object;
+            _remote.ReceiveAvailableMachines = _mockAvailableMachines.Object;
+            _remote.ReceiveSelectMachine = _mockSelectMachine.Object;
+            _remote.ReceiveRequestAvailableMachines = _mockRequestAvailableMachines.Object;
         }
 
         [Test]
@@ -246,6 +261,16 @@ namespace CPvC.Test
 
             // Verify
             _mockCoreRequest.Verify(p => p(It.Is<CoreRequest>(r => CoreRequestsEqual(r, _coreRequest))));
+        }
+
+        [Test]
+        public void ReceiveRequestAvailableMachines()
+        {
+            // Act
+            _mockConnection.Raise(c => c.OnNewMessage += null, _requestAvailableMachines);
+
+            // Verify
+            _mockRequestAvailableMachines.Verify(p => p());
         }
     }
 }
