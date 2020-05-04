@@ -329,11 +329,11 @@ namespace CPvC.Test
                 case CoreRequest.Types.KeyPress:
                     return request1.KeyCode == request2.KeyCode && request1.KeyDown == request2.KeyDown;
                 case CoreRequest.Types.LoadCore:
-                    return request1.CoreState == request2.CoreState;
+                    return request1.CoreState.GetBytes().SequenceEqual(request2.CoreState.GetBytes());
                 case CoreRequest.Types.LoadDisc:
-                    return request1.Drive == request2.Drive && request1.MediaBuffer == request2.MediaBuffer;
+                    return request1.Drive == request2.Drive && request1.MediaBuffer.GetBytes().SequenceEqual(request2.MediaBuffer.GetBytes());
                 case CoreRequest.Types.LoadTape:
-                    return request1.MediaBuffer == request2.MediaBuffer;
+                    return request1.MediaBuffer.GetBytes().SequenceEqual(request2.MediaBuffer.GetBytes());
                 case CoreRequest.Types.Quit:
                     return true;
                 case CoreRequest.Types.Reset:
