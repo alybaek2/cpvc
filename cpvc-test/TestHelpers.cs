@@ -304,5 +304,75 @@ namespace CPvC.Test
 
             return machine;
         }
+
+        static public bool CoreRequestsEqual(CoreRequest request1, CoreRequest request2)
+        {
+            if (request1 == request2)
+            {
+                return true;
+            }
+
+            if (request1 == null || request2 == null)
+            {
+                return false;
+            }
+
+            if (request1.Type != request2.Type)
+            {
+                return false;
+            }
+
+            switch (request1.Type)
+            {
+                case CoreRequest.Types.CoreVersion:
+                    return request1.Version == request2.Version;
+                case CoreRequest.Types.KeyPress:
+                    return request1.KeyCode == request2.KeyCode && request1.KeyDown == request2.KeyDown;
+                case CoreRequest.Types.LoadCore:
+                    return request1.CoreState == request2.CoreState;
+                case CoreRequest.Types.LoadDisc:
+                    return request1.Drive == request2.Drive && request1.MediaBuffer == request2.MediaBuffer;
+                case CoreRequest.Types.LoadTape:
+                    return request1.MediaBuffer == request2.MediaBuffer;
+                case CoreRequest.Types.Quit:
+                    return true;
+                case CoreRequest.Types.Reset:
+                    return true;
+                case CoreRequest.Types.RunUntilForce:
+                    return request1.StopTicks == request2.StopTicks;
+            }
+
+            return false;
+        }
+
+        static public bool CoreActionsEqual(CoreAction action1, CoreAction action2)
+        {
+            if (!CoreRequestsEqual(action1, action2))
+            {
+                return false;
+            }
+
+            if (action1 == action2)
+            {
+                return true;
+            }
+
+            if (action1 == null || action2 == null)
+            {
+                return false;
+            }
+
+            if (action1.Type != action2.Type)
+            {
+                return false;
+            }
+
+            if (action1.Ticks != action2.Ticks)
+            {
+                return false;
+            }
+
+            return true;
+        }
     }
 }
