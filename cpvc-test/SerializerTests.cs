@@ -20,76 +20,102 @@ namespace CPvC.Test
 
         static object[] CoreRequestCases =
         {
-            new object[] { CoreRequest.KeyPress(Keys.A, true), new byte[] { 0x01, 58, 0xFF } },
-            new object[] { CoreRequest.Reset(), new byte[] { 0x02 } },
-            new object[] { CoreRequest.LoadDisc(1, new byte[] { 0x01, 0x02 }), new byte[] { 0x03, 0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } },
-            new object[] { CoreRequest.LoadTape(new byte[] { 0x01, 0x02 }), new byte[] { 0x04, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } },
-            new object[] { CoreRequest.RunUntilForce(0x0123456789abcdef ), new byte[] { 0x05, 0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01 } },
-            new object[] { CoreRequest.LoadCore(new MemoryBlob(new byte[] { 0x01, 0x02 })), new byte[] { 0x06, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } },
-            new object[] { CoreRequest.CoreVersion(257), new byte[] { 0x07, 0x01, 0x01, 0x00, 0x00 } }
+            new object[] { CoreRequest.KeyPress(Keys.A, true), new byte[] { 0x01, 58, 0xFF } , false },
+            new object[] { CoreRequest.Reset(), new byte[] { 0x02 } , false },
+            new object[] { CoreRequest.LoadDisc(1, new byte[] { 0x01, 0x02 }), new byte[] { 0x03, 0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
+            new object[] { CoreRequest.LoadTape(new byte[] { 0x01, 0x02 }), new byte[] { 0x04, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
+            new object[] { CoreRequest.RunUntilForce(0x0123456789abcdef ), new byte[] { 0x05, 0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01 } , false },
+            new object[] { CoreRequest.LoadCore(new MemoryBlob(new byte[] { 0x01, 0x02 })), new byte[] { 0x06, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
+            new object[] { CoreRequest.CoreVersion(257), new byte[] { 0x07, 0x01, 0x01, 0x00, 0x00 } , false },
+            new object[] { new CoreRequest((CoreRequest.Types) 99), new byte[] { 99 }, true }
         };
 
         static object[] CoreActionCases =
         {
-            new object[] { CoreAction.KeyPress(0x01234567, Keys.A, true), new byte[] { 0x01, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 58, 0xFF } },
-            new object[] { CoreAction.Reset(0x01234567), new byte[] { 0x02, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00 } },
-            new object[] { CoreAction.LoadDisc(0x01234567, 1, new MemoryBlob(new byte[] { 0x01, 0x02 })), new byte[] { 0x03, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } },
-            new object[] { CoreAction.LoadTape(0x01234567, new MemoryBlob(new byte[] { 0x01, 0x02 })), new byte[] { 0x04, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } },
-            new object[] { CoreAction.RunUntilForce(0x01234567, 0x0123456789abcdef ), new byte[] { 0x05, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01 } },
-            new object[] { CoreAction.LoadCore(0x01234567, new MemoryBlob(new byte[] { 0x01, 0x02 })), new byte[] { 0x06, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } },
-            new object[] { CoreAction.CoreVersion(0x01234567, 257), new byte[] { 0x07, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00 } }
+            new object[] { CoreAction.KeyPress(0x01234567, Keys.A, true), new byte[] { 0x01, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 58, 0xFF } , false },
+            new object[] { CoreAction.Reset(0x01234567), new byte[] { 0x02, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00 } , false },
+            new object[] { CoreAction.LoadDisc(0x01234567, 1, new MemoryBlob(new byte[] { 0x01, 0x02 })), new byte[] { 0x03, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
+            new object[] { CoreAction.LoadTape(0x01234567, new MemoryBlob(new byte[] { 0x01, 0x02 })), new byte[] { 0x04, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
+            new object[] { CoreAction.RunUntilForce(0x01234567, 0x0123456789abcdef ), new byte[] { 0x05, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01 } , false },
+            new object[] { CoreAction.LoadCore(0x01234567, new MemoryBlob(new byte[] { 0x01, 0x02 })), new byte[] { 0x06, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
+            new object[] { CoreAction.CoreVersion(0x01234567, 257), new byte[] { 0x07, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00 } , false },
+            new object[] { new CoreAction((CoreRequest.Types) 99, 0x01234567), new byte[] { 99 }, true }
         };
 
         [TestCaseSource("CoreRequestCases")]
-        public void CoreRequestToBytes(CoreRequest coreRequest, byte[] expectedBytes)
+        public void CoreRequestToBytes(CoreRequest coreRequest, byte[] expectedBytes, bool throws)
         {
             // Setup
             MemoryByteStream stream = new MemoryByteStream();
 
-            // Act
-            Serializer.CoreRequestToBytes(stream, coreRequest);
+            // Act and Verify
+            if (throws)
+            {
+                Assert.Throws<Exception>(() => Serializer.CoreRequestToBytes(stream, coreRequest));
+            }
+            else
+            {
+                Serializer.CoreRequestToBytes(stream, coreRequest);
 
-            // Verify
-            Assert.AreEqual(expectedBytes, stream.AsBytes());
+                Assert.AreEqual(expectedBytes, stream.AsBytes());
+            }
         }
 
         [TestCaseSource("CoreRequestCases")]
-        public void CoreRequestFromBytes(CoreRequest expectedCoreRequest, byte[] expectedBytes)
+        public void CoreRequestFromBytes(CoreRequest expectedCoreRequest, byte[] expectedBytes, bool throws)
         {
             // Setup
             MemoryByteStream stream = new MemoryByteStream(expectedBytes);
 
-            // Act
-            CoreRequest coreRequest = Serializer.CoreRequestFromBytes(stream);
+            // Act and Verify
+            if (throws)
+            {
+                Assert.Throws<Exception>(() => Serializer.CoreRequestFromBytes(stream));
+            }
+            else
+            {
+                CoreRequest coreRequest = Serializer.CoreRequestFromBytes(stream);
 
-            // Verify
-            Assert.True(CoreRequestsEqual(expectedCoreRequest, coreRequest));
+                Assert.True(CoreRequestsEqual(expectedCoreRequest, coreRequest));
+            }
         }
 
         [TestCaseSource("CoreActionCases")]
-        public void CoreActionToBytes(CoreAction coreAction, byte[] expectedBytes)
+        public void CoreActionToBytes(CoreAction coreAction, byte[] expectedBytes, bool throws)
         {
             // Setup
             MemoryByteStream stream = new MemoryByteStream();
 
             // Act
-            Serializer.CoreActionToBytes(stream, coreAction);
 
-            // Verify
-            Assert.AreEqual(expectedBytes, stream.AsBytes());
+            // Act and Verify
+            if (throws)
+            {
+                Assert.Throws<Exception>(() => Serializer.CoreActionToBytes(stream, coreAction));
+            }
+            else
+            {
+                Serializer.CoreActionToBytes(stream, coreAction);
+                Assert.AreEqual(expectedBytes, stream.AsBytes());
+            }
         }
 
         [TestCaseSource("CoreActionCases")]
-        public void CoreActionFromBytes(CoreAction expectedCoreAction, byte[] bytes)
+        public void CoreActionFromBytes(CoreAction expectedCoreAction, byte[] bytes, bool throws)
         {
             // Setup
             MemoryByteStream stream = new MemoryByteStream(bytes);
 
-            // Act
-            CoreAction coreAction = Serializer.CoreActionFromBytes(stream);
-
-            // Verify
-            Assert.True(CoreActionsEqual(expectedCoreAction, coreAction));
+            // Act and Verify
+            if (throws)
+            {
+                Assert.Throws<Exception>(() => Serializer.CoreActionFromBytes(stream));
+            }
+            else
+            {
+                CoreAction coreAction = Serializer.CoreActionFromBytes(stream);
+                Assert.True(CoreActionsEqual(expectedCoreAction, coreAction));
+            }
         }
 
         [Test]

@@ -191,12 +191,8 @@ namespace CPvC
                         return CoreAction.CoreVersion(ticks, version);
                     }
                 default:
-                    break;
+                    throw new Exception(String.Format("Unknown CoreAction type {0}!", type));
             }
-
-            // Should throw an exception?
-
-            return null;
         }
 
         static public CoreRequest CoreRequestFromBytes(MemoryByteStream stream)
@@ -247,12 +243,8 @@ namespace CPvC
                         return CoreRequest.CoreVersion(version);
                     }
                 default:
-                    break;
+                    throw new Exception(String.Format("Unknown CoreRequest type {0}!", type));
             }
-
-            // Should throw an exception?
-
-            return null;
         }
     }
 }
