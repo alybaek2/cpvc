@@ -53,10 +53,16 @@ namespace CPvC
             _remote.ReceiveCoreAction = ReceiveCoreAction;
             _remote.ReceivePing = ReceivePing;
             _remote.ReceiveName = ReceiveName;
+            _remote.CloseConnection = CloseConnection;
 
             _lastPing = 0;
             _connectionLatency = 0;
             _emulationLatency = 0;
+        }
+
+        private void CloseConnection()
+        {
+            Status = "Connection closed";
         }
 
         public void ReceiveCoreAction(CoreAction coreAction)

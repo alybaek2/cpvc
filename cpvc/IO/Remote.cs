@@ -28,11 +28,14 @@ namespace CPvC
 
         public Remote(IConnection connection)
         {
-            _connection = connection;
-            if (_connection != null)
+            if (connection == null)
             {
-                _connection.OnNewMessage += OnNewMessage;
+                throw new Exception("No connection specified!");
             }
+
+            _connection = connection;
+            _connection.OnNewMessage += OnNewMessage;
+            _connection.OnCloseConnection += OnCloseConnection;
         }
 
         public ReceiveCoreActionDelegate ReceiveCoreAction { get; set; }
@@ -42,6 +45,8 @@ namespace CPvC
         public ReceivePingDelegate ReceivePing { get; set; }
         public ReceiveNameDelegate ReceiveName { get; set; }
         public ReceiveCoreRequestDelegate ReceiveCoreRequest { get; set; }
+
+        public CloseConnectionDelegate CloseConnection { get; set; }
 
         public void Close()
         {
@@ -127,6 +132,11 @@ namespace CPvC
                     _connection.SendMessage(msg);
                 }
             }
+        }
+
+        private void OnCloseConnection()
+        {
+            CloseConnection?.Invoke();
         }
 
         private void OnNewMessage(byte[] msg)

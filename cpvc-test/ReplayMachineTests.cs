@@ -115,6 +115,16 @@ namespace CPvC.Test
             }
         }
 
+        [Test]
+        public void CanClose()
+        {
+            // Setup
+            using (ReplayMachine machine = CreateMachine())
+            {
+                // Verify
+                Assert.True(machine.CanClose());
+            }
+        }
 
         [Test]
         public void CloseTwice()
@@ -275,6 +285,25 @@ namespace CPvC.Test
 
                 // Verify
                 propChanged.Verify(p => p(replayMachine, It.Is<PropertyChangedEventArgs>(e => e.PropertyName == "Status")));
+            }
+        }
+
+        [Test]
+        public void Auditor()
+        {
+            // Setup
+            using (ReplayMachine replayMachine = CreateMachine())
+            {
+                Mock<MachineAuditorDelegate> auditor = new Mock<MachineAuditorDelegate>();
+                replayMachine.Auditors += auditor.Object;
+
+                // Act
+                replayMachine.Start();
+                Thread.Sleep(10);
+                replayMachine.Stop();
+
+                // Verify
+                auditor.Verify(a => a(It.Is<CoreAction>(coreAction => coreAction != null && coreAction.Type == CoreRequest.Types.RunUntilForce)), Times.AtLeastOnce());
             }
         }
     }

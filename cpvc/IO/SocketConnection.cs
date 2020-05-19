@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 namespace CPvC
 {
     public delegate void NewMessageDelegate(byte[] message);
+    public delegate void CloseConnectionDelegate();
 
     public class SocketConnection : IConnection, IDisposable
     {
@@ -15,16 +16,18 @@ namespace CPvC
         private const byte _escapeByte = 0xfe;
         private const byte _escapeEscapeByte = 0x00; // 0xfe 0x00 == 0xfe
         private const byte _escapeDelimByte = 0x01;  // 0xfe 0x01 == 0xff
+        private const byte _closeConnection = 0x02;
 
         protected List<byte> _currentMessage;
         private bool _escaped;
 
         public event NewMessageDelegate OnNewMessage;
+        public event CloseConnectionDelegate OnCloseConnection;
 
         protected byte[] _receiveData = new byte[1024];
         protected List<byte> _sendData;
 
-        protected Socket _socket;
+        protected ISocket _socket;
 
         public SocketConnection()
         {
@@ -32,7 +35,7 @@ namespace CPvC
             _sendData = new List<byte>();
         }
 
-        public SocketConnection(Socket socket) : this()
+        public SocketConnection(ISocket socket) : this()
         {
             _socket = socket;
 
@@ -52,10 +55,10 @@ namespace CPvC
             Close();
         }
 
-        static public SocketConnection ConnectToServer(string hostname, UInt16 port)
+        static public SocketConnection ConnectToServer(ISocket socket, string hostname, UInt16 port)
         {
             SocketConnection conn = new SocketConnection();
-            if (conn.Connect(hostname, port))
+            if (conn.Connect(socket, hostname, port))
             {
                 return conn;
             }
@@ -84,7 +87,7 @@ namespace CPvC
             }
         }
 
-        private bool Connect(string hostname, UInt16 port)
+        private bool Connect(ISocket socket, string hostname, UInt16 port)
         {
             System.Net.IPHostEntry host = System.Net.Dns.GetHostEntry(hostname);
             if (host.AddressList.Length <= 0)
@@ -107,7 +110,6 @@ namespace CPvC
                 return false;
             }
 
-            Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             System.Net.IPEndPoint ipEnd = new System.Net.IPEndPoint(ipAddr, port);
 
             try
@@ -134,6 +136,13 @@ namespace CPvC
         }
 
         public void Close()
+        {
+            SendRawMessage(new byte[] { _escapeByte, _closeConnection });
+
+            SocketClose();
+        }
+
+        private void SocketClose()
         {
             _socket?.Close();
             _socket = null;
@@ -169,6 +178,11 @@ namespace CPvC
                         case _escapeDelimByte:
                             _currentMessage.Add(_delimByte);
                             break;
+                        case _closeConnection:
+                            OnCloseConnection?.Invoke();
+                            SocketClose();
+
+                            return;
                         default:
                             // Unrecognized escape sequence!
                             break;
@@ -185,6 +199,11 @@ namespace CPvC
         {
             byte[] escapedMsg = EscapeMessageForSending(msg);
 
+            SendRawMessage(escapedMsg);
+        }
+
+        private void SendRawMessage(byte[] msg)
+        {
             lock (_sendData)
             {
                 if (_socket == null)
@@ -193,7 +212,7 @@ namespace CPvC
                 }
 
                 bool isEmpty = (_sendData.Count == 0);
-                _sendData.AddRange(escapedMsg);
+                _sendData.AddRange(msg);
 
                 if (isEmpty)
                 {

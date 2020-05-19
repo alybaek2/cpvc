@@ -134,6 +134,7 @@
     </Compile>
     <Compile Include="SerializerTests.cs" />
     <Compile Include="SettingsTests.cs" />
+    <Compile Include="SocketConnectionTests.cs" />
     <Compile Include="TestHelpers.cs" />
     <Compile Include="UnmanagedMemoryTests.cs" />
     <Compile Include="CommandTests.cs" />

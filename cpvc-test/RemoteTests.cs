@@ -170,6 +170,13 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void SendWithoutConnection()
+        {
+            // Act and Verify
+            Assert.Throws<Exception>(() => new Remote(null));
+        }
+
+        [Test]
         public void ReceiveUnknown([Values(false, true)] bool handler)
         {
             // Setup

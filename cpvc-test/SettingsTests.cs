@@ -55,5 +55,20 @@ namespace CPvC.Test
             // Verify
             Assert.AreEqual(recentlyOpened, settings.RecentlyOpened);
         }
+
+        [TestCase(null)]
+        [TestCase("abc")]
+        [TestCase("123")]
+        public void SetRemoteServers(string remoteServers)
+        {
+            // Setup
+            Settings settings = new Settings();
+
+            // Act
+            settings.RemoteServers = remoteServers;
+
+            // Verify
+            Assert.AreEqual(remoteServers, settings.RemoteServers);
+        }
     }
 }

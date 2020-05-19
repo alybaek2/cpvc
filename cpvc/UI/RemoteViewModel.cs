@@ -53,7 +53,7 @@ namespace CPvC
 
             ObservableCollection<RemoteMachineInfo> remoteMachines = new ObservableCollection<RemoteMachineInfo>();
 
-            IConnection connection = SocketConnection.ConnectToServer(ServerName, Port);
+            IConnection connection = SocketConnection.ConnectToServer(new Socket(), ServerName, Port);
             if (connection == null)
             {
                 return false;
@@ -155,7 +155,7 @@ namespace CPvC
             _settings = settings;
             _enableLivePreview = false;
 
-            _connection = SocketConnection.ConnectToServer(serverInfo.ServerName, serverInfo.Port);
+            _connection = SocketConnection.ConnectToServer(new Socket(), serverInfo.ServerName, serverInfo.Port);
             _remote = new Remote(_connection);
             _machine = new RemoteMachine(_remote);
         }

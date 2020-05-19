@@ -25,7 +25,7 @@ namespace CPvC
 
             if (_listeningSocket == null)
             {
-                _listeningSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                _listeningSocket = new Socket();
             }
 
             _listeningSocket.Bind(ipEnd);
@@ -55,7 +55,7 @@ namespace CPvC
 
             try
             {
-                Socket clientSocket = _listeningSocket.EndAccept(asyn);
+                ISocket clientSocket = _listeningSocket.EndAccept(asyn);
                 if (clientSocket != null)
                 {
                     SocketConnection com = new SocketConnection(clientSocket);

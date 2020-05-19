@@ -123,11 +123,13 @@
     <Compile Include="IO\IByteStream.cs" />
     <Compile Include="IO\IConnection.cs" />
     <Compile Include="IO\IFileByteStream.cs" />
+    <Compile Include="IO\ISocket.cs" />
     <Compile Include="IO\IStreamBlob.cs" />
     <Compile Include="IO\IStreamDiffBlob.cs" />
     <Compile Include="IO\MemoryByteStream.cs" />
     <Compile Include="IO\Remote.cs" />
     <Compile Include="IO\Serializer.cs" />
+    <Compile Include="IO\Socket.cs" />
     <Compile Include="IO\SocketConnection.cs" />
     <Compile Include="IO\SocketServer.cs" />
     <Compile Include="ISettings.cs" />

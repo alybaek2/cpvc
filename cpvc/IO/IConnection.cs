@@ -12,6 +12,7 @@ namespace CPvC
         void Close();
 
         event NewMessageDelegate OnNewMessage;
+        event CloseConnectionDelegate OnCloseConnection;
 
         bool IsConnected { get; }
     }

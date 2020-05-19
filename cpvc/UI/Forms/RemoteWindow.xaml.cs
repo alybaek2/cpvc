@@ -56,7 +56,7 @@ namespace CPvC.UI.Forms
                 return;
             }
 
-            IConnection connection = SocketConnection.ConnectToServer(info.ServerInfo.ServerName, info.ServerInfo.Port);
+            IConnection connection = SocketConnection.ConnectToServer(new Socket(), info.ServerInfo.ServerName, info.ServerInfo.Port);
             Remote remote = new Remote(connection);
             RemoteMachine machine = new RemoteMachine(remote);
             remote.SendSelectMachine(info.MachineName);
