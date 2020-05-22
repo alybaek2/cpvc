@@ -42,9 +42,7 @@ namespace CPvC
 
         public ISocket EndAccept(IAsyncResult asyncResult)
         {
-            System.Net.Sockets.Socket newSocket = _socket.EndAccept(asyncResult);
-
-            return new Socket(newSocket);
+            return new Socket(_socket.EndAccept(asyncResult));
         }
 
         public bool SendAsync(SocketAsyncEventArgs e)

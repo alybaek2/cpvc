@@ -1,7 +1,7 @@
 call .\buildkite\restore.bat cpvc-test\bin
 
 REM Generate code coverage files for cpvc (C#).
-%BUILD_OPENCOVER% -target:%BUILD_NUNIT% -targetargs:"cpvc-test\bin\x64\Debug\cpvc-test.dll" -filter:"+[cpvc]* +[cpvc-core-clr]* -[cpvc-test]*" -excludebyfile:"d:\agent\*";"c:\program files*";"*App.g.cs";"*.xaml.cs";"*.xaml";"*.Designer.cs" -hideskipped:All -register:user -output:cpvc-coverage.xml
+%BUILD_OPENCOVER% -target:%BUILD_NUNIT% -targetargs:"cpvc-test\bin\x64\Debug\cpvc-test.dll" -filter:"+[cpvc]* +[cpvc-core-clr]* -[cpvc-test]*" -excludebyfile:"d:\agent\*";"c:\program files*";"*App.g.cs";"*.xaml.cs";"*.xaml";"*.Designer.cs";"Socket.cs" -hideskipped:All -register:user -output:cpvc-coverage.xml
 
 REM Generate ReportGenerator reports from the original Cobertura files.
 %BUILD_NUGET% install ReportGenerator -Version 4.3.6
