@@ -8,7 +8,7 @@ using System.Net;
 
 namespace CPvC
 {
-    public interface ISocket
+    public interface ISocket : IDisposable
     {
         bool Connected { get; }
         IAsyncResult BeginReceive(byte[] buffer, int offset, int size, SocketFlags socketFlags, AsyncCallback callback, object state);

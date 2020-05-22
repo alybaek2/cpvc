@@ -30,6 +30,11 @@ namespace CPvC
             }
         }
 
+        public void Dispose()
+        {
+            Close();
+        }
+
         public IAsyncResult BeginReceive(byte[] buffer, int offset, int size, SocketFlags socketFlags, AsyncCallback callback, object state)
         {
             return _socket.BeginReceive(buffer, offset, size, socketFlags, callback, state);
