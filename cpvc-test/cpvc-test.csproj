@@ -119,6 +119,7 @@
     <Compile Include="HistoryEventTests.cs" />
     <Compile Include="KeyboardMappingTests.cs" />
     <Compile Include="MachineFileTests.cs" />
+    <Compile Include="MachineServerListenerTests.cs" />
     <Compile Include="MachineTests.cs" />
     <Compile Include="MachineViewModelTests.cs" />
     <Compile Include="MainViewModelTests.cs" />

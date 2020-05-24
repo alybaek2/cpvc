@@ -43,9 +43,9 @@ namespace CPvC
             _connections.Add(conn);
         }
 
-        public void Start(UInt16 port)
+        public void Start(ISocket socket, UInt16 port)
         {
-            _server.Start(port);
+            _server.Start(socket, port);
         }
 
         public void Stop()

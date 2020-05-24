@@ -11,7 +11,7 @@ namespace CPvC
 
     public class SocketServer
     {
-        private Socket _listeningSocket;
+        private ISocket _listeningSocket;
 
         public ClientConnectDelegate OnClientConnect { get; set; }
 
@@ -19,14 +19,13 @@ namespace CPvC
         {
         }
 
-        public void Start(UInt16 port)
+        public void Start(ISocket socket, UInt16 port)
         {
+            Stop();
+
             System.Net.IPEndPoint ipEnd = new System.Net.IPEndPoint(System.Net.IPAddress.Any, port);
 
-            if (_listeningSocket == null)
-            {
-                _listeningSocket = new Socket();
-            }
+            _listeningSocket = socket;
 
             _listeningSocket.Bind(ipEnd);
 
@@ -40,7 +39,7 @@ namespace CPvC
         {
             if (_listeningSocket != null)
             {
-                Socket socket = _listeningSocket;
+                ISocket socket = _listeningSocket;
                 _listeningSocket = null;
                 socket.Close();
             }

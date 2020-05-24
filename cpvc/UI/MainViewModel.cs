@@ -385,7 +385,7 @@ namespace CPvC.UI
             UInt16? port = _selectServerPort(defaultPort);
             if (port.HasValue)
             {
-                _machineServer.Start(port.Value);
+                _machineServer.Start(new Socket(), port.Value);
             }
         }
 
