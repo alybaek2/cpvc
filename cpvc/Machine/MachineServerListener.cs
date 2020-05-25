@@ -21,6 +21,14 @@ namespace CPvC
             _server.OnClientConnect += ClientConnect;
         }
 
+        public IEnumerable<MachineServerConnection> Connections
+        {
+            get
+            {
+                return _connections;
+            }
+        }
+
         private void ClientConnect(SocketConnection socket)
         {
             List<CoreMachine> openMachines = _machineViewModels.Where(m =>
