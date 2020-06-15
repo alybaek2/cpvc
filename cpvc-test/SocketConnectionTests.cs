@@ -95,8 +95,10 @@ namespace CPvC.Test
             mockSocket.Verify(s => s.Close(), Times.Once());
         }
 
-        [Test]
-        public void Receive()
+        [TestCase(new byte[] { 0x01, 0x02, 0xff       }, new byte[] { 0x01, 0x02 })]
+        [TestCase(new byte[] { 0x01, 0xfe, 0x00, 0xff }, new byte[] { 0x01, 0xfe })]
+        [TestCase(new byte[] { 0x01, 0xfe, 0x01, 0xff }, new byte[] { 0x01, 0xff })]
+        public void Receive(byte[] message, byte[] expected)
         {
             // Setup
             System.Threading.ManualResetEvent e = new System.Threading.ManualResetEvent(true);
@@ -105,15 +107,13 @@ namespace CPvC.Test
             AsyncCallback receiveCallback = null;
             Mock<ISocket> mockSocket = new Mock<ISocket>();
             mockSocket.Setup(s => s.BeginReceive(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<SocketFlags>(), It.IsAny<AsyncCallback>(), null)).Callback<byte[], int, int, SocketFlags, AsyncCallback, object>((b, offset, s, f, c, o) => {
-                // Request available machines...
-                b[0] = 0x05;
-                b[1] = 0xff;
+                message.CopyTo(b, 0);
 
                 receiveCallback = c;
-                });
+            });
 
             mockSocket.SetupGet(s => s.Connected).Returns(true);
-            mockSocket.Setup(s => s.EndReceive(It.IsAny<IAsyncResult>())).Returns(2);
+            mockSocket.Setup(s => s.EndReceive(It.IsAny<IAsyncResult>())).Returns(message.Length);
 
             SocketConnection connection = new SocketConnection(mockSocket.Object);
 
@@ -124,7 +124,34 @@ namespace CPvC.Test
             receiveCallback?.Invoke(mockResult.Object);
 
             // Verify
-            mockNewMessage.Verify(m => m(new byte[] { 0x05 }));
+            mockNewMessage.Verify(m => m(expected));
+        }
+
+        [TestCase(new byte[] { 0x01, 0x02 }, new byte[] { 0x01, 0x02, 0xff })]
+        [TestCase(new byte[] { 0x01, 0xfe }, new byte[] { 0x01, 0xfe, 0x00, 0xff })]
+        [TestCase(new byte[] { 0x01, 0xff }, new byte[] { 0x01, 0xfe, 0x01, 0xff })]
+        public void Send(byte[] message, byte[] expected)
+        {
+            // Setup
+            System.Threading.ManualResetEvent e = new System.Threading.ManualResetEvent(true);
+            Mock<IAsyncResult> mockResult = new Mock<IAsyncResult>();
+            mockResult.SetupGet(r => r.AsyncWaitHandle).Returns(e);
+            Mock<ISocket> mockSocket = new Mock<ISocket>();
+
+            SocketAsyncEventArgs sendAsyncArgs = null;
+            mockSocket.Setup(s => s.SendAsync(It.IsAny<SocketAsyncEventArgs>())).Callback<SocketAsyncEventArgs>((args) =>
+            {
+                sendAsyncArgs = args;
+            });
+
+            mockSocket.SetupGet(s => s.Connected).Returns(true);
+            SocketConnection connection = new SocketConnection(mockSocket.Object);
+
+            // Act
+            connection.SendMessage(message);
+
+            // Verify
+            Assert.AreEqual(expected, sendAsyncArgs.Buffer);
         }
     }
 }
