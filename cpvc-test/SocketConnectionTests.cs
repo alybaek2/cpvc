@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CPvC.Test
@@ -130,6 +131,7 @@ namespace CPvC.Test
         [TestCase(new byte[] { 0x01, 0x02 }, new byte[] { 0x01, 0x02, 0xff })]
         [TestCase(new byte[] { 0x01, 0xfe }, new byte[] { 0x01, 0xfe, 0x00, 0xff })]
         [TestCase(new byte[] { 0x01, 0xff }, new byte[] { 0x01, 0xfe, 0x01, 0xff })]
+        [TestCase(new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 }, new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0xff })]
         public void Send(byte[] message, byte[] expected)
         {
             // Setup
@@ -138,10 +140,14 @@ namespace CPvC.Test
             mockResult.SetupGet(r => r.AsyncWaitHandle).Returns(e);
             Mock<ISocket> mockSocket = new Mock<ISocket>();
 
-            SocketAsyncEventArgs sendAsyncArgs = null;
-            mockSocket.Setup(s => s.SendAsync(It.IsAny<SocketAsyncEventArgs>())).Callback<SocketAsyncEventArgs>((args) =>
+            List<byte> sent = new List<byte>();
+            mockSocket.Setup(s => s.SendAsync(It.IsAny<byte[]>(), It.IsAny<SendCallbackDelegate>())).Callback<byte[], SendCallbackDelegate>((buffer, callback) =>
             {
-                sendAsyncArgs = args;
+                // Pretend we're sending 4 bytes at a time.
+                int sentBytes = Math.Min(4, buffer.Length);
+                sent.AddRange(buffer.Take(sentBytes));
+
+                callback.Invoke(SocketError.Success, sentBytes);
             });
 
             mockSocket.SetupGet(s => s.Connected).Returns(true);
@@ -149,9 +155,11 @@ namespace CPvC.Test
 
             // Act
             connection.SendMessage(message);
+            connection.SendComplete.WaitOne(2000);
 
             // Verify
-            Assert.AreEqual(expected, sendAsyncArgs.Buffer);
+            Assert.AreEqual(expected, sent);
+            Assert.True(connection.SendComplete.WaitOne(0));
         }
     }
 }

@@ -50,9 +50,15 @@ namespace CPvC
             return new Socket(_socket.EndAccept(asyncResult));
         }
 
-        public bool SendAsync(SocketAsyncEventArgs e)
+        public bool SendAsync(byte[] buffer, SendCallbackDelegate callback)
         {
-            return _socket.SendAsync(e);
+            SocketAsyncEventArgs sendArgs = new SocketAsyncEventArgs();
+            sendArgs.SetBuffer(buffer, 0, buffer.Length);
+            sendArgs.Completed += new EventHandler<SocketAsyncEventArgs>((o, e) => {
+                callback(e.SocketError, e.BytesTransferred);
+            });
+
+            return _socket.SendAsync(sendArgs);
         }
 
         public void Close()

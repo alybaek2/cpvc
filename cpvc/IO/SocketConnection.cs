@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CPvC
@@ -27,12 +28,15 @@ namespace CPvC
         protected byte[] _receiveData = new byte[1024];
         protected List<byte> _sendData;
 
+        private ManualResetEvent _sendComplete;
+
         protected ISocket _socket;
 
         public SocketConnection()
         {
             _currentMessage = new List<byte>();
             _sendData = new List<byte>();
+            _sendComplete = new ManualResetEvent(false);
         }
 
         public SocketConnection(ISocket socket) : this()
@@ -47,6 +51,14 @@ namespace CPvC
             get
             {
                 return _socket?.Connected ?? false;
+            }
+        }
+
+        public ManualResetEvent SendComplete
+        {
+            get
+            {
+                return _sendComplete;
             }
         }
 
@@ -214,6 +226,11 @@ namespace CPvC
                 bool isEmpty = (_sendData.Count == 0);
                 _sendData.AddRange(msg);
 
+                if (_sendData.Count > 0)
+                {
+                    _sendComplete.Reset();
+                }
+
                 if (isEmpty)
                 {
                     SendQueuedDataASync();
@@ -229,27 +246,24 @@ namespace CPvC
                 return;
             }
 
-            byte[] bytesToSend = _sendData.ToArray();
-            SocketAsyncEventArgs sendArgs = new SocketAsyncEventArgs();
-            sendArgs.SetBuffer(bytesToSend, 0, bytesToSend.Length);
-            sendArgs.Completed += new EventHandler<SocketAsyncEventArgs>(SendCallback);
-
-            _socket.SendAsync(sendArgs);
+            _socket.SendAsync(_sendData.ToArray(), SendCallback);
         }
 
-        private void SendCallback(object sender, SocketAsyncEventArgs e)
+        private void SendCallback(SocketError error, int bytesTransferred)
         {
-            if (e.SocketError == SocketError.Success)
+            if (error == SocketError.Success)
             {
-                int bytesSuccessfullySent = e.BytesTransferred;
-
                 lock (_sendData)
                 {
-                    _sendData.RemoveRange(0, bytesSuccessfullySent);
+                    _sendData.RemoveRange(0, bytesTransferred);
 
                     if (_sendData.Count > 0)
                     {
                         SendQueuedDataASync();
+                    }
+                    else
+                    {
+                        _sendComplete.Set();
                     }
                 }
             }
