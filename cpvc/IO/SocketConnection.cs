@@ -101,18 +101,28 @@ namespace CPvC
 
         private bool Connect(ISocket socket, string hostname, UInt16 port)
         {
-            System.Net.IPHostEntry host = System.Net.Dns.GetHostEntry(hostname);
-            if (host.AddressList.Length <= 0)
+            System.Net.IPAddress[] addrs;
+
+            try
+            {
+                addrs = System.Net.Dns.GetHostAddresses(hostname);
+            }
+            catch (SocketException ex)
+            {
+                return false;
+            }
+
+            if (addrs.Length <= 0)
             {
                 return false;
             }
 
             System.Net.IPAddress ipAddr = null;
-            for (int f = 0; f < host.AddressList.Length; f++)
+            for (int f = 0; f < addrs.Length; f++)
             {
-                if (host.AddressList[f].AddressFamily == AddressFamily.InterNetwork)
+                if (addrs[f].AddressFamily == AddressFamily.InterNetwork)
                 {
-                    ipAddr = host.AddressList[f];
+                    ipAddr = addrs[f];
                     break;
                 }
             }

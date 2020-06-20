@@ -78,6 +78,45 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void BeginConnectException()
+        {
+            // Setup
+            System.Threading.ManualResetEvent e = new System.Threading.ManualResetEvent(true);
+            Mock<IAsyncResult> mockResult = new Mock<IAsyncResult>();
+            mockResult.SetupGet(r => r.AsyncWaitHandle).Returns(e);
+            Mock<ISocket> mockSocket = new Mock<ISocket>();
+            mockSocket.Setup(s => s.BeginConnect(It.IsAny<System.Net.EndPoint>(), It.IsAny<AsyncCallback>(), It.IsAny<object>())).Throws<SocketException>();
+            mockSocket.Setup(s => s.BeginReceive(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<System.Net.Sockets.SocketFlags>(), It.IsAny<AsyncCallback>(), It.IsAny<object>()));
+            mockSocket.SetupGet(s => s.Connected).Returns(false);
+
+            // Act
+            SocketConnection connection = SocketConnection.ConnectToServer(mockSocket.Object, "localhost", 6128);
+
+            // Verify
+            mockSocket.Verify(s => s.Close(), Times.Never());
+        }
+
+        [Test]
+        public void ConnectInvalidHostname()
+        {
+            // Setup
+            System.Threading.ManualResetEvent e = new System.Threading.ManualResetEvent(true);
+            Mock<IAsyncResult> mockResult = new Mock<IAsyncResult>();
+            mockResult.SetupGet(r => r.AsyncWaitHandle).Returns(e);
+            Mock<ISocket> mockSocket = new Mock<ISocket>();
+            mockSocket.Setup(s => s.BeginConnect(It.IsAny<System.Net.EndPoint>(), It.IsAny<AsyncCallback>(), It.IsAny<object>())).Returns(mockResult.Object);
+            mockSocket.Setup(s => s.BeginReceive(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<System.Net.Sockets.SocketFlags>(), It.IsAny<AsyncCallback>(), It.IsAny<object>()));
+            mockSocket.SetupGet(s => s.Connected).Returns(false);
+
+            // Act
+            SocketConnection connection = SocketConnection.ConnectToServer(mockSocket.Object, "ZZZ", 6128);
+
+            // Verify
+            Assert.IsNull(connection);
+            mockSocket.VerifyNoOtherCalls();
+        }
+
+        [Test]
         public void BeginReceiveException()
         {
             // Setup
@@ -126,6 +165,41 @@ namespace CPvC.Test
 
             // Verify
             mockNewMessage.Verify(m => m(expected));
+        }
+
+        [Test]
+        public void ReceiveCloseConnection()
+        {
+            // Setup
+            byte[] message = new byte[] { 0x01, 0xfe, 0x02 };
+            System.Threading.ManualResetEvent e = new System.Threading.ManualResetEvent(true);
+            Mock<IAsyncResult> mockResult = new Mock<IAsyncResult>();
+            mockResult.SetupGet(r => r.AsyncWaitHandle).Returns(e);
+            AsyncCallback receiveCallback = null;
+            Mock<ISocket> mockSocket = new Mock<ISocket>();
+            mockSocket.Setup(s => s.BeginReceive(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<SocketFlags>(), It.IsAny<AsyncCallback>(), null)).Callback<byte[], int, int, SocketFlags, AsyncCallback, object>((b, offset, s, f, c, o) => {
+                message.CopyTo(b, 0);
+
+                receiveCallback = c;
+            });
+
+            mockSocket.SetupGet(s => s.Connected).Returns(true);
+            mockSocket.Setup(s => s.EndReceive(It.IsAny<IAsyncResult>())).Returns(message.Length);
+
+            Mock<CloseConnectionDelegate> mockClose = new Mock<CloseConnectionDelegate>();
+            
+            SocketConnection connection = new SocketConnection(mockSocket.Object);
+            connection.OnCloseConnection += mockClose.Object;
+
+            Mock<NewMessageDelegate> mockNewMessage = new Mock<NewMessageDelegate>();
+            connection.OnNewMessage += mockNewMessage.Object;
+
+            // Act
+            receiveCallback?.Invoke(mockResult.Object);
+
+            // Verify
+            mockClose.Verify();
+            Assert.False(connection.IsConnected);
         }
 
         [TestCase(new byte[] { 0x01, 0x02 }, new byte[] { 0x01, 0x02, 0xff })]
