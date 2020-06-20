@@ -8,7 +8,7 @@ namespace CPvC
 {
     public interface IConnection
     {
-        void SendMessage(byte[] msg);
+        bool SendMessage(byte[] msg);
         void Close();
 
         event NewMessageDelegate OnNewMessage;

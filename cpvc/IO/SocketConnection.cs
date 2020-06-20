@@ -217,20 +217,20 @@ namespace CPvC
             }
         }
 
-        public void SendMessage(byte[] msg)
+        public bool SendMessage(byte[] msg)
         {
             byte[] escapedMsg = EscapeMessageForSending(msg);
 
-            SendRawMessage(escapedMsg);
+            return SendRawMessage(escapedMsg);
         }
 
-        private void SendRawMessage(byte[] msg)
+        private bool SendRawMessage(byte[] msg)
         {
             lock (_sendData)
             {
                 if (_socket == null)
                 {
-                    return;
+                    return false;
                 }
 
                 bool isEmpty = (_sendData.Count == 0);
@@ -245,6 +245,8 @@ namespace CPvC
                 {
                     SendQueuedDataASync();
                 }
+
+                return true;
             }
         }
 
