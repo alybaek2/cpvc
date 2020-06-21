@@ -15,6 +15,8 @@ namespace CPvC.Test
         private Mock<IAsyncResult> _mockResult;
         private Mock<ISocket> _mockSocket;
         private System.Threading.ManualResetEvent _mockEvent;
+        private byte[] _sendMessage;
+        private AsyncCallback _receiveCallback;
 
         private Moq.Language.Flow.ISetup<ISocket, IAsyncResult> _mockBeginConnect;
         private Moq.Language.Flow.ISetup<ISocket, IAsyncResult> _mockBeginReceive;
@@ -37,6 +39,15 @@ namespace CPvC.Test
             _mockEndReceive = _mockSocket.Setup(s => s.EndReceive(It.IsAny<IAsyncResult>()));
             _mockConnected = _mockSocket.SetupGet(s => s.Connected);
             _mockConnected.Returns(true);
+
+            _mockBeginReceive.Callback<byte[], int, int, SocketFlags, AsyncCallback, object>((b, offset, s, f, c, o) => {
+                _sendMessage?.CopyTo(b, 0);
+
+                _receiveCallback = c;
+            });
+
+            _sendMessage = null;
+            _receiveCallback = null;
         }
 
         [TestCase(null)]
@@ -147,12 +158,7 @@ namespace CPvC.Test
         public void Receive(byte[] message, byte[] expected)
         {
             // Setup
-            AsyncCallback receiveCallback = null;
-            _mockBeginReceive.Callback<byte[], int, int, SocketFlags, AsyncCallback, object>((b, offset, s, f, c, o) => {
-                message.CopyTo(b, 0);
-
-                receiveCallback = c;
-            });
+            _sendMessage = message;
 
             SocketConnection connection = new SocketConnection(_mockSocket.Object);
 
@@ -162,7 +168,7 @@ namespace CPvC.Test
             _mockSocket.Setup(s => s.EndReceive(It.IsAny<IAsyncResult>())).Returns(message.Length);
 
             // Act
-            receiveCallback?.Invoke(_mockResult.Object);
+            _receiveCallback?.Invoke(_mockResult.Object);
 
             // Verify
             mockNewMessage.Verify(m => m(expected));
@@ -186,16 +192,11 @@ namespace CPvC.Test
         public void Close()
         {
             // Setup
-            AsyncCallback receiveCallback = null;
-            _mockBeginReceive.Callback<byte[], int, int, SocketFlags, AsyncCallback, object>((b, offset, s, f, c, o) => {
-                receiveCallback = c;
-            });
-
             SocketConnection connection = new SocketConnection(_mockSocket.Object);
 
             // Act
             connection.Close();
-            receiveCallback?.Invoke(_mockResult.Object);
+            _receiveCallback?.Invoke(_mockResult.Object);
 
             // Verify
             _mockSocket.Verify(s => s.EndReceive(It.IsAny<IAsyncResult>()), Times.Never());
@@ -205,16 +206,11 @@ namespace CPvC.Test
         public void Disconnected()
         {
             // Setup
-            AsyncCallback receiveCallback = null;
-            _mockBeginReceive.Callback<byte[], int, int, SocketFlags, AsyncCallback, object>((b, offset, s, f, c, o) => {
-                receiveCallback = c;
-            });
-
             SocketConnection connection = new SocketConnection(_mockSocket.Object);
 
             // Act
             _mockConnected.Returns(false);
-            receiveCallback?.Invoke(_mockResult.Object);
+            _receiveCallback?.Invoke(_mockResult.Object);
 
             // Verify
             _mockSocket.Verify(s => s.EndReceive(It.IsAny<IAsyncResult>()), Times.Never());
@@ -224,16 +220,12 @@ namespace CPvC.Test
         public void EndReceiveException()
         {
             // Setup
-            AsyncCallback receiveCallback = null;
-            _mockBeginReceive.Callback<byte[], int, int, SocketFlags, AsyncCallback, object>((b, offset, s, f, c, o) => {
-                receiveCallback = c;
-            });
             _mockEndReceive.Throws<SocketException>();
 
             SocketConnection connection = new SocketConnection(_mockSocket.Object);
 
             // Act
-            receiveCallback?.Invoke(_mockResult.Object);
+            _receiveCallback?.Invoke(_mockResult.Object);
 
             // Verify
             _mockSocket.Verify(s => s.EndReceive(It.IsAny<IAsyncResult>()), Times.Once());
@@ -244,16 +236,11 @@ namespace CPvC.Test
         public void ResumeReceiveException()
         {
             // Setup
-            AsyncCallback receiveCallback = null;
-            _mockBeginReceive.Callback<byte[], int, int, SocketFlags, AsyncCallback, object>((b, offset, s, f, c, o) => {
-                receiveCallback = c;
-            });
-
             SocketConnection connection = new SocketConnection(_mockSocket.Object);
             _mockBeginReceive.Throws<SocketException>();
 
             // Act
-            receiveCallback?.Invoke(_mockResult.Object);
+            _receiveCallback?.Invoke(_mockResult.Object);
 
             // Verify
             _mockSocket.Verify(s => s.EndReceive(It.IsAny<IAsyncResult>()), Times.Once());
