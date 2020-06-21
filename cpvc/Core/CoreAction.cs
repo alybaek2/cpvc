@@ -108,40 +108,5 @@ namespace CPvC
                     return null;
             }
         }
-
-        public void DebugDump()
-        {
-            string str = "";
-
-            switch (Type)
-            {
-                case Types.CoreVersion:
-                    str = String.Format("Version: {0}", Version);
-                    break;
-                case Types.KeyPress:
-                    str = String.Format("Key: {0} {1}", KeyCode, KeyDown ? "down" : "up");
-                    break;
-                case Types.LoadDisc:
-                    str = String.Format("Load Disc: drive {0}, {1}", Drive, (MediaBuffer == null) ? "null" : MediaBuffer.GetBytes().Length.ToString());
-                    break;
-                case Types.LoadTape:
-                    str = String.Format("Load Tape: {0}", (MediaBuffer == null) ? "null" : MediaBuffer.GetBytes().Length.ToString());
-                    break;
-                case Types.Quit:
-                    str = "Quit";
-                    break;
-                case Types.Reset:
-                    str = "Reset";
-                    break;
-                case Types.RunUntilForce:
-                    str = String.Format("Run Until: {0}", StopTicks);
-                    break;
-                case Types.LoadCore:
-                    str = String.Format("Load Core: {0}", CoreState.GetBytes().Length);
-                    break;
-            }
-
-            Diagnostics.Trace(str);
-        }
     }
 }

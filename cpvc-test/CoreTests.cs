@@ -392,5 +392,30 @@ namespace CPvC.Test
                 Assert.AreEqual(state, loadedState);
             }
         }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void KeepRunning(bool keepRunning)
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                core.KeepRunning = keepRunning;
+                
+                // Act
+                core.Start();
+                Thread.Sleep(200);
+
+                // Verify
+                if (keepRunning)
+                {
+                    Assert.AreNotEqual(0, core.Ticks);
+                }
+                else
+                {
+                    Assert.Zero(core.Ticks);
+                }
+            }
+        }
     }
 }

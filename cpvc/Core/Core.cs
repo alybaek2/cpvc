@@ -293,11 +293,6 @@ namespace CPvC
 
         public bool KeepRunning
         {
-            get
-            {
-                return _keepRunning;
-            }
-
             set
             {
                 _keepRunning = value;
