@@ -332,14 +332,7 @@ namespace CPvC
 
             if (_socket != null && _socket.Connected)
             {
-                try
-                {
-                    ResumeReceive();
-                }
-                catch (SocketException e)
-                {
-                    System.Diagnostics.Debug.WriteLine(e);
-                }
+                ResumeReceive();
             }
             else
             {
