@@ -46,7 +46,7 @@ namespace CPvC
 
                 return false;
             }).Select(m => m.Machine as CoreMachine).ToList();
-            MachineServerConnection conn = new MachineServerConnection(socket, openMachines);
+            MachineServerConnection conn = new MachineServerConnection(new Remote(socket), openMachines);
 
             _connections.Add(conn);
         }

@@ -123,6 +123,7 @@
     <Compile Include="IO\IByteStream.cs" />
     <Compile Include="IO\IConnection.cs" />
     <Compile Include="IO\IFileByteStream.cs" />
+    <Compile Include="IO\IRemote.cs" />
     <Compile Include="IO\ISocket.cs" />
     <Compile Include="IO\IStreamBlob.cs" />
     <Compile Include="IO\IStreamDiffBlob.cs" />

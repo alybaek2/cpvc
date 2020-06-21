@@ -23,5 +23,7 @@ namespace CPvC
         string Name { get; set; }
         string Filepath { get; }
         IDisposable AutoPause();
+
+        MachineAuditorDelegate Auditors { get; set; }
     }
 }

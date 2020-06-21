@@ -4,9 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace CPvC.Test
 {
@@ -14,7 +12,7 @@ namespace CPvC.Test
     {
         private Mock<IAsyncResult> _mockResult;
         private Mock<ISocket> _mockSocket;
-        private System.Threading.ManualResetEvent _mockEvent;
+        private ManualResetEvent _mockEvent;
         private byte[] _sendMessage;
         private AsyncCallback _receiveCallback;
 

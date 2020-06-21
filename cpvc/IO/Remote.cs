@@ -14,7 +14,7 @@ namespace CPvC
     public delegate void ReceiveNameDelegate(string name);
     public delegate void ReceiveCoreRequestDelegate(CoreRequest request);
 
-    public class Remote: IDisposable
+    public class Remote: IRemote, IDisposable
     {
         private const byte _idAvailableMachines = 0x01;
         private const byte _idSelectMachine = 0x02;

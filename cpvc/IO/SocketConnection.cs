@@ -107,7 +107,7 @@ namespace CPvC
             {
                 addrs = System.Net.Dns.GetHostAddresses(hostname);
             }
-            catch (SocketException ex)
+            catch (SocketException)
             {
                 return false;
             }
