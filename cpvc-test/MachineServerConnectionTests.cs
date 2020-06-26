@@ -69,16 +69,20 @@ namespace CPvC.Test
             _mockRemote.Verify(r => r.SendAvailableMachines(new List<string> { _machines[0].Name }));
         }
 
-        [Test]
-        public void ReceiveSelectMachine()
+        [TestCase(1)]
+        [TestCase(2)]
+        public void ReceiveSelectMachine(int selectCount)
         {
             // Act
-            _receiveSelectMachine(_machines[0].Name);
+            for (int i = 0; i < selectCount; i++)
+            {
+                _receiveSelectMachine(_machines[0].Name);
+            }
 
             // Verify
-            _mockRemote.Verify(r => r.SendName(_machines[0].Name));
-            _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.LoadCore)));
-            _mockMachine.VerifySet(m => m.Auditors = It.IsAny<MachineAuditorDelegate>());
+            _mockRemote.Verify(r => r.SendName(_machines[0].Name), Times.Once());
+            _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.LoadCore)), Times.Once());
+            _mockMachine.VerifySet(m => m.Auditors = It.IsAny<MachineAuditorDelegate>(), Times.Once());
         }
 
         [Test]
