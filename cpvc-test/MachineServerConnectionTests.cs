@@ -43,6 +43,7 @@ namespace CPvC.Test
                 _mockMachines[i].SetupGet(m => m.Name).Returns(String.Format("Machine{0}", i));
                 _mockMachines[i].SetupGet(m => m.Core).Returns(core);
                 _mockMachines[i].SetupGet(m => m.Ticks).Returns(() => core.Ticks);
+                _mockMachines[i].SetupSet(m => m.Auditors = It.IsAny<MachineAuditorDelegate>()).Callback<MachineAuditorDelegate>(callback => core.Auditors += (Core c, CoreRequest r, CoreAction a) => callback(a));
             }
 
             _machines = _mockMachines.Select(m => m.Object).ToList();
@@ -110,7 +111,7 @@ namespace CPvC.Test
             _receiveSelectMachine(_machines[0].Name);
             _receiveSelectMachine(_machines[1].Name);
 
-            // Verify
+            // Verify - Todo: verify the sequence of these calls.
             _mockRemote.Verify(r => r.SendName(_machines[0].Name), Times.Once());
             _mockRemote.Verify(r => r.SendName(_machines[1].Name), Times.Once());
             _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.LoadCore)), Times.Exactly(2));
@@ -137,6 +138,20 @@ namespace CPvC.Test
             _mockRemote.Verify(r => r.SendName(_mockMachines[0].Object.Name));
             _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.LoadCore)));
             _mockMachines[0].VerifySet(m => m.Auditors = It.IsAny<MachineAuditorDelegate>());
+        }
+
+        [Test]
+        public void MachineAuditor()
+        {
+            // Setup
+            _receiveSelectMachine(_machines[0].Name);
+
+            // Act
+            _cores[0].PushRequest(CoreRequest.RunUntilForce(1));
+            RunForAWhile(_cores[0], 1);
+
+            // Verify
+            _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.RunUntilForce)));
         }
     }
 }
