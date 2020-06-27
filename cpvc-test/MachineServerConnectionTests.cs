@@ -21,22 +21,31 @@ namespace CPvC.Test
         private MachineServerConnection _serverConnection;
 
         private List<ICoreMachine> _machines;
-        private Mock<ICoreMachine> _mockMachine;
+        private List<Core> _cores;
+
+        private Mock<ICoreMachine>[] _mockMachines;
 
         [SetUp]
         public void Setup()
         {
-            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-            core.KeepRunning = false;
+            _cores = new List<Core>();
+            _mockMachines = new Mock<ICoreMachine>[2];
 
-            _mockMachine = new Mock<ICoreMachine>();
-            _mockMachine.SetupGet(m => m.Core).Returns(core);
-            _mockMachine.SetupGet(m => m.Ticks).Returns(() => core.Ticks);
-
-            _machines = new List<ICoreMachine>
+            for (int i = 0; i < _mockMachines.Length; i++)
             {
-                _mockMachine.Object
-            };
+                Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+                core.KeepRunning = false;
+
+                _cores.Add(core);
+
+                _mockMachines[i] = new Mock<ICoreMachine>();
+
+                _mockMachines[i].SetupGet(m => m.Name).Returns(String.Format("Machine{0}", i));
+                _mockMachines[i].SetupGet(m => m.Core).Returns(core);
+                _mockMachines[i].SetupGet(m => m.Ticks).Returns(() => core.Ticks);
+            }
+
+            _machines = _mockMachines.Select(m => m.Object).ToList();
 
             _mockRemote = new Mock<IRemote>();
 
@@ -49,14 +58,15 @@ namespace CPvC.Test
             _serverConnection = new MachineServerConnection(_mockRemote.Object, _machines);
         }
 
-        [Test]
-        public void ReceivePing()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ReceivePing(bool response)
         {
             // Act
-            _receivePing(false, 1234);
+            _receivePing(response, 1234);
 
             // Verify
-            _mockRemote.Verify(r => r.SendPing(true, 1234));
+            _mockRemote.Verify(r => r.SendPing(true, 1234), Times.Exactly(response ? 0 : 1));
         }
 
         [Test]
@@ -66,7 +76,8 @@ namespace CPvC.Test
             _receiveRequestAvailableMachines();
 
             // Verify
-            _mockRemote.Verify(r => r.SendAvailableMachines(new List<string> { _machines[0].Name }));
+            IEnumerable<string> machineNames = _machines.Select(m => m.Name);
+            _mockRemote.Verify(r => r.SendAvailableMachines(machineNames));
         }
 
         [TestCase(1)]
@@ -82,7 +93,30 @@ namespace CPvC.Test
             // Verify
             _mockRemote.Verify(r => r.SendName(_machines[0].Name), Times.Once());
             _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.LoadCore)), Times.Once());
-            _mockMachine.VerifySet(m => m.Auditors = It.IsAny<MachineAuditorDelegate>(), Times.Once());
+            _mockMachines[0].VerifySet(m => m.Auditors = It.IsAny<MachineAuditorDelegate>(), Times.Once());
+        }
+
+        [Test]
+        public void ReceiveSelectDifferentMachine()
+        {
+            // Setup
+            _mockRemote.SetupSet(r => r.ReceiveSelectMachine = It.IsAny<ReceiveSelectMachineDelegate>());
+            _mockMachines[0].SetupSet(m => m.Auditors = It.Is<MachineAuditorDelegate>(d => d != null));
+            _mockRemote.Setup(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.LoadCore)));
+            _mockRemote.Setup(r => r.SendName(_machines[1].Name));
+            _mockRemote.Setup(r => r.SendName(_machines[0].Name));
+
+            // Act
+            _receiveSelectMachine(_machines[0].Name);
+            _receiveSelectMachine(_machines[1].Name);
+
+            // Verify
+            _mockRemote.Verify(r => r.SendName(_machines[0].Name), Times.Once());
+            _mockRemote.Verify(r => r.SendName(_machines[1].Name), Times.Once());
+            _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.LoadCore)), Times.Exactly(2));
+            _mockMachines[0].VerifySet(m => m.Auditors = It.Is<MachineAuditorDelegate>(d => d != null), Times.Once());
+            _mockMachines[0].VerifySet(m => m.Auditors = null, Times.Once());
+            _mockMachines[1].VerifySet(m => m.Auditors = It.IsAny<MachineAuditorDelegate>(), Times.Once());
         }
 
         [Test]
@@ -92,17 +126,17 @@ namespace CPvC.Test
             CoreAction coreAction = CoreAction.RunUntilForce(0, 1000);
 
             // Act
-            _receiveSelectMachine(_mockMachine.Object.Name);
+            _receiveSelectMachine(_mockMachines[0].Object.Name);
             _receiveCoreAction(coreAction);
-            _mockMachine.Object.Core.Start();
+            _cores[0].Start();
             Thread.Sleep(100);
-            _mockMachine.Object.Core.Stop();
+            _cores[0].Stop();
 
             // Verify
             Assert.AreEqual(1000, _machines[0].Ticks);
-            _mockRemote.Verify(r => r.SendName(_mockMachine.Object.Name));
+            _mockRemote.Verify(r => r.SendName(_mockMachines[0].Object.Name));
             _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.LoadCore)));
-            _mockMachine.VerifySet(m => m.Auditors = It.IsAny<MachineAuditorDelegate>());
+            _mockMachines[0].VerifySet(m => m.Auditors = It.IsAny<MachineAuditorDelegate>());
         }
     }
 }
