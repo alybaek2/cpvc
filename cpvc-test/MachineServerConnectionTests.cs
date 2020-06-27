@@ -81,6 +81,19 @@ namespace CPvC.Test
             _mockRemote.Verify(r => r.SendAvailableMachines(machineNames));
         }
 
+        [Test]
+        public void ReceiveRequestNoAvailableMachines()
+        {
+            // Setup
+            _machines.Clear();
+
+            // Act
+            _receiveRequestAvailableMachines();
+
+            // Verify
+            _mockRemote.Verify(r => r.SendAvailableMachines(new List<string>()));
+        }
+
         [TestCase(1)]
         [TestCase(2)]
         public void ReceiveSelectMachine(int selectCount)
@@ -98,7 +111,7 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void ReceiveSelectDifferentMachine()
+        public void ReceiveSelectDifferentMachines()
         {
             // Setup
             _mockRemote.SetupSet(r => r.ReceiveSelectMachine = It.IsAny<ReceiveSelectMachineDelegate>());
@@ -110,6 +123,7 @@ namespace CPvC.Test
             // Act
             _receiveSelectMachine(_machines[0].Name);
             _receiveSelectMachine(_machines[1].Name);
+            _receiveSelectMachine("UnknownMachine");
 
             // Verify - Todo: verify the sequence of these calls.
             _mockRemote.Verify(r => r.SendName(_machines[0].Name), Times.Once());
@@ -117,7 +131,8 @@ namespace CPvC.Test
             _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.LoadCore)), Times.Exactly(2));
             _mockMachines[0].VerifySet(m => m.Auditors = It.Is<MachineAuditorDelegate>(d => d != null), Times.Once());
             _mockMachines[0].VerifySet(m => m.Auditors = null, Times.Once());
-            _mockMachines[1].VerifySet(m => m.Auditors = It.IsAny<MachineAuditorDelegate>(), Times.Once());
+            _mockMachines[1].VerifySet(m => m.Auditors = It.Is<MachineAuditorDelegate>(d => d != null), Times.Once());
+            _mockMachines[1].VerifySet(m => m.Auditors = null, Times.Once());
         }
 
         [Test]

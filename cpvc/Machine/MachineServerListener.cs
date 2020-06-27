@@ -31,21 +31,7 @@ namespace CPvC
 
         private void ClientConnect(SocketConnection socket)
         {
-            List<CoreMachine> openMachines = _machineViewModels.Where(m =>
-            {
-                CoreMachine cm = m.Machine as CoreMachine;
-                if (cm is IOpenableMachine om)
-                {
-                    return !om.RequiresOpen;
-                }
-
-                if (cm is Machine)
-                {
-                    return true;
-                }
-
-                return false;
-            }).Select(m => m.Machine as CoreMachine).ToList();
+            IEnumerable<ICoreMachine> openMachines = _machineViewModels.Where(m => m.Machine?.Core != null).Select(m => m.Machine);
             MachineServerConnection conn = new MachineServerConnection(new Remote(socket), openMachines);
 
             _connections.Add(conn);
