@@ -35,9 +35,13 @@ namespace CPvC.Test
             Mock<IAsyncResult> mockResult = new Mock<IAsyncResult>();
             mockResult.SetupGet(r => r.AsyncWaitHandle).Returns(e);
 
-            List<MachineViewModel> models = new List<MachineViewModel>();
+            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            Mock<ICoreMachine> mockMachine = new Mock<ICoreMachine>();
+            mockMachine.SetupGet(m => m.Core).Returns(core);
 
-            MachineServerListener listener = new MachineServerListener(models);
+            List<ICoreMachine> machines = new List<ICoreMachine> { mockMachine.Object };
+
+            MachineServerListener listener = new MachineServerListener(machines);
             Mock<ISocket> mockSocketListener = new Mock<ISocket>();
             Mock<ISocket> mockSocket = new Mock<ISocket>();
             AsyncCallback callback = null;

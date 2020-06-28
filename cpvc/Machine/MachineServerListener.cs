@@ -8,13 +8,13 @@ namespace CPvC
 {
     public class MachineServerListener
     {
-        private IEnumerable<MachineViewModel> _machineViewModels;
+        private IEnumerable<ICoreMachine> _machines;
         private SocketServer _server;
         private List<MachineServerConnection> _connections;
 
-        public MachineServerListener(IEnumerable<MachineViewModel> machines)
+        public MachineServerListener(IEnumerable<ICoreMachine> machines)
         {
-            _machineViewModels = machines;
+            _machines = machines;
             _connections = new List<MachineServerConnection>();
 
             _server = new SocketServer();
@@ -31,8 +31,7 @@ namespace CPvC
 
         private void ClientConnect(SocketConnection socket)
         {
-            IEnumerable<ICoreMachine> openMachines = _machineViewModels.Where(m => m.Machine?.Core != null).Select(m => m.Machine);
-            MachineServerConnection conn = new MachineServerConnection(new Remote(socket), openMachines);
+            MachineServerConnection conn = new MachineServerConnection(new Remote(socket), _machines);
 
             _connections.Add(conn);
         }

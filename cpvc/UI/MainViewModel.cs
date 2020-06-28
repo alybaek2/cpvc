@@ -90,7 +90,7 @@ namespace CPvC.UI
                 machineViewModel.RemoveCommand = removeMachineCommand;
             }
 
-            _machineServer = new MachineServerListener(MachineViewModels);
+            _machineServer = new MachineServerListener(MachineViewModels.Select(vm => vm.Machine).Where(m => m.Core != null));
 
             LoadRecentServersSetting();
 
