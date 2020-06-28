@@ -14,7 +14,7 @@ namespace CPvC
         IDisposable
     {
         private string _name;
-        private Remote _remote;
+        private IRemote _remote;
         private int _lastPing;
         private int _connectionLatency;
         private UInt64 _emulationLatency;
@@ -39,7 +39,7 @@ namespace CPvC
 
         public OnCloseDelegate OnClose { get; set; }
 
-        public RemoteMachine(Remote remote)
+        public RemoteMachine(IRemote remote)
         {
             Display = new Display();
             Display.GetFromBookmark(null);
@@ -123,7 +123,7 @@ namespace CPvC
 
         public void Close()
         {
-            _remote.Close();
+            _remote.Dispose();
             _core?.Stop();
             Core = null;
 

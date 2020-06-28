@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public interface IRemote
+    public interface IRemote : IDisposable
     {
         ReceiveCoreActionDelegate ReceiveCoreAction { get; set; }
         ReceiveSelectMachineDelegate ReceiveSelectMachine { get; set; }
