@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CPvC
 {
@@ -16,7 +12,7 @@ namespace CPvC
 
         UInt64 Ticks { get; }
         bool Running { get; }
-        byte Volume { get; set;  }
+        byte Volume { get; set; }
 
         string Status { get; set; }
 

@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace CPvC
 {
@@ -194,7 +191,7 @@ namespace CPvC
                 {
                     return _pos;
                 }
-            }            
+            }
         }
 
         public class DiffBlob : Blob, IStreamDiffBlob

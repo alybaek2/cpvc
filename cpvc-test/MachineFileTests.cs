@@ -76,7 +76,7 @@ namespace CPvC.Test
                 0x06,
                       0x19, 0x00, 0x00, 0x00
             };
-            
+
             // Act
             _file.WriteDelete(historyEvent);
 
@@ -240,7 +240,7 @@ namespace CPvC.Test
         public void WriteTape()
         {
             // Setup
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.LoadTape(100, new MemoryBlob(new byte[]{ 0x01, 0x02 })));
+            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.LoadTape(100, new MemoryBlob(new byte[] { 0x01, 0x02 })));
             byte[] expected = new byte[]
             {
                 0x04,

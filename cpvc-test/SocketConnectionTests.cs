@@ -38,7 +38,8 @@ namespace CPvC.Test
             _mockConnected = _mockSocket.SetupGet(s => s.Connected);
             _mockConnected.Returns(true);
 
-            _mockBeginReceive.Callback<byte[], int, int, SocketFlags, AsyncCallback, object>((b, offset, s, f, c, o) => {
+            _mockBeginReceive.Callback<byte[], int, int, SocketFlags, AsyncCallback, object>((b, offset, s, f, c, o) =>
+            {
                 _sendMessage?.CopyTo(b, 0);
 
                 _receiveCallback = c;
@@ -82,7 +83,7 @@ namespace CPvC.Test
             _mockConnected.Returns(success);
 
             // Act
-            SocketConnection connection =  SocketConnection.ConnectToServer(_mockSocket.Object, "localhost", 6128);
+            SocketConnection connection = SocketConnection.ConnectToServer(_mockSocket.Object, "localhost", 6128);
 
             // Verify
             if (success)
@@ -252,7 +253,8 @@ namespace CPvC.Test
             // Setup
             byte[] message = new byte[] { 0x01, 0xfe, 0x02 };
             AsyncCallback receiveCallback = null;
-            _mockBeginReceive.Callback<byte[], int, int, SocketFlags, AsyncCallback, object>((b, offset, s, f, c, o) => {
+            _mockBeginReceive.Callback<byte[], int, int, SocketFlags, AsyncCallback, object>((b, offset, s, f, c, o) =>
+            {
                 message.CopyTo(b, 0);
 
                 receiveCallback = c;

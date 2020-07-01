@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CPvC
 {
@@ -14,7 +11,7 @@ namespace CPvC
     public delegate void ReceiveNameDelegate(string name);
     public delegate void ReceiveCoreRequestDelegate(CoreRequest request);
 
-    public class Remote: IRemote, IDisposable
+    public class Remote : IRemote, IDisposable
     {
         private const byte _idAvailableMachines = 0x01;
         private const byte _idSelectMachine = 0x02;
@@ -39,7 +36,7 @@ namespace CPvC
         }
 
         public ReceiveCoreActionDelegate ReceiveCoreAction { get; set; }
-        public ReceiveSelectMachineDelegate ReceiveSelectMachine{ get; set; }
+        public ReceiveSelectMachineDelegate ReceiveSelectMachine { get; set; }
         public ReceiveRequestAvailableMachinesDelegate ReceiveRequestAvailableMachines { get; set; }
         public ReceiveAvailableMachinesDelegate ReceiveAvailableMachines { get; set; }
         public ReceivePingDelegate ReceivePing { get; set; }

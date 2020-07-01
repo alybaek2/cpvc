@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace CPvC
+﻿namespace CPvC
 {
     /// <summary>
     /// Interface for application-wide configuration settings.

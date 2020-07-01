@@ -1,9 +1,6 @@
 ﻿using Moq;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CPvC.Test
 {
@@ -42,15 +39,18 @@ namespace CPvC.Test
         {
             _readPos = 0;
             Content = new List<byte>();
-            Setup(s => s.Write(It.IsAny<byte>())).Callback<byte>(b => {
+            Setup(s => s.Write(It.IsAny<byte>())).Callback<byte>(b =>
+            {
                 Content.Add(b);
                 _readPos = Content.Count;
             });
-            Setup(s => s.Write(It.IsAny<byte[]>())).Callback<byte[]>(b => {
+            Setup(s => s.Write(It.IsAny<byte[]>())).Callback<byte[]>(b =>
+            {
                 Content.AddRange(b);
                 _readPos = Content.Count;
             });
-            Setup(s => s.ReadByte()).Returns(() => {
+            Setup(s => s.ReadByte()).Returns(() =>
+            {
                 if (_readPos >= Content.Count)
                 {
                     throw new Exception("End of file reached!");
@@ -58,7 +58,8 @@ namespace CPvC.Test
 
                 return Content[(int)_readPos++];
             });
-            Setup(s => s.ReadBytes(It.IsAny<byte[]>(), It.IsAny<int>())).Returns((byte[] bytes, int count) => {
+            Setup(s => s.ReadBytes(It.IsAny<byte[]>(), It.IsAny<int>())).Returns((byte[] bytes, int count) =>
+            {
                 int copied = Math.Min((int)(Content.Count - _readPos), count);
                 Content.CopyTo((int)_readPos, bytes, 0, copied);
                 _readPos += copied;

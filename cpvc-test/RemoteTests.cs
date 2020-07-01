@@ -29,7 +29,7 @@ namespace CPvC.Test
 
 
         private string _selectMachine = "abc";
-        private byte[] _selectMachineMsg = new byte[]{ 0x02, 0x03, 0x00, 0x00, 0x00, 0x61, 0x62, 0x63 };
+        private byte[] _selectMachineMsg = new byte[] { 0x02, 0x03, 0x00, 0x00, 0x00, 0x61, 0x62, 0x63 };
 
         private string[] _availableMachines = new string[] { "ABC", "DEF" };
         private byte[] _availableMachinesMsg = new byte[] {

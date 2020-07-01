@@ -638,7 +638,7 @@ namespace CPvC
         {
             return _nextEventId++;
         }
-        
+
         // IMachineFileReader implementation.
         public void SetName(string name)
         {

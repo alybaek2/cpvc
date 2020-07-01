@@ -401,7 +401,7 @@ namespace CPvC.Test
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.KeepRunning = keepRunning;
-                
+
                 // Act
                 core.Start();
                 Thread.Sleep(200);

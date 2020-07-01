@@ -383,7 +383,8 @@ namespace CPvC.Test
             }
 
             // Act and Verify
-            Assert.Throws<System.IndexOutOfRangeException>(() => {
+            Assert.Throws<System.IndexOutOfRangeException>(() =>
+            {
                 using (Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
                 {
                 }
@@ -736,7 +737,8 @@ namespace CPvC.Test
                 // Act and Verify - note that if CoreMachine.Core_set didn't do a check for reference
                 //                  equality between the new core and current core, an exception would
                 //                  later be thrown due to Dispose() being called.
-                Assert.DoesNotThrow(() => {
+                Assert.DoesNotThrow(() =>
+                {
                     machine.Core = machine.Core;
                 });
             }

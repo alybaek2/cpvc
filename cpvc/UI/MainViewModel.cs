@@ -97,7 +97,8 @@ namespace CPvC
             ActiveItem = this;
 
             _openMachineCommand = new Command(
-                p => {
+                p =>
+                {
                     try
                     {
                         OpenMachine(promptForFile, null, _fileSystem);
@@ -111,7 +112,8 @@ namespace CPvC
             );
 
             _newMachineCommand = new Command(
-                p => {
+                p =>
+                {
                     try
                     {
                         NewMachine(promptForFile, _fileSystem);
@@ -292,7 +294,7 @@ namespace CPvC
             }
 
             _model.Remove(viewModel.Machine as Machine);
-            
+
             RemoveMachineViewModel(viewModel);
         }
 

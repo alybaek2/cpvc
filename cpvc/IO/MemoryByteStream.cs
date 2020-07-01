@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace CPvC
 {
@@ -36,7 +35,7 @@ namespace CPvC
 
         public void Write(bool b)
         {
-            Write((byte) (b ? 0xFF : 0x00));
+            Write((byte)(b ? 0xFF : 0x00));
         }
 
         public bool ReadBool()

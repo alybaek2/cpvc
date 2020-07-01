@@ -1,5 +1,4 @@
-﻿using CPvC.UI;
-using Moq;
+﻿using Moq;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;

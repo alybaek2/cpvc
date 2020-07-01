@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net.Sockets;
 using System.Net;
+using System.Net.Sockets;
 
 namespace CPvC
 {
@@ -54,7 +50,8 @@ namespace CPvC
         {
             SocketAsyncEventArgs sendArgs = new SocketAsyncEventArgs();
             sendArgs.SetBuffer(buffer, 0, buffer.Length);
-            sendArgs.Completed += new EventHandler<SocketAsyncEventArgs>((o, e) => {
+            sendArgs.Completed += new EventHandler<SocketAsyncEventArgs>((o, e) =>
+            {
                 callback(e.SocketError, e.BytesTransferred);
             });
 

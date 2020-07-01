@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CPvC
 {
@@ -101,7 +97,7 @@ namespace CPvC
                         historyEvent = ReadLoadTape();
                         break;
                     case _idRunUntil:
-                        historyEvent = ReadRunUntil();                        
+                        historyEvent = ReadRunUntil();
                         break;
                     case _idLoadCore:
                         historyEvent = ReadLoadCore();
@@ -273,7 +269,7 @@ namespace CPvC
         {
             // Since keyCode can only be a value from 0 to 79 (0x00 to 0x4F), we can use the most significant
             // bit to hold the "down" state of the key, instead of wasting a byte for that.
-            byte keyCodeAndDown = (byte) ((keyDown ? 0x80 : 0x00) | keyCode);
+            byte keyCodeAndDown = (byte)((keyDown ? 0x80 : 0x00) | keyCode);
 
             WriteByte(_idKey);
             WriteInt32(id);

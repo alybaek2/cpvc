@@ -135,7 +135,8 @@ namespace CPvC.Test
                 machine.Close();
 
                 // Act and Verify
-                Assert.DoesNotThrow(() => {
+                Assert.DoesNotThrow(() =>
+                {
                     machine.Close();
                 });
             }
@@ -149,7 +150,8 @@ namespace CPvC.Test
             machine.Dispose();
 
             // Act and Verify
-            Assert.DoesNotThrow(() => {
+            Assert.DoesNotThrow(() =>
+            {
                 machine.Dispose();
             });
         }

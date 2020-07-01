@@ -32,7 +32,7 @@ namespace CPvC.Test
         {
             // Setup
             string filepath = TestHelpers.GetTempFilepath("test.txt");
-            
+
             System.IO.File.Delete(filepath);
 
             FileSystem fs = new FileSystem();
