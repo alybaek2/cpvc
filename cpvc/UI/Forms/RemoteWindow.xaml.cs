@@ -36,10 +36,9 @@ namespace CPvC.UI.Forms
             Close();
         }
 
-        private void _machineListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void MachineListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            RemoteMachineInfo info = _machineListBox.SelectedItem as RemoteMachineInfo;
-            if (info == null)
+            if (!(_machineListBox.SelectedItem is RemoteMachineInfo info))
             {
                 return;
             }

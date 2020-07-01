@@ -21,7 +21,7 @@
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
             <GroupBox Grid.Row="0" Grid.Column="0" Header="Machines" Margin="10,10,10,10" Width="170" HorizontalAlignment="Left">
-                <ListBox x:Name="_machineListBox" Margin="10" ItemsSource="{Binding Server.Machines}" MouseDoubleClick="_machineListBox_MouseDoubleClick" SelectedItem="{Binding SelectedMachine, Mode=TwoWay}">
+                <ListBox x:Name="_machineListBox" Margin="10" ItemsSource="{Binding Server.Machines}" MouseDoubleClick="MachineListBox_MouseDoubleClick" SelectedItem="{Binding SelectedMachine, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding MachineName}"/>
