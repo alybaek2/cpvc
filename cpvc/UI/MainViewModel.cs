@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Windows.Input;
 
-namespace CPvC.UI
+namespace CPvC
 {
     /// <summary>
     /// View Model for the main window.

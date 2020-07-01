@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
-namespace CPvC.UI
+namespace CPvC
 {
     /// <summary>
     /// Data model for the main window.

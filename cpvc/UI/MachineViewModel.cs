@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using static CPvC.UI.MainViewModel;
+using static CPvC.MainViewModel;
 
 namespace CPvC
 {
