@@ -12,7 +12,5 @@ namespace CPvC
     {
         void Close();
         bool CanClose();
-
-        OnCloseDelegate OnClose { get; set; }
     }
 }

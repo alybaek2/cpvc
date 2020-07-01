@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CPvC.UI;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -36,7 +37,7 @@ namespace CPvC
         private Command _turboCommand;
         private ICommand _removeCommand;
 
-        public MachineViewModel(ICoreMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, SelectItemDelegate selectItem)
+        public MachineViewModel(MainViewModel mainViewModel, ICoreMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, SelectItemDelegate selectItem)
         {
             Machine = machine;
             if (machine != null)
@@ -50,7 +51,11 @@ namespace CPvC
             );
 
             _closeCommand = new Command(
-                p => (machine as IClosableMachine)?.Close(),
+                p =>
+                {
+                    (machine as IClosableMachine)?.Close();
+                    mainViewModel?.Remove(this);
+                },
                 p => (machine as IClosableMachine)?.CanClose() ?? false
             );
 

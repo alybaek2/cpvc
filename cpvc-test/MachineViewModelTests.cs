@@ -66,7 +66,7 @@ namespace CPvC.Test
                 mockFileSystem.Setup(fileSystem => fileSystem.ReadBytes(filename)).Returns(new byte[1] { 0x02 });
             }
 
-            MachineViewModel machineViewModel = new MachineViewModel(nullMachine ? null : mockMachine.Object, mockFileSystem.Object, mockPrompt.Object, null, null, mockSelect.Object);
+            MachineViewModel machineViewModel = new MachineViewModel(null, nullMachine ? null : mockMachine.Object, mockFileSystem.Object, mockPrompt.Object, null, null, mockSelect.Object);
 
             ICommand command = getCommand(machineViewModel);
 
@@ -105,7 +105,7 @@ namespace CPvC.Test
             // Setup
             Mock<ICoreMachine> mockMachine = new Mock<ICoreMachine>();
             Mock<T> mockOpenableMachine = mockMachine.As<T>();
-            MachineViewModel model = new MachineViewModel(nullMachine ? null : mockMachine.Object, null, null, null, null, null);
+            MachineViewModel model = new MachineViewModel(null, nullMachine ? null : mockMachine.Object, null, null, null, null, null);
 
             // Act
             getCommand(model).Execute(parameter);
@@ -125,7 +125,7 @@ namespace CPvC.Test
             Mock<ICoreMachine> mockMachine = new Mock<ICoreMachine>();
             Mock<IOpenableMachine> mockOpenableMachine = mockMachine.As<IOpenableMachine>();
             mockOpenableMachine.SetupGet(x => x.RequiresOpen).Returns(requiresOpen);
-            MachineViewModel model = new MachineViewModel(nullMachine ? null : mockMachine.Object, null, null, null, null, null);
+            MachineViewModel model = new MachineViewModel(null, nullMachine ? null : mockMachine.Object, null, null, null, null, null);
 
             // Act
             model.OpenCommand.Execute(null);
@@ -145,7 +145,7 @@ namespace CPvC.Test
             Mock<ICoreMachine> mockMachine = new Mock<ICoreMachine>();
             Mock<IClosableMachine> mockClosableMachine = mockMachine.As<IClosableMachine>();
             mockClosableMachine.Setup(x => x.CanClose()).Returns(canClose);
-            MachineViewModel model = new MachineViewModel(nullMachine ? null : mockMachine.Object, null, null, null, null, null);
+            MachineViewModel model = new MachineViewModel(null, nullMachine ? null : mockMachine.Object, null, null, null, null, null);
 
             // Act
             model.CloseCommand.Execute(null);
@@ -171,7 +171,7 @@ namespace CPvC.Test
             }
             Mock<IPausableMachine> mockPausableMachine = mockMachine.As<IPausableMachine>();
             mockMachine.SetupGet(x => x.Running).Returns(running);
-            MachineViewModel model = new MachineViewModel(nullMachine ? null : mockMachine.Object, null, null, null, null, null);
+            MachineViewModel model = new MachineViewModel(null, nullMachine ? null : mockMachine.Object, null, null, null, null, null);
 
             // Act
             model.PauseCommand.Execute(null);
@@ -197,7 +197,7 @@ namespace CPvC.Test
             }
             Mock<IPausableMachine> mockPausableMachine = mockMachine.As<IPausableMachine>();
             mockMachine.SetupGet(x => x.Running).Returns(running);
-            MachineViewModel model = new MachineViewModel(nullMachine ? null : mockMachine.Object, null, null, null, null, null);
+            MachineViewModel model = new MachineViewModel(null, nullMachine ? null : mockMachine.Object, null, null, null, null, null);
 
             // Act
             model.ResumeCommand.Execute(null);

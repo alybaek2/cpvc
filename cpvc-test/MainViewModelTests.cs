@@ -627,8 +627,9 @@ namespace CPvC.Test
             MainViewModel viewModel = SetupViewModel(1, null, null, null);
 
             // Verify
-            Assert.AreEqual(1, viewModel.ReplayMachines.Count);
-            Assert.AreEqual("Test Replay", viewModel.ReplayMachines[0].Name);
+            IEnumerable<MachineViewModel> replayMachines = viewModel.MachineViewModels.Where(m => m.Machine is ReplayMachine);
+            Assert.AreEqual(1, replayMachines.Count());
+            Assert.AreEqual("Test Replay", replayMachines.ElementAt(0).Machine.Name);
         }
     }
 }

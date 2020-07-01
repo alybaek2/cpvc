@@ -72,7 +72,7 @@ namespace CPvC.UI
             _selectRemoteMachine = selectRemoteMachine;
             _selectServerPort = selectServerPort;
 
-            _nullMachineViewModel = new MachineViewModel(null, null, null, null, null, null);
+            _nullMachineViewModel = new MachineViewModel(this, null, null, null, null, null, null);
 
             _model = new MainModel(settings, fileSystem);
 
@@ -164,22 +164,6 @@ namespace CPvC.UI
             }
         }
 
-        public ObservableCollection<ReplayMachine> ReplayMachines
-        {
-            get
-            {
-                return _model.ReplayMachines;
-            }
-        }
-
-        public ObservableCollection<RemoteMachine> RemoteMachines
-        {
-            get
-            {
-                return _model.RemoteMachines;
-            }
-        }
-
         public Command OpenMachineCommand
         {
             get
@@ -260,15 +244,8 @@ namespace CPvC.UI
             ReplayMachine replayMachine = new ReplayMachine(finalEvent);
             replayMachine.Name = name;
 
-            ReplayMachines.Add(replayMachine);
-
             MachineViewModel machineViewModel = CreateMachineViewModel(replayMachine);
             AddMachineViewModel(machineViewModel);
-            replayMachine.OnClose += () =>
-            {
-                ReplayMachines.Remove(replayMachine);
-                RemoveMachineViewModel(machineViewModel);
-            };
 
             ActiveMachineViewModel = machineViewModel;
         }
@@ -309,27 +286,19 @@ namespace CPvC.UI
 
         public void Remove(MachineViewModel viewModel)
         {
+            if (viewModel.Machine is IClosableMachine closableMachine)
+            {
+                closableMachine.Close();
+            }
+
             _model.Remove(viewModel.Machine as Machine);
+            
             RemoveMachineViewModel(viewModel);
-            viewModel.CloseCommand.Execute(null);
         }
 
         public void CloseAll()
         {
-            Machine[] machines = _model.Machines.ToArray();
-            foreach (Machine machine in machines)
-            {
-                machine.Close();
-            }
-
-            ReplayMachine[] replayMachines = _model.ReplayMachines.ToArray();
-            foreach (ReplayMachine machine in replayMachines)
-            {
-                machine.Close();
-            }
-
-            RemoteMachine[] remoteMachines = _model.RemoteMachines.ToArray();
-            foreach (RemoteMachine machine in remoteMachines)
+            foreach (Machine machine in _model.Machines)
             {
                 machine.Close();
             }
@@ -363,7 +332,7 @@ namespace CPvC.UI
 
         private MachineViewModel CreateMachineViewModel(ICoreMachine machine)
         {
-            MachineViewModel machineViewModel = new MachineViewModel(machine, _fileSystem, _promptForFile, _promptForBookmark, _promptForName, _selectItem);
+            MachineViewModel machineViewModel = new MachineViewModel(this, machine, _fileSystem, _promptForFile, _promptForBookmark, _promptForName, _selectItem);
 
             Command removeMachineCommand = new Command(
                 p => Remove(machineViewModel),
@@ -404,15 +373,8 @@ namespace CPvC.UI
 
             UpdateRecentServersSettings();
 
-            RemoteMachines.Add(remoteMachine);
-
             MachineViewModel machineViewModel = CreateMachineViewModel(remoteMachine);
             AddMachineViewModel(machineViewModel);
-            remoteMachine.OnClose += () =>
-            {
-                RemoteMachines.Remove(remoteMachine);
-                RemoveMachineViewModel(machineViewModel);
-            };
 
             ActiveMachineViewModel = machineViewModel;
         }
@@ -438,15 +400,8 @@ namespace CPvC.UI
                 _remote.SendSelectMachine(availableMachines[0]);
                 _remote = null;
 
-                RemoteMachines.Add(remoteMachine);
-
                 MachineViewModel machineViewModel = CreateMachineViewModel(remoteMachine);
                 AddMachineViewModel(machineViewModel);
-                remoteMachine.OnClose += () =>
-                {
-                    RemoteMachines.Remove(remoteMachine);
-                    RemoveMachineViewModel(machineViewModel);
-                };
 
                 ActiveMachineViewModel = machineViewModel;
             }

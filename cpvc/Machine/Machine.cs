@@ -218,8 +218,6 @@ namespace CPvC
             _nextEventId = 0;
 
             Display?.EnableGreyscale(true);
-
-            OnClose?.Invoke();
         }
 
         /// <summary>

@@ -70,8 +70,6 @@ namespace CPvC
         public void Close()
         {
             Core = null;
-
-            OnClose?.Invoke();
         }
 
         public new void Start()

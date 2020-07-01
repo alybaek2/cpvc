@@ -126,8 +126,6 @@ namespace CPvC
             _remote.Dispose();
             _core?.Stop();
             Core = null;
-
-            OnClose?.Invoke();
         }
 
         public void Key(byte keycode, bool down)

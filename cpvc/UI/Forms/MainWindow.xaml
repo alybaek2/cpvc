@@ -54,8 +54,6 @@
                 <System:String>Machine.RequiresOpen</System:String>
             </CollectionViewSource.LiveFilteringProperties>
         </CollectionViewSource>
-        <CollectionViewSource x:Key="ReplayMachines" Source="{Binding ReplayMachines}"/>
-        <CollectionViewSource x:Key="RemoteMachines" Source="{Binding RemoteMachines}"/>
     </Window.Resources>
     <Grid AllowDrop="True" Margin="0,0,0,0" Background="#FFF0F0F0">
         <Grid.RowDefinitions>
