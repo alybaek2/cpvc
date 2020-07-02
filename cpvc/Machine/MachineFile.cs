@@ -303,14 +303,6 @@ namespace CPvC
             }
         }
 
-        private void ReadRunUntil(IMachineFileReader reader)
-        {
-            HistoryEvent historyEvent = ReadRunUntil();
-
-            reader.AddHistoryEvent(historyEvent);
-        }
-
-
         private HistoryEvent ReadReset()
         {
             lock (_byteStream)

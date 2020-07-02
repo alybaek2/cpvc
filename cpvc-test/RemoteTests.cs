@@ -166,6 +166,8 @@ namespace CPvC.Test
 
             // Verify
             _mockConnection.VerifyGet(c => c.IsConnected);
+            _mockConnection.VerifyGet(c => c.OnCloseConnection);
+            _mockConnection.VerifySet(c => c.OnCloseConnection = It.IsAny<CloseConnectionDelegate>());
             _mockConnection.VerifyNoOtherCalls();
         }
 

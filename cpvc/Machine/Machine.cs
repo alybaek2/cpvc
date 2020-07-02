@@ -29,8 +29,6 @@ namespace CPvC
     {
         private string _name;
 
-        public OnCloseDelegate OnClose { get; set; }
-
         public HistoryEvent CurrentEvent { get; private set; }
         public HistoryEvent RootEvent { get; private set; }
         private Dictionary<int, HistoryEvent> _historyEventById;
