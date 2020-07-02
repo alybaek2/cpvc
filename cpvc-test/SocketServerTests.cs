@@ -63,26 +63,32 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void ClientConnect()
+        public void ClientConnect([Values(false, true)] bool registerConnectCallback, [Values(false, true)] bool returnClientSocket)
         {
             // Setup
-            AsyncCallback callback = null;
+            AsyncCallback clientConnect = null;
             Mock<ISocket> mockSocket = new Mock<ISocket>();
             Mock<ISocket> mockClientSocket = new Mock<ISocket>();
             Mock<IAsyncResult> mockAsyncResult = new Mock<IAsyncResult>();
             SocketServer socketServer = new SocketServer();
-            mockSocket.Setup(s => s.BeginAccept(It.IsAny<AsyncCallback>(), null)).Callback<AsyncCallback, object>((c, o) => callback = c);
-            mockSocket.Setup(s => s.EndAccept(mockAsyncResult.Object)).Returns(mockClientSocket.Object);
+            Mock<ClientConnectDelegate> connectCallback = new Mock<ClientConnectDelegate>();
+            socketServer.OnClientConnect += registerConnectCallback ? connectCallback.Object : null;
+            mockSocket.Setup(s => s.BeginAccept(It.IsAny<AsyncCallback>(), null)).Callback<AsyncCallback, object>((c, o) => clientConnect = c);
+            mockSocket.Setup(s => s.EndAccept(mockAsyncResult.Object)).Returns(returnClientSocket ? mockClientSocket.Object : null);
 
             // Act
             socketServer.Start(mockSocket.Object, 6128);
-            callback.Invoke(mockAsyncResult.Object);
+            clientConnect(mockAsyncResult.Object);
 
             // Verify
             mockSocket.Verify(s => s.Bind(It.IsAny<System.Net.EndPoint>()), Times.Once());
             mockSocket.Verify(s => s.Listen(1), Times.Once());
             mockSocket.Verify(s => s.BeginAccept(It.IsAny<AsyncCallback>(), null), Times.Exactly(2));
-            mockClientSocket.Verify(s => s.BeginReceive(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<System.Net.Sockets.SocketFlags>(), It.IsAny<AsyncCallback>(), It.IsAny<object>()));
+            mockSocket.Verify(s => s.EndAccept(It.IsAny<IAsyncResult>()));
+
+            mockClientSocket.Verify(s => s.BeginReceive(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<System.Net.Sockets.SocketFlags>(), It.IsAny<AsyncCallback>(), It.IsAny<object>()), Times.Exactly(returnClientSocket ? 1 : 0));
+
+            connectCallback.Verify(c => c(It.IsAny<SocketConnection>()), Times.Exactly((returnClientSocket && registerConnectCallback) ? 1 : 0));
 
             // Note that calling VerifyNoOtherCalls on one Mock<ISocket> checks all Mock<ISocket> instances.
             // This is apparently a known issue with Moq. See https://github.com/moq/moq4/issues/892.
