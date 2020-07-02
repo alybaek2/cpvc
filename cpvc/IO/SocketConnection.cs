@@ -20,7 +20,7 @@ namespace CPvC
         private bool _escaped;
 
         public event NewMessageDelegate OnNewMessage;
-        public event CloseConnectionDelegate OnCloseConnection;
+        public CloseConnectionDelegate OnCloseConnection { get; set; }
 
         protected byte[] _receiveData = new byte[1024];
         protected List<byte> _sendData;

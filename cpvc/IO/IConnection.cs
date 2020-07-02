@@ -6,7 +6,7 @@
         void Close();
 
         event NewMessageDelegate OnNewMessage;
-        event CloseConnectionDelegate OnCloseConnection;
+        CloseConnectionDelegate OnCloseConnection { get; set; }
 
         bool IsConnected { get; }
     }

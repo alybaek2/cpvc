@@ -379,5 +379,26 @@ namespace CPvC.Test
             // Verify
             _mockConnection.Verify(c => c.Close());
         }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void CloseConnection(bool useCloseConnection)
+        {
+            // Setup
+            Mock<CloseConnectionDelegate> mockCloseConnection = new Mock<CloseConnectionDelegate>();
+            CloseConnectionDelegate connectionClose = null;
+            _mockConnection.SetupSet(c => c.OnCloseConnection = It.IsAny<CloseConnectionDelegate>()).Callback<CloseConnectionDelegate>(c => connectionClose = c);
+            Remote remote = new Remote(_mockConnection.Object);
+            if (useCloseConnection)
+            {
+                remote.CloseConnection += mockCloseConnection.Object;
+            }
+
+            // Act
+            connectionClose();
+
+            // Verify
+            mockCloseConnection.Verify(c => c(), Times.Exactly(useCloseConnection ? 1 : 0));
+        }
     }
 }
