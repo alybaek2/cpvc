@@ -69,11 +69,6 @@ namespace CPvC
             {
                 return _machine;
             }
-
-            set
-            {
-                _machine = value;
-            }
         }
 
         public bool LivePreviewEnabled
@@ -122,7 +117,7 @@ namespace CPvC
 
             if (current && (!previous || (_selectedMachineName != machineName)))
             {
-                _remote.SendSelectMachine(machineName ?? String.Empty);
+                _remote.SendSelectMachine(machineName);
             }
             else if (previous && !current)
             {

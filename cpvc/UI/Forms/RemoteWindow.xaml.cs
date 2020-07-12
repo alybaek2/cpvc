@@ -9,6 +9,7 @@ namespace CPvC.UI.Forms
     public partial class RemoteWindow : Window
     {
         private RemoteMachine _remoteMachine;
+        private ServerInfo _serverInfo;
 
         private RemoteViewModel _viewModel;
 
@@ -16,7 +17,8 @@ namespace CPvC.UI.Forms
         {
             InitializeComponent();
 
-            SocketConnection connection = SocketConnection.ConnectToServer(new Socket(), serverInfo.ServerName, serverInfo.Port);
+            _serverInfo = serverInfo;
+            IConnection connection = SocketConnection.ConnectToServer(new Socket(), serverInfo.ServerName, serverInfo.Port);
             IRemote remote = new Remote(connection);
 
             _viewModel = new RemoteViewModel(serverInfo, remote);
@@ -46,8 +48,7 @@ namespace CPvC.UI.Forms
                 return;
             }
 
-            ServerInfo serverInfo = _viewModel.Server;
-            IConnection connection = SocketConnection.ConnectToServer(new Socket(), serverInfo.ServerName, serverInfo.Port);
+            IConnection connection = SocketConnection.ConnectToServer(new Socket(), _serverInfo.ServerName, _serverInfo.Port);
             Remote remote = new Remote(connection);
             RemoteMachine machine = new RemoteMachine(remote);
             remote.SendSelectMachine(machineName);
@@ -63,7 +64,6 @@ namespace CPvC.UI.Forms
             if (_viewModel.Machine != null)
             {
                 _viewModel.Machine.Close();
-                _viewModel.Machine = null;
             }
         }
     }

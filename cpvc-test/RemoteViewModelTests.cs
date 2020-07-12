@@ -33,6 +33,9 @@ namespace CPvC.Test
             // Verify
             _mockRemote.Verify(r => r.SendRequestAvailableMachines(), Times.Once());
             Assert.AreEqual(new ObservableCollection<string> { "Machine1", "Machine2" }, _viewModel.MachineNames);
+            Assert.AreEqual("localhost", _viewModel.Server.ServerName);
+            Assert.AreEqual(6128, _viewModel.Server.Port);
+            Assert.IsNotNull(_viewModel.Machine);
         }
 
         [Test]
@@ -45,6 +48,7 @@ namespace CPvC.Test
             // Verify
             _mockRemote.Verify(r => r.SendSelectMachine("Machine1"), Times.Once());
             Assert.True(_viewModel.LivePreviewEnabled);
+            Assert.AreEqual("Machine1", _viewModel.SelectedMachineName);
         }
 
         [Test]
@@ -56,6 +60,7 @@ namespace CPvC.Test
             // Verify
             _mockRemote.Verify(r => r.SendSelectMachine("Machine1"), Times.Never());
             Assert.True(_viewModel.LivePreviewEnabled);
+            Assert.IsNull(_viewModel.SelectedMachineName);
         }
 
         [Test]
@@ -70,6 +75,7 @@ namespace CPvC.Test
             _mockRemote.Verify(r => r.SendSelectMachine("Machine1"), Times.Once());
             _mockRemote.Verify(r => r.SendSelectMachine("Machine2"), Times.Once());
             Assert.True(_viewModel.LivePreviewEnabled);
+            Assert.AreEqual("Machine2", _viewModel.SelectedMachineName);
         }
 
         [Test]
@@ -84,6 +90,7 @@ namespace CPvC.Test
             _mockRemote.Verify(r => r.SendSelectMachine("Machine1"), Times.Once());
             _mockRemote.Verify(r => r.SendSelectMachine(""), Times.Once());
             Assert.False(_viewModel.LivePreviewEnabled);
+            Assert.AreEqual("Machine1", _viewModel.SelectedMachineName);
         }
 
         [Test]
@@ -96,6 +103,7 @@ namespace CPvC.Test
             // Verify
             _mockRemote.Verify(r => r.SendSelectMachine(It.IsAny<string>()), Times.Never());
             Assert.True(_viewModel.LivePreviewEnabled);
+            Assert.IsNull(_viewModel.SelectedMachineName);
         }
 
         [Test]
@@ -109,6 +117,7 @@ namespace CPvC.Test
             // Verify
             _mockRemote.Verify(r => r.SendSelectMachine("Machine1"), Times.Once());
             Assert.True(_viewModel.LivePreviewEnabled);
+            Assert.AreEqual("Machine1", _viewModel.SelectedMachineName);
         }
 
         [Test]
@@ -122,6 +131,7 @@ namespace CPvC.Test
             // Verify
             _mockRemote.Verify(r => r.SendSelectMachine("Machine1"), Times.Never());
             Assert.False(_viewModel.LivePreviewEnabled);
+            Assert.AreEqual("Machine1", _viewModel.SelectedMachineName);
         }
     }
 }

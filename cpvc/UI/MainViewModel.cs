@@ -295,9 +295,13 @@ namespace CPvC
 
         public void CloseAll()
         {
-            foreach (Machine machine in _model.Machines)
+            lock (MachineViewModels)
             {
-                machine.Close();
+                foreach (MachineViewModel model in MachineViewModels)
+                {
+                    IClosableMachine machine = model.Machine as IClosableMachine;
+                    machine?.Close();
+                }
             }
         }
 
