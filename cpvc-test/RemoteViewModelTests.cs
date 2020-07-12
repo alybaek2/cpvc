@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -41,6 +42,10 @@ namespace CPvC.Test
         [Test]
         public void EnableLivePreview()
         {
+            // Setup
+            Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
+            _viewModel.PropertyChanged += propChanged.Object;
+
             // Act
             _viewModel.LivePreviewEnabled = true;
             _viewModel.SelectedMachineName = "Machine1";
@@ -49,6 +54,8 @@ namespace CPvC.Test
             _mockRemote.Verify(r => r.SendSelectMachine("Machine1"), Times.Once());
             Assert.True(_viewModel.LivePreviewEnabled);
             Assert.AreEqual("Machine1", _viewModel.SelectedMachineName);
+            propChanged.Verify(p => p(_viewModel, It.Is<PropertyChangedEventArgs>(e => e.PropertyName == "SelectedMachineName")));
+            propChanged.Verify(p => p(_viewModel, It.Is<PropertyChangedEventArgs>(e => e.PropertyName == "LivePreviewEnabled")));
         }
 
         [Test]
