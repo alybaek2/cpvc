@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
+using static CPvC.MainViewModel;
 using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
@@ -14,7 +15,9 @@ namespace CPvC.Test
     {
         private Mock<ISettings> _mockSettings;
         private Mock<IFileSystem> _mockFileSystem;
-
+        private Mock<ISocket> _mockSocket;
+        private Mock<SelectRemoteMachineDelegate> _mockSelectRemoveMachine;
+        private Mock<SelectServerPortDelegate> _mockSelectServerPort;
         private string _settingGet;
 
         private MockFileByteStream _mockBinaryWriter;
@@ -26,6 +29,7 @@ namespace CPvC.Test
             _mockSettings.SetupGet(x => x.RecentlyOpened).Returns(() => _settingGet);
             _mockSettings.SetupSet(x => x.RecentlyOpened = It.IsAny<string>());
             _mockSettings.SetupGet(x => x.RemoteServers).Returns(() => String.Empty);
+            _mockSettings.SetupSet(x => x.RemoteServers = It.IsAny<string>());
 
             _mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
             _mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(AnyString()));
@@ -37,6 +41,10 @@ namespace CPvC.Test
             _mockBinaryWriter = new MockFileByteStream();
 
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream(AnyString())).Returns(_mockBinaryWriter.Object);
+
+            _mockSocket = new Mock<ISocket>();
+            _mockSelectServerPort = new Mock<SelectServerPortDelegate>();
+            _mockSelectRemoveMachine = new Mock<SelectRemoteMachineDelegate>();
         }
 
         [TearDown]
@@ -60,7 +68,7 @@ namespace CPvC.Test
                       0x00
             };
 
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object, null, mockPromptForFile?.Object, mockPromptForBookmark?.Object, mockPromptForName?.Object, null, null, null);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object, null, mockPromptForFile?.Object, mockPromptForBookmark?.Object, mockPromptForName?.Object, null, _mockSelectRemoveMachine.Object, _mockSelectServerPort.Object, () => _mockSocket.Object);
 
             // Create a Replay machine.
             HistoryEvent historyEvent = null;
@@ -115,7 +123,7 @@ namespace CPvC.Test
             // Act and Verify
             Exception ex = Assert.Throws<Exception>(() =>
             {
-                MainViewModel viewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object, null, null, null, null, null, null, null);
+                MainViewModel viewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object, null, null, null, null, null, null, null, () => new Socket());
                 viewModel.NewMachine(prompt.Object, mockFileSystem.Object);
             });
             Assert.AreEqual(ex.Message, "File not found");
@@ -202,7 +210,8 @@ namespace CPvC.Test
         public void OpenInvalid()
         {
             // Setup
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, null, null, null, null, null, null, null);
+            Mock<ISocket> mockSocket = new Mock<ISocket>();
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, null, null, null, null, null, null, null, () => mockSocket.Object);
             Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, "test.cpvc");
             _mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(true);
 
@@ -214,10 +223,11 @@ namespace CPvC.Test
         public void OpenNonExistantFile()
         {
             // Setup
+            Mock<ISocket> mockSocket = new Mock<ISocket>();
             _settingGet = "Test;test.cpvc";
 
             // Act
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, null, null, null, null, null, null, null);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, null, null, null, null, null, null, null, () => mockSocket.Object);
 
             // Verify
             Assert.AreEqual(0, viewModel.Machines.Count);
@@ -629,6 +639,88 @@ namespace CPvC.Test
             IEnumerable<MachineViewModel> replayMachines = viewModel.MachineViewModels.Where(m => m.Machine is ReplayMachine);
             Assert.AreEqual(1, replayMachines.Count());
             Assert.AreEqual("Test Replay", replayMachines.ElementAt(0).Machine.Name);
+        }
+
+        [Test]
+        public void StartServerSelectCancel()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+            _mockSelectServerPort.Setup(s => s(It.IsAny<ushort>())).Returns(() => null);
+
+            // Act
+            viewModel.StartServerCommand.Execute(null);
+
+            // Verify
+            _mockSelectServerPort.Verify(s => s(6128), Times.Once());
+            _mockSocket.VerifyNoOtherCalls();
+        }
+
+        [TestCase(6128)]
+        [TestCase(9999)]
+        public void StartServerSelectOk(int port)
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+            _mockSelectServerPort.Setup(s => s(It.IsAny<ushort>())).Returns(() => (ushort)port);
+
+            // Act
+            viewModel.StartServerCommand.Execute(null);
+
+            // Verify
+            _mockSelectServerPort.Verify(s => s(6128), Times.Once());
+            _mockSocket.Verify(s => s.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.Any, (ushort)port)), Times.Once());
+            _mockSocket.Verify(s => s.Listen(1), Times.Once());
+            _mockSocket.Verify(s => s.BeginAccept(It.IsAny<AsyncCallback>(), null), Times.Once());
+        }
+
+        [Test]
+        public void StopServer()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+            _mockSelectServerPort.Setup(s => s(It.IsAny<ushort>())).Returns(() => 6128);
+            viewModel.StartServerCommand.Execute(null);
+
+            // Act
+            viewModel.StopServerCommand.Execute(null);
+
+            // Verify
+            _mockSocket.Verify(s => s.Close(), Times.Once());
+        }
+
+        [Test]
+        public void Connect()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+            Mock<IRemote> mockRemote = new Mock<IRemote>();
+            RemoteMachine machine = new RemoteMachine(mockRemote.Object);
+            _mockSelectRemoveMachine.Setup(s => s(It.IsAny<ServerInfo>())).Returns(() => machine);
+
+            // Act
+            viewModel.ConnectCommand.Execute(null);
+
+            // Verify
+            _mockSelectRemoveMachine.Verify(s => s(It.IsAny<ServerInfo>()), Times.Once());
+            Assert.AreEqual(machine, viewModel.ActiveMachineViewModel.Machine);
+        }
+
+        [Test]
+        public void ConnectCancel()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+            Mock<IRemote> mockRemote = new Mock<IRemote>();
+            RemoteMachine machine = new RemoteMachine(mockRemote.Object);
+            _mockSelectRemoveMachine.Setup(s => s(It.IsAny<ServerInfo>())).Returns(() => null);
+
+            // Act
+            viewModel.ConnectCommand.Execute(null);
+
+            // Verify
+            _mockSelectRemoveMachine.Verify(s => s(It.IsAny<ServerInfo>()), Times.Once());
+            Assert.AreNotEqual(machine, viewModel.ActiveMachineViewModel.Machine);
         }
     }
 }

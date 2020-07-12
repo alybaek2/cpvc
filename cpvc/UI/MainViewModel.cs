@@ -21,6 +21,7 @@ namespace CPvC
         public delegate void ReportErrorDelegate(string message);
         public delegate RemoteMachine SelectRemoteMachineDelegate(ServerInfo serverInfo);
         public delegate UInt16? SelectServerPortDelegate(UInt16 defaultPort);
+        public delegate ISocket CreateSocketDelegate();
 
         /// <summary>
         /// The data model associated with this view model.
@@ -56,7 +57,7 @@ namespace CPvC
 
         private ISettings _settings;
 
-        public MainViewModel(ISettings settings, IFileSystem fileSystem, SelectItemDelegate selectItem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, ReportErrorDelegate reportError, SelectRemoteMachineDelegate selectRemoteMachine, SelectServerPortDelegate selectServerPort)
+        public MainViewModel(ISettings settings, IFileSystem fileSystem, SelectItemDelegate selectItem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, ReportErrorDelegate reportError, SelectRemoteMachineDelegate selectRemoteMachine, SelectServerPortDelegate selectServerPort, CreateSocketDelegate createSocket)
         {
             _settings = settings;
             _fileSystem = fileSystem;
@@ -122,7 +123,7 @@ namespace CPvC
             );
 
             _startServerCommand = new Command(
-                p => StartServer(6128),
+                p => StartServer(6128, createSocket()),
                 p => true
             );
 
@@ -155,18 +156,12 @@ namespace CPvC
 
         public ObservableCollection<MachineViewModel> MachineViewModels
         {
-            get
-            {
-                return _machineViewModels;
-            }
+            get { return _machineViewModels; }
         }
 
         public Command OpenMachineCommand
         {
-            get
-            {
-                return _openMachineCommand;
-            }
+            get { return _openMachineCommand; }
         }
 
         public Command NewMachineCommand
@@ -346,12 +341,12 @@ namespace CPvC
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        public void StartServer(UInt16 defaultPort)
+        public void StartServer(UInt16 defaultPort, ISocket socket)
         {
             UInt16? port = _selectServerPort(defaultPort);
             if (port.HasValue)
             {
-                _machineServer.Start(new Socket(), port.Value);
+                _machineServer.Start(socket, port.Value);
             }
         }
 
