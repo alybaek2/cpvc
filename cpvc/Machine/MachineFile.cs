@@ -74,41 +74,6 @@ namespace CPvC
                 }
             }
         }
-        public CoreAction ReadCoreAction()
-        {
-            lock (_byteStream)
-            {
-                HistoryEvent historyEvent = null;
-
-                byte blockType = ReadByte();
-
-                switch (blockType)
-                {
-                    case _idKey:
-                        historyEvent = ReadKey();
-                        break;
-                    case _idReset:
-                        historyEvent = ReadReset();
-                        break;
-                    case _idLoadDisc:
-                        historyEvent = ReadLoadDisc();
-                        break;
-                    case _idLoadTape:
-                        historyEvent = ReadLoadTape();
-                        break;
-                    case _idRunUntil:
-                        historyEvent = ReadRunUntil();
-                        break;
-                    case _idLoadCore:
-                        historyEvent = ReadLoadCore();
-                        break;
-                    default:
-                        throw new Exception("Unknown block type!");
-                }
-
-                return historyEvent?.CoreAction;
-            }
-        }
 
         public void WriteDelete(HistoryEvent historyEvent)
         {
