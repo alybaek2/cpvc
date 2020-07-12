@@ -16,7 +16,10 @@ namespace CPvC.UI.Forms
         {
             InitializeComponent();
 
-            _viewModel = new RemoteViewModel(serverInfo, new Settings());
+            SocketConnection connection = SocketConnection.ConnectToServer(new Socket(), serverInfo.ServerName, serverInfo.Port);
+            IRemote remote = new Remote(connection);
+
+            _viewModel = new RemoteViewModel(serverInfo, remote);
 
             Owner = owner;
 
@@ -38,15 +41,16 @@ namespace CPvC.UI.Forms
 
         private void MachineListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (!(_machineListBox.SelectedItem is RemoteMachineInfo info))
+            if (!(_machineListBox.SelectedItem is string machineName))
             {
                 return;
             }
 
-            IConnection connection = SocketConnection.ConnectToServer(new Socket(), info.ServerInfo.ServerName, info.ServerInfo.Port);
+            ServerInfo serverInfo = _viewModel.Server;
+            IConnection connection = SocketConnection.ConnectToServer(new Socket(), serverInfo.ServerName, serverInfo.Port);
             Remote remote = new Remote(connection);
             RemoteMachine machine = new RemoteMachine(remote);
-            remote.SendSelectMachine(info.MachineName);
+            remote.SendSelectMachine(machineName);
 
             _remoteMachine = machine;
 
@@ -60,7 +64,7 @@ namespace CPvC.UI.Forms
             {
                 _viewModel.Machine.Close();
                 _viewModel.Machine = null;
-                _viewModel.SelectedMachine = null;
+                //_viewModel.SelectedMachine = null;
             }
         }
     }

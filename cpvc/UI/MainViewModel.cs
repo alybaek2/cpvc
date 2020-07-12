@@ -381,34 +381,6 @@ namespace CPvC
             ActiveMachineViewModel = machineViewModel;
         }
 
-        public void ReceiveAvailableMachines(List<string> availableMachines)
-        {
-            if (_syncContext != null)
-            {
-                _syncContext.Post(_ => ReceiveAvailableMachinesAsync(availableMachines), null);
-            }
-            else
-            {
-                ReceiveAvailableMachinesAsync(availableMachines);
-            }
-
-        }
-
-        public void ReceiveAvailableMachinesAsync(List<string> availableMachines)
-        {
-            if (availableMachines.Count > 0)
-            {
-                RemoteMachine remoteMachine = new RemoteMachine(_remote);
-                _remote.SendSelectMachine(availableMachines[0]);
-                _remote = null;
-
-                MachineViewModel machineViewModel = CreateMachineViewModel(remoteMachine);
-                AddMachineViewModel(machineViewModel);
-
-                ActiveMachineViewModel = machineViewModel;
-            }
-        }
-
         private void AddMachineViewModel(MachineViewModel machineViewModel)
         {
             lock (MachineViewModels)

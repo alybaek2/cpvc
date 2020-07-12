@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Threading;
@@ -82,18 +84,27 @@ namespace CPvC
 
     public class RemoteViewModel : INotifyPropertyChanged
     {
-        private RemoteMachineInfo _selectedMachine;
+        private string _selectedMachineName;
         private ServerInfo _serverInfo;
-        private IConnection _connection;
-        private Remote _remote;
+        private IRemote _remote;
         private RemoteMachine _machine;
         private bool _enableLivePreview;
 
-        public RemoteMachineInfo SelectedMachine
+        private ObservableCollection<string> _machineNames;
+
+        public ObservableCollection<string> MachineNames
         {
             get
             {
-                return _selectedMachine;
+                return _machineNames;
+            }
+        }
+
+        public string SelectedMachineName
+        {
+            get
+            {
+                return _selectedMachineName;
             }
 
             set
@@ -137,33 +148,44 @@ namespace CPvC
 
             set
             {
-                SetLivePreview(value, _selectedMachine);
+                SetLivePreview(value, _selectedMachineName);
             }
         }
 
-        private ISettings _settings;
-
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public RemoteViewModel(ServerInfo serverInfo, ISettings settings)
+        public RemoteViewModel(ServerInfo serverInfo, IRemote remote)
         {
             Server = serverInfo;
-            _settings = settings;
             _enableLivePreview = false;
 
-            _connection = SocketConnection.ConnectToServer(new Socket(), serverInfo.ServerName, serverInfo.Port);
-            _remote = new Remote(_connection);
+            _remote = remote;
+
+            _machineNames = new ObservableCollection<string>();
+
+            _remote.ReceiveAvailableMachines += m =>
+            {
+                _machineNames.Clear();
+
+                foreach (string machineName in m)
+                {
+                    _machineNames.Add(machineName);
+                }
+            };
+
+            _remote.SendRequestAvailableMachines();
+
             _machine = new RemoteMachine(_remote);
         }
 
-        private void SetLivePreview(bool enableLivePreview, RemoteMachineInfo machineInfo)
+        private void SetLivePreview(bool enableLivePreview, string machineName)
         {
-            bool previous = (_enableLivePreview && _selectedMachine != null);
-            bool current = (enableLivePreview && machineInfo != null);
+            bool previous = (_enableLivePreview && _selectedMachineName != null);
+            bool current = (enableLivePreview && machineName != null);
 
-            if (current && (!previous || (_selectedMachine != machineInfo)))
+            if (current && (!previous || (_selectedMachineName != machineName)))
             {
-                _remote.SendSelectMachine(machineInfo?.MachineName ?? String.Empty);
+                _remote.SendSelectMachine(machineName ?? String.Empty);
             }
             else if (previous && !current)
             {
@@ -171,9 +193,9 @@ namespace CPvC
             }
 
             _enableLivePreview = enableLivePreview;
-            _selectedMachine = machineInfo;
+            _selectedMachineName = machineName;
 
-            OnPropertyChanged("SelectedMachine");
+            OnPropertyChanged("SelectedMachineName");
             OnPropertyChanged("LivePreviewEnabled");
         }
 
