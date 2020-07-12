@@ -3,7 +3,7 @@ using System.ComponentModel;
 
 namespace CPvC
 {
-    public abstract class CoreMachine : ICoreMachine
+    public abstract class CoreMachine
     {
         protected Core _core;
         protected string _filepath;

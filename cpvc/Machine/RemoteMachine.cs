@@ -4,7 +4,7 @@ using System.ComponentModel;
 namespace CPvC
 {
     public sealed class RemoteMachine : CoreMachine,
-        IClosableMachine,
+        ICoreMachine,
         IInteractiveMachine,
         INotifyPropertyChanged,
         IDisposable
@@ -32,8 +32,6 @@ namespace CPvC
                 OnPropertyChanged("Name");
             }
         }
-
-        public OnCloseDelegate OnClose { get; set; }
 
         public RemoteMachine(IRemote remote)
         {

@@ -283,10 +283,7 @@ namespace CPvC
 
         public void Remove(MachineViewModel viewModel)
         {
-            if (viewModel.Machine is IClosableMachine closableMachine)
-            {
-                closableMachine.Close();
-            }
+            viewModel.Machine?.Close();
 
             _model.Remove(viewModel.Machine as Machine);
 
@@ -299,8 +296,7 @@ namespace CPvC
             {
                 foreach (MachineViewModel model in MachineViewModels)
                 {
-                    IClosableMachine machine = model.Machine as IClosableMachine;
-                    machine?.Close();
+                    model.Machine?.Close();
                 }
             }
         }

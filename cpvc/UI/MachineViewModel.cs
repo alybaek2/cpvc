@@ -50,10 +50,10 @@ namespace CPvC
             _closeCommand = new Command(
                 p =>
                 {
-                    (machine as IClosableMachine)?.Close();
+                    machine?.Close();
                     mainViewModel?.Remove(this);
                 },
-                p => (machine as IClosableMachine)?.CanClose() ?? false
+                p => machine?.CanClose() ?? false
             );
 
             _pauseCommand = new Command(

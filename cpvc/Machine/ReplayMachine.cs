@@ -5,10 +5,10 @@ using System.ComponentModel;
 namespace CPvC
 {
     public sealed class ReplayMachine : CoreMachine,
+        ICoreMachine,
         IPausableMachine,
         ITurboableMachine,
         IPrerecordedMachine,
-        IClosableMachine,
         INotifyPropertyChanged,
         IDisposable
     {
@@ -23,8 +23,6 @@ namespace CPvC
                 return _endTicks;
             }
         }
-
-        public OnCloseDelegate OnClose { get; set; }
 
         public ReplayMachine(HistoryEvent historyEvent)
         {

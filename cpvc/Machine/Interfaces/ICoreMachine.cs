@@ -20,6 +20,9 @@ namespace CPvC
         string Filepath { get; }
         IDisposable AutoPause();
 
+        void Close();
+        bool CanClose();
+
         MachineAuditorDelegate Auditors { get; set; }
     }
 }
