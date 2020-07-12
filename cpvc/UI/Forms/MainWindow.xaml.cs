@@ -334,13 +334,6 @@ namespace CPvC.UI.Forms
                 }
             }
 
-            if (!serverInfo.GetMachines())
-            {
-                ReportError(String.Format("Unable to connect to {0}:{1}", serverInfo.ServerName, serverInfo.Port));
-
-                return null;
-            }
-
             RemoteWindow dialog = new RemoteWindow(this, serverInfo);
             result = dialog.ShowDialog();
 

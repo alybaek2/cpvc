@@ -7,35 +7,8 @@ using System.Threading;
 
 namespace CPvC
 {
-    public class RemoteMachineInfo
-    {
-        public ServerInfo ServerInfo { get; set; }
-        public string MachineName { get; set; }
-
-        public RemoteMachineInfo(string name, ServerInfo server)
-        {
-            ServerInfo = server;
-            MachineName = name;
-        }
-    }
-
     public class ServerInfo
     {
-        private ObservableCollection<RemoteMachineInfo> _machines;
-
-        public ObservableCollection<RemoteMachineInfo> Machines
-        {
-            get
-            {
-                return _machines;
-            }
-
-            set
-            {
-                _machines = value;
-            }
-        }
-
         public string ServerName { get; set; }
         public UInt16 Port { get; set; }
 
@@ -43,42 +16,6 @@ namespace CPvC
         {
             ServerName = hostname;
             Port = port;
-        }
-
-        public bool GetMachines()
-        {
-            ManualResetEvent e = new ManualResetEvent(false);
-
-            ObservableCollection<RemoteMachineInfo> remoteMachines = new ObservableCollection<RemoteMachineInfo>();
-
-            IConnection connection = SocketConnection.ConnectToServer(new Socket(), ServerName, Port);
-            if (connection == null)
-            {
-                return false;
-            }
-
-            using (Remote remote = new Remote(connection))
-            {
-                remote.ReceiveAvailableMachines += machineNames =>
-                {
-                    foreach (string machineName in machineNames)
-                    {
-                        RemoteMachineInfo info = new RemoteMachineInfo(machineName, this);
-
-                        remoteMachines.Add(info);
-                    }
-
-                    e.Set();
-                };
-
-                remote.SendRequestAvailableMachines();
-
-                e.WaitOne(1000);
-            }
-
-            Machines = remoteMachines;
-
-            return true;
         }
     }
 

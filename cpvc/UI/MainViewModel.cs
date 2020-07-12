@@ -53,16 +53,11 @@ namespace CPvC
         public event PropertyChangedEventHandler PropertyChanged;
 
         private MachineServerListener _machineServer;
-        private Remote _remote;
-
-        private SynchronizationContext _syncContext;
 
         private ISettings _settings;
 
         public MainViewModel(ISettings settings, IFileSystem fileSystem, SelectItemDelegate selectItem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, ReportErrorDelegate reportError, SelectRemoteMachineDelegate selectRemoteMachine, SelectServerPortDelegate selectServerPort)
         {
-            _syncContext = SynchronizationContext.Current;
-
             _settings = settings;
             _fileSystem = fileSystem;
             _selectItem = selectItem;

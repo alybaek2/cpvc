@@ -44,6 +44,7 @@ namespace CPvC.Test
 
             // Verify
             _mockRemote.Verify(r => r.SendSelectMachine("Machine1"), Times.Once());
+            Assert.True(_viewModel.LivePreviewEnabled);
         }
 
         [Test]
@@ -54,6 +55,7 @@ namespace CPvC.Test
 
             // Verify
             _mockRemote.Verify(r => r.SendSelectMachine("Machine1"), Times.Never());
+            Assert.True(_viewModel.LivePreviewEnabled);
         }
 
         [Test]
@@ -67,6 +69,33 @@ namespace CPvC.Test
             // Verify
             _mockRemote.Verify(r => r.SendSelectMachine("Machine1"), Times.Once());
             _mockRemote.Verify(r => r.SendSelectMachine("Machine2"), Times.Once());
+            Assert.True(_viewModel.LivePreviewEnabled);
+        }
+
+        [Test]
+        public void DisableLivePreview()
+        {
+            // Act
+            _viewModel.LivePreviewEnabled = true;
+            _viewModel.SelectedMachineName = "Machine1";
+            _viewModel.LivePreviewEnabled = false;
+
+            // Verify
+            _mockRemote.Verify(r => r.SendSelectMachine("Machine1"), Times.Once());
+            _mockRemote.Verify(r => r.SendSelectMachine(""), Times.Once());
+            Assert.False(_viewModel.LivePreviewEnabled);
+        }
+
+        [Test]
+        public void EnableLivePreviewNullMachine()
+        {
+            // Act
+            _viewModel.LivePreviewEnabled = true;
+            _viewModel.SelectedMachineName = null;
+
+            // Verify
+            _mockRemote.Verify(r => r.SendSelectMachine(It.IsAny<string>()), Times.Never());
+            Assert.True(_viewModel.LivePreviewEnabled);
         }
 
         [Test]
@@ -79,6 +108,7 @@ namespace CPvC.Test
 
             // Verify
             _mockRemote.Verify(r => r.SendSelectMachine("Machine1"), Times.Once());
+            Assert.True(_viewModel.LivePreviewEnabled);
         }
 
         [Test]
@@ -91,6 +121,7 @@ namespace CPvC.Test
 
             // Verify
             _mockRemote.Verify(r => r.SendSelectMachine("Machine1"), Times.Never());
+            Assert.False(_viewModel.LivePreviewEnabled);
         }
     }
 }
