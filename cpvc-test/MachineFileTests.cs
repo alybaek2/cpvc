@@ -214,6 +214,28 @@ namespace CPvC.Test
             Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
         }
 
+        // LoadCore actions are only meant for remote and replay machines. Should never be needed to be written to a machine file.
+        [Test]
+        public void WriteLoadCore()
+        {
+            // Setup
+            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.LoadCore(100, new MemoryBlob(new byte[] { 0x01, 0x02 })));
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => _file.WriteHistoryEvent(historyEvent));
+        }
+
+        // RunUntil actions shouldn't be written to the machine file as they would consume too much space and I/O!
+        [Test]
+        public void WriteRunUntil()
+        {
+            // Setup
+            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.RunUntilForce(100, 0x123456));
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => _file.WriteHistoryEvent(historyEvent));
+        }
+
         [TestCase(0)]
         [TestCase(1)]
         public void WriteDisc(byte drive)
