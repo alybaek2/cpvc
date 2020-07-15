@@ -192,21 +192,20 @@ namespace CPvC.Test
 
         [TestCase(1)]
         [TestCase(2)]
-        public void Close(int closeCount)
+        public void Dispose(int displayCount)
         {
             // Setup
-            using (RemoteMachine machine = new RemoteMachine(_mockRemote.Object))
-            {
-                // Act
-                for (int c = 0; c < closeCount; c++)
-                {
-                    machine.Close();
-                }
+            RemoteMachine machine = new RemoteMachine(_mockRemote.Object);
 
-                // Verify
-                Assert.Null(machine.Core);
-                _mockRemote.Verify(r => r.Dispose(), Times.Exactly(closeCount));
+            // Act
+            for (int c = 0; c < displayCount; c++)
+            {
+                machine.Dispose();
             }
+
+            // Verify
+            Assert.Null(machine.Core);
+            _mockRemote.Verify(r => r.Dispose(), Times.Exactly(displayCount));
         }
     }
 }
