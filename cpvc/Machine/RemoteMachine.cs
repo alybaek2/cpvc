@@ -12,7 +12,6 @@ namespace CPvC
         private string _name;
         private IRemote _remote;
         private int _lastPing;
-        private int _connectionLatency;
         private UInt64 _emulationLatency;
 
         /// <summary>
@@ -45,12 +44,10 @@ namespace CPvC
 
             _remote = remote;
             _remote.ReceiveCoreAction = ReceiveCoreAction;
-            _remote.ReceivePing = ReceivePing;
             _remote.ReceiveName = ReceiveName;
             _remote.CloseConnection = CloseConnection;
 
             _lastPing = 0;
-            _connectionLatency = 0;
             _emulationLatency = 0;
         }
 
@@ -86,20 +83,6 @@ namespace CPvC
         public void ReceiveName(string machineName)
         {
             Name = String.Format("{0} (remote)", machineName);
-        }
-
-        public void ReceivePing(bool response, UInt64 id)
-        {
-            if (response)
-            {
-                int ticks = System.Environment.TickCount;
-
-                int pingTicks = (int)id;
-
-                _connectionLatency = ticks - pingTicks;
-
-                //Status = String.Format("Latency: {0} ms", _connectionLatency);
-            }
         }
 
         public void Dispose()
