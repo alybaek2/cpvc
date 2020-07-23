@@ -118,15 +118,17 @@ namespace CPvC.Test
 
             Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, filepath);
 
+            Mock<ReportErrorDelegate> mockReportError = new Mock<ReportErrorDelegate>();
+
             Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Loose);
 
-            // Act and Verify
-            Exception ex = Assert.Throws<Exception>(() =>
-            {
-                MainViewModel viewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object, null, null, null, null, null, null, null, () => new Socket());
-                viewModel.NewMachine(prompt.Object, mockFileSystem.Object);
-            });
-            Assert.AreEqual(ex.Message, "File not found");
+            // Act
+            MainViewModel viewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object, null, prompt.Object, null, null, mockReportError.Object, null, null, () => new Socket());
+            viewModel.NewMachineCommand.Execute(null);
+
+            // Verify
+            mockReportError.Verify(r => r("File not found"));
+            Assert.Zero(viewModel.MachineViewModels.Count);
         }
 
         [Test]
@@ -149,12 +151,13 @@ namespace CPvC.Test
             // Setup
             Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, null);
             MainViewModel viewModel = SetupViewModel(0, prompt, null, null);
+            int machineViewModelCount = viewModel.MachineViewModels.Count;
 
             // Act
-            Machine machine = viewModel.OpenMachine(prompt.Object, null, _mockFileSystem.Object);
+            viewModel.OpenMachineCommand.Execute(null);
 
             // Verify
-            Assert.IsNull(machine);
+            Assert.AreEqual(machineViewModelCount, viewModel.MachineViewModels.Count);
         }
 
         [TestCase(null, null, "")]
@@ -705,6 +708,24 @@ namespace CPvC.Test
             _mockSelectRemoveMachine.Verify(s => s(It.IsAny<ServerInfo>()), Times.Once());
             Assert.AreEqual(machine, viewModel.ActiveMachineViewModel.Machine);
             _mockSettings.VerifySet(s => s.RemoteServers = "localhost:6128");
+        }
+
+        [Test]
+        public void EmptyRemoteServers()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+            Mock<IRemote> mockRemote = new Mock<IRemote>();
+            RemoteMachine machine = new RemoteMachine(mockRemote.Object);
+            _mockSelectRemoveMachine.Setup(s => s(It.IsAny<ServerInfo>())).Returns(() => machine);
+
+            // Act
+            viewModel.ConnectCommand.Execute(null);
+
+            // Verify
+            _mockSelectRemoveMachine.Verify(s => s(It.IsAny<ServerInfo>()), Times.Once());
+            Assert.AreEqual(machine, viewModel.ActiveMachineViewModel.Machine);
+            _mockSettings.VerifySet(s => s.RemoteServers = "");
         }
 
         [Test]
