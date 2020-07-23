@@ -696,7 +696,7 @@ namespace CPvC.Test
             MainViewModel viewModel = SetupViewModel(1, null, null, null);
             Mock<IRemote> mockRemote = new Mock<IRemote>();
             RemoteMachine machine = new RemoteMachine(mockRemote.Object);
-            _mockSelectRemoveMachine.Setup(s => s(It.IsAny<ServerInfo>())).Returns(() => machine);
+            _mockSelectRemoveMachine.Setup(s => s(It.IsAny<ServerInfo>())).Returns(() => machine).Callback<ServerInfo>(s => viewModel.RecentServers.Add(new ServerInfo("localhost", 6128)));
 
             // Act
             viewModel.ConnectCommand.Execute(null);
@@ -704,6 +704,7 @@ namespace CPvC.Test
             // Verify
             _mockSelectRemoveMachine.Verify(s => s(It.IsAny<ServerInfo>()), Times.Once());
             Assert.AreEqual(machine, viewModel.ActiveMachineViewModel.Machine);
+            _mockSettings.VerifySet(s => s.RemoteServers = "localhost:6128");
         }
 
         [Test]

@@ -291,7 +291,7 @@ namespace CPvC
             {
                 foreach (MachineViewModel model in MachineViewModels)
                 {
-                    model.Machine?.Close();
+                    model.Close();
                 }
             }
         }

@@ -50,7 +50,7 @@ namespace CPvC
             _closeCommand = new Command(
                 p =>
                 {
-                    machine?.Close();
+                    Close();
                     mainViewModel?.Remove(this);
                 },
                 p => machine?.CanClose() ?? false
@@ -447,6 +447,11 @@ namespace CPvC
                     machine.Name = newName;
                 }
             }
+        }
+
+        public void Close()
+        {
+            Machine?.Close();
         }
     }
 }
