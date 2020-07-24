@@ -166,29 +166,13 @@ namespace CPvC
                 return null;
             }
 
-            if (addrs.Length <= 0)
+            System.Net.IPAddress ipAddr = addrs.Where(addr => addr.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault();
+            if (ipAddr != null)
             {
-                return null;
+                return new System.Net.IPEndPoint(ipAddr, port);
             }
 
-            System.Net.IPAddress ipAddr = null;
-            for (int f = 0; f < addrs.Length; f++)
-            {
-                if (addrs[f].AddressFamily == AddressFamily.InterNetwork)
-                {
-                    ipAddr = addrs[f];
-                    break;
-                }
-            }
-
-            if (ipAddr == null)
-            {
-                return null;
-            }
-
-            System.Net.IPEndPoint ipEnd = new System.Net.IPEndPoint(ipAddr, port);
-
-            return ipEnd;
+            return null;
         }
     }
 }

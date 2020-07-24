@@ -239,6 +239,25 @@ namespace CPvC.Test
             });
         }
 
+        [Test]
+        public void CanClose([Values(false, true)] bool requiresOpen)
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                if (requiresOpen)
+                {
+                    machine.Close();
+                }
+
+                // Act
+                bool canClose = machine.CanClose();
+
+                // Verify
+                Assert.AreEqual(!requiresOpen, canClose);
+            }
+        }
+
         /// <summary>
         /// Ensures an existing machine is opened with the expected state.
         /// </summary>
