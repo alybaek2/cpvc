@@ -309,5 +309,19 @@ namespace CPvC.Test
         {
             TestCommand<IInteractiveMachine>(nullMachine, m => m.KeyUpCommand, Keys.A, m => m.Key(Keys.A, false));
         }
+
+        [Test]
+        public void RemoveCommand()
+        {
+            // Setup
+            MachineViewModel viewModel = new MachineViewModel(null, null, null, null, null, null, null);
+            ICommand command = new Command(x => { }, y => true);
+
+            // Act
+            viewModel.RemoveCommand = command;
+
+            // Verify
+            Assert.AreEqual(command, viewModel.RemoveCommand);
+        }
     }
 }

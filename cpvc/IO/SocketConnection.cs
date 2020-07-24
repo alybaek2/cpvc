@@ -98,38 +98,11 @@ namespace CPvC
 
         private bool Connect(ISocket socket, string hostname, UInt16 port)
         {
-            System.Net.IPAddress[] addrs;
-
-            try
-            {
-                addrs = System.Net.Dns.GetHostAddresses(hostname);
-            }
-            catch (SocketException)
+            System.Net.IPEndPoint ipEnd = Helpers.GetEndpoint(hostname, port);
+            if (ipEnd == null)
             {
                 return false;
             }
-
-            if (addrs.Length <= 0)
-            {
-                return false;
-            }
-
-            System.Net.IPAddress ipAddr = null;
-            for (int f = 0; f < addrs.Length; f++)
-            {
-                if (addrs[f].AddressFamily == AddressFamily.InterNetwork)
-                {
-                    ipAddr = addrs[f];
-                    break;
-                }
-            }
-
-            if (ipAddr == null)
-            {
-                return false;
-            }
-
-            System.Net.IPEndPoint ipEnd = new System.Net.IPEndPoint(ipAddr, port);
 
             try
             {

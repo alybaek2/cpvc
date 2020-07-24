@@ -137,6 +137,21 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void ConnectFailure()
+        {
+            // Setup
+            _mockEvent = new ManualResetEvent(false);
+            _mockResult.SetupGet(r => r.AsyncWaitHandle).Returns(_mockEvent);
+
+            // Act
+            SocketConnection connection = SocketConnection.ConnectToServer(_mockSocket.Object, "localhost", 6128);
+
+            // Verify
+            Assert.IsNull(connection);
+            _mockSocket.Verify(s => s.BeginConnect(It.IsAny<System.Net.IPEndPoint>(), It.IsAny<AsyncCallback>(), null), Times.Once());
+        }
+
+        [Test]
         public void BeginReceiveException()
         {
             // Setup
@@ -304,6 +319,28 @@ namespace CPvC.Test
             // Verify
             Assert.AreEqual(expected, sent);
             Assert.True(connection.SendComplete.WaitOne(0));
+        }
+        
+        [Test]
+        public void SendDisconnected()
+        {
+            // Setup
+            SocketConnection connection = new SocketConnection(_mockSocket.Object);
+
+            List<byte> sent = new List<byte>();
+            _mockSocket.Setup(s => s.SendAsync(It.IsAny<byte[]>(), It.IsAny<SendCallbackDelegate>())).Callback<byte[], SendCallbackDelegate>((buffer, callback) =>
+            {
+                connection.Close();
+
+                callback.Invoke(SocketError.Success, 0);
+            });
+
+            // Act
+            connection.SendMessage(new byte[] { 0x01, 0x02 });
+            connection.SendComplete.WaitOne(2000);
+
+            // Verify - SendAsync should be called only once before the connection is closed and the sending process stops.
+            _mockSocket.Verify(s => s.SendAsync(It.IsAny<byte[]>(), It.IsAny<SendCallbackDelegate>()), Times.Once());
         }
     }
 }
