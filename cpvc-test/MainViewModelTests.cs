@@ -19,16 +19,19 @@ namespace CPvC.Test
         private Mock<SelectRemoteMachineDelegate> _mockSelectRemoveMachine;
         private Mock<SelectServerPortDelegate> _mockSelectServerPort;
         private string _settingGet;
+        private string _remoteServersSetting;
 
         private MockFileByteStream _mockBinaryWriter;
 
         [SetUp]
         public void Setup()
         {
+            _remoteServersSetting = String.Empty;
+
             _mockSettings = new Mock<ISettings>(MockBehavior.Strict);
             _mockSettings.SetupGet(x => x.RecentlyOpened).Returns(() => _settingGet);
             _mockSettings.SetupSet(x => x.RecentlyOpened = It.IsAny<string>());
-            _mockSettings.SetupGet(x => x.RemoteServers).Returns(() => String.Empty);
+            _mockSettings.SetupGet(x => x.RemoteServers).Returns(() => _remoteServersSetting);
             _mockSettings.SetupSet(x => x.RemoteServers = It.IsAny<string>());
 
             _mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
@@ -223,7 +226,7 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void OpenNonExistantFile()
+        public void OpenNonExistentFile()
         {
             // Setup
             Mock<ISocket> mockSocket = new Mock<ISocket>();
@@ -743,6 +746,54 @@ namespace CPvC.Test
             // Verify
             _mockSelectRemoveMachine.Verify(s => s(It.IsAny<ServerInfo>()), Times.Once());
             Assert.AreNotEqual(machine, viewModel.ActiveMachineViewModel.Machine);
+        }
+
+        [Test]
+        public void LoadRemoteServer()
+        {
+            // Setup
+            Mock<ISocket> mockSocket = new Mock<ISocket>();
+            _remoteServersSetting = "localhost:6128";
+
+            // Act
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, null, null, null, null, null, null, null, () => mockSocket.Object);
+
+            // Verify
+            Assert.AreEqual(1, viewModel.RecentServers.Count);
+            Assert.AreEqual("localhost", viewModel.RecentServers[0].ServerName);
+            Assert.AreEqual(6128, viewModel.RecentServers[0].Port);
+        }
+
+        [Test]
+        public void LoadRemoteServers()
+        {
+            // Setup
+            Mock<ISocket> mockSocket = new Mock<ISocket>();
+            _remoteServersSetting = "localhost:6128;host2:3333";
+
+            // Act
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, null, null, null, null, null, null, null, () => mockSocket.Object);
+
+            // Verify
+            Assert.AreEqual(2, viewModel.RecentServers.Count);
+            Assert.AreEqual("localhost", viewModel.RecentServers[0].ServerName);
+            Assert.AreEqual(6128, viewModel.RecentServers[0].Port);
+            Assert.AreEqual("host2", viewModel.RecentServers[1].ServerName);
+            Assert.AreEqual(3333, viewModel.RecentServers[1].Port);
+        }
+
+        [Test]
+        public void LoadNullRemoteServers()
+        {
+            // Setup
+            Mock<ISocket> mockSocket = new Mock<ISocket>();
+            _remoteServersSetting = null;
+
+            // Act
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, null, null, null, null, null, null, null, () => mockSocket.Object);
+
+            // Verify
+            Assert.IsNull(viewModel.RecentServers);
         }
     }
 }
