@@ -1,6 +1,8 @@
 ﻿using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
 
 namespace CPvC.Test
 {
@@ -60,6 +62,29 @@ namespace CPvC.Test
             // Verify
             Assert.AreEqual(tokens.ToArray(), expectedTokens);
             Assert.AreEqual(str, str2);
+        }
+
+        [Test]
+        public void GetEndpointLocalhost()
+        {
+            // Act
+            IPEndPoint endpoint = Helpers.GetEndpoint("localhost", 6128);
+
+            // Verify
+            Assert.IsNotNull(endpoint);
+            Assert.AreEqual(AddressFamily.InterNetwork, endpoint.AddressFamily);
+            Assert.AreEqual(6128, endpoint.Port);
+            Assert.AreEqual(new byte[] { 127, 0, 0, 1 }, endpoint.Address.GetAddressBytes());
+        }
+
+        [Test]
+        public void GetEndpointLocalhostIPv6()
+        {
+            // Act
+            IPEndPoint endpoint = Helpers.GetEndpoint("::1", 6128);
+
+            // Verify
+            Assert.IsNull(endpoint);
         }
     }
 }

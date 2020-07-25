@@ -148,7 +148,7 @@ namespace CPvC
         }
 
         /// <summary>
-        /// Resolves a hostname and port to an IPEndPoint.
+        /// Resolves a hostname and port to an IPv4 IPEndPoint.
         /// </summary>
         /// <param name="hostname">Name of the host to resolve.</param>
         /// <param name="port">Port number</param>
