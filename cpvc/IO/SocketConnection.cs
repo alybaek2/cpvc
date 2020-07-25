@@ -206,10 +206,7 @@ namespace CPvC
                 bool isEmpty = (_sendData.Count == 0);
                 _sendData.AddRange(msg);
 
-                if (_sendData.Count > 0)
-                {
-                    _sendComplete.Reset();
-                }
+                _sendComplete.Reset();
 
                 if (isEmpty)
                 {

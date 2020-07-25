@@ -189,6 +189,23 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void ReceiveNoNewMessageHandler()
+        {
+            // Setup
+            _sendMessage = new byte[] { 0x01, 0x02, 0xff };
+
+            SocketConnection connection = new SocketConnection(_mockSocket.Object);
+
+            Mock<NewMessageDelegate> mockNewMessage = new Mock<NewMessageDelegate>();
+
+            _mockSocket.Setup(s => s.EndReceive(It.IsAny<IAsyncResult>())).Returns(_sendMessage.Length);
+
+            // Act and Verify - not much we can really verify here, other than the code doesn't crash
+            //                  when it tries to send the message to the OnNewMessage delegate.
+            Assert.DoesNotThrow(() => _receiveCallback?.Invoke(_mockResult.Object));
+        }
+
+        [Test]
         public void SendAfterClosed()
         {
             // Setup
@@ -263,7 +280,7 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void ReceiveCloseConnection()
+        public void ReceiveCloseConnection([Values(false, true)] bool closeDelegate)
         {
             // Setup
             byte[] message = new byte[] { 0x01, 0xfe, 0x02 };
@@ -280,7 +297,10 @@ namespace CPvC.Test
             Mock<CloseConnectionDelegate> mockClose = new Mock<CloseConnectionDelegate>();
 
             SocketConnection connection = new SocketConnection(_mockSocket.Object);
-            connection.OnCloseConnection += mockClose.Object;
+            if (closeDelegate)
+            {
+                connection.OnCloseConnection += mockClose.Object;
+            }
 
             Mock<NewMessageDelegate> mockNewMessage = new Mock<NewMessageDelegate>();
             connection.OnNewMessage += mockNewMessage.Object;
@@ -289,8 +309,11 @@ namespace CPvC.Test
             receiveCallback?.Invoke(_mockResult.Object);
 
             // Verify
-            mockClose.Verify();
             Assert.False(connection.IsConnected);
+            if (closeDelegate)
+            {
+                mockClose.Verify();
+            }
         }
 
         [TestCase(new byte[] { 0x01, 0x02 }, new byte[] { 0x01, 0x02, 0xff })]
@@ -320,7 +343,28 @@ namespace CPvC.Test
             Assert.AreEqual(expected, sent);
             Assert.True(connection.SendComplete.WaitOne(0));
         }
-        
+
+        [Test]
+        public void SendFailure()
+        {
+            // Setup
+            List<byte> sent = new List<byte>();
+            _mockSocket.Setup(s => s.SendAsync(It.IsAny<byte[]>(), It.IsAny<SendCallbackDelegate>())).Callback<byte[], SendCallbackDelegate>((buffer, callback) =>
+            {
+                callback.Invoke(SocketError.SocketError, 0);
+            });
+
+            SocketConnection connection = new SocketConnection(_mockSocket.Object);
+
+            // Act
+            connection.SendMessage(new byte[] { 0x01, 0x02 });
+            connection.SendComplete.WaitOne(100);
+
+            // Verify
+            Assert.False(connection.SendComplete.WaitOne(0));
+            _mockSocket.Verify(s => s.SendAsync(It.IsAny<byte[]>(), It.IsAny<SendCallbackDelegate>()), Times.AtLeastOnce());
+        }
+
         [Test]
         public void SendDisconnected()
         {
