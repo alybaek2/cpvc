@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 
@@ -22,7 +23,7 @@ namespace CPvC.UI.Forms
         {
             _settings = new Settings();
             _fileSystem = new FileSystem();
-            _mainViewModel = new MainViewModel(_settings, _fileSystem, SelectItem, PromptForFile, PromptForBookmark, PromptForName);
+            _mainViewModel = new MainViewModel(_settings, _fileSystem, SelectItem, PromptForFile, PromptForBookmark, PromptForName, ReportError, SelectRemoteMachine, SelectServerPort, () => new Socket());
             _audio = new Audio(_mainViewModel.ReadAudio);
 
             InitializeComponent();
@@ -187,28 +188,6 @@ namespace CPvC.UI.Forms
             }
         }
 
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.ActiveMachineViewModel.CloseCommand.Execute(null);
-        }
-
-        private void OpenMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                _mainViewModel.OpenMachine(PromptForFile, null, _fileSystem);
-            }
-            catch (Exception ex)
-            {
-                ReportError(ex.Message);
-            }
-        }
-
-        private void CloseMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            _mainViewModel.ActiveMachineViewModel.CloseCommand.Execute(null);
-        }
-
         private string PromptForFile(FileTypes type, bool existing)
         {
             using (System.Windows.Forms.FileDialog fileDialog = existing ? ((System.Windows.Forms.FileDialog)new System.Windows.Forms.OpenFileDialog()) : ((System.Windows.Forms.FileDialog)new System.Windows.Forms.SaveFileDialog()))
@@ -315,23 +294,57 @@ namespace CPvC.UI.Forms
             return null;
         }
 
+        private UInt16? SelectServerPort(UInt16 defaultPort)
+        {
+            StartServerWindow dialog = new StartServerWindow(this, defaultPort);
+            bool? result = dialog.ShowDialog();
+            if (result.HasValue && result.Value)
+            {
+                return dialog.Port;
+            }
+
+            return null;
+        }
+
+        private RemoteMachine SelectRemoteMachine(ServerInfo serverInfo)
+        {
+            bool? result;
+            if (serverInfo == null)
+            {
+                ConnectWindow connectWindow = new ConnectWindow(this);
+                result = connectWindow.ShowDialog();
+
+                if ((result.HasValue && !result.Value) || connectWindow.ServerNameAndPort.Length <= 0)
+                {
+                    return null;
+                }
+
+                string[] tokens = connectWindow.ServerNameAndPort.Split(':');
+                UInt16 port = 6128;
+                if (tokens.Length > 1)
+                {
+                    port = Convert.ToUInt16(tokens[1]);
+                }
+
+                serverInfo = new ServerInfo(tokens[0], port);
+
+                if (!_mainViewModel.RecentServers.Any(s => s.ServerName == serverInfo.ServerName && s.Port == serverInfo.Port))
+                {
+                    _mainViewModel.RecentServers.Add(new ServerInfo(serverInfo.ServerName, serverInfo.Port));
+                }
+            }
+
+            RemoteWindow dialog = new RemoteWindow(this, serverInfo);
+            result = dialog.ShowDialog();
+
+            return (result.HasValue && result.Value) ? dialog.Machine : null;
+        }
+
         private void ReportError(string message)
         {
             // Need to replace this with a messagebox that is centred over its parent. This option
             // doesn't seem to be available with MessageBox.Show().
             MessageBox.Show(this, message, "CPvC", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-
-        private void NewMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                _mainViewModel.NewMachine(PromptForFile, _fileSystem);
-            }
-            catch (Exception ex)
-            {
-                ReportError(ex.Message);
-            }
         }
 
         private void MachinePreviewGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -345,7 +358,7 @@ namespace CPvC.UI.Forms
                 }
                 catch (Exception ex)
                 {
-                    ReportError(String.Format("Unable to open {0}.\n\n{1}", (machine as IInteractiveMachine).Name, ex.Message));
+                    ReportError(String.Format("Unable to open {0}.\n\n{1}", machine.Name, ex.Message));
                 }
             }
         }
@@ -358,24 +371,11 @@ namespace CPvC.UI.Forms
             }
         }
 
-        private void OpenPreviewMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            MachinePreviewGrid_MouseLeftButtonUp(sender, null);
-        }
-
-        private void RemoveMachineMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is FrameworkElement element && element.DataContext is MachineViewModel viewModel)
-            {
-                _mainViewModel.Remove(viewModel);
-            }
-        }
-
         private void OpenMachineViewModels_Filter(object sender, System.Windows.Data.FilterEventArgs e)
         {
             if (e.Item is MachineViewModel machineViewModel)
             {
-                e.Accepted = !((machineViewModel.Machine as IOpenableMachine)?.RequiresOpen ?? true);
+                e.Accepted = !((machineViewModel.Machine as IOpenableMachine)?.RequiresOpen ?? false);
             }
             else
             {

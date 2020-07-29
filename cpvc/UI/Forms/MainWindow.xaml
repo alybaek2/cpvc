@@ -54,7 +54,6 @@
                 <System:String>Machine.RequiresOpen</System:String>
             </CollectionViewSource.LiveFilteringProperties>
         </CollectionViewSource>
-        <CollectionViewSource x:Key="ReplayMachines" Source="{Binding ReplayMachines}"/>
     </Window.Resources>
     <Grid AllowDrop="True" Margin="0,0,0,0" Background="#FFF0F0F0">
         <Grid.RowDefinitions>
@@ -65,126 +64,143 @@
         </Grid.RowDefinitions>
         <Menu Height="30" Margin="0" VerticalAlignment="Top" VerticalContentAlignment="Center">
             <MenuItem Header="File">
-                <MenuItem x:Name="_newMenuItem" Header="New..." Click="NewMenuItem_Click"/>
-                <MenuItem x:Name="_openMenuItem" Header="Open..." Click="OpenMenuItem_Click"/>
-                <MenuItem x:Name="_closeMenuItem" Header="Close" Click="CloseMenuItem_Click"/>
+                <MenuItem Header="New..." Command="{Binding NewMachineCommand}"/>
+                <MenuItem Header="Open..." Command="{Binding OpenMachineCommand}"/>
                 <Separator/>
-                <MenuItem x:Name="_exitMenuItem" Header="Exit" Click="ExitMenuItem_Click"/>
+                <MenuItem Header="Close" Command="{Binding ActiveMachineViewModel.CloseCommand}"/>
+                <Separator/>
+                <MenuItem Header="Exit" Click="ExitMenuItem_Click"/>
             </MenuItem>
-            <MenuItem x:Name="_machineMenuItem" Header="Machine">
+            <MenuItem Header="Machine">
                 <MenuItem Header="Drive A:">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
-                    <MenuItem x:Name="_driveAMenuItem" Header="Load..." Command="{Binding ActiveMachineViewModel.DriveACommand}"/>
-                    <MenuItem x:Name="_driveAEjectMenuItem" Header="Eject" Command="{Binding ActiveMachineViewModel.DriveAEjectCommand}"/>
+                    <MenuItem Header="Load..." Command="{Binding ActiveMachineViewModel.DriveACommand}"/>
+                    <MenuItem Header="Eject" Command="{Binding ActiveMachineViewModel.DriveAEjectCommand}"/>
                 </MenuItem>
                 <MenuItem Header="Drive B:">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
-                    <MenuItem x:Name="_driveBMenuItem" Header="Load..." Command="{Binding ActiveMachineViewModel.DriveBCommand}"/>
-                    <MenuItem x:Name="_driveBEjectMenuItem" Header="Eject" Command="{Binding ActiveMachineViewModel.DriveBEjectCommand}"/>
+                    <MenuItem Header="Load..." Command="{Binding ActiveMachineViewModel.DriveBCommand}"/>
+                    <MenuItem Header="Eject" Command="{Binding ActiveMachineViewModel.DriveBEjectCommand}"/>
                 </MenuItem>
                 <MenuItem Header="Tape">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/tape16.png" />
                     </MenuItem.Icon>
-                    <MenuItem x:Name="_tapeMenuItem" Header="Load..." Command="{Binding ActiveMachineViewModel.TapeCommand}"/>
-                    <MenuItem x:Name="_tapeEjectMenuItem" Header="Eject" Command="{Binding ActiveMachineViewModel.TapeEjectCommand}"/>
+                    <MenuItem Header="Load..." Command="{Binding ActiveMachineViewModel.TapeCommand}"/>
+                    <MenuItem Header="Eject" Command="{Binding ActiveMachineViewModel.TapeEjectCommand}"/>
                 </MenuItem>
                 <Separator/>
-                <MenuItem x:Name="_pauseMenuItem" Header="Pause" Command="{Binding ActiveMachineViewModel.PauseCommand}">
+                <MenuItem Header="Pause" Command="{Binding ActiveMachineViewModel.PauseCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/pause16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem x:Name="_resumeMenuItem" Header="Resume" Command="{Binding ActiveMachineViewModel.ResumeCommand}">
+                <MenuItem Header="Resume" Command="{Binding ActiveMachineViewModel.ResumeCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/resume16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem x:Name="_resetMenuItem" Header="Reset" Command="{Binding ActiveMachineViewModel.ResetCommand}">
+                <MenuItem Header="Reset" Command="{Binding ActiveMachineViewModel.ResetCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/reset16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem x:Name="_addBookmarkMenuItem" Header="Add Bookmark" Command="{Binding ActiveMachineViewModel.AddBookmarkCommand}">
+                <MenuItem Header="Add Bookmark" Command="{Binding ActiveMachineViewModel.AddBookmarkCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmarkadd16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem x:Name="_jumpToMostRecentBookmarkMenuItem" Header="Jump to Most Recent Bookmark" Command="{Binding ActiveMachineViewModel.JumpToMostRecentBookmarkCommand}">
+                <MenuItem Header="Jump to Most Recent Bookmark" Command="{Binding ActiveMachineViewModel.JumpToMostRecentBookmarkCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmarkprev16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem x:Name="_jumpToBookmarkMenuItem" Header="Bookmarks..." Command="{Binding ActiveMachineViewModel.BrowseBookmarksCommand}">
+                <MenuItem Header="Bookmarks..." Command="{Binding ActiveMachineViewModel.BrowseBookmarksCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmark16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem x:Name="_renameFileMenuItem" Header="Rename machine..." Command="{Binding ActiveMachineViewModel.RenameCommand}"/>
-                <MenuItem x:Name="_compactFileMenuItem" Header="Compact machine file" Command="{Binding ActiveMachineViewModel.CompactCommand}"/>
+                <MenuItem Header="Rename machine..." Command="{Binding ActiveMachineViewModel.RenameCommand}"/>
+                <MenuItem Header="Compact machine file" Command="{Binding ActiveMachineViewModel.CompactCommand}"/>
+            </MenuItem>
+            <MenuItem Header="Remote">
+                <MenuItem Header="Start Server" Command="{Binding StartServerCommand}"/>
+                <MenuItem Header="Stop Server" Command="{Binding StopServerCommand}"/>
+                <Separator/>
+                <MenuItem Header="Connect..." Command="{Binding ConnectCommand}"/>
+                <MenuItem Header="Recent Servers" ItemsSource="{Binding RecentServers}">
+                    <ItemsControl.ItemContainerStyle>
+                        <Style TargetType="MenuItem">
+                            <Setter Property="Header" Value="{Binding ServerName}" />
+                            <Setter Property="Command" Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=MenuItem}, Path=DataContext.ConnectCommand}" />
+                            <Setter Property="CommandParameter" Value="{Binding}" />
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
+                </MenuItem>
+
             </MenuItem>
         </Menu>
-        <ToolBarTray x:Name="toolBarTray" Margin="0" VerticalAlignment="Top" Grid.Row="1" Background="#FFF0F0F0">
-            <ToolBar x:Name="toolBar" ToolBarTray.IsLocked="True" HorizontalContentAlignment="Left" VerticalAlignment="Center" VerticalContentAlignment="Center" Background="#FFF0F0F0">
-                <Button x:Name="_driveAButton" Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.DriveACommand}">
+        <ToolBarTray Margin="0" VerticalAlignment="Top" Grid.Row="1" Background="#FFF0F0F0">
+            <ToolBar ToolBarTray.IsLocked="True" HorizontalContentAlignment="Left" VerticalAlignment="Center" VerticalContentAlignment="Center" Background="#FFF0F0F0">
+                <Button Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.DriveACommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/floppy.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                         <TextBlock><Run Text="A:"/></TextBlock>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_driveBButton" Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.DriveBCommand}">
+                <Button Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.DriveBCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/floppy.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                         <TextBlock><Run Text="B:"/></TextBlock>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_tapeButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.TapeCommand}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.TapeCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/tape16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
                 <Separator/>
-                <Button x:Name="_pauseButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.PauseCommand}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.PauseCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/pause16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_resumeButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.ResumeCommand}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.ResumeCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/resume16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_resetButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.ResetCommand}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.ResetCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/reset16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
                 <Separator/>
-                <Button x:Name="_addBookmarkButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding ActiveMachineViewModel.AddBookmarkCommand}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding ActiveMachineViewModel.AddBookmarkCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmarkadd16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_seekToLastBookmarkButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding ActiveMachineViewModel.JumpToMostRecentBookmarkCommand}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding ActiveMachineViewModel.JumpToMostRecentBookmarkCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmarkprev16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button x:Name="_browseBookmarksButton" Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding ActiveMachineViewModel.BrowseBookmarksCommand}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding ActiveMachineViewModel.BrowseBookmarksCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmark16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
             </ToolBar>
         </ToolBarTray>
-        <TabControl x:Name="_machineTabControl" Margin="5,5,5,5" Grid.Row="2" Height="576" Width="768" SelectedItem="{Binding ActiveItem, Mode=TwoWay}">
+        <TabControl Margin="5,5,5,5" Grid.Row="2" Height="576" Width="768" SelectedItem="{Binding ActiveItem, Mode=TwoWay}">
             <TabControl.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
@@ -265,11 +281,11 @@
                                                         <Grid MouseLeftButtonUp="MachinePreviewGrid_MouseLeftButtonUp">
                                                             <Grid.ContextMenu>
                                                                 <ContextMenu>
-                                                                    <MenuItem x:Name="_pausePreviewMenuItem" Header="Pause" Command="{Binding PauseCommand}"/>
-                                                                    <MenuItem x:Name="_resumePreviewMenuItem" Header="Resume" Command="{Binding ResumeCommand}"/>
-                                                                    <MenuItem x:Name="_openPreviewMenuItem" Header="Open" Command="{Binding OpenCommand}"/>
-                                                                    <MenuItem x:Name="_closePreviewMenuItem" Header="Close" Command="{Binding CloseCommand}"/>
-                                                                    <MenuItem x:Name="_removeOpenMachineMenuItem" Header="Remove" Click="RemoveMachineMenuItem_Click"/>
+                                                                    <MenuItem Header="Pause" Command="{Binding PauseCommand}"/>
+                                                                    <MenuItem Header="Resume" Command="{Binding ResumeCommand}"/>
+                                                                    <MenuItem Header="Open" Command="{Binding OpenCommand}"/>
+                                                                    <MenuItem Header="Close" Command="{Binding CloseCommand}"/>
+                                                                    <MenuItem Header="Remove" Command="{Binding RemoveCommand}"/>
                                                                 </ContextMenu>
                                                             </Grid.ContextMenu>
                                                             <StackPanel Margin="5">
@@ -287,18 +303,17 @@
                         </TabItem.ContentTemplate>
                     </TabItem>
                     <CollectionContainer Collection="{Binding Source={StaticResource OpenMachines}}" />
-                    <CollectionContainer Collection="{Binding Source={StaticResource ReplayMachines}}" />
                 </CompositeCollection>
             </TabControl.ItemsSource>
         </TabControl>
-        <StatusBar x:Name="_statusBar" Height="30" Grid.Row="3" VerticalAlignment="Top">
-            <TextBlock x:Name="_clockTextBlock" TextWrapping="Wrap" Text="{Binding ActiveMachineViewModel.Machine.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
+        <StatusBar Height="30" Grid.Row="3" VerticalAlignment="Top">
+            <TextBlock TextWrapping="Wrap" Text="{Binding ActiveMachineViewModel.Machine.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
             <Separator/>
-            <Slider x:Name="_volumeSlider" Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding ActiveMachineViewModel.Machine.Volume, Mode=TwoWay}" ToolTip="{Binding ActiveMachineViewModel.Machine.Volume}" />
-            <Button x:Name="_previousBookmark" Content="&lt;&lt;" Command="{Binding ActiveMachineViewModel.SeekToPrevBookmarkCommand}"/>
-            <Button x:Name="_nextBookmark" Content=">>" Command="{Binding ActiveMachineViewModel.SeekToNextBookmarkCommand}"/>
-            <Button x:Name="_beginButton" Content=" |&lt; " Command="{Binding ActiveMachineViewModel.SeekToStartCommand}"/>
-            <Slider x:Name="_timelineSlider" Width="300" VerticalAlignment="Center" HorizontalAlignment="Right" Minimum="0" Maximum="{Binding ActiveMachineViewModel.Machine.EndTicks, Mode=OneWay}" Value="{Binding ActiveMachineViewModel.Machine.Ticks, Mode=OneWay}"/>
+            <Slider Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding ActiveMachineViewModel.Machine.Volume, Mode=TwoWay}" ToolTip="{Binding ActiveMachineViewModel.Machine.Volume}" />
+            <Button Content="&lt;&lt;" Command="{Binding ActiveMachineViewModel.SeekToPrevBookmarkCommand}"/>
+            <Button Content=">>" Command="{Binding ActiveMachineViewModel.SeekToNextBookmarkCommand}"/>
+            <Button Content=" |&lt; " Command="{Binding ActiveMachineViewModel.SeekToStartCommand}"/>
+            <Slider Width="300" VerticalAlignment="Center" HorizontalAlignment="Right" Minimum="0" Maximum="{Binding ActiveMachineViewModel.Machine.EndTicks, Mode=OneWay}" Value="{Binding ActiveMachineViewModel.Machine.Ticks, Mode=OneWay}"/>
         </StatusBar>
     </Grid>
 </Window>

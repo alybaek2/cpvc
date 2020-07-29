@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CPvC
 {
@@ -20,7 +16,7 @@ namespace CPvC
         public const byte _idBookmark = 8;
         public const byte _idVersion = 9;
 
-        public MachineFile(IByteStream byteStream) : base(byteStream)
+        public MachineFile(IFileByteStream byteStream) : base(byteStream)
         {
         }
 
@@ -166,7 +162,7 @@ namespace CPvC
             WriteInt32(historyEvent.Id);
         }
 
-        private void WriteCoreAction(int id, UInt64 ticks, CoreAction action)
+        public void WriteCoreAction(int id, UInt64 ticks, CoreAction action)
         {
             switch (action.Type)
             {
@@ -190,7 +186,7 @@ namespace CPvC
             }
         }
 
-        private void ReadKey(IMachineFileReader reader)
+        private HistoryEvent ReadKey()
         {
             lock (_byteStream)
             {
@@ -203,17 +199,22 @@ namespace CPvC
                 CoreAction action = CoreAction.KeyPress(ticks, keyCode, keyDown);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                //Diagnostics.Trace("{0} {1}: Key {2} {3}", id, ticks, keyCode, keyDown?"down":"up");
-
-                reader.AddHistoryEvent(historyEvent);
+                return historyEvent;
             }
+        }
+
+        private void ReadKey(IMachineFileReader reader)
+        {
+            HistoryEvent historyEvent = ReadKey();
+
+            reader.AddHistoryEvent(historyEvent);
         }
 
         private void WriteKey(int id, UInt64 ticks, byte keyCode, bool keyDown)
         {
             // Since keyCode can only be a value from 0 to 79 (0x00 to 0x4F), we can use the most significant
             // bit to hold the "down" state of the key, instead of wasting a byte for that.
-            byte keyCodeAndDown = (byte) ((keyDown ? 0x80 : 0x00) | keyCode);
+            byte keyCodeAndDown = (byte)((keyDown ? 0x80 : 0x00) | keyCode);
 
             WriteByte(_idKey);
             WriteInt32(id);
@@ -221,7 +222,7 @@ namespace CPvC
             WriteByte(keyCodeAndDown);
         }
 
-        private void ReadReset(IMachineFileReader reader)
+        private HistoryEvent ReadReset()
         {
             lock (_byteStream)
             {
@@ -230,10 +231,15 @@ namespace CPvC
                 CoreAction action = CoreAction.Reset(ticks);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                //Diagnostics.Trace("{0} {1}: Reset", id, ticks);
-
-                reader.AddHistoryEvent(historyEvent);
+                return historyEvent;
             }
+        }
+
+        private void ReadReset(IMachineFileReader reader)
+        {
+            HistoryEvent historyEvent = ReadReset();
+
+            reader.AddHistoryEvent(historyEvent);
         }
 
         private void WriteReset(int id, UInt64 ticks)
@@ -243,7 +249,7 @@ namespace CPvC
             WriteUInt64(ticks);
         }
 
-        private void ReadLoadDisc(IMachineFileReader reader)
+        private HistoryEvent ReadLoadDisc()
         {
             lock (_byteStream)
             {
@@ -255,10 +261,15 @@ namespace CPvC
                 CoreAction action = CoreAction.LoadDisc(ticks, drive, mediaBlob);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                //Diagnostics.Trace("{0} {1}: Load disc (drive {2}, {3} byte tape image)", id, ticks, (drive == 0) ? "A:" : "B:", mediaBlob.GetBytes()?.Length ?? 0);
-
-                reader.AddHistoryEvent(historyEvent);
+                return historyEvent;
             }
+        }
+
+        private void ReadLoadDisc(IMachineFileReader reader)
+        {
+            HistoryEvent historyEvent = ReadLoadDisc();
+
+            reader.AddHistoryEvent(historyEvent);
         }
 
         private void WriteLoadDisc(int id, UInt64 ticks, byte drive, byte[] media)
@@ -281,8 +292,6 @@ namespace CPvC
                 CoreAction action = CoreAction.CoreVersion(ticks, version);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                //Diagnostics.Trace("{0} {1}: Version {2}", id, ticks, version);
-
                 reader.AddHistoryEvent(historyEvent);
             }
         }
@@ -298,7 +307,7 @@ namespace CPvC
             }
         }
 
-        private void ReadLoadTape(IMachineFileReader reader)
+        private HistoryEvent ReadLoadTape()
         {
             lock (_byteStream)
             {
@@ -309,7 +318,15 @@ namespace CPvC
                 CoreAction action = CoreAction.LoadTape(ticks, mediaBlob);
                 HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(id, action);
 
-                //Diagnostics.Trace("{0} {1}: Load tape ({2} byte tape image)", id, ticks, mediaBlob.GetBytes()?.Length ?? 0);
+                return historyEvent;
+            }
+        }
+
+        private void ReadLoadTape(IMachineFileReader reader)
+        {
+            lock (_byteStream)
+            {
+                HistoryEvent historyEvent = ReadLoadTape();
 
                 reader.AddHistoryEvent(historyEvent);
             }
@@ -344,15 +361,6 @@ namespace CPvC
                 }
 
                 HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(id, ticks, created, bookmark);
-
-                //if (bookmark == null)
-                //{
-                //    Diagnostics.Trace("{0} {1}: Checkpoint (no bookmark)", id, ticks);
-                //}
-                //else
-                //{
-                //    Diagnostics.Trace("{0} {1}: Checkpoint (with {2} bookmark)", id, ticks, bookmark.System ? "system" : "user");
-                //}
 
                 reader.AddHistoryEvent(historyEvent);
             }
@@ -398,7 +406,7 @@ namespace CPvC
 
                 byte[] screen = historyEvent.Bookmark.Screen.GetBytes();
 
-                IStreamBlob newBlob2 = WriteSmallestBlob(screen, parentBookmark?.Screen as IStreamBlob); // SmallestBlob(screen, grandparentBookmark?.Screen as IStreamBlob, parentBookmark?.Screen as IStreamBlob);
+                IStreamBlob newBlob2 = WriteSmallestBlob(screen, parentBookmark?.Screen as IStreamBlob);
                 historyEvent.Bookmark.Screen = newBlob2;
             }
         }
@@ -406,8 +414,6 @@ namespace CPvC
         private void ReadDelete(IMachineFileReader reader)
         {
             int id = ReadInt32();
-
-            //Diagnostics.Trace("{0}: Delete", id);
 
             reader.DeleteEvent(id);
         }

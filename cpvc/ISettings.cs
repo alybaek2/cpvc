@@ -9,5 +9,7 @@
 
         string GetFolder(FileTypes fileType);
         void SetFolder(FileTypes fileType, string folder);
+
+        string RemoteServers { get; set; }
     }
 }

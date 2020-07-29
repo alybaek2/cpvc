@@ -115,6 +115,16 @@ namespace CPvC.Test
             }
         }
 
+        [Test]
+        public void CanClose()
+        {
+            // Setup
+            using (ReplayMachine machine = CreateMachine())
+            {
+                // Verify
+                Assert.True(machine.CanClose());
+            }
+        }
 
         [Test]
         public void CloseTwice()
@@ -125,7 +135,8 @@ namespace CPvC.Test
                 machine.Close();
 
                 // Act and Verify
-                Assert.DoesNotThrow(() => {
+                Assert.DoesNotThrow(() =>
+                {
                     machine.Close();
                 });
             }
@@ -139,7 +150,8 @@ namespace CPvC.Test
             machine.Dispose();
 
             // Act and Verify
-            Assert.DoesNotThrow(() => {
+            Assert.DoesNotThrow(() =>
+            {
                 machine.Dispose();
             });
         }
@@ -169,16 +181,29 @@ namespace CPvC.Test
                 replayMachine.SeekToNextBookmark();
                 replayMachine.SeekToNextBookmark();
 
+                replayMachine.Start();
                 while (replayMachine.Running)
                 {
-                    RunForAWhile(replayMachine);
+                    Thread.Sleep(10);
                 }
 
                 // Act
+                Mock<MachineAuditorDelegate> auditor = new Mock<MachineAuditorDelegate>();
+                replayMachine.Auditors += auditor.Object;
                 replayMachine.Start();
+                while (replayMachine.Running)
+                {
+                    Thread.Sleep(10);
+                }
 
                 // Verify
-                Assert.False(replayMachine.Running);
+                auditor.VerifyNoOtherCalls();
+                if (replayMachine.Running)
+                {
+                    replayMachine.Stop();
+                    Assert.Fail();
+                }
+
                 Assert.AreEqual(replayMachine.EndTicks, replayMachine.Ticks);
             }
         }
@@ -262,6 +287,25 @@ namespace CPvC.Test
 
                 // Verify
                 propChanged.Verify(p => p(replayMachine, It.Is<PropertyChangedEventArgs>(e => e.PropertyName == "Status")));
+            }
+        }
+
+        [Test]
+        public void Auditor()
+        {
+            // Setup
+            using (ReplayMachine replayMachine = CreateMachine())
+            {
+                Mock<MachineAuditorDelegate> auditor = new Mock<MachineAuditorDelegate>();
+                replayMachine.Auditors += auditor.Object;
+
+                // Act
+                replayMachine.Start();
+                Thread.Sleep(10);
+                replayMachine.Stop();
+
+                // Verify
+                auditor.Verify(a => a(It.Is<CoreAction>(coreAction => coreAction != null && coreAction.Type == CoreRequest.Types.RunUntilForce)), Times.AtLeastOnce());
             }
         }
     }

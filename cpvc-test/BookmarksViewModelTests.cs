@@ -268,7 +268,6 @@ namespace CPvC.Test
                 HistoryViewItem branchViewItem = viewModel.Items[1];
                 HistoryEvent parentEvent = branchViewItem.HistoryEvent.Parent;
                 viewModel.SelectedItem = nullSelectedItem ? null : branchViewItem;
-                int viewItemsCount = viewModel.Items.Count;
 
                 // Act
                 viewModel.DeleteBranchesCommand.Execute(null);

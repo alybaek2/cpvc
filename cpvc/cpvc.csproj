@@ -95,6 +95,7 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
@@ -120,25 +121,36 @@
     <Compile Include="IO\FileByteStream.cs" />
     <Compile Include="IO\IBinaryFile.cs" />
     <Compile Include="IO\IByteStream.cs" />
+    <Compile Include="IO\IConnection.cs" />
     <Compile Include="IO\IFileByteStream.cs" />
+    <Compile Include="IO\IRemote.cs" />
+    <Compile Include="IO\ISocket.cs" />
     <Compile Include="IO\IStreamBlob.cs" />
     <Compile Include="IO\IStreamDiffBlob.cs" />
+    <Compile Include="IO\MemoryByteStream.cs" />
+    <Compile Include="IO\Remote.cs" />
+    <Compile Include="IO\Serializer.cs" />
+    <Compile Include="IO\Socket.cs" />
+    <Compile Include="IO\SocketConnection.cs" />
+    <Compile Include="IO\SocketServer.cs" />
     <Compile Include="ISettings.cs" />
     <Compile Include="Machine\Command.cs" />
     <Compile Include="Machine\IBlob.cs" />
-    <Compile Include="Machine\IBookmarkableMachine.cs" />
-    <Compile Include="Machine\IClosableMachine.cs" />
-    <Compile Include="Machine\IInteractiveMachine.cs" />
-    <Compile Include="Machine\ICoreMachine.cs" />
+    <Compile Include="Machine\Interfaces\IBookmarkableMachine.cs" />
+    <Compile Include="Machine\Interfaces\IInteractiveMachine.cs" />
+    <Compile Include="Machine\Interfaces\ICoreMachine.cs" />
     <Compile Include="Machine\IMachineFileReader.cs" />
-    <Compile Include="Machine\IOpenableMachine.cs" />
-    <Compile Include="Machine\IPausableMachine.cs" />
-    <Compile Include="Machine\ICompactableMachine.cs" />
-    <Compile Include="Machine\IPrerecordedMachine.cs" />
-    <Compile Include="Machine\IRewindableMachine.cs" />
-    <Compile Include="Machine\ITurboableMachine.cs" />
+    <Compile Include="Machine\Interfaces\IOpenableMachine.cs" />
+    <Compile Include="Machine\Interfaces\IPausableMachine.cs" />
+    <Compile Include="Machine\Interfaces\ICompactableMachine.cs" />
+    <Compile Include="Machine\Interfaces\IPrerecordedMachine.cs" />
+    <Compile Include="Machine\Interfaces\IJumpableMachine.cs" />
+    <Compile Include="Machine\Interfaces\ITurboableMachine.cs" />
     <Compile Include="Machine\MachineFile.cs" />
+    <Compile Include="Machine\MachineServerListener.cs" />
+    <Compile Include="Machine\MachineServerConnection.cs" />
     <Compile Include="Machine\MemoryBlob.cs" />
+    <Compile Include="Machine\RemoteMachine.cs" />
     <Compile Include="Machine\ReplayMachine.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -155,6 +167,12 @@
     <Compile Include="IO\FileSystem.cs" />
     <Compile Include="IO\IFileSystem.cs" />
     <Compile Include="Settings.cs" />
+    <Compile Include="UI\Forms\ConnectWindow.xaml.cs">
+      <DependentUpon>ConnectWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UI\Forms\RemoteWindow.xaml.cs">
+      <DependentUpon>RemoteWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UI\Forms\RenameWindow.xaml.cs">
       <DependentUpon>RenameWindow.xaml</DependentUpon>
     </Compile>
@@ -172,11 +190,19 @@
     <Compile Include="UI\Forms\BookmarksWindow.xaml.cs">
       <DependentUpon>BookmarksWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UI\Forms\StartServerWindow.xaml.cs">
+      <DependentUpon>StartServerWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UI\HistoryViewItem.cs" />
     <Compile Include="UI\MachineViewModel.cs" />
     <Compile Include="UI\MainModel.cs" />
     <Compile Include="UI\MainViewModel.cs" />
+    <Compile Include="UI\RemoteViewModel.cs" />
     <Compile Include="UnmanagedMemory.cs" />
+    <Page Include="UI\Forms\ConnectWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="UI\Forms\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -192,6 +218,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="UI\Forms\RemoteWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="UI\Forms\RenameWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -201,6 +231,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UI\Forms\BookmarksWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UI\Forms\StartServerWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Input;
-using static CPvC.UI.MainViewModel;
+using static CPvC.MainViewModel;
 
 namespace CPvC
 {
@@ -34,8 +32,9 @@ namespace CPvC
         private Command _keyDownCommand;
         private Command _keyUpCommand;
         private Command _turboCommand;
+        private ICommand _removeCommand;
 
-        public MachineViewModel(ICoreMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, SelectItemDelegate selectItem)
+        public MachineViewModel(MainViewModel mainViewModel, ICoreMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, SelectItemDelegate selectItem)
         {
             Machine = machine;
             if (machine != null)
@@ -45,12 +44,16 @@ namespace CPvC
 
             _openCommand = new Command(
                 p => (machine as IOpenableMachine)?.Open(),
-                p => ((machine as IOpenableMachine)?.RequiresOpen ?? false)
+                p => (machine as IOpenableMachine)?.RequiresOpen ?? false
             );
 
             _closeCommand = new Command(
-                p => (machine as IOpenableMachine)?.Close(),
-                p => !((machine as IOpenableMachine)?.RequiresOpen ?? true)
+                p =>
+                {
+                    Close();
+                    mainViewModel?.Remove(this);
+                },
+                p => machine?.CanClose() ?? false
             );
 
             _pauseCommand = new Command(
@@ -137,13 +140,13 @@ namespace CPvC
             );
 
             _jumpToMostRecentBookmarkCommand = new Command(
-                p => (machine as IBookmarkableMachine)?.JumpToMostRecentBookmark(),
-                p => (machine as IBookmarkableMachine) != null
+                p => (machine as IJumpableMachine)?.JumpToMostRecentBookmark(),
+                p => (machine as IJumpableMachine) != null
             );
 
             _browseBookmarksCommand = new Command(
-                p => SelectBookmark(machine as Machine, promptForBookmark),
-                p => (machine as IBookmarkableMachine) != null
+                p => SelectBookmark(machine as IJumpableMachine, promptForBookmark),
+                p => (machine as IJumpableMachine) != null
             );
 
             _compactCommand = new Command(
@@ -304,6 +307,12 @@ namespace CPvC
             get { return _turboCommand; }
         }
 
+        public ICommand RemoveCommand
+        {
+            get { return _removeCommand; }
+            set { _removeCommand = value; }
+        }
+
         private void MachinePropChanged(object sender, PropertyChangedEventArgs args)
         {
             if (args.PropertyName == "Running")
@@ -405,7 +414,7 @@ namespace CPvC
             return buffer;
         }
 
-        private void SelectBookmark(IInteractiveMachine machine, PromptForBookmarkDelegate promptForBookmark)
+        private void SelectBookmark(IJumpableMachine machine, PromptForBookmarkDelegate promptForBookmark)
         {
             if (machine == null)
             {
@@ -417,13 +426,13 @@ namespace CPvC
                 HistoryEvent historyEvent = promptForBookmark();
                 if (historyEvent != null)
                 {
-                    machine.SetCurrentEvent(historyEvent);
-                    machine.Status = String.Format("Jumped to {0}", Helpers.GetTimeSpanFromTicks(machine.Core.Ticks).ToString(@"hh\:mm\:ss"));
+                    machine.JumpToBookmark(historyEvent);
+                    machine.Status = String.Format("Jumped to {0}", Helpers.GetTimeSpanFromTicks(historyEvent.Ticks).ToString(@"hh\:mm\:ss"));
                 }
             }
         }
 
-        private void RenameMachine(IInteractiveMachine machine, PromptForNameDelegate promptForName)
+        private void RenameMachine(Machine machine, PromptForNameDelegate promptForName)
         {
             if (machine == null)
             {
@@ -438,6 +447,11 @@ namespace CPvC
                     machine.Name = newName;
                 }
             }
+        }
+
+        public void Close()
+        {
+            Machine?.Close();
         }
     }
 }

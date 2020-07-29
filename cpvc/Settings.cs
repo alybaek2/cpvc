@@ -11,6 +11,7 @@ namespace CPvC
         private const string _discsFolderSettingName = "DiscsFolder";
         private const string _tapesFolderSettingName = "TapesFolder";
         private const string _recentlyOpenedSettingName = "RecentlyOpened";
+        private const string _remoteServersSettingName = "RemoteServers";
 
         static private string GetStringSetting(string name)
         {
@@ -79,6 +80,19 @@ namespace CPvC
             set
             {
                 SetStringSetting(_recentlyOpenedSettingName, value);
+            }
+        }
+
+        public string RemoteServers
+        {
+            get
+            {
+                return GetStringSetting(_remoteServersSettingName);
+            }
+
+            set
+            {
+                SetStringSetting(_remoteServersSettingName, value);
             }
         }
     }

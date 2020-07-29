@@ -11,7 +11,7 @@ namespace CPvC.Test
     {
         private Mock<IFileSystem> _mockFileSystem;
         private MockFileByteStream _mockBinaryWriter;
-        private Mock<RequestProcessedDelegate> _mockAuditor;
+        private Mock<MachineAuditorDelegate> _mockAuditor;
 
         public Machine CreateMachine()
         {
@@ -39,7 +39,7 @@ namespace CPvC.Test
 
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream("test.cpvc")).Returns(_mockBinaryWriter.Object);
 
-            _mockAuditor = new Mock<RequestProcessedDelegate>();
+            _mockAuditor = new Mock<MachineAuditorDelegate>();
         }
 
         [TearDown]
@@ -172,11 +172,11 @@ namespace CPvC.Test
 
                 if (createBookmark)
                 {
-                    _mockAuditor.Verify(a => a(machine.Core, null, It.Is<CoreAction>(c => c.Type == CoreRequest.Types.LoadCore && c.Ticks == ticks)), Times.Once);
+                    _mockAuditor.Verify(a => a(It.Is<CoreAction>(c => c.Type == CoreRequest.Types.LoadCore && c.Ticks == ticks)), Times.Once);
                 }
                 else
                 {
-                    _mockAuditor.Verify(a => a(machine.Core, null, It.Is<CoreAction>(c => c.Type == CoreRequest.Types.Reset && c.Ticks == 0)), Times.Once);
+                    _mockAuditor.Verify(a => a(It.Is<CoreAction>(c => c.Type == CoreRequest.Types.Reset && c.Ticks == 0)), Times.Once);
                 }
             }
         }
@@ -237,6 +237,25 @@ namespace CPvC.Test
             {
                 using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false)) { }
             });
+        }
+
+        [Test]
+        public void CanClose([Values(false, true)] bool requiresOpen)
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                if (requiresOpen)
+                {
+                    machine.Close();
+                }
+
+                // Act
+                bool canClose = machine.CanClose();
+
+                // Verify
+                Assert.AreEqual(!requiresOpen, canClose);
+            }
         }
 
         /// <summary>
@@ -324,7 +343,7 @@ namespace CPvC.Test
 
                 Assert.AreEqual(historyEvent, machine.CurrentEvent);
 
-                _mockAuditor.Verify(a => a(It.IsAny<Core>(), null, It.Is<CoreAction>(c => c.Type == CoreRequest.Types.LoadCore)), Times.Once);
+                _mockAuditor.Verify(a => a(It.Is<CoreAction>(c => c.Type == CoreRequest.Types.LoadCore)), Times.Once);
             }
         }
 
@@ -383,7 +402,8 @@ namespace CPvC.Test
             }
 
             // Act and Verify
-            Assert.Throws<System.IndexOutOfRangeException>(() => {
+            Assert.Throws<System.IndexOutOfRangeException>(() =>
+            {
                 using (Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
                 {
                 }
@@ -736,7 +756,8 @@ namespace CPvC.Test
                 // Act and Verify - note that if CoreMachine.Core_set didn't do a check for reference
                 //                  equality between the new core and current core, an exception would
                 //                  later be thrown due to Dispose() being called.
-                Assert.DoesNotThrow(() => {
+                Assert.DoesNotThrow(() =>
+                {
                     machine.Core = machine.Core;
                 });
             }
@@ -760,7 +781,7 @@ namespace CPvC.Test
                 RunForAWhile(machine);
 
                 // Act and Verify
-                machine.SetCurrentEvent(bookmarkEvent);
+                machine.JumpToBookmark(bookmarkEvent);
                 Assert.AreEqual(bookmarkEvent, machine.CurrentEvent);
 
                 bool[] keys = new bool[80];

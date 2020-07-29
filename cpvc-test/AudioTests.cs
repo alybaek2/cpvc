@@ -56,6 +56,26 @@ namespace CPvC.Test
             }
         }
 
+        [Test]
+        public void NullDelegate()
+        {
+            // Setup
+            byte[] buffer = new byte[1000];
+            int bytesWritten = 0;
+            using (Audio audio = new Audio(null))
+            {
+                // Act
+                bytesWritten = audio.Read(buffer, 0, 100);
+            }
+
+            // Verify
+            Assert.AreEqual(4, bytesWritten);
+            Assert.Zero(buffer[0]);
+            Assert.Zero(buffer[1]);
+            Assert.Zero(buffer[2]);
+            Assert.Zero(buffer[3]);
+        }
+
         /// <summary>
         /// This isn't a real test as such, but rather a way of ensuring code coverage for the Length
         /// and Position properties which NAudio never seems to call, despite requiring them to be

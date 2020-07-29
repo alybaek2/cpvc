@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Media;
 
 namespace CPvC
 {
-    public sealed class ReplayMachine : CoreMachine, IPausableMachine, ITurboableMachine, IPrerecordedMachine, IClosableMachine, INotifyPropertyChanged, IDisposable
+    public sealed class ReplayMachine : CoreMachine,
+        ICoreMachine,
+        IPausableMachine,
+        ITurboableMachine,
+        IPrerecordedMachine,
+        INotifyPropertyChanged,
+        IDisposable
     {
         private UInt64 _endTicks;
 
@@ -41,7 +43,7 @@ namespace CPvC
             SeekToBookmark(-1);
         }
 
-        public string Name
+        public override string Name
         {
             get; set;
         }
@@ -54,9 +56,23 @@ namespace CPvC
             Display = null;
         }
 
+        public bool CanClose()
+        {
+            return true;
+        }
+
         public void Close()
         {
             Core = null;
+        }
+
+        public new void Start()
+        {
+            // Would a better test be to see if the core has outstanding requests?
+            if (Ticks < _endTicks)
+            {
+                base.Start();
+            }
         }
 
         private void SeekToBookmark(int bookmarkEventIndex)
@@ -94,35 +110,9 @@ namespace CPvC
 
             bool running = Core?.Running ?? false;
             Core = core;
-            if (running)
-            {
-                Core.Start();
-            }
-        }
+            Core.Auditors = RequestProcessed;
 
-        public void Start()
-        {
-            if (_core.Ticks < _endTicks)
-            {
-                _core.Start();
-            }
-        }
-
-        public void Stop()
-        {
-            _core.Stop();
-        }
-
-        public void ToggleRunning()
-        {
-            if (_core.Running)
-            {
-                Stop();
-            }
-            else
-            {
-                Start();
-            }
+            SetCoreRunning();
         }
 
         public void SeekToStart()
@@ -143,6 +133,17 @@ namespace CPvC
             {
                 SeekToBookmark(bookmarkIndex);
             }
+        }
+
+        /// <summary>
+        /// Delegate for logging core actions.
+        /// </summary>
+        /// <param name="core">The core the request was made for.</param>
+        /// <param name="request">The original request.</param>
+        /// <param name="action">The action taken.</param>
+        private void RequestProcessed(Core core, CoreRequest request, CoreAction action)
+        {
+            Auditors?.Invoke(action);
         }
     }
 }

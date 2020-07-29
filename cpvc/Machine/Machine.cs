@@ -4,6 +4,9 @@ using System.ComponentModel;
 
 namespace CPvC
 {
+    // Should this also send the Machine, so the receiver can verify this event came from the right Machine?
+    public delegate void MachineAuditorDelegate(CoreAction action);
+
     /// <summary>
     /// Represents a persistent instance of a CPvC machine.
     /// </summary>
@@ -12,23 +15,19 @@ namespace CPvC
     /// This allows a machine to be closed, and then resumed where it left off the next time it's opened.
     /// </remarks>
     public sealed class Machine : CoreMachine,
+        ICoreMachine,
         IOpenableMachine,
         IInteractiveMachine,
         IBookmarkableMachine,
+        IJumpableMachine,
         IPausableMachine,
         ITurboableMachine,
         ICompactableMachine,
-        IClosableMachine,
         IMachineFileReader,
         INotifyPropertyChanged,
         IDisposable
     {
         private string _name;
-        private bool _running;
-        private int _autoPauseCount;
-
-        // This really should be an event, so multiple subscribers can be supported. Or is this already supprted? Test this!
-        public RequestProcessedDelegate Auditors { get; set; }
 
         public HistoryEvent CurrentEvent { get; private set; }
         public HistoryEvent RootEvent { get; private set; }
@@ -43,8 +42,6 @@ namespace CPvC
         {
             _name = name;
             Filepath = machineFilepath;
-            _running = false;
-            _autoPauseCount = 0;
 
             Display = new Display();
 
@@ -129,11 +126,11 @@ namespace CPvC
 
                 if (bookmarkEvent?.Bookmark != null)
                 {
-                    Auditors?.Invoke(core, null, CoreAction.LoadCore(bookmarkEvent.Ticks, bookmarkEvent.Bookmark.State));
+                    Auditors?.Invoke(CoreAction.LoadCore(bookmarkEvent.Ticks, bookmarkEvent.Bookmark.State));
                 }
 
                 CoreAction action = CoreAction.CoreVersion(Core.Ticks, Core.LatestVersion);
-                AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true); // Core.Ticks, Core.LatestVersion), true);
+                AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
             }
             catch (Exception)
             {
@@ -180,6 +177,11 @@ namespace CPvC
             }
         }
 
+        public bool CanClose()
+        {
+            return !RequiresOpen;
+        }
+
         public void Close()
         {
             // No need to do this if we're in a "lazy-loaded" state.
@@ -206,9 +208,6 @@ namespace CPvC
 
             SetCore(null);
 
-            _running = false;
-            _autoPauseCount = 0;
-
             CurrentEvent = null;
             RootEvent = null;
 
@@ -227,23 +226,27 @@ namespace CPvC
         /// <param name="action">The action taken.</param>
         private void RequestProcessed(Core core, CoreRequest request, CoreAction action)
         {
-            if (core == _core && action != null && action.Type != CoreAction.Types.RunUntilForce)
+            if (core == _core && action != null)
             {
-                Auditors?.Invoke(core, request, action);
+                Auditors?.Invoke(action);
 
-                AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
-
-                switch (action.Type)
+                if (action.Type != CoreAction.Types.RunUntilForce)
                 {
-                    case CoreRequest.Types.LoadDisc:
-                        Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded disc" : "Ejected disc";
-                        break;
-                    case CoreRequest.Types.LoadTape:
-                        Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded tape" : "Ejected tape";
-                        break;
-                    case CoreRequest.Types.Reset:
-                        Status = "Reset";
-                        break;
+
+                    AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
+
+                    switch (action.Type)
+                    {
+                        case CoreRequest.Types.LoadDisc:
+                            Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded disc" : "Ejected disc";
+                            break;
+                        case CoreRequest.Types.LoadTape:
+                            Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded tape" : "Ejected tape";
+                            break;
+                        case CoreRequest.Types.Reset:
+                            Status = "Reset";
+                            break;
+                    }
                 }
             }
         }
@@ -278,39 +281,9 @@ namespace CPvC
         }
 
         /// <summary>
-        /// Helper class that pauses the machine on creation and resumes the machine when the object is disposed.
-        /// </summary>
-        private class AutoPauser : IDisposable
-        {
-            private readonly Machine _machine;
-
-            public AutoPauser(Machine machine)
-            {
-                _machine = machine;
-                _machine._autoPauseCount++;
-                _machine.SetCoreRunning();
-            }
-
-            public void Dispose()
-            {
-                _machine._autoPauseCount--;
-                _machine.SetCoreRunning();
-            }
-        }
-
-        /// <summary>
-        /// Pauses the machine and returns an IDisposable which, when disposed of, causes the machine to resume (if it was running before).
-        /// </summary>
-        /// <returns>A IDisposable interface.</returns>
-        public IDisposable AutoPause()
-        {
-            return new AutoPauser(this);
-        }
-
-        /// <summary>
         /// The name of the machine.
         /// </summary>
-        public string Name
+        public override string Name
         {
             get
             {
@@ -337,32 +310,6 @@ namespace CPvC
             _core.KeyPress(keycode, down);
         }
 
-        public void Start()
-        {
-            _running = true;
-            SetCoreRunning();
-            Status = "Resumed";
-        }
-
-        public void Stop()
-        {
-            _running = false;
-            SetCoreRunning();
-            Status = "Paused";
-        }
-
-        public void ToggleRunning()
-        {
-            if (_running)
-            {
-                Stop();
-            }
-            else
-            {
-                Start();
-            }
-        }
-
         public void AddBookmark(bool system)
         {
             using (AutoPause())
@@ -385,7 +332,7 @@ namespace CPvC
                 if (lastBookmarkEvent.Type == HistoryEvent.Types.Checkpoint && lastBookmarkEvent.Bookmark != null && !lastBookmarkEvent.Bookmark.System && lastBookmarkEvent.Ticks != Core.Ticks)
                 {
                     TimeSpan before = Helpers.GetTimeSpanFromTicks(Core.Ticks);
-                    SetCurrentEvent(lastBookmarkEvent);
+                    JumpToBookmark(lastBookmarkEvent);
                     TimeSpan after = Helpers.GetTimeSpanFromTicks(Core.Ticks);
                     Status = String.Format("Rewound to {0} (-{1})", after.ToString(@"hh\:mm\:ss"), (after - before).ToString(@"hh\:mm\:ss"));
                     return;
@@ -395,7 +342,7 @@ namespace CPvC
             }
 
             // No bookmarks? Go all the way back to the root!
-            SetCurrentEvent(RootEvent);
+            JumpToBookmark(RootEvent);
             Status = "Rewound to start";
         }
 
@@ -413,7 +360,7 @@ namespace CPvC
         /// Changes the current position in the timeline.
         /// </summary>
         /// <param name="bookmarkEvent">The event to become the current event in the timeline. This event must have a bookmark.</param>
-        public void SetCurrentEvent(HistoryEvent bookmarkEvent)
+        public void JumpToBookmark(HistoryEvent bookmarkEvent)
         {
             // Add a checkpoint at the current position to properly mark the end of this branch...
             Core.Stop();
@@ -426,11 +373,11 @@ namespace CPvC
 
             if (bookmarkEvent.Bookmark != null)
             {
-                Auditors?.Invoke(_core, null, CoreAction.LoadCore(bookmarkEvent.Ticks, bookmarkEvent.Bookmark.State));
+                Auditors?.Invoke(CoreAction.LoadCore(bookmarkEvent.Ticks, bookmarkEvent.Bookmark.State));
             }
             else
             {
-                Auditors?.Invoke(_core, null, CoreAction.Reset(bookmarkEvent.Ticks));
+                Auditors?.Invoke(CoreAction.Reset(bookmarkEvent.Ticks));
             }
 
             _file.WriteCurrent(bookmarkEvent);
@@ -610,27 +557,6 @@ namespace CPvC
         }
 
         /// <summary>
-        /// Sets the core to the appropriate running state, given the <c>_running</c> and <c>_autoPauseCount</c> members.
-        /// </summary>
-        private void SetCoreRunning()
-        {
-            if (_core == null)
-            {
-                return;
-            }
-
-            bool shouldRun = (_running && _autoPauseCount == 0);
-            if (shouldRun && !_core.Running)
-            {
-                _core.Start();
-            }
-            else if (!shouldRun && _core.Running)
-            {
-                _core.Stop();
-            }
-        }
-
-        /// <summary>
         /// Create a bookmark at the current event.
         /// </summary>
         /// <param name="system">Indicates if this bookmark is to be marked as a system bookmark.</param>
@@ -710,7 +636,7 @@ namespace CPvC
         {
             return _nextEventId++;
         }
-        
+
         // IMachineFileReader implementation.
         public void SetName(string name)
         {

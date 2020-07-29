@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using System;
 
 namespace CPvC.Test
 {
@@ -31,7 +32,7 @@ namespace CPvC.Test
         {
             // Setup
             string filepath = TestHelpers.GetTempFilepath("test.txt");
-            
+
             System.IO.File.Delete(filepath);
 
             FileSystem fs = new FileSystem();
@@ -86,9 +87,9 @@ namespace CPvC.Test
             IFileByteStream file = fileSystem.OpenFileByteStream(filepath);
 
             // Act
-            file.WriteByte(0x01);
-            file.WriteByte(0x02);
-            file.WriteByte(0x03);
+            file.Write(0x01);
+            file.Write(0x02);
+            file.Write(0x03);
             file.Write(new byte[] { 0x04, 0x05, 0x06 });
 
             // Verify
@@ -102,7 +103,7 @@ namespace CPvC.Test
             Assert.AreEqual(new byte[] { 0x04, 0x05, 0x06 }, bytes);
 
             // Verify reading past the end of the file.
-            Assert.AreEqual(-1, file.ReadByte());
+            Assert.Throws<Exception>(() => file.ReadByte());
             Assert.AreEqual(0, file.ReadBytes(bytes, 1));
 
             Assert.AreEqual(6, file.Position);

@@ -234,11 +234,11 @@ namespace CPvC.Test
             Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
             UnmanagedMemory screen = new UnmanagedMemory(Display.Width * Display.Pitch, 0);
             core.SetScreen(screen);
-            RunForAWhile(core, 4);
+            RunForAWhile(core, 1);
 
             // Act
             core.PushRequest(CoreRequest.CoreVersion(1));
-            RunForAWhile(core, 4);
+            RunForAWhile(core, 1);
 
             // Verify - this isn't the greatest test since we only have 1 version to test with.
             //          Once we have a new version, this test can be updated.
@@ -379,9 +379,9 @@ namespace CPvC.Test
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.KeyPress(Keys.A, true);
-                RunForAWhile(core, 100000);
+                RunForAWhile(core, 1);
                 byte[] state = core.GetState();
-                RunForAWhile(core, 100000);
+                RunForAWhile(core, 1);
 
                 // Act
                 core.LoadCoreState(new MemoryBlob(state));
@@ -390,6 +390,31 @@ namespace CPvC.Test
                 // Verify
                 byte[] loadedState = core.GetState();
                 Assert.AreEqual(state, loadedState);
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void KeepRunning(bool keepRunning)
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                core.KeepRunning = keepRunning;
+
+                // Act
+                core.Start();
+                Thread.Sleep(200);
+
+                // Verify
+                if (keepRunning)
+                {
+                    Assert.AreNotEqual(0, core.Ticks);
+                }
+                else
+                {
+                    Assert.Zero(core.Ticks);
+                }
             }
         }
     }

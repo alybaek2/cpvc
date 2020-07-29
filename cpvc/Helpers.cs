@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
+using System.Net.Sockets;
 
 namespace CPvC
 {
@@ -145,6 +145,34 @@ namespace CPvC
         static public TimeSpan GetTimeSpanFromTicks(UInt64 ticks)
         {
             return new TimeSpan((long)(5 * ticks / 2));
+        }
+
+        /// <summary>
+        /// Resolves a hostname and port to an IPv4 IPEndPoint.
+        /// </summary>
+        /// <param name="hostname">Name of the host to resolve.</param>
+        /// <param name="port">Port number</param>
+        /// <returns>An IPEndPoint corresponding to the specified hostname and port; null if resolving failed.</returns>
+        static public System.Net.IPEndPoint GetEndpoint(string hostname, UInt16 port)
+        {
+            System.Net.IPAddress[] addrs;
+
+            try
+            {
+                addrs = System.Net.Dns.GetHostAddresses(hostname);
+            }
+            catch (SocketException)
+            {
+                return null;
+            }
+
+            System.Net.IPAddress ipAddr = addrs.Where(addr => addr.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault();
+            if (ipAddr != null)
+            {
+                return new System.Net.IPEndPoint(ipAddr, port);
+            }
+
+            return null;
         }
     }
 }

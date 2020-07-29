@@ -14,10 +14,10 @@ namespace CPvC.Test
             string filepath = TestHelpers.GetTempFilepath("opentest.txt");
             System.IO.File.Delete(filepath);
             FileSystem fs = new FileSystem();
-            IByteStream file = fs.OpenFileByteStream(filepath);
+            IFileByteStream file = fs.OpenFileByteStream(filepath);
 
             // Act
-            file.WriteByte(0xfe);
+            file.Write(0xfe);
             file.Close();
 
             // Verify

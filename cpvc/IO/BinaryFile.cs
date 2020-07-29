@@ -1,17 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace CPvC
 {
     public class BinaryFile : IBinaryFile
     {
-        public IByteStream _byteStream;
+        public IFileByteStream _byteStream;
         private bool _diffsEnabled;
 
-        public BinaryFile(IByteStream byteStream)
+        public BinaryFile(IFileByteStream byteStream)
         {
             _diffsEnabled = false;
             _byteStream = byteStream;
@@ -42,7 +39,7 @@ namespace CPvC
         {
             lock (_byteStream)
             {
-                _byteStream.WriteByte(b);
+                _byteStream.Write(b);
             }
         }
 
@@ -50,7 +47,7 @@ namespace CPvC
         {
             lock (_byteStream)
             {
-                _byteStream.WriteByte((byte)(b ? 1 : 0));
+                _byteStream.Write((byte)(b ? 1 : 0));
             }
         }
 
@@ -90,13 +87,7 @@ namespace CPvC
         {
             lock (_byteStream)
             {
-                int b = _byteStream.ReadByte();
-                if (b == -1)
-                {
-                    throw new Exception("Insufficient bytes to read byte!");
-                }
-
-                return (byte)b;
+                return _byteStream.ReadByte();
             }
         }
 
@@ -200,7 +191,7 @@ namespace CPvC
                 {
                     return _pos;
                 }
-            }            
+            }
         }
 
         public class DiffBlob : Blob, IStreamDiffBlob

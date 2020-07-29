@@ -1,9 +1,4 @@
-﻿using Moq;
-using NUnit.Framework;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using static CPvC.Test.TestHelpers;
+﻿using NUnit.Framework;
 
 namespace CPvC.Test
 {
@@ -161,7 +156,7 @@ namespace CPvC.Test
         public void CloneInvalidType()
         {
             // Setup
-            CoreAction action = new CoreAction((CoreRequest.Types) 999, 100);
+            CoreAction action = new CoreAction((CoreRequest.Types)999, 100);
 
             // Act
             CoreAction clone = action.Clone();
