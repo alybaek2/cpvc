@@ -271,7 +271,6 @@ namespace CPvC
             return escapedMsg.ToArray();
         }
 
-
         private void ReceiveData(IAsyncResult asyn)
         {
             if (_socket == null)

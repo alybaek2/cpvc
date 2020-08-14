@@ -232,7 +232,6 @@ namespace CPvC
 
                 if (action.Type != CoreAction.Types.RunUntilForce)
                 {
-
                     AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
 
                     switch (action.Type)

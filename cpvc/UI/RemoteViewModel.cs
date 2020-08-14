@@ -88,7 +88,7 @@ namespace CPvC
 
         public RemoteViewModel(ServerInfo serverInfo, IRemote remote)
         {
-            Server = serverInfo;
+            _serverInfo = serverInfo;
             _enableLivePreview = false;
 
             _remote = remote;
