@@ -164,7 +164,14 @@ namespace CPvC.UI.Forms
         {
             if (e.Key == Key.OemTilde)
             {
-                _mainViewModel.ActiveMachineViewModel.TurboCommand.Execute(true);
+                if (e.KeyboardDevice.Modifiers == ModifierKeys.Shift)
+                {
+                    _mainViewModel.ActiveMachineViewModel.ReverseStartCommand.Execute(null);
+                }
+                else
+                {
+                    _mainViewModel.ActiveMachineViewModel.TurboCommand.Execute(true);
+                }
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);
@@ -178,7 +185,14 @@ namespace CPvC.UI.Forms
         {
             if (e.Key == Key.OemTilde)
             {
-                _mainViewModel.ActiveMachineViewModel.TurboCommand.Execute(false);
+                if (e.KeyboardDevice.Modifiers == ModifierKeys.Shift)
+                {
+                    _mainViewModel.ActiveMachineViewModel.ReverseStopCommand.Execute(null);
+                }
+                else
+                {
+                    _mainViewModel.ActiveMachineViewModel.TurboCommand.Execute(false);
+                }
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);

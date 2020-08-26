@@ -32,6 +32,8 @@ namespace CPvC
         private Command _keyDownCommand;
         private Command _keyUpCommand;
         private Command _turboCommand;
+        private Command _reverseStartCommand;
+        private Command _reverseStopCommand;
         private ICommand _removeCommand;
 
         public MachineViewModel(MainViewModel mainViewModel, ICoreMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, SelectItemDelegate selectItem)
@@ -48,11 +50,7 @@ namespace CPvC
             );
 
             _closeCommand = new Command(
-                p =>
-                {
-                    Close();
-                    mainViewModel?.Remove(this);
-                },
+                p => Close(),
                 p => machine?.CanClose() ?? false
             );
 
@@ -188,6 +186,16 @@ namespace CPvC
                 p => (machine as ITurboableMachine)?.EnableTurbo((bool)p),
                 p => (machine as ITurboableMachine) != null
             );
+
+            _reverseStartCommand = new Command(
+                p => (machine as IReversibleMachine)?.StartReverse(),
+                p => (machine as IReversibleMachine) != null
+            );
+
+            _reverseStopCommand = new Command(
+                p => (machine as IReversibleMachine)?.StopReverse(),
+                p => (machine as IReversibleMachine) != null
+            );
         }
 
         public ICoreMachine Machine { get; }
@@ -311,6 +319,16 @@ namespace CPvC
         {
             get { return _removeCommand; }
             set { _removeCommand = value; }
+        }
+
+        public ICommand ReverseStartCommand
+        {
+            get { return _reverseStartCommand; }
+        }
+
+        public ICommand ReverseStopCommand
+        {
+            get { return _reverseStopCommand; }
         }
 
         private void MachinePropChanged(object sender, PropertyChangedEventArgs args)

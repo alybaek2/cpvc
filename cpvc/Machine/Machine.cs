@@ -21,6 +21,7 @@ namespace CPvC
         IBookmarkableMachine,
         IJumpableMachine,
         IPausableMachine,
+        IReversibleMachine,
         ITurboableMachine,
         ICompactableMachine,
         IMachineFileReader,
@@ -230,7 +231,7 @@ namespace CPvC
             {
                 Auditors?.Invoke(action);
 
-                if (action.Type != CoreAction.Types.RunUntilForce)
+                if (action.Type != CoreAction.Types.RunUntilForce && action.Type != CoreAction.Types.LoadSnapshot && action.Type != CoreAction.Types.SaveSnapshot)
                 {
                     AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
 
@@ -245,6 +246,24 @@ namespace CPvC
                         case CoreRequest.Types.Reset:
                             Status = "Reset";
                             break;
+                    }
+                }
+                else if (action.Type == CoreAction.Types.LoadSnapshot)
+                {
+                    // Ensure to update the display.
+                    Display.CopyFromBufferAsync();
+
+                    // Switch the CurrentEvent back if necessary...
+                    HistoryEvent newCurrentEvent = CurrentEvent;
+                    while (newCurrentEvent.Ticks > Ticks)
+                    {
+                        newCurrentEvent = CurrentEvent.Parent;
+                    }
+
+                    if (CurrentEvent != newCurrentEvent)
+                    {
+                        _file.WriteCurrent(newCurrentEvent);
+                        CurrentEvent = newCurrentEvent;
                     }
                 }
             }
@@ -671,6 +690,17 @@ namespace CPvC
             AddEvent(historyEvent, false);
 
             _nextEventId = Math.Max(_nextEventId, historyEvent.Id + 1);
+        }
+
+        public new void StartReverse()
+        {
+            if (_core.RunningState == RunningState.Reverse)
+            {
+                return;
+            }
+
+            SetCheckpoint();
+            base.StartReverse();
         }
     }
 }

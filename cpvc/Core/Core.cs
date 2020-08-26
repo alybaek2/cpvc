@@ -1,10 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 
 namespace CPvC
 {
+    public enum RunningState
+    {
+        Paused,
+        Running,
+        Reverse
+    }
+
     /// <summary>
     /// Delegate for auditing the actions taken by a Core.
     /// </summary>
@@ -37,9 +45,50 @@ namespace CPvC
         private readonly List<CoreRequest> _requests;
         private object _lockObject;
 
-        private bool _running;
         private bool _quitThread;
         private Thread _coreThread;
+
+        private RunningState _runningState;
+        private AutoResetEvent _runningStateChanged;
+
+        public RunningState RunningState
+        {
+            get
+            {
+                return _runningState;
+            }
+        }
+
+        private class SnapshotInfo
+        {
+            private UInt64 _ticks;
+            private int _snapshotId;
+
+            public SnapshotInfo(UInt64 ticks, int snapshotId)
+            {
+                _ticks = ticks;
+                _snapshotId = snapshotId;
+            }
+
+            public UInt64 Ticks
+            {
+                get
+                {
+                    return _ticks;
+                }
+            }
+
+            public int SnapshotId
+            {
+                get
+                {
+                    return _snapshotId;
+                }
+            }
+        }
+
+        private List<SnapshotInfo> _snapshots;
+        private const int _snapshotLimit = 500;
 
         private bool _keepRunning;
 
@@ -74,6 +123,7 @@ namespace CPvC
             10392, 16706, 23339, 29292, 36969, 46421, 55195, 65535
         };
 
+        private const UInt64 _totalSnapshots = 500;
         private SynchronizationContext _syncContext;
 
         public byte Volume
@@ -110,10 +160,12 @@ namespace CPvC
 
             _quitThread = false;
             _coreThread = null;
-            _running = false;
+
             _keepRunning = true;
 
             BeginVSync = null;
+
+            _snapshots = new List<SnapshotInfo>();
 
             SetScreen(IntPtr.Zero);
 
@@ -129,6 +181,9 @@ namespace CPvC
             // doing this, such as wrapping add and remove for Command.CanExecuteChanged in a lambda that
             // calls the target on its own SynchronizationContext.
             _syncContext = SynchronizationContext.Current;
+
+            _runningState = RunningState.Paused;
+            _runningStateChanged = new AutoResetEvent(false);
         }
 
         static private ICore CreateVersionedCore(int version)
@@ -163,6 +218,7 @@ namespace CPvC
         public void Dispose()
         {
             Stop();
+
             Auditors = null;
             BeginVSync = null;
 
@@ -177,6 +233,16 @@ namespace CPvC
 
             _requestQueueNonEmpty?.Dispose();
             _requestQueueNonEmpty = null;
+        }
+
+        public void LoadSnapshot(int id)
+        {
+            _coreCLR.LoadSnapshot(id);
+        }
+
+        public void SaveSnapshot(int id)
+        {
+            _coreCLR.SaveSnapshot(id);
         }
 
         /// <summary>
@@ -280,12 +346,13 @@ namespace CPvC
         {
             get
             {
-                return _running;
+                return (_runningState == RunningState.Running);
             }
 
             private set
             {
-                _running = value;
+                _runningState = value ? RunningState.Running : RunningState.Paused;
+                _runningStateChanged.Set();
 
                 OnPropertyChanged("Running");
             }
@@ -433,10 +500,46 @@ namespace CPvC
         /// </remarks>
         public void CoreThread()
         {
-            while (!_quitThread && !ProcessNextRequest()) { }
+            while (!_quitThread)
+            {
+                if (_runningState == RunningState.Running)
+                {
+                    if (ProcessNextRequest())
+                    {
+                        break;
+                    }
+                }
+                else if (_runningState == RunningState.Reverse)
+                {
+                    if (_snapshots.Count == 0)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        int snapshotIndex = _snapshots.Count - 1;
+                        SnapshotInfo info = _snapshots[snapshotIndex];
+                        _snapshots.RemoveAt(snapshotIndex);
+
+                        if (info.Ticks <= Ticks)
+                        {
+                            UInt64 ticks = Ticks - info.Ticks;
+                            Thread.Sleep((int) (ticks / 4000));
+                            _coreCLR.LoadSnapshot(info.SnapshotId);
+
+                            Auditors?.Invoke(this, null, CoreAction.LoadSnapshot(info.Ticks, info.SnapshotId));
+
+                            _lastTicksNotified = 0;
+                            OnPropertyChanged("Ticks");
+                        }
+                    }
+                }
+            }
 
             _quitThread = false;
             Running = false;
+            _runningState = RunningState.Paused;
+            _runningStateChanged.Set();
         }
 
         /// <summary>Takes the amplitude levels from the three PSG audio channels and converts them to 16-bit stereo samples that can be played by NAudio.</summary>
@@ -560,19 +663,35 @@ namespace CPvC
                 if (!Running)
                 {
                     Running = true;
+                    _runningState = RunningState.Running;
 
-                    _coreThread = new Thread(CoreThread);
-                    _coreThread.Start();
+                    if (_coreThread == null || !_coreThread.IsAlive)
+                    {
+                        _coreThread = new Thread(CoreThread);
+                        _coreThread.Start();
+                    }
                 }
             }
             else
             {
-                if (Running)
+                if (_coreThread != null && _coreThread.IsAlive)
                 {
                     _quitThread = true;
                     _coreThread.Join();
                     _coreThread = null;
                 }
+            }
+        }
+
+        public void SetReverseRunning()
+        {
+            _runningState = RunningState.Reverse;
+            _runningStateChanged.Set();
+
+            if (_coreThread == null || !_coreThread.IsAlive)
+            {
+                _coreThread = new Thread(CoreThread);
+                _coreThread.Start();
             }
         }
 
@@ -681,6 +800,33 @@ namespace CPvC
             return false;
         }
 
+        private void TakeSnapshot()
+        {
+            SnapshotInfo newSnapshotInfo = null;
+            if (_snapshots.Count == _snapshotLimit)
+            {
+                SnapshotInfo info = _snapshots[0];
+                _snapshots.RemoveAt(0);
+
+                newSnapshotInfo = new SnapshotInfo(_coreCLR.Ticks(), info.SnapshotId);
+                _snapshots.Add(newSnapshotInfo);
+            }
+            else if (_snapshots.Count == 0)
+            {
+                newSnapshotInfo = new SnapshotInfo(_coreCLR.Ticks(), 0);
+                _snapshots.Add(newSnapshotInfo);
+            }
+            else
+            {
+                int maxId = _snapshots.Max(s => s.SnapshotId);
+                newSnapshotInfo = new SnapshotInfo(_coreCLR.Ticks(), maxId + 1);
+                _snapshots.Add(newSnapshotInfo);
+            }
+
+            SaveSnapshot(newSnapshotInfo.SnapshotId);
+            Auditors?.Invoke(this, null, CoreAction.SaveSnapshot(newSnapshotInfo.Ticks, newSnapshotInfo.SnapshotId));
+        }
+
         private CoreAction RunForAWhile(UInt64 stopTicks)
         {
             UInt64 ticks = Ticks;
@@ -696,6 +842,8 @@ namespace CPvC
             if ((stopReason & StopReasons.VSync) != 0)
             {
                 BeginVSync?.Invoke(this);
+
+                TakeSnapshot();
             }
 
             // Don't fire a Ticks notification more than once a second. Otherwise, this can fire

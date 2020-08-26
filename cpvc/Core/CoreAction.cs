@@ -74,6 +74,26 @@ namespace CPvC
             return action;
         }
 
+        static public CoreAction LoadSnapshot(UInt64 ticks, int id)
+        {
+            CoreAction action = new CoreAction(Types.LoadSnapshot, ticks)
+            {
+                SnapshotId = id
+            };
+
+            return action;
+        }
+
+        static public CoreAction SaveSnapshot(UInt64 ticks, int id)
+        {
+            CoreAction action = new CoreAction(Types.SaveSnapshot, ticks)
+            {
+                SnapshotId = id
+            };
+
+            return action;
+        }
+
         static public CoreAction CoreVersion(UInt64 ticks, int version)
         {
             CoreAction action = new CoreAction(Types.CoreVersion, ticks)

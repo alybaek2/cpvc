@@ -18,5 +18,7 @@ namespace CPvC
         void AudioSampleFrequency(UInt32 frequency);
         byte[] GetState();
         void LoadState(byte[] state);
+        bool LoadSnapshot(int id);
+        void SaveSnapshot(int id);
     }
 }

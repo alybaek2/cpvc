@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Threading;
 
 namespace CPvC
 {
@@ -8,7 +9,9 @@ namespace CPvC
         protected Core _core;
         protected string _filepath;
         private string _status;
-        protected bool _running;
+        
+        private RunningState _runningState;
+
         protected int _autoPauseCount;
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -16,7 +19,7 @@ namespace CPvC
         public CoreMachine()
         {
             _autoPauseCount = 0;
-            _running = false;
+            _runningState = RunningState.Paused;
         }
 
         public Core Core
@@ -160,34 +163,62 @@ namespace CPvC
                 return;
             }
 
-            bool shouldRun = (_running && _autoPauseCount == 0);
-            if (shouldRun && !_core.Running)
-            {
-                _core.Start();
-            }
-            else if (!shouldRun && _core.Running)
+            if (_autoPauseCount > 0)
             {
                 _core.Stop();
+            }
+            else
+            {
+                switch (_runningState)
+                {
+                    case RunningState.Paused:
+                        _core.Stop();
+                        break;
+                    case RunningState.Running:
+                        _core.Start();
+                        break;
+                    case RunningState.Reverse:
+                        _core.SetReverseRunning();
+                        break;
+                }
             }
         }
 
         public void Start()
         {
-            _running = true;
+            _runningState = RunningState.Running;
             SetCoreRunning();
             Status = "Resumed";
         }
 
         public void Stop()
         {
-            _running = false;
+            _runningState = RunningState.Paused;
             SetCoreRunning();
             Status = "Paused";
         }
 
+        public void Reverse()
+        {
+            _runningState = RunningState.Reverse;
+            
+            SetCoreRunning();
+            Status = "Reversing";
+        }
+
+        public void StartReverse()
+        {
+            Reverse();
+        }
+
+        public void StopReverse()
+        {
+            Stop();
+        }
+
         public void ToggleRunning()
         {
-            if (_running)
+            if (_runningState == RunningState.Running)
             {
                 Stop();
             }

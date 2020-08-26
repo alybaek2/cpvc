@@ -21,6 +21,8 @@ namespace CPvC
             CoreVersion,
             RunUntilForce,
             LoadCore,
+            SaveSnapshot,
+            LoadSnapshot,
             Quit
         }
 
@@ -60,6 +62,11 @@ namespace CPvC
         /// For a request, this indicates the Core to be loaded. For an action represents the core than was actually loaded.
         /// </summary>
         public IBlob CoreState { get; protected set; }
+
+        /// <summary>
+        /// For a load or save snapshot action, this indicates the id of the snapshot.
+        /// </summary>
+        public int SnapshotId { get; protected set; }
 
         static public CoreRequest Reset()
         {

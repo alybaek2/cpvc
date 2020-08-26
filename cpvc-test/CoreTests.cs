@@ -326,7 +326,9 @@ namespace CPvC.Test
                 // Act
                 core.PushRequest(request);
                 core.PushRequest(CoreRequest.Quit());
-                core.CoreThread();
+                core.Start();
+                Thread.Sleep(1000);
+                core.Stop();
 
                 // Verify
                 mockAuditor.Verify(a => a(core, request, null));
