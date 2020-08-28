@@ -205,7 +205,7 @@
             <TabControl.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                        <Image Width="16" Height="16" Stretch="None" Source="{Binding Machine.Running, Converter={StaticResource runningIconConverter}, Mode=OneWay}"/>
+                        <Image Width="16" Height="16" Stretch="None" Source="{Binding Machine.RunningState, Converter={StaticResource runningIconConverter}, Mode=OneWay}"/>
                         <TextBlock Text="{Binding Machine.Name, Mode=OneWay}"/>
                     </StackPanel>
                 </DataTemplate>

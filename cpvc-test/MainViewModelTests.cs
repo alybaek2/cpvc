@@ -587,7 +587,7 @@ namespace CPvC.Test
             ProcessQueueAndStop(machine.Core);
 
             // Verify
-            Assert.False(machine.Core.Running);
+            Assert.AreEqual(RunningState.Paused, machine.RunningState);
 
             Assert.AreEqual(active || !nullMachine, resetCalled);
             Times expectedResetTimes = (active || !nullMachine) ? Times.Once() : Times.Never();

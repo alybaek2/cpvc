@@ -214,7 +214,7 @@ namespace CPvC.Test
             {
                 if (timeWaited > 1000)
                 {
-                    throw new Exception(String.Format("Waited too long for Machine to run! {0} {1}", machine.Ticks, machine.Running));
+                    throw new Exception(String.Format("Waited too long for Machine to run! {0} {1}", machine.Ticks, machine.RunningState));
                 }
 
                 System.Threading.Thread.Sleep(sleepTime);
@@ -253,7 +253,7 @@ namespace CPvC.Test
             int timeout = 30000;
             while (timeout > 0)
             {
-                if (!core.Running)
+                if (core.RunningState == RunningState.Paused)
                 {
                     break;
                 }

@@ -108,7 +108,6 @@ namespace CPvC
             core.PushRequest(CoreRequest.RunUntilForce(_endTicks));
             core.PushRequest(CoreRequest.Quit());
 
-            bool running = Core?.Running ?? false;
             Core = core;
             Core.Auditors = RequestProcessed;
 

@@ -13,12 +13,12 @@ namespace CPvC.UI.Converters
         public object Convert(object value, Type targetType,
             object parameter, CultureInfo culture)
         {
-            if (value == null || !(value is bool))
+            if (value == null || !(value is RunningState))
             {
                 return null;
             }
 
-            return ((bool)value == true) ? _runningImage : _pausedImage;
+            return ((RunningState)value == RunningState.Running) ? _runningImage : _pausedImage;
         }
 
         public object ConvertBack(object value, Type targetType,

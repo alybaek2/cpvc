@@ -118,21 +118,21 @@ namespace CPvC.Test
             {
                 machine.Start();
 
-                Assert.IsTrue(machine.Core.Running);
+                Assert.AreEqual(RunningState.Running, machine.Core.RunningState);
 
                 using (machine.AutoPause())
                 {
-                    Assert.IsFalse(machine.Core.Running);
+                    Assert.AreEqual(RunningState.Paused, machine.Core.RunningState);
 
                     using (machine.AutoPause())
                     {
-                        Assert.IsFalse(machine.Core.Running);
+                        Assert.AreEqual(RunningState.Paused, machine.Core.RunningState);
                     }
 
-                    Assert.IsFalse(machine.Core.Running);
+                    Assert.AreEqual(RunningState.Paused, machine.Core.RunningState);
                 }
 
-                Assert.IsTrue(machine.Core.Running);
+                Assert.AreEqual(RunningState.Running, machine.Core.RunningState);
             }
         }
 
@@ -450,15 +450,15 @@ namespace CPvC.Test
                 machine.Start();
 
                 // Act
-                bool running1 = machine.Core.Running;
+                RunningState state1 = machine.RunningState;
                 machine.ToggleRunning();
-                bool running2 = machine.Core.Running;
+                RunningState state2 = machine.RunningState;
                 machine.ToggleRunning();
 
                 // Verify
-                Assert.IsTrue(running1);
-                Assert.IsFalse(running2);
-                Assert.IsTrue(machine.Core.Running);
+                Assert.AreEqual(RunningState.Running, state1);
+                Assert.AreEqual(RunningState.Paused, state2);
+                Assert.AreEqual(RunningState.Running, machine.RunningState);
             }
         }
 
@@ -702,7 +702,7 @@ namespace CPvC.Test
                 machine.Close();
 
                 // Verify
-                Assert.False(machine.Running);
+                Assert.AreEqual(RunningState.Paused, machine.RunningState);
             }
         }
 

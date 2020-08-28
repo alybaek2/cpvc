@@ -64,7 +64,7 @@ namespace CPvC
                     }
 
                     IOpenableMachine m = machine as IOpenableMachine;
-                    if (machine.Running && (m == null || !m.RequiresOpen))
+                    if ((machine.RunningState == RunningState.Running) && (m == null || !m.RequiresOpen))
                     {
                         return true;
                     }
@@ -83,7 +83,7 @@ namespace CPvC
                     }
 
                     IOpenableMachine m = machine as IOpenableMachine;
-                    if (!machine.Running && (m == null || !m.RequiresOpen))
+                    if ((machine.RunningState == RunningState.Paused) && (m == null || !m.RequiresOpen))
                     {
                         return true;
                     }

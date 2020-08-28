@@ -87,14 +87,6 @@ namespace CPvC
             }
         }
 
-        public bool Running
-        {
-            get
-            {
-                return Core?.Running ?? false;
-            }
-        }
-
         public RunningState RunningState
         {
             get

@@ -51,14 +51,6 @@ namespace CPvC
         private RunningState _runningState;
         private AutoResetEvent _runningStateChanged;
 
-        public RunningState RunningState
-        {
-            get
-            {
-                return _runningState;
-            }
-        }
-
         private class SnapshotInfo
         {
             private UInt64 _ticks;
@@ -340,22 +332,13 @@ namespace CPvC
         }
 
         /// <summary>
-        /// Indicates whether the core is currently running.
+        /// Indicates the current running state of the core.
         /// </summary>
-        public bool Running
+        public RunningState RunningState
         {
             get
             {
-                return (_runningState == RunningState.Running);
-            }
-
-            private set
-            {
-                _runningState = value ? RunningState.Running : RunningState.Paused;
-                _runningStateChanged.Set();
-
-                OnPropertyChanged("Running");
-                OnPropertyChanged("RunningState");
+                return _runningState;
             }
         }
 
@@ -538,7 +521,6 @@ namespace CPvC
             }
 
             _quitThread = false;
-            Running = false;
             _runningState = RunningState.Paused;
             OnPropertyChanged("Running");
             OnPropertyChanged("RunningState");
@@ -663,9 +645,8 @@ namespace CPvC
         {
             if (running)
             {
-                if (!Running)
+                if (_runningState != RunningState.Running)
                 {
-                    Running = true;
                     _runningState = RunningState.Running;
                     OnPropertyChanged("Running");
                     OnPropertyChanged("RunningState");
@@ -684,6 +665,10 @@ namespace CPvC
                     _quitThread = true;
                     _coreThread.Join();
                     _coreThread = null;
+
+                    _runningState = RunningState.Paused;
+                    OnPropertyChanged("Running");
+                    OnPropertyChanged("RunningState");
                 }
             }
         }

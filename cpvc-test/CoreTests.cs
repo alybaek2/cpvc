@@ -347,7 +347,7 @@ namespace CPvC.Test
                 core.Start();
 
                 // Verify
-                Assert.True(core.Running);
+                Assert.AreEqual(RunningState.Running, core.RunningState);
             }
         }
 

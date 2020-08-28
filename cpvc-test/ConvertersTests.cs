@@ -71,8 +71,8 @@ namespace CPvC.Test
         }
 
         [TestCase(null)]
-        [TestCase(false)]
-        [TestCase(true)]
+        [TestCase(RunningState.Paused)]
+        [TestCase(RunningState.Running)]
         [TestCase(100)]
         public void RunningIcon(object value)
         {
@@ -84,14 +84,14 @@ namespace CPvC.Test
             object original = conv.ConvertBack(converted, null, null, null);
 
             // Verify
-            if (value == null || !(value is bool))
+            if (value == null || !(value is RunningState))
             {
                 Assert.IsNull(converted);
             }
             else
             {
                 string path = ((BitmapImage)converted).UriSource.OriginalString;
-                string expectedPath = ((bool)value) ? "resume" : "pause";
+                string expectedPath = (((RunningState)value) == RunningState.Running) ? "resume" : "pause";
                 Assert.IsTrue(path.Contains(expectedPath));
             }
 
