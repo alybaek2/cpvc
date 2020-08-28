@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:converters="clr-namespace:CPvC.UI.Converters"
+        xmlns:cpvc="clr-namespace:CPvC"
         xmlns:System="clr-namespace:System;assembly=mscorlib" x:Class="CPvC.UI.Forms.MainWindow"
         mc:Ignorable="d"
         Title="CPvC" Height="705.125" Width="784.535" Closing="Window_Closing" Loaded="Window_Loaded" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp" SizeToContent="WidthAndHeight" ResizeMode="NoResize" Icon="../Resources/cpvc.png">
@@ -217,7 +218,7 @@
                                 <Style TargetType="Rectangle">
                                     <Setter Property="Visibility" Value="Hidden"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Machine.Running}" Value="False">
+                                        <DataTrigger Binding="{Binding Machine.RunningState}" Value="{x:Static cpvc:RunningState.Paused}">
                                             <Setter Property="Visibility" Value="Visible"/>
                                         </DataTrigger>
                                     </Style.Triggers>

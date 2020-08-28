@@ -355,6 +355,7 @@ namespace CPvC
                 _runningStateChanged.Set();
 
                 OnPropertyChanged("Running");
+                OnPropertyChanged("RunningState");
             }
         }
 
@@ -539,6 +540,8 @@ namespace CPvC
             _quitThread = false;
             Running = false;
             _runningState = RunningState.Paused;
+            OnPropertyChanged("Running");
+            OnPropertyChanged("RunningState");
             _runningStateChanged.Set();
         }
 
@@ -664,6 +667,8 @@ namespace CPvC
                 {
                     Running = true;
                     _runningState = RunningState.Running;
+                    OnPropertyChanged("Running");
+                    OnPropertyChanged("RunningState");
 
                     if (_coreThread == null || !_coreThread.IsAlive)
                     {
@@ -686,6 +691,8 @@ namespace CPvC
         public void SetReverseRunning()
         {
             _runningState = RunningState.Reverse;
+            OnPropertyChanged("Running");
+            OnPropertyChanged("RunningState");
             _runningStateChanged.Set();
 
             if (_coreThread == null || !_coreThread.IsAlive)

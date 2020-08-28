@@ -257,7 +257,7 @@ namespace CPvC
                     HistoryEvent newCurrentEvent = CurrentEvent;
                     while (newCurrentEvent.Ticks > Ticks)
                     {
-                        newCurrentEvent = CurrentEvent.Parent;
+                        newCurrentEvent = newCurrentEvent.Parent;
                     }
 
                     if (CurrentEvent != newCurrentEvent)

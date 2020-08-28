@@ -95,6 +95,14 @@ namespace CPvC
             }
         }
 
+        public RunningState RunningState
+        {
+            get
+            {
+                return Core?.RunningState ?? RunningState.Paused;
+            }
+        }
+
         public byte Volume
         {
             get
@@ -201,7 +209,6 @@ namespace CPvC
         public void Reverse()
         {
             _runningState = RunningState.Reverse;
-            
             SetCoreRunning();
             Status = "Reversing";
         }
