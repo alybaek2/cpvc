@@ -49,7 +49,6 @@ namespace CPvC
         private Thread _coreThread;
 
         private RunningState _runningState;
-        private AutoResetEvent _runningStateChanged;
 
         private class SnapshotInfo
         {
@@ -174,8 +173,7 @@ namespace CPvC
             // calls the target on its own SynchronizationContext.
             _syncContext = SynchronizationContext.Current;
 
-            _runningState = RunningState.Paused;
-            _runningStateChanged = new AutoResetEvent(false);
+            RunningState = RunningState.Paused;
         }
 
         static private ICore CreateVersionedCore(int version)
@@ -340,6 +338,17 @@ namespace CPvC
             {
                 return _runningState;
             }
+
+            set
+            {
+                if (_runningState == value)
+                {
+                    return;
+                }
+
+                _runningState = value;
+                OnPropertyChanged("RunningState");
+            }
         }
 
         public bool KeepRunning
@@ -426,12 +435,12 @@ namespace CPvC
 
         public void Start()
         {
-            SetRunning(true);
+            SetRunning(RunningState.Running);
         }
 
         public void Stop()
         {
-            SetRunning(false);
+            SetRunning(RunningState.Paused);
         }
 
         public void SetLowerROM(byte[] lowerROM)
@@ -486,14 +495,14 @@ namespace CPvC
         {
             while (!_quitThread)
             {
-                if (_runningState == RunningState.Running)
+                if (RunningState == RunningState.Running)
                 {
                     if (ProcessNextRequest())
                     {
                         break;
                     }
                 }
-                else if (_runningState == RunningState.Reverse)
+                else if (RunningState == RunningState.Reverse)
                 {
                     if (_snapshots.Count == 0)
                     {
@@ -521,10 +530,7 @@ namespace CPvC
             }
 
             _quitThread = false;
-            _runningState = RunningState.Paused;
-            OnPropertyChanged("Running");
-            OnPropertyChanged("RunningState");
-            _runningStateChanged.Set();
+            RunningState = RunningState.Paused;
         }
 
         /// <summary>Takes the amplitude levels from the three PSG audio channels and converts them to 16-bit stereo samples that can be played by NAudio.</summary>
@@ -641,50 +647,39 @@ namespace CPvC
             }
         }
 
-        private void SetRunning(bool running)
+        public void SetRunningState(RunningState runningState)
         {
-            if (running)
-            {
-                if (_runningState != RunningState.Running)
-                {
-                    _runningState = RunningState.Running;
-                    OnPropertyChanged("Running");
-                    OnPropertyChanged("RunningState");
+            SetRunning(runningState);
+        }
 
+        private void SetRunning(RunningState runningState)
+        {
+            if (runningState == RunningState)
+            {
+                return;
+            }
+
+            switch (runningState)
+            {
+                case RunningState.Paused:
+                    if (_coreThread != null && _coreThread.IsAlive)
+                    {
+                        _quitThread = true;
+                        _coreThread.Join();
+                        _coreThread = null;
+                    }
+                    break;
+                case RunningState.Running:
+                case RunningState.Reverse:
                     if (_coreThread == null || !_coreThread.IsAlive)
                     {
                         _coreThread = new Thread(CoreThread);
                         _coreThread.Start();
                     }
-                }
+                    break;
             }
-            else
-            {
-                if (_coreThread != null && _coreThread.IsAlive)
-                {
-                    _quitThread = true;
-                    _coreThread.Join();
-                    _coreThread = null;
 
-                    _runningState = RunningState.Paused;
-                    OnPropertyChanged("Running");
-                    OnPropertyChanged("RunningState");
-                }
-            }
-        }
-
-        public void SetReverseRunning()
-        {
-            _runningState = RunningState.Reverse;
-            OnPropertyChanged("Running");
-            OnPropertyChanged("RunningState");
-            _runningStateChanged.Set();
-
-            if (_coreThread == null || !_coreThread.IsAlive)
-            {
-                _coreThread = new Thread(CoreThread);
-                _coreThread.Start();
-            }
+            RunningState = runningState;
         }
 
         private bool ProcessNextRequest()

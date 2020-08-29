@@ -333,7 +333,7 @@ namespace CPvC
 
         private void MachinePropChanged(object sender, PropertyChangedEventArgs args)
         {
-            if (args.PropertyName == "Running")
+            if (args.PropertyName == "RunningState")
             {
                 _resumeCommand.InvokeCanExecuteChanged(sender, args);
                 _pauseCommand.InvokeCanExecuteChanged(sender, args);

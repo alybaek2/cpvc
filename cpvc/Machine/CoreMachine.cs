@@ -59,7 +59,7 @@ namespace CPvC
 
                 OnPropertyChanged("Core");
                 OnPropertyChanged("Ticks");
-                OnPropertyChanged("Running");
+                OnPropertyChanged("RunningState");
                 OnPropertyChanged("Volume");
             }
         }
@@ -169,18 +169,7 @@ namespace CPvC
             }
             else
             {
-                switch (_runningState)
-                {
-                    case RunningState.Paused:
-                        _core.Stop();
-                        break;
-                    case RunningState.Running:
-                        _core.Start();
-                        break;
-                    case RunningState.Reverse:
-                        _core.SetReverseRunning();
-                        break;
-                }
+                _core.SetRunningState(_runningState);
             }
         }
 
