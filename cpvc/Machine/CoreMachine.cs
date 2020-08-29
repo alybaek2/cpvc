@@ -10,7 +10,7 @@ namespace CPvC
         protected string _filepath;
         private string _status;
         
-        private RunningState _runningState;
+        protected RunningState _runningState;
 
         protected int _autoPauseCount;
 
@@ -185,23 +185,6 @@ namespace CPvC
             _runningState = RunningState.Paused;
             SetCoreRunning();
             Status = "Paused";
-        }
-
-        public void Reverse()
-        {
-            _runningState = RunningState.Reverse;
-            SetCoreRunning();
-            Status = "Reversing";
-        }
-
-        public void StartReverse()
-        {
-            Reverse();
-        }
-
-        public void StopReverse()
-        {
-            Stop();
         }
 
         public void ToggleRunning()

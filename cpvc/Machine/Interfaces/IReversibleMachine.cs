@@ -2,7 +2,7 @@
 {
     public interface IReversibleMachine
     {
-        void StartReverse();
-        void StopReverse();
+        void Reverse();
+        void Stop();
     }
 }

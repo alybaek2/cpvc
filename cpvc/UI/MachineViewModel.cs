@@ -188,12 +188,12 @@ namespace CPvC
             );
 
             _reverseStartCommand = new Command(
-                p => (machine as IReversibleMachine)?.StartReverse(),
+                p => (machine as IReversibleMachine)?.Reverse(),
                 p => (machine as IReversibleMachine) != null
             );
 
             _reverseStopCommand = new Command(
-                p => (machine as IReversibleMachine)?.StopReverse(),
+                p => (machine as IReversibleMachine)?.Stop(),
                 p => (machine as IReversibleMachine) != null
             );
         }

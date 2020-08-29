@@ -692,7 +692,7 @@ namespace CPvC
             _nextEventId = Math.Max(_nextEventId, historyEvent.Id + 1);
         }
 
-        public new void StartReverse()
+        public void Reverse()
         {
             if (_core.RunningState == RunningState.Reverse)
             {
@@ -700,7 +700,10 @@ namespace CPvC
             }
 
             SetCheckpoint();
-            base.StartReverse();
+
+            _runningState = RunningState.Reverse;
+            SetCoreRunning();
+            Status = "Reversing";
         }
     }
 }
