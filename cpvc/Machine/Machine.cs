@@ -36,6 +36,8 @@ namespace CPvC
 
         private int _nextEventId;
 
+        private RunningState _previousRunningState;
+
         private readonly IFileSystem _fileSystem;
         private MachineFile _file;
 
@@ -48,6 +50,8 @@ namespace CPvC
 
             _nextEventId = 0;
             _historyEventById = new Dictionary<int, HistoryEvent>();
+
+            _previousRunningState = RunningState.Paused;
 
             _fileSystem = fileSystem;
         }
@@ -701,9 +705,16 @@ namespace CPvC
 
             SetCheckpoint();
 
+            _previousRunningState = _runningState;
             _runningState = RunningState.Reverse;
             SetCoreRunning();
             Status = "Reversing";
+        }
+
+        public void ReverseStop()
+        {
+            _runningState = _previousRunningState;
+            SetCoreRunning();
         }
     }
 }

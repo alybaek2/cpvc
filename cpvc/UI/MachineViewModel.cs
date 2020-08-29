@@ -193,7 +193,7 @@ namespace CPvC
             );
 
             _reverseStopCommand = new Command(
-                p => (machine as IReversibleMachine)?.Stop(),
+                p => (machine as IReversibleMachine)?.ReverseStop(),
                 p => (machine as IReversibleMachine) != null
             );
         }

@@ -3,6 +3,6 @@
     public interface IReversibleMachine
     {
         void Reverse();
-        void Stop();
+        void ReverseStop();
     }
 }

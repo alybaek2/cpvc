@@ -102,7 +102,7 @@
                 </MenuItem>
                 <MenuItem Header="Resume" Command="{Binding ActiveMachineViewModel.ResumeCommand}">
                     <MenuItem.Icon>
-                        <Image Width="16" Height="16" Source="../Resources/resume16.png" />
+                        <Image Width="16" Height="16" Source="../Resources/running16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
@@ -175,7 +175,7 @@
                 </Button>
                 <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.ResumeCommand}">
                     <StackPanel Orientation="Horizontal">
-                        <Image Source="../Resources/resume16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
+                        <Image Source="../Resources/running16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
                 <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.ResetCommand}">

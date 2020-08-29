@@ -70,11 +70,12 @@ namespace CPvC.Test
             Assert.IsNull(original);
         }
 
-        [TestCase(null)]
-        [TestCase(RunningState.Paused)]
-        [TestCase(RunningState.Running)]
-        [TestCase(100)]
-        public void RunningIcon(object value)
+        [TestCase(null, null)]
+        [TestCase(RunningState.Paused, "pause")]
+        [TestCase(RunningState.Running, "running")]
+        [TestCase(RunningState.Reverse, "reverse")]
+        [TestCase(100, null)]
+        public void RunningIcon(object value, string expectedPath)
         {
             // Setup
             CPvC.UI.Converters.RunningIcon conv = new UI.Converters.RunningIcon();
@@ -91,7 +92,6 @@ namespace CPvC.Test
             else
             {
                 string path = ((BitmapImage)converted).UriSource.OriginalString;
-                string expectedPath = (((RunningState)value) == RunningState.Running) ? "resume" : "pause";
                 Assert.IsTrue(path.Contains(expectedPath));
             }
 
