@@ -72,29 +72,6 @@ namespace CPvC.Test
             }
         }
 
-        // Ensures that pings are "throttled". That is, if two CoreActions are processed
-        // in quick succession, only one ping will be sent. This test could probably be
-        // a bit more precise in terms of testing the 100 ms threshold for sending
-        // successive ping messages.
-        [Test]
-        public void SendOnePing()
-        {
-            // Setup
-            using (RemoteMachine machine = new RemoteMachine(_mockRemote.Object))
-            {
-                machine.Start();
-
-                // Act
-                _receiveCoreAction(CoreAction.RunUntilForce(0, 1));
-                _receiveCoreAction(CoreAction.RunUntilForce(0, 1));
-                Thread.Sleep(100);
-                machine.Stop();
-
-                // Verify
-                _mockRemote.Verify(r => r.SendPing(false, It.IsAny<UInt64>()), Times.Once());
-            }
-        }
-
         [Test]
         public void CloseConnection()
         {
