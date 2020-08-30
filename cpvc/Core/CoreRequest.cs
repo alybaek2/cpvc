@@ -135,6 +135,26 @@ namespace CPvC
             return request;
         }
 
+        static public CoreRequest SaveSnapshot(Int32 snapshotId)
+        {
+            CoreRequest request = new CoreRequest(Types.SaveSnapshot)
+            {
+                SnapshotId = snapshotId
+            };
+
+            return request;
+        }
+
+        static public CoreRequest LoadSnapshot(Int32 snapshotId)
+        {
+            CoreRequest request = new CoreRequest(Types.LoadSnapshot)
+            {
+                SnapshotId = snapshotId
+            };
+
+            return request;
+        }
+
         static public CoreRequest Quit()
         {
             return new CoreRequest(Types.Quit);

@@ -13,6 +13,8 @@ namespace CPvC
         public const byte _coreActionRunUntil = 5;
         public const byte _coreActionLoadCore = 6;
         public const byte _coreActionCoreVersion = 7;
+        public const byte _coreActionSaveSnapshot = 8;
+        public const byte _coreActionLoadSnapshot = 9;
 
         static public void SelectMachineToBytes(MemoryByteStream stream, string machineName)
         {
@@ -83,6 +85,14 @@ namespace CPvC
                     stream.Write(_coreActionCoreVersion);
                     stream.Write(request.Version);
                     break;
+                case CoreRequest.Types.SaveSnapshot:
+                    stream.Write(_coreActionSaveSnapshot);
+                    stream.Write(request.SnapshotId);
+                    break;
+                case CoreRequest.Types.LoadSnapshot:
+                    stream.Write(_coreActionLoadSnapshot);
+                    stream.Write(request.SnapshotId);
+                    break;
                 default:
                     throw new Exception(String.Format("Unknown CoreRequest type {0}!", request.Type));
             }
@@ -127,6 +137,16 @@ namespace CPvC
                     stream.Write(_coreActionCoreVersion);
                     stream.Write(action.Ticks);
                     stream.Write(action.Version);
+                    break;
+                case CoreRequest.Types.SaveSnapshot:
+                    stream.Write(_coreActionSaveSnapshot);
+                    stream.Write(action.Ticks);
+                    stream.Write(action.SnapshotId);
+                    break;
+                case CoreRequest.Types.LoadSnapshot:
+                    stream.Write(_coreActionLoadSnapshot);
+                    stream.Write(action.Ticks);
+                    stream.Write(action.SnapshotId);
                     break;
                 default:
                     throw new Exception(String.Format("Unknown CoreAction type {0}!", action.Type));
@@ -188,6 +208,20 @@ namespace CPvC
 
                         return CoreAction.CoreVersion(ticks, version);
                     }
+                case _coreActionSaveSnapshot:
+                    {
+                        UInt64 ticks = stream.ReadUInt64();
+                        Int32 snapshotId = stream.ReadInt32();
+
+                        return CoreAction.SaveSnapshot(ticks, snapshotId);
+                    }
+                case _coreActionLoadSnapshot:
+                    {
+                        UInt64 ticks = stream.ReadUInt64();
+                        Int32 snapshotId = stream.ReadInt32();
+
+                        return CoreAction.LoadSnapshot(ticks, snapshotId);
+                    }
                 default:
                     throw new Exception(String.Format("Unknown CoreAction type {0}!", type));
             }
@@ -239,6 +273,18 @@ namespace CPvC
                         Int32 version = stream.ReadInt32();
 
                         return CoreRequest.CoreVersion(version);
+                    }
+                case _coreActionSaveSnapshot:
+                    {
+                        Int32 snapshotId = stream.ReadInt32();
+
+                        return CoreRequest.SaveSnapshot(snapshotId);
+                    }
+                case _coreActionLoadSnapshot:
+                    {
+                        Int32 snapshotId = stream.ReadInt32();
+
+                        return CoreRequest.LoadSnapshot(snapshotId);
                     }
                 default:
                     throw new Exception(String.Format("Unknown CoreRequest type {0}!", type));

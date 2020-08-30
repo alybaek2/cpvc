@@ -124,6 +124,10 @@ namespace CPvC
                     return CoreAction.RunUntilForce(Ticks, StopTicks);
                 case Types.LoadCore:
                     return CoreAction.LoadCore(Ticks, CoreState);
+                case Types.SaveSnapshot:
+                    return CoreAction.SaveSnapshot(Ticks, SnapshotId);
+                case Types.LoadSnapshot:
+                    return CoreAction.LoadSnapshot(Ticks, SnapshotId);
                 default:
                     return null;
             }

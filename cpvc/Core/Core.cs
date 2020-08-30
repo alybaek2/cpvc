@@ -225,16 +225,6 @@ namespace CPvC
             _requestQueueNonEmpty = null;
         }
 
-        public void LoadSnapshot(int id)
-        {
-            _coreCLR.LoadSnapshot(id);
-        }
-
-        public void SaveSnapshot(int id)
-        {
-            _coreCLR.SaveSnapshot(id);
-        }
-
         /// <summary>
         /// Asynchronously updates the state of a key.
         /// </summary>
@@ -768,6 +758,25 @@ namespace CPvC
 
                         action = CoreAction.LoadCore(ticks, request.CoreState);
                         break;
+                    case CoreRequest.Types.SaveSnapshot:
+                        lock (_lockObject)
+                        {
+                            _coreCLR.SaveSnapshot(request.SnapshotId);
+                        }
+
+                        action = CoreAction.SaveSnapshot(ticks, request.SnapshotId);
+                        break;
+                    case CoreRequest.Types.LoadSnapshot:
+                        lock (_lockObject)
+                        {
+                            _coreCLR.LoadSnapshot(request.SnapshotId);
+                        }
+
+                        _lastTicksNotified = 0;
+                        OnPropertyChanged("Ticks");
+
+                        action = CoreAction.LoadSnapshot(ticks, request.SnapshotId);
+                        break;
                     case CoreRequest.Types.Quit:
                         RemoveFirstRequest();
                         return true;
@@ -810,7 +819,8 @@ namespace CPvC
                 _snapshots.Add(newSnapshotInfo);
             }
 
-            SaveSnapshot(newSnapshotInfo.SnapshotId);
+            _coreCLR.SaveSnapshot(newSnapshotInfo.SnapshotId);
+            //SaveSnapshot(newSnapshotInfo.SnapshotId);
             Auditors?.Invoke(this, null, CoreAction.SaveSnapshot(newSnapshotInfo.Ticks, newSnapshotInfo.SnapshotId));
         }
 

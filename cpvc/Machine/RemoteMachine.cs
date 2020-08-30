@@ -11,8 +11,6 @@ namespace CPvC
     {
         private string _name;
         private IRemote _remote;
-        private int _lastPing;
-        private UInt64 _emulationLatency;
 
         /// <summary>
         /// The name of the machine.
@@ -40,15 +38,14 @@ namespace CPvC
             Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
             core.KeepRunning = false;
             Core = core;
+            core.Auditors += RequestProcessed;
+
             Start();
 
             _remote = remote;
             _remote.ReceiveCoreAction = ReceiveCoreAction;
             _remote.ReceiveName = ReceiveName;
             _remote.CloseConnection = CloseConnection;
-
-            _lastPing = 0;
-            _emulationLatency = 0;
         }
 
         private void CloseConnection()
@@ -66,18 +63,7 @@ namespace CPvC
 
             Auditors?.Invoke(coreAction);
 
-            _emulationLatency = coreAction.Ticks - Ticks;
-            Status = String.Format("Emulation latency: {0} ms", _emulationLatency / 4000);
             _core.PushRequest(coreAction);
-
-            int ticks = System.Environment.TickCount;
-
-            if ((ticks - _lastPing) > 100)
-            {
-                _remote.SendPing(false, (UInt64)ticks);
-
-                _lastPing = ticks;
-            }
         }
 
         public void ReceiveName(string machineName)
@@ -123,6 +109,18 @@ namespace CPvC
         public void Reset()
         {
             _remote.SendCoreRequest(CoreRequest.Reset());
+        }
+
+        private void RequestProcessed(Core core, CoreRequest request, CoreAction action)
+        {
+            if (core == _core && action != null)
+            {
+                if (action.Type == CoreAction.Types.LoadSnapshot)
+                {
+                    // Ensure to update the display.
+                    Display.CopyFromBufferAsync();
+                }
+            }
         }
     }
 }
