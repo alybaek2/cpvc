@@ -137,13 +137,13 @@ namespace CPvC
         /// <summary>
         /// Delegate for VSync events.
         /// </summary>
-        /// <param name="core">Core whose VSync signal went form low to high.</param>
-        protected void BeginVSync(Core core)
+        /// <param name="core">Core whose VSync signal went from low to high.</param>
+        protected virtual void BeginVSync(Core core)
         {
             Display.CopyFromBufferAsync();
         }
 
-        public int ReadAudio(byte[] buffer, int offset, int samplesRequested)
+        public virtual int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
             return Core?.ReadAudio16BitStereo(buffer, offset, samplesRequested) ?? 0;
         }

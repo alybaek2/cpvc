@@ -651,6 +651,7 @@ namespace CPvC
 
             switch (runningState)
             {
+                case RunningState.Reverse:
                 case RunningState.Paused:
                     if (_coreThread != null && _coreThread.IsAlive)
                     {
@@ -660,7 +661,6 @@ namespace CPvC
                     }
                     break;
                 case RunningState.Running:
-                case RunningState.Reverse:
                     if (_coreThread == null || !_coreThread.IsAlive)
                     {
                         _coreThread = new Thread(CoreThread);
@@ -796,32 +796,23 @@ namespace CPvC
             return false;
         }
 
-        private void TakeSnapshot()
+        public void SaveSnapshot(int snapshotId)
         {
-            SnapshotInfo newSnapshotInfo = null;
-            if (_snapshots.Count == _snapshotLimit)
-            {
-                SnapshotInfo info = _snapshots[0];
-                _snapshots.RemoveAt(0);
+            _coreCLR.SaveSnapshot(snapshotId);
+            Auditors?.Invoke(this, null, CoreAction.SaveSnapshot(Ticks, snapshotId));
+        }
 
-                newSnapshotInfo = new SnapshotInfo(_coreCLR.Ticks(), info.SnapshotId);
-                _snapshots.Add(newSnapshotInfo);
-            }
-            else if (_snapshots.Count == 0)
+        public bool LoadSnapshot(int snapshotId)
+        {
+            if (_coreCLR.LoadSnapshot(snapshotId))
             {
-                newSnapshotInfo = new SnapshotInfo(_coreCLR.Ticks(), 0);
-                _snapshots.Add(newSnapshotInfo);
-            }
-            else
-            {
-                int maxId = _snapshots.Max(s => s.SnapshotId);
-                newSnapshotInfo = new SnapshotInfo(_coreCLR.Ticks(), maxId + 1);
-                _snapshots.Add(newSnapshotInfo);
+                _lastTicksNotified = 0;
+
+                Auditors?.Invoke(this, null, CoreAction.LoadSnapshot(Ticks, snapshotId));
+                return true;
             }
 
-            _coreCLR.SaveSnapshot(newSnapshotInfo.SnapshotId);
-            //SaveSnapshot(newSnapshotInfo.SnapshotId);
-            Auditors?.Invoke(this, null, CoreAction.SaveSnapshot(newSnapshotInfo.Ticks, newSnapshotInfo.SnapshotId));
+            return false;
         }
 
         private CoreAction RunForAWhile(UInt64 stopTicks)
@@ -839,8 +830,6 @@ namespace CPvC
             if ((stopReason & StopReasons.VSync) != 0)
             {
                 BeginVSync?.Invoke(this);
-
-                TakeSnapshot();
             }
 
             // Don't fire a Ticks notification more than once a second. Otherwise, this can fire

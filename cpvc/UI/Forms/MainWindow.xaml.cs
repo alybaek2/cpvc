@@ -114,27 +114,27 @@ namespace CPvC.UI.Forms
             _keyMap.Map(Key.OemPipe, Keys.At);
             _keyMap.Map(Key.OemPlus, Keys.Caret);
             _keyMap.Map(Key.Back, Keys.Delete);
-            _keyMap.Map(Key.F10, Keys.Function0);
-            _keyMap.Map(Key.F1, Keys.Function1);
-            _keyMap.Map(Key.F2, Keys.Function2);
-            _keyMap.Map(Key.F3, Keys.Function3);
-            _keyMap.Map(Key.F4, Keys.Function4);
-            _keyMap.Map(Key.F5, Keys.Function5);
-            _keyMap.Map(Key.F6, Keys.Function6);
-            _keyMap.Map(Key.F7, Keys.Function7);
-            _keyMap.Map(Key.F8, Keys.Function8);
-            _keyMap.Map(Key.F9, Keys.Function9);
+            _keyMap.Map(Key.NumPad0, Keys.Function0);
+            _keyMap.Map(Key.NumPad1, Keys.Function1);
+            _keyMap.Map(Key.NumPad2, Keys.Function2);
+            _keyMap.Map(Key.NumPad3, Keys.Function3);
+            _keyMap.Map(Key.NumPad4, Keys.Function4);
+            _keyMap.Map(Key.NumPad5, Keys.Function5);
+            _keyMap.Map(Key.NumPad6, Keys.Function6);
+            _keyMap.Map(Key.NumPad7, Keys.Function7);
+            _keyMap.Map(Key.NumPad8, Keys.Function8);
+            _keyMap.Map(Key.NumPad9, Keys.Function9);
             _keyMap.Map(Key.Enter, Keys.Return);
             _keyMap.Map(Key.Space, Keys.Space);
             _keyMap.Map(Key.OemComma, Keys.LessThan);
             _keyMap.Map(Key.OemPeriod, Keys.GreaterThan);
 
-            _keyMap.Map(Key.NumPad4, Keys.Joy0Left);
-            _keyMap.Map(Key.NumPad6, Keys.Joy0Right);
-            _keyMap.Map(Key.NumPad8, Keys.Joy0Up);
-            _keyMap.Map(Key.NumPad2, Keys.Joy0Down);
-            _keyMap.Map(Key.NumPad0, Keys.Joy0Fire2);
-            _keyMap.Map(Key.NumPad5, Keys.Joy0Fire1);
+            //_keyMap.Map(Key.NumPad4, Keys.Joy0Left);
+            //_keyMap.Map(Key.NumPad6, Keys.Joy0Right);
+            //_keyMap.Map(Key.NumPad8, Keys.Joy0Up);
+            //_keyMap.Map(Key.NumPad2, Keys.Joy0Down);
+            //_keyMap.Map(Key.NumPad0, Keys.Joy0Fire2);
+            //_keyMap.Map(Key.NumPad5, Keys.Joy0Fire1);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -162,16 +162,13 @@ namespace CPvC.UI.Forms
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.OemTilde)
+            if (e.Key == Key.F1)
             {
-                if (e.KeyboardDevice.Modifiers == ModifierKeys.Shift)
-                {
-                    _mainViewModel.ActiveMachineViewModel.ReverseStartCommand.Execute(null);
-                }
-                else
-                {
-                    _mainViewModel.ActiveMachineViewModel.TurboCommand.Execute(true);
-                }
+                _mainViewModel.ActiveMachineViewModel.ReverseStartCommand.Execute(null);
+            }
+            else if (e.Key == Key.F2)
+            {
+                _mainViewModel.ActiveMachineViewModel.TurboCommand.Execute(true);
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);
@@ -183,16 +180,13 @@ namespace CPvC.UI.Forms
 
         private void Window_KeyUp(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.OemTilde)
+            if (e.Key == Key.F1)
             {
-                if (e.KeyboardDevice.Modifiers == ModifierKeys.Shift)
-                {
-                    _mainViewModel.ActiveMachineViewModel.ReverseStopCommand.Execute(null);
-                }
-                else
-                {
-                    _mainViewModel.ActiveMachineViewModel.TurboCommand.Execute(false);
-                }
+                _mainViewModel.ActiveMachineViewModel.ReverseStopCommand.Execute(null);
+            }
+            else if (e.Key == Key.F2)
+            {
+                _mainViewModel.ActiveMachineViewModel.TurboCommand.Execute(false);
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);

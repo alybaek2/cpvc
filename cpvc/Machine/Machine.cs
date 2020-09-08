@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 
 namespace CPvC
 {
@@ -41,6 +42,9 @@ namespace CPvC
         private readonly IFileSystem _fileSystem;
         private MachineFile _file;
 
+        private const int _snapshotLimit = 500;
+        private List<MachineSnapshotInfo> _snapshots;
+
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
             _name = name;
@@ -54,6 +58,8 @@ namespace CPvC
             _previousRunningState = RunningState.Paused;
 
             _fileSystem = fileSystem;
+
+            _snapshots = new List<MachineSnapshotInfo>();
         }
 
         public void Dispose()
@@ -62,6 +68,44 @@ namespace CPvC
 
             Display?.Dispose();
             Display = null;
+        }
+
+        private class MachineSnapshotInfo
+        {
+            readonly private UInt64 _ticks;
+            readonly private int _snapshotId;
+            readonly private HistoryEvent _parentEvent;
+
+            public MachineSnapshotInfo(UInt64 ticks, int snapshotId, HistoryEvent parentEvent)
+            {
+                _ticks = ticks;
+                _snapshotId = snapshotId;
+                _parentEvent = parentEvent;
+            }
+
+            public UInt64 Ticks
+            {
+                get
+                {
+                    return _ticks;
+                }
+            }
+
+            public int SnapshotId
+            {
+                get
+                {
+                    return _snapshotId;
+                }
+            }
+
+            public HistoryEvent ParentEvent
+            {
+                get
+                {
+                    return _parentEvent;
+                }
+            }
         }
 
         /// <summary>
@@ -221,6 +265,109 @@ namespace CPvC
             _nextEventId = 0;
 
             Display?.EnableGreyscale(true);
+        }
+
+        /// <summary>
+        /// Delegate for VSync events.
+        /// </summary>
+        /// <param name="core">Core whose VSync signal went from low to high.</param>
+        protected override void BeginVSync(Core core)
+        {
+            TakeSnapshot();
+
+            base.BeginVSync(core);
+        }
+
+        public override int ReadAudio(byte[] buffer, int offset, int samplesRequested)
+        {
+            // Drive Reverse mode from here...
+            if (RunningState == RunningState.Reverse)
+            {
+                int totalSamplesWritten = 0;
+                int currentSamplesRequested = samplesRequested;
+
+                while (totalSamplesWritten < samplesRequested)
+                {
+                    int samplesWritten = Core?.ReadAudio16BitStereo(buffer, offset, currentSamplesRequested) ?? 0;
+                    if (samplesWritten == 0)
+                    {
+
+                        // Time for the next snapshot!
+                        lock (_snapshots)
+                        {
+                            MachineSnapshotInfo nextSnapshot = _snapshots.Where(x => x.Ticks < Ticks).OrderBy(x => x.Ticks).LastOrDefault();
+                            if (nextSnapshot != null)
+                            {
+                                _snapshots.Remove(nextSnapshot);
+                                if (_core.LoadSnapshot(nextSnapshot.SnapshotId))
+                                {
+                                    OnPropertyChanged("Ticks");
+                                }
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                    }
+
+                    totalSamplesWritten += samplesWritten;
+                    currentSamplesRequested -= samplesWritten;
+                    offset += 4 * samplesWritten;
+                }
+
+                return totalSamplesWritten;
+            }
+
+            int samplesWritten2 = Core?.ReadAudio16BitStereo(buffer, offset, samplesRequested) ?? 0;
+
+            return samplesWritten2;
+        }
+
+        private void TakeSnapshot()
+        {
+            lock (_snapshots)
+            {
+                MachineSnapshotInfo newSnapshotInfo = null;
+                if (_snapshots.Count == _snapshotLimit)
+                {
+                    UInt64 minId = _snapshots.Min(s => s.Ticks);
+
+                    MachineSnapshotInfo info = _snapshots.Where(s => s.Ticks == minId).FirstOrDefault();
+                    _snapshots.Remove(info);
+
+                    newSnapshotInfo = new MachineSnapshotInfo(_core.Ticks, info.SnapshotId, CurrentEvent);
+                    _snapshots.Add(newSnapshotInfo);
+                }
+                else if (_snapshots.Count == 0)
+                {
+                    newSnapshotInfo = new MachineSnapshotInfo(_core.Ticks, 1, CurrentEvent);
+                    _snapshots.Add(newSnapshotInfo);
+                }
+                else
+                {
+                    int id = -1;
+                    for (int t = 0; t < _snapshotLimit; t++)
+                    {
+                        if (!_snapshots.Where(s => s.SnapshotId == t).Any())
+                        {
+                            id = t;
+                            break;
+                        }
+                    }
+
+                    if (id == -1)
+                    {
+                        // Problem!
+                        throw new Exception("id == -1... oops!");
+                    }
+
+                    newSnapshotInfo = new MachineSnapshotInfo(_core.Ticks, id, CurrentEvent);
+                    _snapshots.Add(newSnapshotInfo);
+                }
+
+                _core.SaveSnapshot(newSnapshotInfo.SnapshotId);
+            }
         }
 
         /// <summary>
@@ -708,6 +855,20 @@ namespace CPvC
             _previousRunningState = _runningState;
             _runningState = RunningState.Reverse;
             SetCoreRunning();
+
+            lock (_snapshots)
+            {
+                _snapshots = _snapshots.Where(x => x.Ticks < Ticks).ToList();
+                MachineSnapshotInfo nextSnapshot = _snapshots.OrderBy(x => x.Ticks).LastOrDefault();
+                if (nextSnapshot != null)
+                {
+                    _snapshots.Remove(nextSnapshot);
+                    _core.LoadSnapshot(nextSnapshot.SnapshotId);
+
+                    OnPropertyChanged("Ticks");
+                }
+            }
+
             Status = "Reversing";
         }
 
