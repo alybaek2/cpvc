@@ -95,7 +95,7 @@ namespace CPvC.Test
             {
                 // Verify
                 byte[] buffer = new byte[100];
-                int samplesRead = core.ReadAudio16BitStereo(buffer, 0, buffer.Length);
+                int samplesRead = core.RenderAudio16BitStereo(buffer, 0, buffer.Length, core.AudioSamples);
                 Assert.AreEqual(0, samplesRead);
             }
         }
@@ -417,6 +417,45 @@ namespace CPvC.Test
                 {
                     Assert.Zero(core.Ticks);
                 }
+            }
+        }
+
+        [Test]
+        public void StopOnAudioOverrun()
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                core.PushRequest(CoreRequest.RunUntilForce(4000000));
+
+                // Act
+                core.Start();
+                Thread.Sleep(200);
+
+                // Verify
+                Assert.Less(core.Ticks, 4000000);
+            }
+        }
+
+        [Test]
+        public void ResumeAfterAudioOverrun()
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                core.PushRequest(CoreRequest.RunUntilForce(4000000));
+                core.Start();
+                Thread.Sleep(200);
+                UInt64 ticks = core.Ticks;
+
+                // Act - empty out the audio buffer and continue running
+                byte[] buffer = new byte[4096];
+                core.RenderAudio16BitStereo(buffer, 0, buffer.Length / 4, core.AudioSamples);
+                core.PushRequest(CoreRequest.RunUntilForce(4000000));
+                Thread.Sleep(200);
+
+                // Verify
+                Assert.Greater(core.Ticks, ticks);
             }
         }
     }

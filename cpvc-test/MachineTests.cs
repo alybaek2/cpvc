@@ -415,13 +415,11 @@ namespace CPvC.Test
         /// </summary>
         /// <param name="ticks">The number of ticks to run the core for.</param>
         /// <param name="expectedSamples">The number of audio samples that should be written.</param>
-        /// <param name="bufferSize">The size of the buffer to receive audio data.</param>
-        [TestCase(4UL, 1, 100)]
-        [TestCase(250UL, 1, 7)]
-        [TestCase(250UL, 4, 100)]
-        [TestCase(504UL, 7, 100)]
-        [TestCase(85416UL, 1025, 4104)]  // This test case ensures we do at least 2 iterations of the while loop in ReadAudio16BitStereo.
-        public void GetAudio(UInt64 ticks, int expectedSamples, int bufferSize)
+        [TestCase(4UL, 1)]
+        [TestCase(250UL, 4)]
+        [TestCase(504UL, 7)]
+        [TestCase(85416UL, 1025)]
+        public void GetAudio(UInt64 ticks, int expectedSamples)
         {
             // Setup
             using (Machine machine = CreateMachine())
@@ -430,14 +428,12 @@ namespace CPvC.Test
                 machine.Core.SetUpperROM(0, new byte[0x4000]);
                 machine.Core.SetUpperROM(7, new byte[0x4000]);
 
-                byte[] buffer = new byte[bufferSize];
-
                 // Act
-                machine.Core.RunUntil(ticks, StopReasons.AudioOverrun);
-                int samples = machine.ReadAudio(buffer, 0, bufferSize);
+                List<UInt16> audioSamples = new List<UInt16>();
+                machine.Core.RunUntil(ticks, StopReasons.None, audioSamples);
 
                 // Verify
-                Assert.AreEqual(expectedSamples, samples);
+                Assert.AreEqual(expectedSamples, audioSamples.Count);
             }
         }
 

@@ -106,7 +106,7 @@ namespace CPvC.Test
         public void CloneRunUntil()
         {
             // Setup
-            CoreAction action = CoreAction.RunUntilForce(100, 4000000);
+            CoreAction action = CoreAction.RunUntilForce(100, 4000000, null);
 
             // Act
             CoreAction clone = action.Clone();

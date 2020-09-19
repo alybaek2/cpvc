@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 
@@ -145,7 +146,12 @@ namespace CPvC
 
         public virtual int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
-            return Core?.ReadAudio16BitStereo(buffer, offset, samplesRequested) ?? 0;
+            if (_core?.AudioSamples == null)
+            {
+                return 0;
+            }
+
+            return _core.RenderAudio16BitStereo(buffer, offset, samplesRequested, _core.AudioSamples);
         }
 
         public void AdvancePlayback(int samples)

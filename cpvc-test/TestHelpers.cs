@@ -193,7 +193,7 @@ namespace CPvC.Test
         static public UInt64 Run(ICoreMachine machine, UInt64 ticks, bool stopOnAudioOverrun)
         {
             UInt64 beforeTicks = machine.Core.Ticks;
-            machine.Core.RunUntil(beforeTicks + ticks, stopOnAudioOverrun ? StopReasons.AudioOverrun : StopReasons.None);
+            machine.Core.RunUntil(beforeTicks + ticks, StopReasons.None, null);
 
             return machine.Core.Ticks - beforeTicks;
         }

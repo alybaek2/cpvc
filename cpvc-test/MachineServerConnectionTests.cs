@@ -137,7 +137,7 @@ namespace CPvC.Test
         public void ReceiveCoreAction()
         {
             // Setup
-            CoreAction coreAction = CoreAction.RunUntilForce(0, 1000);
+            CoreAction coreAction = CoreAction.RunUntilForce(0, 1000, null);
 
             // Act
             _receiveSelectMachine(_mockMachines[0].Object.Name);

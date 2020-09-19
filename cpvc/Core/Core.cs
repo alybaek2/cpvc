@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Threading;
 
 namespace CPvC
@@ -99,14 +99,19 @@ namespace CPvC
         public RequestProcessedDelegate Auditors { get; set; }
         public BeginVSyncDelegate BeginVSync { get; set; }
 
+        public AudioBuffer AudioSamples
+        {
+            get
+            {
+                return _audioSamples;
+            }
+        }
+
         private AutoResetEvent _audioReady;
         private AutoResetEvent _requestQueueEmpty;
         private AutoResetEvent _requestQueueNonEmpty;
 
-        private const int _audioBufferSize = 1024;
-        private readonly byte[] _audioChannelA = new byte[_audioBufferSize];
-        private readonly byte[] _audioChannelB = new byte[_audioBufferSize];
-        private readonly byte[] _audioChannelC = new byte[_audioBufferSize];
+        private AudioBuffer _audioSamples;
 
         // AY volume table (c) by Hacker KAY (http://kay27.narod.ru/ay.html)
         private static readonly ushort[] _amplitudes = {
@@ -167,6 +172,8 @@ namespace CPvC
             _audioReady = new AutoResetEvent(true);
             _requestQueueEmpty = new AutoResetEvent(true);
             _requestQueueNonEmpty = new AutoResetEvent(false);
+
+            _audioSamples = new AudioBuffer();
 
             // Ensure any OnPropChanged calls are executed on the main thread. There may be a better way of
             // doing this, such as wrapping add and remove for Command.CanExecuteChanged in a lambda that
@@ -278,25 +285,12 @@ namespace CPvC
         /// <param name="samples"></param>
         public void AdvancePlayback(int samples)
         {
-            lock (_lockObject)
+            for (int i = 0; i < samples; i++)
             {
-                _coreCLR.GetAudioBuffers(samples, null, null, null);
-            }
-        }
-
-        /// <summary>
-        /// Copies audio buffer data to the specified arrays.
-        /// </summary>
-        /// <param name="samples">The number of samples to be copied. Each of the <c>channelA</c>, <c>channelB</c>, and <c>channelC</c> byte arrays must be at least this size.</param>
-        /// <param name="channelA">Array to which audio channel A samples should be copied.</param>
-        /// <param name="channelB">Array to which audio channel B samples should be copied.</param>
-        /// <param name="channelC">Array to which audio channel C samples should be copied.</param>
-        /// <returns>The number of samples copied to each array.</returns>
-        public int GetAudioBuffers(int samples, byte[] channelA, byte[] channelB, byte[] channelC)
-        {
-            lock (_lockObject)
-            {
-                return _coreCLR.GetAudioBuffers(samples, channelA, channelB, channelC);
+                if (!_audioSamples.Pop(out UInt16 sample))
+                {
+                    break;
+                }
             }
         }
 
@@ -449,11 +443,11 @@ namespace CPvC
         /// <param name="ticks">Clock value to run core until.</param>
         /// <param name="stopReason">Bitmask specifying what conditions will force execution to stop prior to the clock reaching <c>ticks</c>.</param>
         /// <returns>A bitmask specifying why the execution stopped. See <c>StopReasons</c> for a list of values.</returns>
-        public byte RunUntil(UInt64 ticks, byte stopReason)
+        public byte RunUntil(UInt64 ticks, byte stopReason, List<UInt16> audioSamples)
         {
             lock (_lockObject)
             {
-                return _coreCLR.RunUntil(ticks, stopReason);
+                return _coreCLR.RunUntil(ticks, stopReason, audioSamples);
             }
         }
 
@@ -465,7 +459,7 @@ namespace CPvC
         {
             while (vsyncCount > 0)
             {
-                byte stopReason = RunUntil(Ticks + 20000, StopReasons.VSync);
+                byte stopReason = RunUntil(Ticks + 20000, StopReasons.VSync, null);
                 if (stopReason == StopReasons.VSync)
                 {
                     vsyncCount--;
@@ -492,43 +486,13 @@ namespace CPvC
                         break;
                     }
                 }
-                else if (RunningState == RunningState.Reverse)
-                {
-                    if (_snapshots.Count == 0)
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        int snapshotIndex = _snapshots.Count - 1;
-                        SnapshotInfo info = _snapshots[snapshotIndex];
-                        _snapshots.RemoveAt(snapshotIndex);
-
-                        if (info.Ticks <= Ticks)
-                        {
-                            UInt64 ticks = Ticks - info.Ticks;
-                            Thread.Sleep((int) (ticks / 4000));
-                            _coreCLR.LoadSnapshot(info.SnapshotId);
-
-                            Auditors?.Invoke(this, null, CoreAction.LoadSnapshot(info.Ticks, info.SnapshotId));
-
-                            _lastTicksNotified = 0;
-                            OnPropertyChanged("Ticks");
-                        }
-                    }
-                }
             }
 
             _quitThread = false;
             RunningState = RunningState.Paused;
         }
 
-        /// <summary>Takes the amplitude levels from the three PSG audio channels and converts them to 16-bit stereo samples that can be played by NAudio.</summary>
-        /// <param name="buffer">Byte array to copy audio samples to.</param>
-        /// <param name="offset">Offset into <c>buffer</c> to start copying.</param>
-        /// <param name="samplesRequested">Number of samples that should be copied into the buffer.</param>
-        /// <returns>The number of samples that were copied in the buffer. Note this can be less than <c>samplesRequested</c>.</returns>
-        public int ReadAudio16BitStereo(byte[] buffer, int offset, int samplesRequested)
+        public int RenderAudio16BitStereo(byte[] buffer, int offset, int samplesRequested, AudioBuffer samples)
         {
             // Each sample requires four bytes, so take the size of the buffer to be the largest multiple
             // of 4 less than or equal to the length of the buffer.
@@ -538,42 +502,33 @@ namespace CPvC
             double volumeFactor = Math.Pow(_volume / 255.0, 3);
 
             int samplesWritten = 0;
-            while (samplesWritten < samplesRequested)
+
+            while (samplesWritten < samplesRequested && offset < bufferSize)
             {
-                int samplesToGet = Math.Min(samplesRequested - samplesWritten, _audioBufferSize);
-                int samplesReturned = GetAudioBuffers(samplesToGet, _audioChannelA, _audioChannelB, _audioChannelC);
-
-                for (int s = 0; s < samplesReturned && offset < bufferSize; s++)
+                if (!samples.Pop(out UInt16 sample))
                 {
-                    // Treat Channel A as "Left", Channel B as "Centre", and Channel C as "Right".
-                    UInt32 left = (UInt32)(((2 * _amplitudes[_audioChannelA[s]]) + _amplitudes[_audioChannelB[s]]) * volumeFactor) / 3;
-                    UInt32 right = (UInt32)(((2 * _amplitudes[_audioChannelC[s]]) + _amplitudes[_audioChannelB[s]]) * volumeFactor) / 3;
-
-                    // Divide by two to deal with the fact NAudio requires signed 16-bit samples.
-                    left = (UInt16)(left / 2);
-                    right = (UInt16)(right / 2);
-
-                    buffer[offset] = (byte)(left & 0xFF);
-                    buffer[offset + 1] = (byte)(left >> 8);
-                    buffer[offset + 2] = (byte)(right & 0xFF);
-                    buffer[offset + 3] = (byte)(right >> 8);
-
-                    offset += 4;
-                    samplesWritten++;
-                }
-
-                if (samplesReturned < samplesToGet)
-                {
-                    // No more samples available at this time.
                     break;
                 }
-            }
 
-            if (samplesWritten > 0)
-            {
-                // Signal to the core thread that audio data has been read from the buffer. If the thread is
-                // waiting on this event due to a audio buffer overrun, it will now resume.
-                _audioReady.Set();
+                byte channelA = (byte) (sample & 0x000f);
+                byte channelB = (byte)((sample & 0x00f0) >> 4);
+                byte channelC = (byte)((sample & 0x0f00) >> 8);
+
+                // Treat Channel A as "Left", Channel B as "Centre", and Channel C as "Right".
+                UInt32 left = (UInt32)(((2 * _amplitudes[channelA]) + _amplitudes[channelB]) * volumeFactor) / 3;
+                UInt32 right = (UInt32)(((2 * _amplitudes[channelC]) + _amplitudes[channelB]) * volumeFactor) / 3;
+
+                // Divide by two to deal with the fact NAudio requires signed 16-bit samples.
+                left = (UInt16)(left / 2);
+                right = (UInt16)(right / 2);
+
+                buffer[offset] = (byte)(left & 0xFF);
+                buffer[offset + 1] = (byte)(left >> 8);
+                buffer[offset + 2] = (byte)(right & 0xFF);
+                buffer[offset + 3] = (byte)(right >> 8);
+
+                offset += 4;
+                samplesWritten++;
             }
 
             return samplesWritten;
@@ -683,7 +638,7 @@ namespace CPvC
             {
                 if (_keepRunning)
                 {
-                    action = RunForAWhile(Ticks + 20000);
+                    action = RunForAWhile(Ticks + 1000);
                 }
                 else
                 {
@@ -728,10 +683,10 @@ namespace CPvC
                         break;
                     case CoreRequest.Types.RunUntilForce:
                         {
-                            RunForAWhile(request.StopTicks);
+                            action = RunForAWhile(request.StopTicks);
 
                             success = (request.StopTicks <= Ticks);
-                            action = CoreAction.RunUntilForce(ticks, Ticks);
+                            //action = CoreAction.RunUntilForce(ticks, Ticks, null);
                         }
                         break;
                     case CoreRequest.Types.CoreVersion:
@@ -781,7 +736,7 @@ namespace CPvC
                         RemoveFirstRequest();
                         return true;
                     default:
-                        Diagnostics.Trace(String.Format("Unknown core request type {0}. Ignoring request.", request.Type));
+                        Diagnostics.Trace("Unknown core request type {0}. Ignoring request.", request.Type);
                         break;
                 }
             }
@@ -819,12 +774,21 @@ namespace CPvC
         {
             UInt64 ticks = Ticks;
 
-            byte stopReason = RunUntil(stopTicks, (byte)((_keepRunning ? StopReasons.AudioOverrun : 0) | StopReasons.VSync));
-
-            if ((stopReason & StopReasons.AudioOverrun) != 0)
+            // Check for audio overrun.
+            if (_audioSamples.Overrun())
             {
-                // Wait for audio buffer to not be full...
-                _audioReady.WaitOne(20);
+                if (!_audioSamples.WaitForUnderrun(10))
+                {
+                    return null;
+                }
+            }
+
+            List<UInt16> audioSamples = new List<UInt16>();
+            byte stopReason = RunUntil(stopTicks, (byte)(StopReasons.VSync), audioSamples);
+
+            foreach (UInt16 sample in audioSamples)
+            {
+                _audioSamples.Push(sample);
             }
 
             if ((stopReason & StopReasons.VSync) != 0)
@@ -841,7 +805,7 @@ namespace CPvC
                 _lastTicksNotified = Ticks;
             }
 
-            return CoreAction.RunUntilForce(ticks, Ticks);
+            return CoreAction.RunUntilForce(ticks, Ticks, audioSamples);
         }
     }
 }

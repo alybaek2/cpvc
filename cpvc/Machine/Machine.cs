@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing.Text;
 using System.Linq;
 
 namespace CPvC
@@ -45,6 +47,8 @@ namespace CPvC
         private const int _snapshotLimit = 500;
         private List<MachineSnapshotInfo> _snapshots;
 
+        private MachineSnapshotInfo _currentSnapshot;
+
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
             _name = name;
@@ -60,6 +64,7 @@ namespace CPvC
             _fileSystem = fileSystem;
 
             _snapshots = new List<MachineSnapshotInfo>();
+            _currentSnapshot = null;
         }
 
         public void Dispose()
@@ -75,6 +80,7 @@ namespace CPvC
             readonly private UInt64 _ticks;
             readonly private int _snapshotId;
             readonly private HistoryEvent _parentEvent;
+            public AudioBuffer _audioSamples;
 
             public MachineSnapshotInfo(UInt64 ticks, int snapshotId, HistoryEvent parentEvent)
             {
@@ -286,29 +292,13 @@ namespace CPvC
                 int totalSamplesWritten = 0;
                 int currentSamplesRequested = samplesRequested;
 
-                while (totalSamplesWritten < samplesRequested)
+                while (totalSamplesWritten < samplesRequested && _currentSnapshot != null)
                 {
-                    int samplesWritten = Core?.ReadAudio16BitStereo(buffer, offset, currentSamplesRequested) ?? 0;
+                    int samplesWritten = _core.RenderAudio16BitStereo(buffer, offset, samplesRequested, _currentSnapshot._audioSamples);
                     if (samplesWritten == 0)
                     {
-
                         // Time for the next snapshot!
-                        lock (_snapshots)
-                        {
-                            MachineSnapshotInfo nextSnapshot = _snapshots.Where(x => x.Ticks < Ticks).OrderBy(x => x.Ticks).LastOrDefault();
-                            if (nextSnapshot != null)
-                            {
-                                _snapshots.Remove(nextSnapshot);
-                                if (_core.LoadSnapshot(nextSnapshot.SnapshotId))
-                                {
-                                    OnPropertyChanged("Ticks");
-                                }
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
+                        LoadNextSnapshot();
                     }
 
                     totalSamplesWritten += samplesWritten;
@@ -319,9 +309,7 @@ namespace CPvC
                 return totalSamplesWritten;
             }
 
-            int samplesWritten2 = Core?.ReadAudio16BitStereo(buffer, offset, samplesRequested) ?? 0;
-
-            return samplesWritten2;
+            return base.ReadAudio(buffer, offset, samplesRequested);
         }
 
         private void TakeSnapshot()
@@ -366,6 +354,8 @@ namespace CPvC
                     _snapshots.Add(newSnapshotInfo);
                 }
 
+                newSnapshotInfo._audioSamples = new AudioBuffer();
+                _currentSnapshot = newSnapshotInfo;
                 _core.SaveSnapshot(newSnapshotInfo.SnapshotId);
             }
         }
@@ -415,6 +405,16 @@ namespace CPvC
                     {
                         _file.WriteCurrent(newCurrentEvent);
                         CurrentEvent = newCurrentEvent;
+                    }
+                }
+                else if (action.Type == CoreAction.Types.RunUntilForce)
+                {
+                    if (_currentSnapshot != null && action.AudioSamples != null)
+                    {
+                        foreach (UInt16 sample in action.AudioSamples)
+                        {
+                            _currentSnapshot._audioSamples.Push(sample);
+                        }
                     }
                 }
             }
@@ -852,10 +852,19 @@ namespace CPvC
 
             SetCheckpoint();
 
+            _currentSnapshot = null;
+
             _previousRunningState = _runningState;
             _runningState = RunningState.Reverse;
             SetCoreRunning();
 
+            LoadNextSnapshot();
+
+            Status = "Reversing";
+        }
+
+        public void LoadNextSnapshot()
+        {
             lock (_snapshots)
             {
                 _snapshots = _snapshots.Where(x => x.Ticks < Ticks).ToList();
@@ -864,12 +873,18 @@ namespace CPvC
                 {
                     _snapshots.Remove(nextSnapshot);
                     _core.LoadSnapshot(nextSnapshot.SnapshotId);
+                    _currentSnapshot = nextSnapshot;
+
+                    // Reverse the order of the audio samples so they play correctly!
+                    nextSnapshot._audioSamples.Reverse();
 
                     OnPropertyChanged("Ticks");
                 }
+                else
+                {
+                    _currentSnapshot = null;
+                }
             }
-
-            Status = "Reversing";
         }
 
         public void ReverseStop()

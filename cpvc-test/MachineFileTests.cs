@@ -230,7 +230,7 @@ namespace CPvC.Test
         public void WriteRunUntil()
         {
             // Setup
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.RunUntilForce(100, 0x123456));
+            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.RunUntilForce(100, 0x123456, null));
 
             // Act and Verify
             Assert.Throws<Exception>(() => _file.WriteHistoryEvent(historyEvent));

@@ -192,7 +192,7 @@ namespace CPvC
                         UInt64 ticks = stream.ReadUInt64();
                         UInt64 stopTicks = stream.ReadUInt64();
 
-                        return CoreAction.RunUntilForce(ticks, stopTicks);
+                        return CoreAction.RunUntilForce(ticks, stopTicks, null);
                     }
                 case _coreActionLoadCore:
                     {

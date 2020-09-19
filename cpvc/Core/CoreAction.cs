@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Windows.Documents;
 
 namespace CPvC
 {
@@ -12,9 +14,15 @@ namespace CPvC
         /// </summary>
         public UInt64 Ticks { get; }
 
+        /// <summary>
+        /// The set of audio samples that were generated during a RunUntil request.
+        /// </summary>
+        public List<UInt16> AudioSamples { get; private set; }
+
         public CoreAction(Types type, UInt64 ticks) : base(type)
         {
             Ticks = ticks;
+            AudioSamples = new List<UInt16>();
         }
 
         static public CoreAction Reset(UInt64 ticks)
@@ -33,11 +41,12 @@ namespace CPvC
             return action;
         }
 
-        static public CoreAction RunUntilForce(UInt64 ticks, UInt64 stopTicks)
+        static public CoreAction RunUntilForce(UInt64 ticks, UInt64 stopTicks, List<UInt16> audioSamples)
         {
             CoreAction action = new CoreAction(Types.RunUntilForce, ticks)
             {
-                StopTicks = stopTicks
+                StopTicks = stopTicks,
+                AudioSamples = audioSamples
             };
 
             return action;
@@ -121,7 +130,7 @@ namespace CPvC
                 case Types.Reset:
                     return CoreAction.Reset(Ticks);
                 case Types.RunUntilForce:
-                    return CoreAction.RunUntilForce(Ticks, StopTicks);
+                    return CoreAction.RunUntilForce(Ticks, StopTicks, new List<UInt16>(AudioSamples));
                 case Types.LoadCore:
                     return CoreAction.LoadCore(Ticks, CoreState);
                 case Types.SaveSnapshot:
