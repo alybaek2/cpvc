@@ -49,19 +49,6 @@ namespace CPvC
 
         private RunningState _runningState;
 
-        private class SnapshotInfo
-        {
-            public SnapshotInfo(UInt64 ticks, int snapshotId)
-            {
-                Ticks = ticks;
-                SnapshotId = snapshotId;
-            }
-
-            public UInt64 Ticks { get; }
-
-            public int SnapshotId { get; }
-        }
-
         private bool _keepRunning;
 
         /// <summary>

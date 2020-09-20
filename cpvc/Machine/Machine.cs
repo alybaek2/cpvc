@@ -45,7 +45,7 @@ namespace CPvC
         private MachineFile _file;
 
         private const int _snapshotLimit = 500;
-        private List<MachineSnapshotInfo> _snapshots;
+        private List<SnapshotInfo> _snapshots;
 
         private int _currentSnapshotIndex;
 
@@ -63,7 +63,7 @@ namespace CPvC
 
             _fileSystem = fileSystem;
 
-            _snapshots = new List<MachineSnapshotInfo>();
+            _snapshots = new List<SnapshotInfo>();
             _currentSnapshotIndex = -1;
         }
 
@@ -75,25 +75,15 @@ namespace CPvC
             Display = null;
         }
 
-        private class MachineSnapshotInfo
+        private class SnapshotInfo
         {
-            readonly private UInt64 _ticks;
             readonly private int _id;
             private AudioBuffer _audioBuffer;
 
-            public MachineSnapshotInfo(UInt64 ticks, int id)
+            public SnapshotInfo(int id)
             {
-                _ticks = ticks;
                 _id = id;
                 _audioBuffer = new AudioBuffer();
-            }
-
-            public UInt64 Ticks
-            {
-                get
-                {
-                    return _ticks;
-                }
             }
 
             public int Id
@@ -304,7 +294,7 @@ namespace CPvC
 
             while (totalSamplesWritten < samplesRequested && _currentSnapshotIndex >= 0)
             {
-                MachineSnapshotInfo currentSnapshot = _snapshots[_currentSnapshotIndex];
+                SnapshotInfo currentSnapshot = _snapshots[_currentSnapshotIndex];
                 int samplesWritten = _core.RenderAudio16BitStereo(buffer, offset, currentSamplesRequested, currentSnapshot.AudioBuffer, true);
                 if (samplesWritten == 0)
                 {
@@ -329,7 +319,7 @@ namespace CPvC
 
         private void TakeSnapshot()
         {
-            MachineSnapshotInfo oldestSnapshot = _snapshots.FirstOrDefault();
+            SnapshotInfo oldestSnapshot = _snapshots.FirstOrDefault();
 
             int newSnapshotId = 0;
             if (_snapshots.Count >= _snapshotLimit)
@@ -357,7 +347,7 @@ namespace CPvC
                 }
             }
 
-            MachineSnapshotInfo newSnapshot = new MachineSnapshotInfo(_core.Ticks, newSnapshotId);
+            SnapshotInfo newSnapshot = new SnapshotInfo(newSnapshotId);
             _core.SaveSnapshot(newSnapshotId);
 
             _snapshots.Add(newSnapshot);
