@@ -20,7 +20,7 @@ namespace CPvC
             _underrunEvent = new AutoResetEvent(true);
         }
 
-        public bool Pop(out UInt16 sample)
+        public bool Pop(out UInt16 sample, bool reverse)
         {
             if (_writePosition <= _readPosition)
             {
@@ -28,8 +28,16 @@ namespace CPvC
                 return false;
             }
 
-            sample = _buffer[_readPosition % _buffer.Length];
-            _readPosition++;
+            if (reverse)
+            {
+                sample = _buffer[_writePosition % _buffer.Length];
+                _writePosition--;
+            }
+            else
+            {
+                sample = _buffer[_readPosition % _buffer.Length];
+                _readPosition++;
+            }
 
             if (!Overrun())
             {
@@ -53,22 +61,6 @@ namespace CPvC
         public bool Overrun()
         {
             return (_writePosition - _readPosition) > 2000;
-        }
-
-        public void Reverse()
-        {
-            Stack<UInt16> temp = new Stack<ushort>();
-
-            UInt16 sample = 0;
-            while (Pop(out sample))
-            {
-                temp.Push(sample);
-            }
-
-            while (temp.Count > 0)
-            {
-                Push(temp.Pop());
-            }
         }
     }
 }

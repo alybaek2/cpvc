@@ -80,13 +80,18 @@ namespace CPvC
             readonly private UInt64 _ticks;
             readonly private int _snapshotId;
             readonly private HistoryEvent _parentEvent;
-            public AudioBuffer _audioSamples;
+            private AudioBuffer _audioSamples;
+            private MachineSnapshotInfo _prevSnapshot;
+            private MachineSnapshotInfo _nextSnapshot;
 
-            public MachineSnapshotInfo(UInt64 ticks, int snapshotId, HistoryEvent parentEvent)
+            public MachineSnapshotInfo(UInt64 ticks, int snapshotId, HistoryEvent parentEvent, MachineSnapshotInfo previousSnapshot)
             {
                 _ticks = ticks;
                 _snapshotId = snapshotId;
                 _parentEvent = parentEvent;
+                _audioSamples = new AudioBuffer();
+                _prevSnapshot = previousSnapshot;
+                _nextSnapshot = null;
             }
 
             public UInt64 Ticks
@@ -110,6 +115,40 @@ namespace CPvC
                 get
                 {
                     return _parentEvent;
+                }
+            }
+
+            public AudioBuffer AudioSamples
+            {
+                get
+                {
+                    return _audioSamples;
+                }
+            }
+
+            public MachineSnapshotInfo PreviousSnapshot
+            {
+                get
+                {
+                    return _prevSnapshot;
+                }
+
+                set
+                {
+                    _prevSnapshot = value;
+                }
+            }
+
+            public MachineSnapshotInfo NextSnapshot
+            {
+                get
+                {
+                    return _nextSnapshot;
+                }
+
+                set
+                {
+                    _nextSnapshot = value;
                 }
             }
         }
@@ -286,78 +325,95 @@ namespace CPvC
 
         public override int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
-            // Drive Reverse mode from here...
-            if (RunningState == RunningState.Reverse)
+            lock (_runningStateLock)
             {
-                int totalSamplesWritten = 0;
-                int currentSamplesRequested = samplesRequested;
-
-                while (totalSamplesWritten < samplesRequested && _currentSnapshot != null)
+                // Drive Reverse mode from here...
+                if (RunningState == RunningState.Reverse)
                 {
-                    int samplesWritten = _core.RenderAudio16BitStereo(buffer, offset, samplesRequested, _currentSnapshot._audioSamples);
-                    if (samplesWritten == 0)
-                    {
-                        // Time for the next snapshot!
-                        LoadNextSnapshot();
-                    }
-
-                    totalSamplesWritten += samplesWritten;
-                    currentSamplesRequested -= samplesWritten;
-                    offset += 4 * samplesWritten;
+                    return ReverseReadAudio(buffer, offset, samplesRequested);
                 }
 
-                return totalSamplesWritten;
+                return base.ReadAudio(buffer, offset, samplesRequested);
+            }
+        }
+
+        private int ReverseReadAudio(byte[] buffer, int offset, int samplesRequested)
+        {
+            int totalSamplesWritten = 0;
+            int currentSamplesRequested = samplesRequested;
+
+            while (totalSamplesWritten < samplesRequested && _currentSnapshot != null)
+            {
+                int samplesWritten = _core.RenderAudio16BitStereo(buffer, offset, currentSamplesRequested, _currentSnapshot.AudioSamples, true);
+                if (samplesWritten == 0)
+                {
+                    _core.LoadSnapshot(_currentSnapshot.SnapshotId);
+
+                    if (_currentSnapshot.PreviousSnapshot == null)
+                    {
+                        // We've reached the last snapshot.
+                        break;
+                    }
+
+                    _currentSnapshot = _currentSnapshot.PreviousSnapshot;
+                }
+
+                totalSamplesWritten += samplesWritten;
+                currentSamplesRequested -= samplesWritten;
+                offset += 4 * samplesWritten;
             }
 
-            return base.ReadAudio(buffer, offset, samplesRequested);
+            return totalSamplesWritten;
         }
 
         private void TakeSnapshot()
         {
-            lock (_snapshots)
+            // Find the oldest snapshot and remove it!
+            List<int> snapshotIds = new List<int>();
+            MachineSnapshotInfo oldestSnapshot = _currentSnapshot;
+            while (oldestSnapshot != null && oldestSnapshot.PreviousSnapshot != null)
             {
-                MachineSnapshotInfo newSnapshotInfo = null;
-                if (_snapshots.Count == _snapshotLimit)
-                {
-                    UInt64 minId = _snapshots.Min(s => s.Ticks);
-
-                    MachineSnapshotInfo info = _snapshots.Where(s => s.Ticks == minId).FirstOrDefault();
-                    _snapshots.Remove(info);
-
-                    newSnapshotInfo = new MachineSnapshotInfo(_core.Ticks, info.SnapshotId, CurrentEvent);
-                    _snapshots.Add(newSnapshotInfo);
-                }
-                else if (_snapshots.Count == 0)
-                {
-                    newSnapshotInfo = new MachineSnapshotInfo(_core.Ticks, 1, CurrentEvent);
-                    _snapshots.Add(newSnapshotInfo);
-                }
-                else
-                {
-                    int id = -1;
-                    for (int t = 0; t < _snapshotLimit; t++)
-                    {
-                        if (!_snapshots.Where(s => s.SnapshotId == t).Any())
-                        {
-                            id = t;
-                            break;
-                        }
-                    }
-
-                    if (id == -1)
-                    {
-                        // Problem!
-                        throw new Exception("id == -1... oops!");
-                    }
-
-                    newSnapshotInfo = new MachineSnapshotInfo(_core.Ticks, id, CurrentEvent);
-                    _snapshots.Add(newSnapshotInfo);
-                }
-
-                newSnapshotInfo._audioSamples = new AudioBuffer();
-                _currentSnapshot = newSnapshotInfo;
-                _core.SaveSnapshot(newSnapshotInfo.SnapshotId);
+                snapshotIds.Add(oldestSnapshot.SnapshotId);
+                oldestSnapshot = oldestSnapshot.PreviousSnapshot;
             }
+
+            int newSnapshotId = 0;
+            if (snapshotIds.Count >= _snapshotLimit)
+            {
+                newSnapshotId = oldestSnapshot.SnapshotId;
+                if (oldestSnapshot.NextSnapshot != null)
+                {
+                    oldestSnapshot.NextSnapshot.PreviousSnapshot = null;
+                    oldestSnapshot.NextSnapshot = null;
+                }
+            }
+            else
+            {
+                newSnapshotId = -1;
+                for (int i = 0; i < _snapshotLimit; i++)
+                {
+                    if (!snapshotIds.Contains(i))
+                    {
+                        newSnapshotId = i;
+                        break;
+                    }
+                }
+
+                if (newSnapshotId == -1)
+                {
+                    // This should never happen!
+                    throw new Exception("Unable to find a free snapshot id");
+                }
+            }
+
+            MachineSnapshotInfo newSnapshot = new MachineSnapshotInfo(_core.Ticks, newSnapshotId, CurrentEvent, _currentSnapshot);
+            _core.SaveSnapshot(newSnapshotId);
+            if (_currentSnapshot != null)
+            {
+                _currentSnapshot.NextSnapshot = newSnapshot;
+            }
+
+            _currentSnapshot = newSnapshot;
         }
 
         /// <summary>
@@ -413,7 +469,7 @@ namespace CPvC
                     {
                         foreach (UInt16 sample in action.AudioSamples)
                         {
-                            _currentSnapshot._audioSamples.Push(sample);
+                            _currentSnapshot.AudioSamples.Push(sample);
                         }
                     }
                 }
@@ -845,52 +901,21 @@ namespace CPvC
 
         public void Reverse()
         {
-            if (_core.RunningState == RunningState.Reverse)
+            if (_core.RunningState == RunningState.Reverse || _currentSnapshot == null)
             {
                 return;
             }
 
             SetCheckpoint();
 
-            _currentSnapshot = null;
-
-            _previousRunningState = _runningState;
-            _runningState = RunningState.Reverse;
-            SetCoreRunning();
-
-            LoadNextSnapshot();
+            _previousRunningState = SetRunningState(RunningState.Reverse);
 
             Status = "Reversing";
         }
 
-        public void LoadNextSnapshot()
-        {
-            lock (_snapshots)
-            {
-                _snapshots = _snapshots.Where(x => x.Ticks < Ticks).ToList();
-                MachineSnapshotInfo nextSnapshot = _snapshots.OrderBy(x => x.Ticks).LastOrDefault();
-                if (nextSnapshot != null)
-                {
-                    _snapshots.Remove(nextSnapshot);
-                    _core.LoadSnapshot(nextSnapshot.SnapshotId);
-                    _currentSnapshot = nextSnapshot;
-
-                    // Reverse the order of the audio samples so they play correctly!
-                    nextSnapshot._audioSamples.Reverse();
-
-                    OnPropertyChanged("Ticks");
-                }
-                else
-                {
-                    _currentSnapshot = null;
-                }
-            }
-        }
-
         public void ReverseStop()
         {
-            _runningState = _previousRunningState;
-            SetCoreRunning();
+            SetRunningState(_previousRunningState);
         }
     }
 }

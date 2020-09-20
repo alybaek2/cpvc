@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
@@ -52,34 +51,16 @@ namespace CPvC
 
         private class SnapshotInfo
         {
-            private UInt64 _ticks;
-            private int _snapshotId;
-
             public SnapshotInfo(UInt64 ticks, int snapshotId)
             {
-                _ticks = ticks;
-                _snapshotId = snapshotId;
+                Ticks = ticks;
+                SnapshotId = snapshotId;
             }
 
-            public UInt64 Ticks
-            {
-                get
-                {
-                    return _ticks;
-                }
-            }
+            public UInt64 Ticks { get; }
 
-            public int SnapshotId
-            {
-                get
-                {
-                    return _snapshotId;
-                }
-            }
+            public int SnapshotId { get; }
         }
-
-        private List<SnapshotInfo> _snapshots;
-        private const int _snapshotLimit = 500;
 
         private bool _keepRunning;
 
@@ -108,7 +89,6 @@ namespace CPvC
         }
 
         private AutoResetEvent _audioReady;
-        private AutoResetEvent _requestQueueEmpty;
         private AutoResetEvent _requestQueueNonEmpty;
 
         private AudioBuffer _audioSamples;
@@ -161,8 +141,6 @@ namespace CPvC
 
             BeginVSync = null;
 
-            _snapshots = new List<SnapshotInfo>();
-
             SetScreen(IntPtr.Zero);
 
             _audioSamplingFrequency = 48000;
@@ -170,7 +148,6 @@ namespace CPvC
             EnableTurbo(false);
 
             _audioReady = new AutoResetEvent(true);
-            _requestQueueEmpty = new AutoResetEvent(true);
             _requestQueueNonEmpty = new AutoResetEvent(false);
 
             _audioSamples = new AudioBuffer();
@@ -224,9 +201,6 @@ namespace CPvC
 
             _audioReady?.Dispose();
             _audioReady = null;
-
-            _requestQueueEmpty?.Dispose();
-            _requestQueueEmpty = null;
 
             _requestQueueNonEmpty?.Dispose();
             _requestQueueNonEmpty = null;
@@ -287,7 +261,7 @@ namespace CPvC
         {
             for (int i = 0; i < samples; i++)
             {
-                if (!_audioSamples.Pop(out UInt16 sample))
+                if (!_audioSamples.Pop(out UInt16 sample, false))
                 {
                     break;
                 }
@@ -492,7 +466,16 @@ namespace CPvC
             RunningState = RunningState.Paused;
         }
 
-        public int RenderAudio16BitStereo(byte[] buffer, int offset, int samplesRequested, AudioBuffer samples)
+        /// <summary>
+        /// Converts three-channel CPC audio samples to 16-bit signed stereo samples.
+        /// </summary>
+        /// <param name="buffer">Buffer to write audio samples to.</param>
+        /// <param name="offset">Offset to begin writing at.</param>
+        /// <param name="samplesRequested">The maximum number of sameples to write.</param>
+        /// <param name="samples">The buffer containing the CPC audio samples.</param>
+        /// <param name="reverse">Indicates if the CPC audio samples should be read in reverse.</param>
+        /// <returns>The number of samples written to <c>buffer</c>.</returns>
+        public int RenderAudio16BitStereo(byte[] buffer, int offset, int samplesRequested, AudioBuffer samples, bool reverse)
         {
             // Each sample requires four bytes, so take the size of the buffer to be the largest multiple
             // of 4 less than or equal to the length of the buffer.
@@ -505,12 +488,13 @@ namespace CPvC
 
             while (samplesWritten < samplesRequested && offset < bufferSize)
             {
-                if (!samples.Pop(out UInt16 sample))
+                if (!samples.Pop(out UInt16 sample, reverse))
                 {
                     break;
                 }
 
-                byte channelA = (byte) (sample & 0x000f);
+                // Samples are encoded as a 16-bit integer, with 4 bits per channel.
+                byte channelA = (byte)(sample & 0x000f);
                 byte channelB = (byte)((sample & 0x00f0) >> 4);
                 byte channelC = (byte)((sample & 0x0f00) >> 8);
 
@@ -554,7 +538,6 @@ namespace CPvC
             lock (_requests)
             {
                 _requests.Add(request);
-                _requestQueueEmpty.Reset();
                 _requestQueueNonEmpty.Set();
             }
         }
@@ -580,11 +563,7 @@ namespace CPvC
                 {
                     _requests.RemoveAt(0);
 
-                    if (_requests.Count == 0)
-                    {
-                        _requestQueueEmpty.Set();
-                    }
-                    else
+                    if (_requests.Count > 0)
                     {
                         _requestQueueNonEmpty.Set();
                     }
@@ -686,7 +665,6 @@ namespace CPvC
                             action = RunForAWhile(request.StopTicks);
 
                             success = (request.StopTicks <= Ticks);
-                            //action = CoreAction.RunUntilForce(ticks, Ticks, null);
                         }
                         break;
                     case CoreRequest.Types.CoreVersion:
@@ -762,6 +740,7 @@ namespace CPvC
             if (_coreCLR.LoadSnapshot(snapshotId))
             {
                 _lastTicksNotified = 0;
+                OnPropertyChanged("Ticks");
 
                 Auditors?.Invoke(this, null, CoreAction.LoadSnapshot(Ticks, snapshotId));
                 return true;

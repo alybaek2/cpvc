@@ -12,6 +12,7 @@ namespace CPvC
         private string _status;
         
         protected RunningState _runningState;
+        protected object _runningStateLock;
 
         protected int _autoPauseCount;
 
@@ -21,6 +22,7 @@ namespace CPvC
         {
             _autoPauseCount = 0;
             _runningState = RunningState.Paused;
+            _runningStateLock = new object();
         }
 
         public Core Core
@@ -146,12 +148,16 @@ namespace CPvC
 
         public virtual int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
-            if (_core?.AudioSamples == null)
+            // Ensure that while we're reading audio, the running state of the machine can't be changed.
+            lock (_runningStateLock)
             {
-                return 0;
-            }
+                if (_core?.AudioSamples == null)
+                {
+                    return 0;
+                }
 
-            return _core.RenderAudio16BitStereo(buffer, offset, samplesRequested, _core.AudioSamples);
+                return _core.RenderAudio16BitStereo(buffer, offset, samplesRequested, _core.AudioSamples, false);
+            }
         }
 
         public void AdvancePlayback(int samples)
@@ -181,15 +187,13 @@ namespace CPvC
 
         public void Start()
         {
-            _runningState = RunningState.Running;
-            SetCoreRunning();
+            SetRunningState(RunningState.Running);
             Status = "Resumed";
         }
 
         public void Stop()
         {
-            _runningState = RunningState.Paused;
-            SetCoreRunning();
+            SetRunningState(RunningState.Paused);
             Status = "Paused";
         }
 
@@ -215,14 +219,12 @@ namespace CPvC
             public AutoPauser(CoreMachine machine)
             {
                 _machine = machine;
-                _machine._autoPauseCount++;
-                _machine.SetCoreRunning();
+                _machine.IncrementAutoPause();
             }
 
             public void Dispose()
             {
-                _machine._autoPauseCount--;
-                _machine.SetCoreRunning();
+                _machine.DecrementAutoPause();
             }
         }
 
@@ -233,6 +235,36 @@ namespace CPvC
         public IDisposable AutoPause()
         {
             return new AutoPauser(this);
+        }
+
+        private void IncrementAutoPause()
+        {
+            lock (_runningStateLock)
+            {
+                _autoPauseCount++;
+                SetCoreRunning();
+            }
+        }
+
+        private void DecrementAutoPause()
+        {
+            lock (_runningStateLock)
+            {
+                _autoPauseCount--;
+                SetCoreRunning();
+            }
+        }
+
+        public RunningState SetRunningState(RunningState runningState)
+        {
+            lock (_runningStateLock)
+            {
+                RunningState previousRunningState = _runningState;
+                _runningState = runningState;
+                SetCoreRunning();
+
+                return previousRunningState;
+            }
         }
 
         protected void CorePropertyChanged(object sender, PropertyChangedEventArgs e)

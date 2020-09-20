@@ -95,7 +95,7 @@ namespace CPvC.Test
             {
                 // Verify
                 byte[] buffer = new byte[100];
-                int samplesRead = core.RenderAudio16BitStereo(buffer, 0, buffer.Length, core.AudioSamples);
+                int samplesRead = core.RenderAudio16BitStereo(buffer, 0, buffer.Length, core.AudioSamples, false);
                 Assert.AreEqual(0, samplesRead);
             }
         }
@@ -450,7 +450,7 @@ namespace CPvC.Test
 
                 // Act - empty out the audio buffer and continue running
                 byte[] buffer = new byte[4096];
-                core.RenderAudio16BitStereo(buffer, 0, buffer.Length / 4, core.AudioSamples);
+                core.RenderAudio16BitStereo(buffer, 0, buffer.Length / 4, core.AudioSamples, false);
                 core.PushRequest(CoreRequest.RunUntilForce(4000000));
                 Thread.Sleep(200);
 
