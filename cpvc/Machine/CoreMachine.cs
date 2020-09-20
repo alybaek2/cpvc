@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Threading;
 
 namespace CPvC
 {
@@ -10,7 +8,7 @@ namespace CPvC
         protected Core _core;
         protected string _filepath;
         private string _status;
-        
+
         protected RunningState _runningState;
         protected object _runningStateLock;
 
