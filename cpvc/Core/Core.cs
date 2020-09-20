@@ -217,6 +217,20 @@ namespace CPvC
         }
 
         /// <summary>
+        /// Helper method that sets all keys into the "up" state.
+        /// </summary>
+        /// <remarks>
+        /// Useful after loading a snapshot.
+        /// </remarks>
+        public void AllKeysUp()
+        {
+            for (byte keycode = 0; keycode < 80; keycode++)
+            {
+                KeyPress(keycode, false);
+            }
+        }
+
+        /// <summary>
         /// Asynchronously performs a soft reset of the core.
         /// </summary>
         public void Reset()

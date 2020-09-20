@@ -47,7 +47,7 @@ namespace CPvC
         private const int _snapshotLimit = 500;
         private List<MachineSnapshotInfo> _snapshots;
 
-        private MachineSnapshotInfo _currentSnapshot;
+        private int _currentSnapshotIndex;
 
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
@@ -64,7 +64,7 @@ namespace CPvC
             _fileSystem = fileSystem;
 
             _snapshots = new List<MachineSnapshotInfo>();
-            _currentSnapshot = null;
+            _currentSnapshotIndex = -1;
         }
 
         public void Dispose()
@@ -78,20 +78,14 @@ namespace CPvC
         private class MachineSnapshotInfo
         {
             readonly private UInt64 _ticks;
-            readonly private int _snapshotId;
-            readonly private HistoryEvent _parentEvent;
-            private AudioBuffer _audioSamples;
-            private MachineSnapshotInfo _prevSnapshot;
-            private MachineSnapshotInfo _nextSnapshot;
+            readonly private int _id;
+            private AudioBuffer _audioBuffer;
 
-            public MachineSnapshotInfo(UInt64 ticks, int snapshotId, HistoryEvent parentEvent, MachineSnapshotInfo previousSnapshot)
+            public MachineSnapshotInfo(UInt64 ticks, int id)
             {
                 _ticks = ticks;
-                _snapshotId = snapshotId;
-                _parentEvent = parentEvent;
-                _audioSamples = new AudioBuffer();
-                _prevSnapshot = previousSnapshot;
-                _nextSnapshot = null;
+                _id = id;
+                _audioBuffer = new AudioBuffer();
             }
 
             public UInt64 Ticks
@@ -102,53 +96,19 @@ namespace CPvC
                 }
             }
 
-            public int SnapshotId
+            public int Id
             {
                 get
                 {
-                    return _snapshotId;
+                    return _id;
                 }
             }
 
-            public HistoryEvent ParentEvent
+            public AudioBuffer AudioBuffer
             {
                 get
                 {
-                    return _parentEvent;
-                }
-            }
-
-            public AudioBuffer AudioSamples
-            {
-                get
-                {
-                    return _audioSamples;
-                }
-            }
-
-            public MachineSnapshotInfo PreviousSnapshot
-            {
-                get
-                {
-                    return _prevSnapshot;
-                }
-
-                set
-                {
-                    _prevSnapshot = value;
-                }
-            }
-
-            public MachineSnapshotInfo NextSnapshot
-            {
-                get
-                {
-                    return _nextSnapshot;
-                }
-
-                set
-                {
-                    _nextSnapshot = value;
+                    return _audioBuffer;
                 }
             }
         }
@@ -342,20 +302,21 @@ namespace CPvC
             int totalSamplesWritten = 0;
             int currentSamplesRequested = samplesRequested;
 
-            while (totalSamplesWritten < samplesRequested && _currentSnapshot != null)
+            while (totalSamplesWritten < samplesRequested && _currentSnapshotIndex >= 0)
             {
-                int samplesWritten = _core.RenderAudio16BitStereo(buffer, offset, currentSamplesRequested, _currentSnapshot.AudioSamples, true);
+                MachineSnapshotInfo currentSnapshot = _snapshots[_currentSnapshotIndex];
+                int samplesWritten = _core.RenderAudio16BitStereo(buffer, offset, currentSamplesRequested, currentSnapshot.AudioBuffer, true);
                 if (samplesWritten == 0)
                 {
-                    _core.LoadSnapshot(_currentSnapshot.SnapshotId);
-
-                    if (_currentSnapshot.PreviousSnapshot == null)
+                    _core.LoadSnapshot(currentSnapshot.Id);
+                    if (_currentSnapshotIndex == 0)
                     {
                         // We've reached the last snapshot.
                         break;
                     }
 
-                    _currentSnapshot = _currentSnapshot.PreviousSnapshot;
+                    _snapshots.RemoveAt(_currentSnapshotIndex);
+                    _currentSnapshotIndex--;
                 }
 
                 totalSamplesWritten += samplesWritten;
@@ -368,27 +329,17 @@ namespace CPvC
 
         private void TakeSnapshot()
         {
-            // Find the oldest snapshot and remove it!
-            List<int> snapshotIds = new List<int>();
-            MachineSnapshotInfo oldestSnapshot = _currentSnapshot;
-            while (oldestSnapshot != null && oldestSnapshot.PreviousSnapshot != null)
-            {
-                snapshotIds.Add(oldestSnapshot.SnapshotId);
-                oldestSnapshot = oldestSnapshot.PreviousSnapshot;
-            }
+            MachineSnapshotInfo oldestSnapshot = _snapshots.FirstOrDefault();
 
             int newSnapshotId = 0;
-            if (snapshotIds.Count >= _snapshotLimit)
+            if (_snapshots.Count >= _snapshotLimit)
             {
-                newSnapshotId = oldestSnapshot.SnapshotId;
-                if (oldestSnapshot.NextSnapshot != null)
-                {
-                    oldestSnapshot.NextSnapshot.PreviousSnapshot = null;
-                    oldestSnapshot.NextSnapshot = null;
-                }
+                _snapshots.RemoveAt(0);
+                newSnapshotId = oldestSnapshot.Id;
             }
             else
             {
+                IEnumerable<int> snapshotIds = _snapshots.Select(s => s.Id);
                 newSnapshotId = -1;
                 for (int i = 0; i < _snapshotLimit; i++)
                 {
@@ -406,14 +357,11 @@ namespace CPvC
                 }
             }
 
-            MachineSnapshotInfo newSnapshot = new MachineSnapshotInfo(_core.Ticks, newSnapshotId, CurrentEvent, _currentSnapshot);
+            MachineSnapshotInfo newSnapshot = new MachineSnapshotInfo(_core.Ticks, newSnapshotId);
             _core.SaveSnapshot(newSnapshotId);
-            if (_currentSnapshot != null)
-            {
-                _currentSnapshot.NextSnapshot = newSnapshot;
-            }
 
-            _currentSnapshot = newSnapshot;
+            _snapshots.Add(newSnapshot);
+            _currentSnapshotIndex = _snapshots.Count - 1;
         }
 
         /// <summary>
@@ -465,11 +413,11 @@ namespace CPvC
                 }
                 else if (action.Type == CoreAction.Types.RunUntilForce)
                 {
-                    if (_currentSnapshot != null && action.AudioSamples != null)
+                    if (_currentSnapshotIndex >= 0 && action.AudioSamples != null)
                     {
                         foreach (UInt16 sample in action.AudioSamples)
                         {
-                            _currentSnapshot.AudioSamples.Push(sample);
+                            _snapshots[_currentSnapshotIndex].AudioBuffer.Push(sample);
                         }
                     }
                 }
@@ -845,11 +793,7 @@ namespace CPvC
             {
                 Core core = Core.Create(Core.LatestVersion, bookmark.State.GetBytes());
 
-                // Ensure all keys are in an "up" state.
-                for (byte keycode = 0; keycode < 80; keycode++)
-                {
-                    core.KeyPress(keycode, false);
-                }
+                core.AllKeysUp();
 
                 return core;
             }
@@ -901,7 +845,7 @@ namespace CPvC
 
         public void Reverse()
         {
-            if (_core.RunningState == RunningState.Reverse || _currentSnapshot == null)
+            if (_core.RunningState == RunningState.Reverse || _currentSnapshotIndex < 0)
             {
                 return;
             }
@@ -909,6 +853,9 @@ namespace CPvC
             SetCheckpoint();
 
             _previousRunningState = SetRunningState(RunningState.Reverse);
+
+            // Ensure all keys are "up" once we come out of Reverse mode.
+            _core.AllKeysUp();
 
             Status = "Reversing";
         }
