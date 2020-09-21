@@ -458,7 +458,7 @@ namespace CPvC
                 {
                     if (ProcessNextRequest())
                     {
-                        break;
+                        _quitThread = true;
                     }
                 }
             }
