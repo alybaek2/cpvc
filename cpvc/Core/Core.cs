@@ -51,6 +51,7 @@ namespace CPvC
 
         private bool _keepRunning;
 
+        private string _callStack;
         /// <summary>
         /// Frequency (in samples per second) at which the Core will populate its audio buffers.
         /// </summary>
@@ -116,6 +117,8 @@ namespace CPvC
 
         private Core(int version)
         {
+            _callStack = Environment.StackTrace;
+
             _version = version;
             _coreCLR = CreateVersionedCore(version);
             _requests = new List<CoreRequest>();
