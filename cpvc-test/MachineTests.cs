@@ -531,26 +531,29 @@ namespace CPvC.Test
             {
                 // Act
                 machine.EnableTurbo(true);
+                machine.Start();
+                if (!RunUntilAudioOverrun(machine.Core, 10000))
+                {
+                    Assert.Fail("Failed to wait for audio overrun.");
+                }
 
-                // Run long enough to fill the audio buffer.
-                Run(machine, 8000000, true);
                 turboDuration = machine.Core.Ticks;
 
                 // Empty out the audio buffer.
                 machine.AdvancePlayback(1000000);
 
                 machine.EnableTurbo(false);
-                Run(machine, 8000000, true);
+                if (!RunUntilAudioOverrun(machine.Core, 10000))
+                {
+                    Assert.Fail("Failed to wait for audio overrun.");
+                }
+
                 normalDuration = machine.Core.Ticks - turboDuration;
             }
 
-            // Verify
-            double expectedSpeedFactor = 10.0;
+            // Verify - speed should be at least doubled.
             double actualSpeedFactor = ((double)turboDuration) / ((double)normalDuration);
-
-            // We can't expect the actual factor to be *precisely* 10 times greater than
-            // normal, so just make sure it's reasonably close.
-            Assert.Less(Math.Abs(1 - (actualSpeedFactor / expectedSpeedFactor)), 0.001);
+            Assert.Greater(actualSpeedFactor, 2);
         }
 
         [Test]

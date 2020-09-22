@@ -129,7 +129,14 @@ namespace CPvC
                 case Types.Reset:
                     return CoreAction.Reset(Ticks);
                 case Types.RunUntilForce:
-                    return CoreAction.RunUntilForce(Ticks, StopTicks, new List<UInt16>(AudioSamples));
+                    {
+                        List<UInt16> samples = null;
+                        if (AudioSamples != null)
+                        {
+                            samples = new List<UInt16>(samples);
+                        }
+                        return CoreAction.RunUntilForce(Ticks, StopTicks, samples);
+                    }
                 case Types.LoadCore:
                     return CoreAction.LoadCore(Ticks, CoreState);
                 case Types.SaveSnapshot:

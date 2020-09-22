@@ -426,14 +426,12 @@ namespace CPvC.Test
             // Setup
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
-                core.PushRequest(CoreRequest.RunUntilForce(4000000));
-
                 // Act
                 core.Start();
-                Thread.Sleep(200);
+                bool overrun = RunUntilAudioOverrun(core, 1000);
 
                 // Verify
-                Assert.Less(core.Ticks, 4000000);
+                Assert.True(overrun);
             }
         }
 
@@ -443,16 +441,18 @@ namespace CPvC.Test
             // Setup
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
-                core.PushRequest(CoreRequest.RunUntilForce(4000000));
                 core.Start();
-                Thread.Sleep(200);
+                if (!RunUntilAudioOverrun(core, 1000))
+                {
+                    Assert.Fail("Failed to wait for audio overrun");
+                }
+
                 UInt64 ticks = core.Ticks;
 
                 // Act - empty out the audio buffer and continue running
-                byte[] buffer = new byte[4096];
+                byte[] buffer = new byte[48000];
                 core.RenderAudio16BitStereo(buffer, 0, buffer.Length / 4, core.AudioSamples, false);
-                core.PushRequest(CoreRequest.RunUntilForce(4000000));
-                Thread.Sleep(200);
+                RunForAWhile(core, 40000000);
 
                 // Verify
                 Assert.Greater(core.Ticks, ticks);

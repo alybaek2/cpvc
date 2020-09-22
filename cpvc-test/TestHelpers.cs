@@ -240,6 +240,18 @@ namespace CPvC.Test
             core.Stop();
         }
 
+        static public bool RunUntilAudioOverrun(Core core, int timeout)
+        {
+            int elapsed = 0;
+            while (!core.AudioSamples.Overrun())
+            {
+                Thread.Sleep(10);
+                elapsed += 10;
+            }
+
+            return core.AudioSamples.Overrun();
+        }
+
         static public string GetTempFilepath(string filename)
         {
             return String.Format("{0}\\{1}", System.IO.Path.GetTempPath(), filename);
