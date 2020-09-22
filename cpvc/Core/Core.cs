@@ -328,8 +328,10 @@ namespace CPvC
         {
             get
             {
-                // No need to lock _coreCLR just to get the ticks.
-                return _coreCLR.Ticks();
+                lock (_lockObject)
+                {
+                    return _coreCLR.Ticks();
+                }
             }
         }
 
