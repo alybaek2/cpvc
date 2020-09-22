@@ -700,21 +700,16 @@ namespace CPvC
                     case CoreRequest.Types.SaveSnapshot:
                         lock (_lockObject)
                         {
-                            _coreCLR.SaveSnapshot(request.SnapshotId);
+                            action = SaveSnapshot(request.SnapshotId);
                         }
 
-                        action = CoreAction.SaveSnapshot(ticks, request.SnapshotId);
                         break;
                     case CoreRequest.Types.LoadSnapshot:
                         lock (_lockObject)
                         {
-                            _coreCLR.LoadSnapshot(request.SnapshotId);
+                            action = LoadSnapshot(request.SnapshotId);
                         }
 
-                        _lastTicksNotified = 0;
-                        OnPropertyChanged("Ticks");
-
-                        action = CoreAction.LoadSnapshot(ticks, request.SnapshotId);
                         break;
                     case CoreRequest.Types.Quit:
                         RemoveFirstRequest();
@@ -735,24 +730,24 @@ namespace CPvC
             return false;
         }
 
-        public void SaveSnapshot(int snapshotId)
+        public CoreAction SaveSnapshot(int snapshotId)
         {
             _coreCLR.SaveSnapshot(snapshotId);
-            Auditors?.Invoke(this, null, CoreAction.SaveSnapshot(Ticks, snapshotId));
+
+            return CoreAction.SaveSnapshot(Ticks, snapshotId);
         }
 
-        public bool LoadSnapshot(int snapshotId)
+        public CoreAction LoadSnapshot(int snapshotId)
         {
             if (_coreCLR.LoadSnapshot(snapshotId))
             {
                 _lastTicksNotified = 0;
                 OnPropertyChanged("Ticks");
 
-                Auditors?.Invoke(this, null, CoreAction.LoadSnapshot(Ticks, snapshotId));
-                return true;
+                return CoreAction.LoadSnapshot(Ticks, snapshotId);
             }
 
-            return false;
+            return null;
         }
 
         private CoreAction RunForAWhile(UInt64 stopTicks)
