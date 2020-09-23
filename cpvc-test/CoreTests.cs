@@ -220,7 +220,7 @@ namespace CPvC.Test
             core.BeginVSync += mock.Object;
 
             // Act
-            core.PushRequest(CoreRequest.RunUntilForce(100000));
+            core.PushRequest(CoreRequest.RunUntil(100000));
             ProcessQueueAndStop(core);
 
             // Verify

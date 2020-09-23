@@ -108,13 +108,13 @@ namespace CPvC.Test
         public void CloneRunUntil()
         {
             // Setup
-            CoreAction action = CoreAction.RunUntilForce(100, 4000000, null);
+            CoreAction action = CoreAction.RunUntil(100, 4000000, null);
 
             // Act
             CoreAction clone = action.Clone();
 
             // Verify
-            Assert.AreEqual(CoreRequest.Types.RunUntilForce, clone.Type);
+            Assert.AreEqual(CoreRequest.Types.RunUntil, clone.Type);
             Assert.AreEqual(100, clone.Ticks);
             Assert.AreEqual(4000000, clone.StopTicks);
             Assert.AreEqual(null, clone.AudioSamples);
@@ -125,13 +125,13 @@ namespace CPvC.Test
         {
             // Setup
             List<UInt16> audioSamples = new List<UInt16> { 0x01, 0x02 };
-            CoreAction action = CoreAction.RunUntilForce(100, 4000000, audioSamples);
+            CoreAction action = CoreAction.RunUntil(100, 4000000, audioSamples);
 
             // Act
             CoreAction clone = action.Clone();
 
             // Verify
-            Assert.AreEqual(CoreRequest.Types.RunUntilForce, clone.Type);
+            Assert.AreEqual(CoreRequest.Types.RunUntil, clone.Type);
             Assert.AreEqual(100, clone.Ticks);
             Assert.AreEqual(4000000, clone.StopTicks);
             Assert.AreEqual(new List<UInt16> { 0x01, 0x02 }, clone.AudioSamples);

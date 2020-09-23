@@ -40,7 +40,7 @@ namespace CPvC.Test
                 machine.Start();
 
                 // Act
-                _receiveCoreAction(CoreAction.RunUntilForce(0, 1, null));
+                _receiveCoreAction(CoreAction.RunUntil(0, 1, null));
                 Thread.Sleep(100);
                 machine.Stop();
 
@@ -64,10 +64,10 @@ namespace CPvC.Test
                 }
 
                 // Act
-                _receiveCoreAction(CoreAction.RunUntilForce(0, 1, null));
+                _receiveCoreAction(CoreAction.RunUntil(0, 1, null));
 
                 // Verify
-                _mockAuditor.Verify(a => a(It.Is<CoreAction>(action => action.Type == CoreRequest.Types.RunUntilForce)), Times.Exactly(closed ? 0 : 1));
+                _mockAuditor.Verify(a => a(It.Is<CoreAction>(action => action.Type == CoreRequest.Types.RunUntil)), Times.Exactly(closed ? 0 : 1));
             }
         }
 

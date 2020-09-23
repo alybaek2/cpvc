@@ -363,7 +363,7 @@ namespace CPvC
             {
                 Auditors?.Invoke(action);
 
-                if (action.Type != CoreAction.Types.RunUntilForce && action.Type != CoreAction.Types.LoadSnapshot && action.Type != CoreAction.Types.SaveSnapshot)
+                if (action.Type != CoreAction.Types.RunUntil && action.Type != CoreAction.Types.LoadSnapshot && action.Type != CoreAction.Types.SaveSnapshot)
                 {
                     AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
 
@@ -398,7 +398,7 @@ namespace CPvC
                         CurrentEvent = newCurrentEvent;
                     }
                 }
-                else if (action.Type == CoreAction.Types.RunUntilForce)
+                else if (action.Type == CoreAction.Types.RunUntil)
                 {
                     if (_currentSnapshotIndex >= 0 && action.AudioSamples != null)
                     {

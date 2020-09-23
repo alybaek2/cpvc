@@ -100,12 +100,12 @@ namespace CPvC
                 HistoryEvent historyEvent = _historyEvents[i];
                 if (historyEvent.Type == HistoryEvent.Types.CoreAction)
                 {
-                    core.PushRequest(CoreRequest.RunUntilForce(historyEvent.Ticks));
+                    core.PushRequest(CoreRequest.RunUntil(historyEvent.Ticks));
                     core.PushRequest(historyEvent.CoreAction);
                 }
             }
 
-            core.PushRequest(CoreRequest.RunUntilForce(_endTicks));
+            core.PushRequest(CoreRequest.RunUntil(_endTicks));
             core.PushRequest(CoreRequest.Quit());
 
             Core = core;

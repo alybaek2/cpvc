@@ -40,9 +40,9 @@ namespace CPvC
             return action;
         }
 
-        static public CoreAction RunUntilForce(UInt64 ticks, UInt64 stopTicks, List<UInt16> audioSamples)
+        static public CoreAction RunUntil(UInt64 ticks, UInt64 stopTicks, List<UInt16> audioSamples)
         {
-            CoreAction action = new CoreAction(Types.RunUntilForce, ticks)
+            CoreAction action = new CoreAction(Types.RunUntil, ticks)
             {
                 StopTicks = stopTicks,
                 AudioSamples = audioSamples
@@ -128,14 +128,14 @@ namespace CPvC
                     return new CoreAction(Types.Quit, Ticks);
                 case Types.Reset:
                     return CoreAction.Reset(Ticks);
-                case Types.RunUntilForce:
+                case Types.RunUntil:
                     {
                         List<UInt16> samples = null;
                         if (AudioSamples != null)
                         {
                             samples = new List<UInt16>(AudioSamples);
                         }
-                        return CoreAction.RunUntilForce(Ticks, StopTicks, samples);
+                        return CoreAction.RunUntil(Ticks, StopTicks, samples);
                     }
                 case Types.LoadCore:
                     return CoreAction.LoadCore(Ticks, CoreState);

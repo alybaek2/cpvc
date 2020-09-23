@@ -137,7 +137,7 @@ namespace CPvC.Test
         public void ReceiveCoreAction()
         {
             // Setup
-            CoreAction coreAction = CoreAction.RunUntilForce(0, 1000, null);
+            CoreAction coreAction = CoreAction.RunUntil(0, 1000, null);
 
             // Act
             _receiveSelectMachine(_mockMachines[0].Object.Name);
@@ -160,11 +160,11 @@ namespace CPvC.Test
             _receiveSelectMachine(_machines[0].Name);
 
             // Act
-            _cores[0].PushRequest(CoreRequest.RunUntilForce(1));
+            _cores[0].PushRequest(CoreRequest.RunUntil(1));
             RunForAWhile(_cores[0], 1);
 
             // Verify
-            _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.RunUntilForce)));
+            _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.RunUntil)));
         }
     }
 }

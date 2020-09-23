@@ -305,7 +305,7 @@ namespace CPvC.Test
                 replayMachine.Stop();
 
                 // Verify
-                auditor.Verify(a => a(It.Is<CoreAction>(coreAction => coreAction != null && coreAction.Type == CoreRequest.Types.RunUntilForce)), Times.AtLeastOnce());
+                auditor.Verify(a => a(It.Is<CoreAction>(coreAction => coreAction != null && coreAction.Type == CoreRequest.Types.RunUntil)), Times.AtLeastOnce());
             }
         }
     }

@@ -51,7 +51,6 @@ namespace CPvC
 
         private bool _keepRunning;
 
-        private string _callStack;
         /// <summary>
         /// Frequency (in samples per second) at which the Core will populate its audio buffers.
         /// </summary>
@@ -117,8 +116,6 @@ namespace CPvC
 
         private Core(int version)
         {
-            _callStack = Environment.StackTrace;
-
             _version = version;
             _coreCLR = CreateVersionedCore(version);
             _requests = new List<CoreRequest>();
@@ -671,7 +668,7 @@ namespace CPvC
                         }
                         action = CoreAction.LoadTape(ticks, request.MediaBuffer);
                         break;
-                    case CoreRequest.Types.RunUntilForce:
+                    case CoreRequest.Types.RunUntil:
                         {
                             action = RunForAWhile(request.StopTicks);
 
@@ -790,7 +787,7 @@ namespace CPvC
                 _lastTicksNotified = Ticks;
             }
 
-            return CoreAction.RunUntilForce(ticks, Ticks, audioSamples);
+            return CoreAction.RunUntil(ticks, Ticks, audioSamples);
         }
     }
 }

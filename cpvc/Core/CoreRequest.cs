@@ -19,7 +19,7 @@ namespace CPvC
             LoadDisc,
             LoadTape,
             CoreVersion,
-            RunUntilForce,
+            RunUntil,
             LoadCore,
             SaveSnapshot,
             LoadSnapshot,
@@ -84,9 +84,9 @@ namespace CPvC
             return request;
         }
 
-        static public CoreRequest RunUntilForce(UInt64 stopTicks)
+        static public CoreRequest RunUntil(UInt64 stopTicks)
         {
-            CoreRequest request = new CoreRequest(Types.RunUntilForce)
+            CoreRequest request = new CoreRequest(Types.RunUntil)
             {
                 StopTicks = stopTicks
             };

@@ -55,7 +55,7 @@ namespace CPvC.Test
 
         static public CoreAction RunUntilActionForce()
         {
-            return It.Is<CoreAction>(r => r == null || r.Type == CoreRequest.Types.RunUntilForce);
+            return It.Is<CoreAction>(r => r == null || r.Type == CoreRequest.Types.RunUntil);
         }
 
         static public CoreRequest ResetRequest()
@@ -349,7 +349,7 @@ namespace CPvC.Test
                     return true;
                 case CoreRequest.Types.Reset:
                     return true;
-                case CoreRequest.Types.RunUntilForce:
+                case CoreRequest.Types.RunUntil:
                     return request1.StopTicks == request2.StopTicks;
                 case CoreRequest.Types.SaveSnapshot:
                 case CoreRequest.Types.LoadSnapshot:

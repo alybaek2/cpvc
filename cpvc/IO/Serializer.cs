@@ -73,7 +73,7 @@ namespace CPvC
                     stream.Write(_coreActionLoadTape);
                     stream.WriteArray(request.MediaBuffer.GetBytes());
                     break;
-                case CoreRequest.Types.RunUntilForce:
+                case CoreRequest.Types.RunUntil:
                     stream.Write(_coreActionRunUntil);
                     stream.Write(request.StopTicks);
                     break;
@@ -123,7 +123,7 @@ namespace CPvC
                     stream.Write(action.Ticks);
                     stream.WriteArray(action.MediaBuffer.GetBytes());
                     break;
-                case CoreRequest.Types.RunUntilForce:
+                case CoreRequest.Types.RunUntil:
                     stream.Write(_coreActionRunUntil);
                     stream.Write(action.Ticks);
                     stream.Write(action.StopTicks);
@@ -192,7 +192,7 @@ namespace CPvC
                         UInt64 ticks = stream.ReadUInt64();
                         UInt64 stopTicks = stream.ReadUInt64();
 
-                        return CoreAction.RunUntilForce(ticks, stopTicks, null);
+                        return CoreAction.RunUntil(ticks, stopTicks, null);
                     }
                 case _coreActionLoadCore:
                     {
@@ -260,7 +260,7 @@ namespace CPvC
                     {
                         UInt64 stopTicks = stream.ReadUInt64();
 
-                        return CoreRequest.RunUntilForce(stopTicks);
+                        return CoreRequest.RunUntil(stopTicks);
                     }
                 case _coreActionLoadCore:
                     {
