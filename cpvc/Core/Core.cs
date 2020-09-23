@@ -265,7 +265,7 @@ namespace CPvC
         {
             for (int i = 0; i < samples; i++)
             {
-                if (!_audioSamples.Pop(out UInt16 sample, false))
+                if (!_audioSamples.ReadFront(out UInt16 sample))
                 {
                     break;
                 }
@@ -494,7 +494,12 @@ namespace CPvC
 
             while (samplesWritten < samplesRequested && offset < bufferSize)
             {
-                if (!samples.Pop(out UInt16 sample, reverse))
+                UInt16 sample = 0;
+                if (reverse && !samples.ReadFront(out sample))
+                {
+                    break;
+                }
+                else if (!reverse && !samples.ReadBack(out sample))
                 {
                     break;
                 }
@@ -768,7 +773,7 @@ namespace CPvC
 
             foreach (UInt16 sample in audioSamples)
             {
-                _audioSamples.Push(sample);
+                _audioSamples.Write(sample);
             }
 
             if ((stopReason & StopReasons.VSync) != 0)

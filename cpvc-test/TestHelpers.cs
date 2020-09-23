@@ -351,6 +351,9 @@ namespace CPvC.Test
                     return true;
                 case CoreRequest.Types.RunUntilForce:
                     return request1.StopTicks == request2.StopTicks;
+                case CoreRequest.Types.SaveSnapshot:
+                case CoreRequest.Types.LoadSnapshot:
+                    return request1.SnapshotId == request2.SnapshotId;
             }
 
             return false;

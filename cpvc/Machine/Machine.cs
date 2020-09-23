@@ -44,7 +44,6 @@ namespace CPvC
 
         private const int _snapshotLimit = 500;
         private List<SnapshotInfo> _snapshots;
-
         private int _currentSnapshotIndex;
 
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
@@ -405,7 +404,7 @@ namespace CPvC
                     {
                         foreach (UInt16 sample in action.AudioSamples)
                         {
-                            _snapshots[_currentSnapshotIndex].AudioBuffer.Push(sample);
+                            _snapshots[_currentSnapshotIndex].AudioBuffer.Write(sample);
                         }
                     }
                 }

@@ -18,7 +18,17 @@ namespace CPvC
             _underrunEvent = new AutoResetEvent(true);
         }
 
-        public bool Pop(out UInt16 sample, bool reverse)
+        public bool ReadFront(out UInt16 sample)
+        {
+            return Read(out sample, false);
+        }
+
+        public bool ReadBack(out UInt16 sample)
+        {
+            return Read(out sample, true);
+        }
+
+        private bool Read(out UInt16 sample, bool back)
         {
             if (_writePosition <= _readPosition)
             {
@@ -26,10 +36,10 @@ namespace CPvC
                 return false;
             }
 
-            if (reverse)
+            if (back)
             {
-                sample = _buffer[_writePosition % _buffer.Length];
                 _writePosition--;
+                sample = _buffer[_writePosition % _buffer.Length];
             }
             else
             {
@@ -50,7 +60,7 @@ namespace CPvC
             return _underrunEvent.WaitOne(timeout);
         }
 
-        public void Push(UInt16 sample)
+        public void Write(UInt16 sample)
         {
             _buffer[_writePosition % _buffer.Length] = sample;
             _writePosition++;
