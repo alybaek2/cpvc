@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
@@ -677,21 +678,6 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void VolumeNoCore()
-        {
-            // Setup
-            using (Machine machine = CreateMachine())
-            {
-                // Act
-                machine.Volume = 100;
-                machine.Close();
-
-                // Verify
-                Assert.Zero(machine.Volume);
-            }
-        }
-
-        [Test]
         public void RunningNoCore()
         {
             // Setup
@@ -836,7 +822,32 @@ namespace CPvC.Test
             }
         }
 
-        //[Test]
-        //public void 
+        [TestCase(0, 1, true)]
+        [TestCase(100, 101, true)]
+        [TestCase(255, 0, true)]
+        [TestCase(255, 255, false)]
+        public void SetVolume(byte volume1, byte volume2, bool notified)
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            //using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                machine.Volume = volume1;
+                Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
+                machine.PropertyChanged += propChanged.Object;
+
+                // Act
+                machine.Volume = volume2;
+
+                // Verify
+                Assert.AreEqual(machine.Volume, volume2);
+                if (notified)
+                {
+                    propChanged.Verify(PropertyChanged(machine, "Volume"), Times.Once);
+                }
+
+                propChanged.VerifyNoOtherCalls();
+            }
+        }
     }
 }

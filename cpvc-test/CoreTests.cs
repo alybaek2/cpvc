@@ -95,7 +95,7 @@ namespace CPvC.Test
             {
                 // Verify
                 byte[] buffer = new byte[100];
-                int samplesRead = core.RenderAudio16BitStereo(buffer, 0, buffer.Length, core.AudioSamples, false);
+                int samplesRead = core.RenderAudio16BitStereo(80, buffer, 0, buffer.Length, core.AudioSamples, false);
                 Assert.AreEqual(0, samplesRead);
             }
         }
@@ -125,33 +125,6 @@ namespace CPvC.Test
                 // Verify
                 _mockRequestProcessed.Verify();
                 _mockRequestProcessed.VerifyNoOtherCalls();
-            }
-        }
-
-        [TestCase(0, 1, true)]
-        [TestCase(100, 101, true)]
-        [TestCase(255, 0, true)]
-        [TestCase(255, 255, false)]
-        public void SetVolume(byte volume1, byte volume2, bool notified)
-        {
-            // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
-            {
-                core.Volume = volume1;
-                Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
-                core.PropertyChanged += propChanged.Object;
-
-                // Act
-                core.Volume = volume2;
-
-                // Verify
-                Assert.AreEqual(core.Volume, volume2);
-                if (notified)
-                {
-                    propChanged.Verify(PropertyChanged(core, "Volume"), Times.Once);
-                }
-
-                propChanged.VerifyNoOtherCalls();
             }
         }
 
@@ -352,7 +325,7 @@ namespace CPvC.Test
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
                 // Act and Verify
-                Assert.DoesNotThrow(() => core.Volume = 100);
+                Assert.DoesNotThrow(() => core.RunningState = RunningState.Reverse);
             }
         }
 
@@ -380,7 +353,7 @@ namespace CPvC.Test
                 };
 
                 // Act
-                core.Volume = 100;
+                core.RunningState = RunningState.Reverse;
 
                 // Verify
                 e.WaitOne(1000);
@@ -526,7 +499,7 @@ namespace CPvC.Test
 
                 // Act - empty out the audio buffer and continue running
                 byte[] buffer = new byte[48000];
-                core.RenderAudio16BitStereo(buffer, 0, buffer.Length / 4, core.AudioSamples, false);
+                core.RenderAudio16BitStereo(80, buffer, 0, buffer.Length / 4, core.AudioSamples, false);
                 RunForAWhile(core, 40000000);
 
                 // Verify

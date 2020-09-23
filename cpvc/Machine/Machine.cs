@@ -292,7 +292,7 @@ namespace CPvC
             while (totalSamplesWritten < samplesRequested && _currentSnapshotIndex >= 0)
             {
                 SnapshotInfo currentSnapshot = _snapshots[_currentSnapshotIndex];
-                int samplesWritten = _core.RenderAudio16BitStereo(buffer, offset, currentSamplesRequested, currentSnapshot.AudioBuffer, true);
+                int samplesWritten = _core.RenderAudio16BitStereo(Volume, buffer, offset, currentSamplesRequested, currentSnapshot.AudioBuffer, true);
                 if (samplesWritten == 0)
                 {
                     _core.LoadSnapshot(currentSnapshot.Id);
@@ -525,11 +525,9 @@ namespace CPvC
             // Add a checkpoint at the current position to properly mark the end of this branch...
             Core.Stop();
             SetCheckpoint();
-            byte volume = Core.Volume;
 
             Display.GetFromBookmark(bookmarkEvent.Bookmark);
             SetCore(Machine.GetCore(bookmarkEvent.Bookmark));
-            Core.Volume = volume;
 
             if (bookmarkEvent.Bookmark != null)
             {

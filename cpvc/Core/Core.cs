@@ -89,23 +89,6 @@ namespace CPvC
         private const UInt64 _totalSnapshots = 500;
         private SynchronizationContext _syncContext;
 
-        public byte Volume
-        {
-            get
-            {
-                return _volume;
-            }
-
-            set
-            {
-                if (_volume != value)
-                {
-                    _volume = value;
-                    OnPropertyChanged("Volume");
-                }
-            }
-        }
-
         public int Version
         {
             get
@@ -478,14 +461,14 @@ namespace CPvC
         /// <param name="samples">The buffer containing the CPC audio samples.</param>
         /// <param name="reverse">Indicates if the CPC audio samples should be read in reverse.</param>
         /// <returns>The number of samples written to <c>buffer</c>.</returns>
-        public int RenderAudio16BitStereo(byte[] buffer, int offset, int samplesRequested, AudioBuffer samples, bool reverse)
+        public int RenderAudio16BitStereo(byte volume, byte[] buffer, int offset, int samplesRequested, AudioBuffer samples, bool reverse)
         {
             // Each sample requires four bytes, so take the size of the buffer to be the largest multiple
             // of 4 less than or equal to the length of the buffer.
             int bufferSize = 4 * (buffer.Length / 4);
 
             // Skew the volume factor so the volume control presents a more balanced range of volumes.
-            double volumeFactor = Math.Pow(_volume / 255.0, 3);
+            double volumeFactor = Math.Pow(volume / 255.0, 3);
 
             int samplesWritten = 0;
 

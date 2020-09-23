@@ -16,11 +16,17 @@ namespace CPvC
 
         public event PropertyChangedEventHandler PropertyChanged;
 
+        /// <summary>
+        /// Value indicating the relative volume level of rendered audio (0 = mute, 255 = loudest).
+        /// </summary>
+        private byte _volume;
+
         public CoreMachine()
         {
             _autoPauseCount = 0;
             _runningState = RunningState.Paused;
             _runningStateLock = new object();
+            _volume = 80;
         }
 
         public Core Core
@@ -100,12 +106,18 @@ namespace CPvC
         {
             get
             {
-                return Core?.Volume ?? 0;
+                return _volume;
             }
 
             set
             {
-                Core.Volume = value;
+                if (_volume == value)
+                {
+                    return;
+                }
+
+                _volume = value;
+                OnPropertyChanged("Volume");
             }
         }
 
@@ -154,7 +166,7 @@ namespace CPvC
                     return 0;
                 }
 
-                return _core.RenderAudio16BitStereo(buffer, offset, samplesRequested, _core.AudioSamples, false);
+                return _core.RenderAudio16BitStereo(Volume, buffer, offset, samplesRequested, _core.AudioSamples, false);
             }
         }
 
