@@ -1,4 +1,6 @@
 ﻿using NUnit.Framework;
+using System;
+using System.Collections.Generic;
 
 namespace CPvC.Test
 {
@@ -115,6 +117,54 @@ namespace CPvC.Test
             Assert.AreEqual(CoreRequest.Types.RunUntilForce, clone.Type);
             Assert.AreEqual(100, clone.Ticks);
             Assert.AreEqual(4000000, clone.StopTicks);
+            Assert.AreEqual(null, clone.AudioSamples);
+        }
+
+        [Test]
+        public void CloneRunUntilWithAudio()
+        {
+            // Setup
+            List<UInt16> audioSamples = new List<UInt16> { 0x01, 0x02 };
+            CoreAction action = CoreAction.RunUntilForce(100, 4000000, audioSamples);
+
+            // Act
+            CoreAction clone = action.Clone();
+
+            // Verify
+            Assert.AreEqual(CoreRequest.Types.RunUntilForce, clone.Type);
+            Assert.AreEqual(100, clone.Ticks);
+            Assert.AreEqual(4000000, clone.StopTicks);
+            Assert.AreEqual(new List<UInt16> { 0x01, 0x02 }, clone.AudioSamples);
+        }
+
+        [Test]
+        public void CloneLoadSnapshot()
+        {
+            // Setup
+            CoreAction action = CoreAction.LoadSnapshot(100, 42);
+
+            // Act
+            CoreAction clone = action.Clone();
+
+            // Verify
+            Assert.AreEqual(CoreRequest.Types.LoadSnapshot, clone.Type);
+            Assert.AreEqual(100, clone.Ticks);
+            Assert.AreEqual(42, clone.SnapshotId);
+        }
+
+        [Test]
+        public void CloneSaveSnapshot()
+        {
+            // Setup
+            CoreAction action = CoreAction.SaveSnapshot(100, 42);
+
+            // Act
+            CoreAction clone = action.Clone();
+
+            // Verify
+            Assert.AreEqual(CoreRequest.Types.SaveSnapshot, clone.Type);
+            Assert.AreEqual(100, clone.Ticks);
+            Assert.AreEqual(42, clone.SnapshotId);
         }
 
         [Test]

@@ -133,7 +133,7 @@ namespace CPvC
                         List<UInt16> samples = null;
                         if (AudioSamples != null)
                         {
-                            samples = new List<UInt16>(samples);
+                            samples = new List<UInt16>(AudioSamples);
                         }
                         return CoreAction.RunUntilForce(Ticks, StopTicks, samples);
                     }
