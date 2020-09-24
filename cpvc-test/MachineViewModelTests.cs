@@ -150,6 +150,60 @@ namespace CPvC.Test
             Assert.AreEqual(!nullMachine && canClose, model.CloseCommand.CanExecute(null));
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ReverseStart(bool nullMachine)
+        {
+            // Setup
+            Mock<IReversibleMachine> mockMachine = new Mock<IReversibleMachine>();
+            Mock<ICoreMachine> mockCoreMachine = mockMachine.As<ICoreMachine>();
+            mockMachine.Setup(x => x.Reverse());
+            MachineViewModel model = new MachineViewModel(null, nullMachine ? null : mockCoreMachine.Object, null, null, null, null, null);
+
+            // Act
+            model.ReverseStartCommand.Execute(null);
+
+            // Verify
+            mockMachine.Verify(m => m.Reverse(), nullMachine ? Times.Never() : Times.Once());
+            Assert.AreEqual(!nullMachine, model.ReverseStartCommand.CanExecute(null));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ReverseStop(bool nullMachine)
+        {
+            // Setup
+            Mock<IReversibleMachine> mockMachine = new Mock<IReversibleMachine>();
+            Mock<ICoreMachine> mockCoreMachine = mockMachine.As<ICoreMachine>();
+            mockMachine.Setup(x => x.ReverseStop());
+            MachineViewModel model = new MachineViewModel(null, nullMachine ? null : mockCoreMachine.Object, null, null, null, null, null);
+
+            // Act
+            model.ReverseStopCommand.Execute(null);
+
+            // Verify
+            mockMachine.Verify(m => m.ReverseStop(), nullMachine ? Times.Never() : Times.Once());
+            Assert.AreEqual(!nullMachine, model.ReverseStopCommand.CanExecute(null));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void EnableTurbo(bool nullMachine)
+        {
+            // Setup
+            Mock<ITurboableMachine> mockMachine = new Mock<ITurboableMachine>();
+            Mock<ICoreMachine> mockCoreMachine = mockMachine.As<ICoreMachine>();
+            mockMachine.Setup(x => x.EnableTurbo(true));
+            MachineViewModel model = new MachineViewModel(null, nullMachine ? null : mockCoreMachine.Object, null, null, null, null, null);
+
+            // Act
+            model.TurboCommand.Execute(true);
+
+            // Verify
+            mockMachine.Verify(m => m.EnableTurbo(true), nullMachine ? Times.Never() : Times.Once());
+            Assert.AreEqual(!nullMachine, model.TurboCommand.CanExecute(null));
+        }
+
         [Test]
         public void Pause(
             [Values(false, true)] bool nullMachine,
