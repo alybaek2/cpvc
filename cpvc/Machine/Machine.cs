@@ -74,30 +74,15 @@ namespace CPvC
 
         private class SnapshotInfo
         {
-            readonly private int _id;
-            private AudioBuffer _audioBuffer;
-
             public SnapshotInfo(int id)
             {
-                _id = id;
-                _audioBuffer = new AudioBuffer();
+                Id = id;
+                AudioBuffer = new AudioBuffer();
             }
 
-            public int Id
-            {
-                get
-                {
-                    return _id;
-                }
-            }
+            public int Id { get; }
 
-            public AudioBuffer AudioBuffer
-            {
-                get
-                {
-                    return _audioBuffer;
-                }
-            }
+            public AudioBuffer AudioBuffer { get; }
         }
 
         /// <summary>
