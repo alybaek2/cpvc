@@ -140,11 +140,15 @@ namespace CPvC.Test
             Assert.AreEqual(!expectedOverrun, _audioBuffer.WaitForUnderrun(0));
         }
 
-        [TestCase(0, 2)]
-        [TestCase(1, 1)]
-        [TestCase(2, 0)]
-        [TestCase(3, 0)]
-        public void Advance(int advanceSamples, int expectedSamplesWritten)
+        [TestCase(0, 2, false)]
+        [TestCase(1, 1, false)]
+        [TestCase(2, 0, false)]
+        [TestCase(3, 0, false)]
+        [TestCase(0, 2, true)]
+        [TestCase(1, 1, true)]
+        [TestCase(2, 0, true)]
+        [TestCase(3, 0, true)]
+        public void Advance(int advanceSamples, int expectedSamplesWritten, bool reverse)
         {
             // Setup
             _audioBuffer.Write(1);
@@ -155,7 +159,7 @@ namespace CPvC.Test
 
             // Verify
             byte[] buffer = new byte[8];
-            int samplesWritten = _audioBuffer.Render16BitStereo(255, buffer, 0, 2, false);
+            int samplesWritten = _audioBuffer.Render16BitStereo(255, buffer, 0, 2, reverse);
             Assert.AreEqual(expectedSamplesWritten, samplesWritten);
         }
     }
