@@ -84,22 +84,6 @@ namespace CPvC.Test
             }
         }
 
-        /// <summary>
-        /// Ensures a newly instantiated Core has no samples in the audio buffer.
-        /// </summary>
-        [Test]
-        public void ReadNoAudioSamples()
-        {
-            // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
-            {
-                // Verify
-                byte[] buffer = new byte[100];
-                int samplesRead = core.RenderAudio16BitStereo(80, buffer, 0, buffer.Length, core.AudioSamples, false);
-                Assert.AreEqual(0, samplesRead);
-            }
-        }
-
         [Test]
         public void ProcessesActionsInCorrectOrder()
         {
@@ -498,8 +482,7 @@ namespace CPvC.Test
                 UInt64 ticks = core.Ticks;
 
                 // Act - empty out the audio buffer and continue running
-                byte[] buffer = new byte[48000];
-                core.RenderAudio16BitStereo(80, buffer, 0, buffer.Length / 4, core.AudioSamples, false);
+                core.AudioBuffer.Advance(12000);
                 RunForAWhile(core, 40000000);
 
                 // Verify

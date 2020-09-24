@@ -5,80 +5,69 @@ namespace CPvC.Test
 {
     public class AudioBufferTests
     {
-        [Test]
-        public void ReadFront()
+        private AudioBuffer _audioBuffer;
+
+        [SetUp]
+        public void Setup()
+        {
+            _audioBuffer = new AudioBuffer();
+        }
+
+        // CPC sample    16-bit left   16-bit right
+        // 0x0123        0x19, 0x03    0xe0, 0x01
+        // 0x0456        0x8c, 0x09    0xee, 0x05
+        // 0x0789        0x84, 0x1c    0x41, 0x12
+        // 0x0abc        0x35, 0x43    0x75, 0x31
+        // 0x0def        0x44, 0x79    0x60, 0x60
+
+        [TestCase(0,   new UInt16[] { 0x0123, 0x0789, 0x0def }, 0, new byte[] { 0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00 }, 3, false)]
+
+        [TestCase(255, new UInt16[] { 0x0123, 0x0789, 0x0def }, 0, new byte[] { 0x00 }, 0, false)]
+        [TestCase(255, new UInt16[] { 0x0123, 0x0789, 0x0def }, 0, new byte[] { 0x00, 0x00 }, 0, false)]
+        [TestCase(255, new UInt16[] { 0x0123, 0x0789, 0x0def }, 0, new byte[] { 0x00, 0x00, 0x00 }, 0, false)]
+        [TestCase(255, new UInt16[] { 0x0123, 0x0789, 0x0def }, 0, new byte[] { 0x19, 0x03, 0xe0, 0x01 }, 1, false)]
+
+        [TestCase(101, new UInt16[] { 0x0123 }, 0, new byte[] { 0x31, 0x00, 0x1d, 0x00 }, 1, false)]
+
+        [TestCase(255, new UInt16[] { 0x0123, 0x0789, 0x0def }, 0, new byte[] { 0x19, 0x03, 0xe0, 0x01,  0x84, 0x1c, 0x41, 0x12,  0x44, 0x79, 0x60, 0x60 }, 3, false)]
+        [TestCase(255, new UInt16[] { 0x0123, 0x0789, 0x0def }, 1, new byte[] { 0x00, 0x19, 0x03, 0xe0,  0x01, 0x84, 0x1c, 0x41,  0x12, 0x00, 0x00, 0x00 }, 2, false)]
+        [TestCase(255, new UInt16[] { 0x0123, 0x0789, 0x0def }, 2, new byte[] { 0x00, 0x00, 0x19, 0x03,  0xe0, 0x01, 0x84, 0x1c,  0x41, 0x12, 0x00, 0x00 }, 2, false)]
+        [TestCase(255, new UInt16[] { 0x0123, 0x0789, 0x0def }, 3, new byte[] { 0x00, 0x00, 0x00, 0x19,  0x03, 0xe0, 0x01, 0x84,  0x1c, 0x41, 0x12, 0x00 }, 2, false)]
+        [TestCase(255, new UInt16[] { 0x0123, 0x0789, 0x0def }, 0, new byte[] { 0x44, 0x79, 0x60, 0x60,  0x84, 0x1c, 0x41, 0x12,  0x19, 0x03, 0xe0, 0x01 }, 3, true)]
+        [TestCase(255, new UInt16[] { 0x0123, 0x0789, 0x0def }, 1, new byte[] { 0x00, 0x44, 0x79, 0x60,  0x60, 0x84, 0x1c, 0x41,  0x12, 0x00, 0x00, 0x00 }, 2, true)]
+        [TestCase(255, new UInt16[] { 0x0123, 0x0789, 0x0def }, 2, new byte[] { 0x00, 0x00, 0x44, 0x79,  0x60, 0x60, 0x84, 0x1c,  0x41, 0x12, 0x00, 0x00 }, 2, true)]
+        [TestCase(255, new UInt16[] { 0x0123, 0x0789, 0x0def }, 3, new byte[] { 0x00, 0x00, 0x00, 0x44,  0x79, 0x60, 0x60, 0x84,  0x1c, 0x41, 0x12, 0x00 }, 2, true)]
+        public void Render(byte volume, UInt16[] cpcSamples, int offset, byte[] expectedBuffer, int expectedSamplesWritten, bool reverse)
         {
             // Setup
-            AudioBuffer audioBuffer = new AudioBuffer();
+            foreach (UInt16 cpcSample in cpcSamples)
+            {
+                _audioBuffer.Write(cpcSample);
+            }
 
             // Act
-            audioBuffer.Write(0x0102);
-            audioBuffer.Write(0x0304);
+            byte[] buffer = new byte[expectedBuffer.Length];
+            int samplesWritten = _audioBuffer.Render16BitStereo(volume, buffer, offset, cpcSamples.Length, reverse);
 
             // Verify
-            UInt16 sample1;
-            bool pop1 = audioBuffer.ReadFront(out sample1);
-            UInt16 sample2;
-            bool pop2 = audioBuffer.ReadFront(out sample2);
-            UInt16 sample3;
-            bool pop3 = audioBuffer.ReadFront(out sample3);
-
-            Assert.IsTrue(pop1);
-            Assert.AreEqual(0x0102, sample1);
-            Assert.IsTrue(pop2);
-            Assert.AreEqual(0x0304, sample2);
-            Assert.IsFalse(pop3);
+            Assert.AreEqual(expectedSamplesWritten, samplesWritten);
+            Assert.AreEqual(expectedBuffer, buffer);
         }
 
-        [Test]
-        public void ReadBack()
+        [TestCase(0, false)]
+        [TestCase(2000, false)]
+        [TestCase(2001, true)]
+        public void Overrun(int samples, bool expectedOverrun)
         {
             // Setup
-            AudioBuffer audioBuffer = new AudioBuffer();
-
-            // Act
-            audioBuffer.Write(0x0102);
-            audioBuffer.Write(0x0304);
-
-            // Verify
-            UInt16 sample1;
-            bool pop1 = audioBuffer.ReadBack(out sample1);
-            UInt16 sample2;
-            bool pop2 = audioBuffer.ReadBack(out sample2);
-            UInt16 sample3;
-            bool pop3 = audioBuffer.ReadBack(out sample3);
-
-            Assert.IsTrue(pop1);
-            Assert.AreEqual(0x0304, sample1);
-            Assert.IsTrue(pop2);
-            Assert.AreEqual(0x0102, sample2);
-            Assert.IsFalse(pop3);
-        }
-
-        [Test]
-        public void ReadBackEmpty()
-        {
-            // Setup
-            AudioBuffer audioBuffer = new AudioBuffer();
+            for (int i = 0; i < samples; i++)
+            {
+                _audioBuffer.Write(0);
+            }
 
             // Verify
-            UInt16 sample1;
-            bool pop = audioBuffer.ReadFront(out sample1);
-
-            Assert.IsFalse(pop);
-        }
-
-        [Test]
-        public void ReadFrontEmpty()
-        {
-            // Setup
-            AudioBuffer audioBuffer = new AudioBuffer();
-
-            // Verify
-            UInt16 sample1;
-            bool pop = audioBuffer.ReadFront(out sample1);
-
-            Assert.IsFalse(pop);
+            Assert.AreEqual(expectedOverrun, _audioBuffer.Overrun());
+            Assert.AreEqual(!expectedOverrun, _audioBuffer.WaitForUnderrun(0));
         }
     }
 }

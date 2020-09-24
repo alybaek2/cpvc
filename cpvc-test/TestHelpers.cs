@@ -243,13 +243,13 @@ namespace CPvC.Test
         static public bool RunUntilAudioOverrun(Core core, int timeout)
         {
             int elapsed = 0;
-            while (!core.AudioSamples.Overrun())
+            while (!core.AudioBuffer.Overrun())
             {
                 Thread.Sleep(10);
                 elapsed += 10;
             }
 
-            return core.AudioSamples.Overrun();
+            return core.AudioBuffer.Overrun();
         }
 
         static public string GetTempFilepath(string filename)

@@ -161,12 +161,12 @@ namespace CPvC
             // Ensure that while we're reading audio, the running state of the machine can't be changed.
             lock (_runningStateLock)
             {
-                if (_core?.AudioSamples == null)
+                if (_core?.AudioBuffer == null)
                 {
                     return 0;
                 }
 
-                return _core.RenderAudio16BitStereo(Volume, buffer, offset, samplesRequested, _core.AudioSamples, false);
+                return _core.AudioBuffer.Render16BitStereo(Volume, buffer, offset, samplesRequested, false);
             }
         }
 

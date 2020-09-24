@@ -292,7 +292,7 @@ namespace CPvC
             while (totalSamplesWritten < samplesRequested && _currentSnapshotIndex >= 0)
             {
                 SnapshotInfo currentSnapshot = _snapshots[_currentSnapshotIndex];
-                int samplesWritten = _core.RenderAudio16BitStereo(Volume, buffer, offset, currentSamplesRequested, currentSnapshot.AudioBuffer, true);
+                int samplesWritten = currentSnapshot.AudioBuffer.Render16BitStereo(Volume, buffer, offset, currentSamplesRequested, true);
                 if (samplesWritten == 0)
                 {
                     _core.LoadSnapshot(currentSnapshot.Id);

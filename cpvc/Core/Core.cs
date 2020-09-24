@@ -59,32 +59,21 @@ namespace CPvC
         /// </remarks>
         private UInt32 _audioSamplingFrequency;
 
-        /// <summary>
-        /// Value indicating the relative volume level of rendered audio (0 = mute, 255 = loudest).
-        /// </summary>
-        private byte _volume;
-
         public RequestProcessedDelegate Auditors { get; set; }
         public BeginVSyncDelegate BeginVSync { get; set; }
 
-        public AudioBuffer AudioSamples
+        public AudioBuffer AudioBuffer
         {
             get
             {
-                return _audioSamples;
+                return _audioBuffer;
             }
         }
 
         private AutoResetEvent _audioReady;
         private AutoResetEvent _requestQueueNonEmpty;
 
-        private AudioBuffer _audioSamples;
-
-        // AY volume table (c) by Hacker KAY (http://kay27.narod.ru/ay.html)
-        private static readonly ushort[] _amplitudes = {
-            0, 836, 1212, 1773, 2619, 3875, 5397, 8823,
-            10392, 16706, 23339, 29292, 36969, 46421, 55195, 65535
-        };
+        private AudioBuffer _audioBuffer;
 
         private const UInt64 _totalSnapshots = 500;
         private SynchronizationContext _syncContext;
@@ -114,13 +103,12 @@ namespace CPvC
             SetScreen(IntPtr.Zero);
 
             _audioSamplingFrequency = 48000;
-            _volume = 80;
             EnableTurbo(false);
 
             _audioReady = new AutoResetEvent(true);
             _requestQueueNonEmpty = new AutoResetEvent(false);
 
-            _audioSamples = new AudioBuffer();
+            _audioBuffer = new AudioBuffer();
 
             // Ensure any OnPropChanged calls are executed on the main thread. There may be a better way of
             // doing this, such as wrapping add and remove for Command.CanExecuteChanged in a lambda that
@@ -243,13 +231,7 @@ namespace CPvC
         /// <param name="samples"></param>
         public void AdvancePlayback(int samples)
         {
-            for (int i = 0; i < samples; i++)
-            {
-                if (!_audioSamples.ReadFront(out UInt16 sample))
-                {
-                    break;
-                }
-            }
+            _audioBuffer.Advance(samples);
         }
 
         /// <summary>
@@ -450,63 +432,6 @@ namespace CPvC
 
             _quitThread = false;
             RunningState = RunningState.Paused;
-        }
-
-        /// <summary>
-        /// Converts three-channel CPC audio samples to 16-bit signed stereo samples.
-        /// </summary>
-        /// <param name="buffer">Buffer to write audio samples to.</param>
-        /// <param name="offset">Offset to begin writing at.</param>
-        /// <param name="samplesRequested">The maximum number of sameples to write.</param>
-        /// <param name="samples">The buffer containing the CPC audio samples.</param>
-        /// <param name="reverse">Indicates if the CPC audio samples should be read in reverse.</param>
-        /// <returns>The number of samples written to <c>buffer</c>.</returns>
-        public int RenderAudio16BitStereo(byte volume, byte[] buffer, int offset, int samplesRequested, AudioBuffer samples, bool reverse)
-        {
-            // Each sample requires four bytes, so take the size of the buffer to be the largest multiple
-            // of 4 less than or equal to the length of the buffer.
-            int bufferSize = 4 * (buffer.Length / 4);
-
-            // Skew the volume factor so the volume control presents a more balanced range of volumes.
-            double volumeFactor = Math.Pow(volume / 255.0, 3);
-
-            int samplesWritten = 0;
-
-            while (samplesWritten < samplesRequested && offset < bufferSize)
-            {
-                UInt16 sample = 0;
-                if (reverse && !samples.ReadFront(out sample))
-                {
-                    break;
-                }
-                else if (!reverse && !samples.ReadBack(out sample))
-                {
-                    break;
-                }
-
-                // Samples are encoded as a 16-bit integer, with 4 bits per channel.
-                byte channelA = (byte)(sample & 0x000f);
-                byte channelB = (byte)((sample & 0x00f0) >> 4);
-                byte channelC = (byte)((sample & 0x0f00) >> 8);
-
-                // Treat Channel A as "Left", Channel B as "Centre", and Channel C as "Right".
-                UInt32 left = (UInt32)(((2 * _amplitudes[channelA]) + _amplitudes[channelB]) * volumeFactor) / 3;
-                UInt32 right = (UInt32)(((2 * _amplitudes[channelC]) + _amplitudes[channelB]) * volumeFactor) / 3;
-
-                // Divide by two to deal with the fact NAudio requires signed 16-bit samples.
-                left = (UInt16)(left / 2);
-                right = (UInt16)(right / 2);
-
-                buffer[offset] = (byte)(left & 0xFF);
-                buffer[offset + 1] = (byte)(left >> 8);
-                buffer[offset + 2] = (byte)(right & 0xFF);
-                buffer[offset + 3] = (byte)(right >> 8);
-
-                offset += 4;
-                samplesWritten++;
-            }
-
-            return samplesWritten;
         }
 
         /// <summary>
@@ -740,9 +665,9 @@ namespace CPvC
             UInt64 ticks = Ticks;
 
             // Check for audio overrun.
-            if (_audioSamples.Overrun())
+            if (_audioBuffer.Overrun())
             {
-                if (!_audioSamples.WaitForUnderrun(10))
+                if (!_audioBuffer.WaitForUnderrun(10))
                 {
                     return null;
                 }
@@ -753,7 +678,7 @@ namespace CPvC
 
             foreach (UInt16 sample in audioSamples)
             {
-                _audioSamples.Write(sample);
+                _audioBuffer.Write(sample);
             }
 
             if ((stopReason & StopReasons.VSync) != 0)
