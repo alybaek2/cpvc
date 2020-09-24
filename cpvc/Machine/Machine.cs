@@ -287,6 +287,7 @@ namespace CPvC
                         break;
                     }
 
+                    Display.CopyFromBufferAsync();
                     _snapshots.RemoveAt(_currentSnapshotIndex);
                     _currentSnapshotIndex--;
                 }
