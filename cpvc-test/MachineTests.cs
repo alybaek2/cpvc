@@ -855,7 +855,7 @@ namespace CPvC.Test
             // Setup
             using (Machine machine = CreateMachine())
             {
-                RunForAWhile(machine, 40000000, 60000);
+                RunForAWhile(machine, 1000000, 60000);
 
                 // Act
                 machine.Reverse();
