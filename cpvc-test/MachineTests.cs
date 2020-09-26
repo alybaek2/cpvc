@@ -830,7 +830,6 @@ namespace CPvC.Test
         {
             // Setup
             using (Machine machine = CreateMachine())
-            //using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
                 machine.Volume = volume1;
                 Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
@@ -847,6 +846,26 @@ namespace CPvC.Test
                 }
 
                 propChanged.VerifyNoOtherCalls();
+            }
+        }
+
+        [Test]
+        public void Reverse()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                RunForAWhile(machine, 40000000, 10000);
+
+                // Act
+                machine.Reverse();
+
+                byte[] buffer = new byte[48000];
+                machine.ReadAudio(buffer, 0, buffer.Length / 4);
+
+                // Verify - this test is incomplete. Need checks for reversal of audio
+                //          samples. Probably easier to do this once the Core class is
+                //          hidden behind an interface and can be mocked.
             }
         }
     }

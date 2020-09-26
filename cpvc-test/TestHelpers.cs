@@ -202,17 +202,17 @@ namespace CPvC.Test
         /// Runs a machine for at least one instruction cycle.
         /// </summary>
         /// <param name="machine">The machine to run.</param>
-        static public void RunForAWhile(IPausableMachine machine)
+        static public void RunForAWhile(IPausableMachine machine, UInt32 ticksDuration = 1, int timeout = 1000)
         {
             UInt64 startTicks = machine.Ticks;
-            UInt64 endTicks = startTicks + 1;
+            UInt64 endTicks = startTicks + ticksDuration;
 
             int timeWaited = 0;
             int sleepTime = 10;
             machine.Start();
             while (machine.Ticks < endTicks)
             {
-                if (timeWaited > 1000)
+                if (timeWaited > timeout)
                 {
                     throw new Exception(String.Format("Waited too long for Machine to run! {0} {1}", machine.Ticks, machine.RunningState));
                 }
