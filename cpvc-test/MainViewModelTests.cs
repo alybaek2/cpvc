@@ -191,7 +191,7 @@ namespace CPvC.Test
             });
 
             // Act
-            Machine machine = viewModel.OpenMachine(prompt.Object, filepath, _mockFileSystem.Object);
+            MachineViewModel machineViewModel = viewModel.OpenMachine(prompt.Object, filepath, _mockFileSystem.Object);
 
             // Verify
             prompt.Verify(x => x(FileTypes.Machine, true), (filepath != null) ? Times.Never() : Times.Once());
@@ -201,8 +201,9 @@ namespace CPvC.Test
             {
                 Assert.AreEqual(1, viewModel.Machines.Count);
                 Assert.AreEqual(expectedMachineName, viewModel.Machines[0].Name);
-                Assert.IsNotNull(machine);
-                Assert.Contains(machine, viewModel.Machines);
+                Assert.IsNotNull(machineViewModel);
+                Assert.IsNotNull(machineViewModel.Machine);
+                Assert.Contains(machineViewModel.Machine, viewModel.Machines);
                 _mockSettings.VerifySet(x => x.RecentlyOpened = "test;test.cpvc", Times.Once);
             }
             else
