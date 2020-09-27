@@ -281,6 +281,7 @@ namespace CPvC
                 if (samplesWritten == 0)
                 {
                     _core.LoadSnapshot(currentSnapshot.Id);
+
                     if (_currentSnapshotIndex == 0)
                     {
                         // We've reached the last snapshot.
@@ -364,24 +365,6 @@ namespace CPvC
                         case CoreRequest.Types.Reset:
                             Status = "Reset";
                             break;
-                    }
-                }
-                else if (action.Type == CoreAction.Types.LoadSnapshot)
-                {
-                    // Ensure to update the display.
-                    Display.CopyFromBufferAsync();
-
-                    // Switch the CurrentEvent back if necessary...
-                    HistoryEvent newCurrentEvent = CurrentEvent;
-                    while (newCurrentEvent.Ticks > Ticks)
-                    {
-                        newCurrentEvent = newCurrentEvent.Parent;
-                    }
-
-                    if (CurrentEvent != newCurrentEvent)
-                    {
-                        _file.WriteCurrent(newCurrentEvent);
-                        CurrentEvent = newCurrentEvent;
                     }
                 }
                 else if (action.Type == CoreAction.Types.RunUntil)
@@ -688,8 +671,16 @@ namespace CPvC
             }
             else
             {
-                CurrentEvent.AddChild(historyEvent);
-                _historyEventById[historyEvent.Id] = historyEvent;
+                // Special case for creating a parent event...
+                if (historyEvent.Ticks < CurrentEvent.Ticks)
+                {
+                    AddParentCheckpoint(historyEvent);
+                }
+                else
+                {
+                    CurrentEvent.AddChild(historyEvent);
+                    _historyEventById[historyEvent.Id] = historyEvent;
+                }
             }
 
             if (writeToFile)
@@ -698,6 +689,31 @@ namespace CPvC
             }
 
             CurrentEvent = historyEvent;
+        }
+
+        private void AddParentCheckpoint(HistoryEvent newParent)
+        {
+            HistoryEvent historyEvent = CurrentEvent;
+
+            while (historyEvent?.Parent != null)
+            {
+                if (historyEvent.Parent.Ticks > newParent.Ticks)
+                {
+                    historyEvent = historyEvent.Parent;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (historyEvent?.Parent != null)
+            {
+                historyEvent.Parent.AddChild(newParent);
+                historyEvent.Parent.RemoveChild(historyEvent);
+                newParent.AddChild(historyEvent);
+                _historyEventById[newParent.Id] = newParent;
+            }
         }
 
         /// <summary>
@@ -833,6 +849,8 @@ namespace CPvC
 
         public void ReverseStop()
         {
+            AddEvent(HistoryEvent.CreateCheckpoint(NextEventId(), Ticks, DateTime.UtcNow, null), true);
+
             SetRunningState(_previousRunningState);
         }
     }
