@@ -849,7 +849,7 @@ namespace CPvC
 
         public void ReverseStop()
         {
-            AddEvent(HistoryEvent.CreateCheckpoint(NextEventId(), Ticks, DateTime.UtcNow, null), true);
+            SetCheckpoint();
 
             SetRunningState(_previousRunningState);
         }
