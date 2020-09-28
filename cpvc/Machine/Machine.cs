@@ -31,16 +31,19 @@ namespace CPvC
     {
         private string _name;
 
-        public HistoryEvent CurrentEvent { get; private set; }
-        public HistoryEvent RootEvent { get; private set; }
-        private Dictionary<int, HistoryEvent> _historyEventById;
-
-        private int _nextEventId;
+        public MachineHistory History
+        {
+            get
+            {
+                return _history;
+            }
+        }
 
         private RunningState _previousRunningState;
 
         private readonly IFileSystem _fileSystem;
         private MachineFile _file;
+        private MachineHistory _history;
 
         private const int _snapshotLimit = 500;
         private List<SnapshotInfo> _snapshots;
@@ -53,15 +56,14 @@ namespace CPvC
 
             Display = new Display();
 
-            _nextEventId = 0;
-            _historyEventById = new Dictionary<int, HistoryEvent>();
-
             _previousRunningState = RunningState.Paused;
 
             _fileSystem = fileSystem;
 
             _snapshots = new List<SnapshotInfo>();
             _currentSnapshotIndex = -1;
+
+            _history = new MachineHistory();
         }
 
         public void Dispose()
@@ -129,14 +131,14 @@ namespace CPvC
 
                 _file.ReadFile(this);
 
-                if (CurrentEvent == null)
+                if (_history.CurrentEvent == null)
                 {
                     // The machine file is either empty or has some other problem...
                     throw new Exception(String.Format("Unable to load file \"{0}\"; CurrentEvent is null!", Filepath));
                 }
 
                 // Rewind from the current event to the most recent one with a bookmark...
-                HistoryEvent bookmarkEvent = CurrentEvent;
+                HistoryEvent bookmarkEvent = _history.CurrentEvent;
                 while (bookmarkEvent != null && bookmarkEvent.Bookmark == null)
                 {
                     bookmarkEvent = bookmarkEvent.Parent;
@@ -144,7 +146,7 @@ namespace CPvC
 
                 core = GetCore(bookmarkEvent?.Bookmark);
 
-                CurrentEvent = bookmarkEvent ?? RootEvent;
+                _history.CurrentEvent = bookmarkEvent ?? _history.RootEvent;
 
                 Display.EnableGreyscale(false);
                 Display.GetFromBookmark(bookmarkEvent?.Bookmark);
@@ -156,7 +158,7 @@ namespace CPvC
                 }
 
                 CoreAction action = CoreAction.CoreVersion(Core.Ticks, Core.LatestVersion);
-                AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
+                AddEvent(HistoryEvent.CreateCoreAction(_history.NextEventId(), action), true);
             }
             catch (Exception)
             {
@@ -164,6 +166,16 @@ namespace CPvC
                 Dispose();
 
                 throw;
+            }
+        }
+
+        public void AddEvent(HistoryEvent historyEvent, bool writeToFile)
+        {
+            _history.AddEvent(historyEvent);
+
+            if (writeToFile)
+            {
+                _file.WriteHistoryEvent(historyEvent);
             }
         }
 
@@ -188,10 +200,10 @@ namespace CPvC
                 machine.SetCore(Core.Create(Core.LatestVersion, Core.Type.CPC6128));
 
                 CoreAction action = CoreAction.CoreVersion(machine.Core.Ticks, Core.LatestVersion);
-                machine.RootEvent = HistoryEvent.CreateCoreAction(machine.NextEventId(), action);
-                machine._file.WriteHistoryEvent(machine.RootEvent);
+                machine._history.RootEvent = HistoryEvent.CreateCoreAction(machine._history.NextEventId(), action);
+                machine._file.WriteHistoryEvent(machine._history.RootEvent);
 
-                machine.CurrentEvent = machine.RootEvent;
+                machine._history.CurrentEvent = machine._history.RootEvent;
 
                 return machine;
             }
@@ -219,9 +231,9 @@ namespace CPvC
                 {
                     // Create a system bookmark so the machine can resume from where it left off the next time it's loaded, but don't
                     // create one if we already have a system bookmark at the current event, or we're at the root event.
-                    if ((CurrentEvent.Ticks != Ticks) ||
-                        (CurrentEvent.Bookmark == null && CurrentEvent != RootEvent) ||
-                        (CurrentEvent.Bookmark != null && !CurrentEvent.Bookmark.System))
+                    if ((_history.CurrentEvent.Ticks != Ticks) ||
+                        (_history.CurrentEvent.Bookmark == null && _history.CurrentEvent != _history.RootEvent) ||
+                        (_history.CurrentEvent.Bookmark != null && !_history.CurrentEvent.Bookmark.System))
                     {
                         AddCheckpointWithBookmarkEvent(true);
                     }
@@ -234,12 +246,10 @@ namespace CPvC
 
             SetCore(null);
 
-            CurrentEvent = null;
-            RootEvent = null;
+            _history.CurrentEvent = null;
+            _history.RootEvent = null;
 
             Status = null;
-
-            _nextEventId = 0;
 
             Display?.EnableGreyscale(true);
         }
@@ -352,7 +362,7 @@ namespace CPvC
 
                 if (action.Type != CoreAction.Types.RunUntil && action.Type != CoreAction.Types.LoadSnapshot && action.Type != CoreAction.Types.SaveSnapshot)
                 {
-                    AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
+                    AddEvent(HistoryEvent.CreateCoreAction(_history.NextEventId(), action), true);
 
                     switch (action.Type)
                     {
@@ -455,7 +465,7 @@ namespace CPvC
         /// </summary>
         public void JumpToMostRecentBookmark()
         {
-            HistoryEvent lastBookmarkEvent = CurrentEvent;
+            HistoryEvent lastBookmarkEvent = _history.CurrentEvent;
             while (lastBookmarkEvent != null)
             {
                 if (lastBookmarkEvent.Type == HistoryEvent.Types.Checkpoint && lastBookmarkEvent.Bookmark != null && !lastBookmarkEvent.Bookmark.System && lastBookmarkEvent.Ticks != Core.Ticks)
@@ -471,7 +481,7 @@ namespace CPvC
             }
 
             // No bookmarks? Go all the way back to the root!
-            JumpToBookmark(RootEvent);
+            JumpToBookmark(_history.RootEvent);
             Status = "Rewound to start";
         }
 
@@ -508,7 +518,7 @@ namespace CPvC
             }
 
             _file.WriteCurrent(bookmarkEvent);
-            CurrentEvent = bookmarkEvent;
+            _history.CurrentEvent = bookmarkEvent;
 
             SetCoreRunning();
         }
@@ -520,19 +530,11 @@ namespace CPvC
         /// <param name="loading">Indicates whether the MachineFile is being loaded from a file.</param>
         private void DeleteEvent(HistoryEvent historyEvent, bool writeToFile)
         {
-            if (historyEvent.Parent == null)
-            {
-                return;
-            }
-
             using (AutoPause())
             {
-                historyEvent.Parent.RemoveChild(historyEvent);
-
-                // Remove the event and all its descendents from the lookup.
-                foreach (HistoryEvent e in historyEvent.GetSelfAndDescendents())
+                if (!_history.DeleteEvent(historyEvent))
                 {
-                    _historyEventById.Remove(e.Id);
+                    return;
                 }
 
                 if (writeToFile)
@@ -548,7 +550,7 @@ namespace CPvC
         /// <param name="historyEvent">HistoryEvent object which belongs to the branch to be removed.</param>
         public void TrimTimeline(HistoryEvent historyEvent)
         {
-            if (historyEvent == null || historyEvent.Children.Count != 0 || historyEvent == CurrentEvent || historyEvent.Parent == null)
+            if (historyEvent == null || historyEvent.Children.Count != 0 || historyEvent == _history.CurrentEvent || historyEvent.Parent == null)
             {
                 return;
             }
@@ -579,7 +581,7 @@ namespace CPvC
         {
             using (AutoPause())
             {
-                AddEvent(HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, null), true);
+                AddEvent(HistoryEvent.CreateCheckpoint(_history.NextEventId(), _core.Ticks, DateTime.UtcNow, null), true);
             }
         }
 
@@ -605,8 +607,8 @@ namespace CPvC
                     tempfile.DiffsEnabled = diffsEnabled;
 
                     tempfile.WriteName(_name);
-                    WriteEvent(tempfile, RootEvent);
-                    tempfile.WriteCurrent(CurrentEvent);
+                    WriteEvent(tempfile, _history.RootEvent);
+                    tempfile.WriteCurrent(_history.CurrentEvent);
                 }
                 finally
                 {
@@ -620,9 +622,8 @@ namespace CPvC
 
                 _fileSystem.ReplaceFile(Filepath, tempname);
 
-                RootEvent = null;
-                CurrentEvent = null;
-                _historyEventById.Clear();
+                _history.RootEvent = null;
+                _history.CurrentEvent = null;
 
                 _file = new MachineFile(_fileSystem, Filepath);
                 _file.ReadFile(this);
@@ -651,69 +652,10 @@ namespace CPvC
         private HistoryEvent AddCheckpointWithBookmarkEvent(bool system)
         {
             Bookmark bookmark = GetBookmark(system);
-            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark);
+            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(_history.NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark);
             AddEvent(historyEvent, true);
 
             return historyEvent;
-        }
-
-        /// <summary>
-        /// Adds a historical event to the current event, and makes that event the new current event.
-        /// </summary>
-        /// <param name="historyEvent">The History event to be added.</param>
-        /// <param name="writeToFile">Indicates whether this event should be written to the machine file. Should be false only when loading a machine.</param>
-        private void AddEvent(HistoryEvent historyEvent, bool writeToFile)
-        {
-            if (RootEvent == null)
-            {
-                RootEvent = historyEvent;
-                _historyEventById[historyEvent.Id] = historyEvent;
-            }
-            else
-            {
-                // Special case for creating a parent event...
-                if (historyEvent.Ticks < CurrentEvent.Ticks)
-                {
-                    AddParentCheckpoint(historyEvent);
-                }
-                else
-                {
-                    CurrentEvent.AddChild(historyEvent);
-                    _historyEventById[historyEvent.Id] = historyEvent;
-                }
-            }
-
-            if (writeToFile)
-            {
-                _file.WriteHistoryEvent(historyEvent);
-            }
-
-            CurrentEvent = historyEvent;
-        }
-
-        private void AddParentCheckpoint(HistoryEvent newParent)
-        {
-            HistoryEvent historyEvent = CurrentEvent;
-
-            while (historyEvent?.Parent != null)
-            {
-                if (historyEvent.Parent.Ticks > newParent.Ticks)
-                {
-                    historyEvent = historyEvent.Parent;
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            if (historyEvent?.Parent != null)
-            {
-                historyEvent.Parent.AddChild(newParent);
-                historyEvent.Parent.RemoveChild(historyEvent);
-                newParent.AddChild(historyEvent);
-                _historyEventById[newParent.Id] = newParent;
-            }
         }
 
         /// <summary>
@@ -756,7 +698,7 @@ namespace CPvC
                 }
 
                 // Don't write out non-root checkpoint nodes which have only one child and no bookmark.
-                if (currentEvent == RootEvent || currentEvent.Children.Count != 1 || currentEvent.Type != HistoryEvent.Types.Checkpoint || currentEvent.Bookmark != null)
+                if (currentEvent == _history.RootEvent || currentEvent.Children.Count != 1 || currentEvent.Type != HistoryEvent.Types.Checkpoint || currentEvent.Bookmark != null)
                 {
                     file.WriteHistoryEvent(currentEvent);
                 }
@@ -788,11 +730,6 @@ namespace CPvC
             return Core.Create(Core.LatestVersion, Core.Type.CPC6128);
         }
 
-        private int NextEventId()
-        {
-            return _nextEventId++;
-        }
-
         // IMachineFileReader implementation.
         public void SetName(string name)
         {
@@ -801,33 +738,22 @@ namespace CPvC
 
         public void DeleteEvent(int id)
         {
-            if (_historyEventById.TryGetValue(id, out HistoryEvent historyEvent) && historyEvent != null)
-            {
-                DeleteEvent(historyEvent, false);
-            }
+            _history.DeleteEvent(id);
         }
 
         public void SetBookmark(int id, Bookmark bookmark)
         {
-            if (_historyEventById.TryGetValue(id, out HistoryEvent historyEvent) && historyEvent != null)
-            {
-                historyEvent.Bookmark = bookmark;
-            }
+            _history.SetBookmark(id, bookmark);
         }
 
         public void SetCurrentEvent(int id)
         {
-            if (_historyEventById.TryGetValue(id, out HistoryEvent historyEvent) && historyEvent != null)
-            {
-                CurrentEvent = historyEvent;
-            }
+            _history.SetCurrentEvent(id);
         }
 
         public void AddHistoryEvent(HistoryEvent historyEvent)
         {
             AddEvent(historyEvent, false);
-
-            _nextEventId = Math.Max(_nextEventId, historyEvent.Id + 1);
         }
 
         public void Reverse()

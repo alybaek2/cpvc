@@ -77,7 +77,7 @@ namespace CPvC.Test
             HistoryEvent historyEvent = null;
             using (Machine machine = CreateTestMachine())
             {
-                historyEvent = machine.CurrentEvent;
+                historyEvent = machine.History.CurrentEvent;
             }
 
             viewModel.OpenReplayMachine("Test Replay", historyEvent);
@@ -386,17 +386,17 @@ namespace CPvC.Test
                 prompt.Verify(p => p(), Times.Once());
                 if (selectEvent)
                 {
-                    Assert.AreEqual(historyEvent, machine.CurrentEvent);
+                    Assert.AreEqual(historyEvent, machine.History.CurrentEvent);
                 }
                 else
                 {
-                    Assert.AreNotEqual(historyEvent, machine.CurrentEvent);
+                    Assert.AreNotEqual(historyEvent, machine.History.CurrentEvent);
                 }
             }
             else
             {
                 prompt.Verify(p => p(), Times.Never());
-                Assert.AreNotEqual(historyEvent, machine.CurrentEvent);
+                Assert.AreNotEqual(historyEvent, machine.History.CurrentEvent);
             }
         }
 
@@ -611,11 +611,11 @@ namespace CPvC.Test
             // Verify
             if (active)
             {
-                Assert.IsNotNull(machine.CurrentEvent.Bookmark);
+                Assert.IsNotNull(machine.History.CurrentEvent.Bookmark);
             }
             else
             {
-                Assert.IsNull(machine.CurrentEvent.Bookmark);
+                Assert.IsNull(machine.History.CurrentEvent.Bookmark);
             }
         }
 

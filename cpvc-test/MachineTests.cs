@@ -158,7 +158,7 @@ namespace CPvC.Test
                 }
 
                 UInt64 ticks = machine.Core.Ticks;
-                int bookmarkId = machine.CurrentEvent.Id;
+                int bookmarkId = machine.History.CurrentEvent.Id;
                 byte[] state = machine.Core.GetState();
 
                 RunForAWhile(machine);
@@ -167,7 +167,7 @@ namespace CPvC.Test
                 machine.JumpToMostRecentBookmark();
 
                 // Verify
-                Assert.AreEqual(machine.CurrentEvent.Id, bookmarkId);
+                Assert.AreEqual(machine.History.CurrentEvent.Id, bookmarkId);
                 Assert.AreEqual(machine.Core.Ticks, ticks);
                 Assert.AreEqual(state, machine.Core.GetState());
 
@@ -278,7 +278,7 @@ namespace CPvC.Test
                 machine.Reset();
                 RunForAWhile(machine);
                 machine.AddBookmark(false);
-                HistoryEvent bookmarkEvent = machine.CurrentEvent;
+                HistoryEvent bookmarkEvent = machine.History.CurrentEvent;
                 RunForAWhile(machine);
                 machine.JumpToMostRecentBookmark();
                 HistoryEvent eventToDelete = bookmarkEvent.Children[0];
@@ -294,11 +294,11 @@ namespace CPvC.Test
                 Assert.AreEqual(machine.Filepath, "test.cpvc");
                 Assert.AreEqual(machine.Name, "test");
 
-                Assert.AreEqual(HistoryEvent.Types.CoreAction, machine.RootEvent.Type);
-                Assert.AreEqual(CoreRequest.Types.CoreVersion, machine.RootEvent.CoreAction.Type);
-                Assert.AreEqual(1, machine.RootEvent.Children.Count);
+                Assert.AreEqual(HistoryEvent.Types.CoreAction, machine.History.RootEvent.Type);
+                Assert.AreEqual(CoreRequest.Types.CoreVersion, machine.History.RootEvent.CoreAction.Type);
+                Assert.AreEqual(1, machine.History.RootEvent.Children.Count);
 
-                HistoryEvent historyEvent = machine.RootEvent.Children[0];
+                HistoryEvent historyEvent = machine.History.RootEvent.Children[0];
                 Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
                 Assert.AreEqual(CoreRequest.Types.KeyPress, historyEvent.CoreAction.Type);
                 Assert.AreEqual(Keys.A, historyEvent.CoreAction.KeyCode);
@@ -342,7 +342,7 @@ namespace CPvC.Test
                 Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
                 Assert.AreEqual(CoreRequest.Types.CoreVersion, historyEvent.CoreAction.Type);
 
-                Assert.AreEqual(historyEvent, machine.CurrentEvent);
+                Assert.AreEqual(historyEvent, machine.History.CurrentEvent);
 
                 _mockAuditor.Verify(a => a(It.Is<CoreAction>(c => c.Type == CoreRequest.Types.LoadCore)), Times.Once);
             }
@@ -377,9 +377,9 @@ namespace CPvC.Test
             {
                 // Verify - when opened, the machine should rewind to the bookmark, then add a Version
                 //          history event at that point.
-                HistoryEvent bookmarkEvent = machine.RootEvent.Children[0];
+                HistoryEvent bookmarkEvent = machine.History.RootEvent.Children[0];
                 Assert.AreEqual(2, bookmarkEvent.Children.Count);
-                Assert.AreEqual(machine.CurrentEvent, bookmarkEvent.Children[1]);
+                Assert.AreEqual(machine.History.CurrentEvent, bookmarkEvent.Children[1]);
                 Assert.AreEqual(HistoryEvent.Types.CoreAction, bookmarkEvent.Children[1].Type);
                 Assert.AreEqual(CoreRequest.Types.CoreVersion, bookmarkEvent.Children[1].CoreAction.Type);
             }
@@ -399,7 +399,7 @@ namespace CPvC.Test
                 machine.AddBookmark(true);
 
                 Bookmark corruptedBookmark = new Bookmark(true, 5, new byte[] { }, new byte[] { });
-                machine.SetBookmark(machine.CurrentEvent, corruptedBookmark);
+                machine.SetBookmark(machine.History.CurrentEvent, corruptedBookmark);
             }
 
             // Act and Verify
@@ -471,12 +471,12 @@ namespace CPvC.Test
                 machine.AddBookmark(false);
                 RunForAWhile(machine);
 
-                HistoryEvent bookmarkEvent = machine.CurrentEvent;
+                HistoryEvent bookmarkEvent = machine.History.CurrentEvent;
 
                 machine.LoadDisc(0, null);
                 RunForAWhile(machine);
 
-                HistoryEvent eventToDelete = machine.CurrentEvent;
+                HistoryEvent eventToDelete = machine.History.CurrentEvent;
 
                 machine.JumpToMostRecentBookmark();
                 machine.LoadDisc(0, null);
@@ -604,12 +604,12 @@ namespace CPvC.Test
                 int pos = _mockBinaryWriter.Content.Count;
 
                 // Act
-                machine.SetBookmark(machine.RootEvent.Children[0], null);
+                machine.SetBookmark(machine.History.RootEvent.Children[0], null);
 
                 // Verify
-                Assert.IsNotNull(machine.RootEvent);
-                Assert.GreaterOrEqual(machine.RootEvent.Children.Count, 1);
-                Assert.IsEmpty(machine.RootEvent.Children[0].Children);
+                Assert.IsNotNull(machine.History.RootEvent);
+                Assert.GreaterOrEqual(machine.History.RootEvent.Children.Count, 1);
+                Assert.IsEmpty(machine.History.RootEvent.Children[0].Children);
                 Assert.AreEqual(pos, _mockBinaryWriter.Content.Count);
             }
         }
@@ -640,8 +640,8 @@ namespace CPvC.Test
             using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
             {
                 // Verify
-                Assert.IsNotNull(machine.RootEvent);
-                Assert.IsNotEmpty(machine.RootEvent.Children);
+                Assert.IsNotNull(machine.History.RootEvent);
+                Assert.IsNotEmpty(machine.History.RootEvent.Children);
             }
         }
 
@@ -654,11 +654,11 @@ namespace CPvC.Test
                 int pos = _mockBinaryWriter.Content.Count;
 
                 // Act
-                machine.TrimTimeline(machine.RootEvent);
+                machine.TrimTimeline(machine.History.RootEvent);
 
                 // Verify
-                Assert.IsNotNull(machine.RootEvent);
-                Assert.IsEmpty(machine.RootEvent.Children);
+                Assert.IsNotNull(machine.History.RootEvent);
+                Assert.IsEmpty(machine.History.RootEvent.Children);
                 Assert.AreEqual(pos, _mockBinaryWriter.Content.Count);
             }
         }
@@ -762,12 +762,12 @@ namespace CPvC.Test
                 RunForAWhile(machine);
 
                 machine.AddBookmark(true);
-                HistoryEvent bookmarkEvent = machine.CurrentEvent;
+                HistoryEvent bookmarkEvent = machine.History.CurrentEvent;
                 RunForAWhile(machine);
 
                 // Act and Verify
                 machine.JumpToBookmark(bookmarkEvent);
-                Assert.AreEqual(bookmarkEvent, machine.CurrentEvent);
+                Assert.AreEqual(bookmarkEvent, machine.History.CurrentEvent);
 
                 bool[] keys = new bool[80];
                 Array.Clear(keys, 0, keys.Length);

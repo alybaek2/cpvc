@@ -37,7 +37,7 @@ namespace CPvC.Test
                 _bookmarkTicks.Add(machine.Ticks);
                 Run(machine, 4000000, false);
 
-                _finalHistoryEvent = machine.CurrentEvent;
+                _finalHistoryEvent = machine.History.CurrentEvent;
             }
         }
 
