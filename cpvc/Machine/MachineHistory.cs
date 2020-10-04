@@ -82,7 +82,7 @@ namespace CPvC
         {
             HistoryEvent historyEvent = CurrentEvent;
 
-            while (historyEvent?.Parent != null)
+            while (historyEvent.Parent != null)
             {
                 if (historyEvent.Parent.Ticks > newParent.Ticks)
                 {
@@ -90,16 +90,13 @@ namespace CPvC
                 }
                 else
                 {
+                    historyEvent.Parent.AddChild(newParent);
+                    historyEvent.Parent.RemoveChild(historyEvent);
+                    newParent.AddChild(historyEvent);
+                    _historyEventById[newParent.Id] = newParent;
+
                     break;
                 }
-            }
-
-            if (historyEvent?.Parent != null)
-            {
-                historyEvent.Parent.AddChild(newParent);
-                historyEvent.Parent.RemoveChild(historyEvent);
-                newParent.AddChild(historyEvent);
-                _historyEventById[newParent.Id] = newParent;
             }
         }
 
