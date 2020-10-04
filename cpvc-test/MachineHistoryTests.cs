@@ -33,23 +33,27 @@ namespace CPvC.Test
             // Setup
             MachineHistory history = new MachineHistory();
             HistoryEvent event1 = HistoryEvent.CreateCheckpoint(1, 1, DateTime.UtcNow, null);
-            HistoryEvent event2 = HistoryEvent.CreateCheckpoint(2, 100, DateTime.UtcNow, null);
+            HistoryEvent event2 = HistoryEvent.CreateCheckpoint(2, 10, DateTime.UtcNow, null);
             HistoryEvent event3 = HistoryEvent.CreateCheckpoint(3, 50, DateTime.UtcNow, null);
+            HistoryEvent event4 = HistoryEvent.CreateCheckpoint(4, 5, DateTime.UtcNow, null);
 
             // Act
             history.AddEvent(event1);
             history.AddEvent(event2);
             history.AddEvent(event3);
+            history.AddEvent(event4);
 
             // Verify
             Assert.AreEqual(event1, history.RootEvent);
             Assert.AreEqual(1, event1.Children.Count);
-            Assert.AreEqual(1, event3.Children.Count);
-            Assert.AreEqual(0, event2.Children.Count);
-            Assert.AreEqual(event3, event2.Parent);
-            Assert.AreEqual(event1, event3.Parent);
-            Assert.AreEqual(event3, event1.Children[0]);
-            Assert.AreEqual(event2, event3.Children[0]);
+            Assert.AreEqual(1, event2.Children.Count);
+            Assert.AreEqual(1, event4.Children.Count);
+            Assert.AreEqual(0, event3.Children.Count);
+            Assert.AreEqual(event4, event2.Parent);
+            Assert.AreEqual(event2, event3.Parent);
+            Assert.AreEqual(event1, event4.Parent);
+            Assert.AreEqual(event4, event1.Children[0]);
+            Assert.AreEqual(event2, event4.Children[0]);
         }
 
         [Test]
