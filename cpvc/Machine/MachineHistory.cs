@@ -103,12 +103,14 @@ namespace CPvC
             }
         }
 
-        public void DeleteEvent(int id)
+        public bool DeleteEvent(int id)
         {
             if (_historyEventById.TryGetValue(id, out HistoryEvent historyEvent) && historyEvent != null)
             {
-                DeleteEvent(historyEvent);
+                return DeleteEvent(historyEvent);
             }
+
+            return false;
         }
 
         /// <summary>

@@ -86,5 +86,53 @@ namespace CPvC.Test
             // Verify
             Assert.False(result);
         }
+
+        [Test]
+        public void DeleteRootEventById()
+        {
+            // Setup
+            MachineHistory history = new MachineHistory();
+            HistoryEvent event1 = HistoryEvent.CreateCheckpoint(1, 1, DateTime.UtcNow, null);
+            history.AddEvent(event1);
+
+            // Act
+            bool result = history.DeleteEvent(1);
+
+            // Verify
+            Assert.False(result);
+        }
+
+        [Test]
+        public void SetCurrentEvent()
+        {
+            // Setup
+            MachineHistory history = new MachineHistory();
+            HistoryEvent event1 = HistoryEvent.CreateCheckpoint(1, 1, DateTime.UtcNow, null);
+            HistoryEvent event2 = HistoryEvent.CreateCheckpoint(2, 50, DateTime.UtcNow, null);
+            history.AddEvent(event1);
+            history.AddEvent(event2);
+
+            // Act
+            history.SetCurrentEvent(1);
+
+            // Verify
+            Assert.AreEqual(event1, history.CurrentEvent);
+        }
+
+        [Test]
+        public void SetBookmark()
+        {
+            // Setup
+            Bookmark bookmark = new Bookmark(false, 1, (byte[])null, (byte[])null);
+            MachineHistory history = new MachineHistory();
+            HistoryEvent event1 = HistoryEvent.CreateCheckpoint(1, 1, DateTime.UtcNow, null);
+            history.AddEvent(event1);
+
+            // Act
+            history.SetBookmark(1, bookmark);
+
+            // Verify
+            Assert.AreEqual(bookmark, event1.Bookmark);
+        }
     }
 }
