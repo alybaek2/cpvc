@@ -1,5 +1,6 @@
 ﻿using Moq;
 using NUnit.Framework;
+using System;
 using System.Linq;
 using System.Threading;
 
@@ -46,6 +47,30 @@ namespace CPvC.Test
 
                 // Verify
                 Assert.Greater(machine.Ticks, 0);
+            }
+        }
+
+        [Test]
+        public void ReceiveLoadSnapshot()
+        {
+            // Setup
+            using (RemoteMachine machine = new RemoteMachine(_mockRemote.Object))
+            {
+                machine.Start();
+                _receiveCoreAction(CoreAction.RunUntil(0, 100000, null));
+                Thread.Sleep(100);
+                _receiveCoreAction(CoreAction.SaveSnapshot(0, 1));
+                UInt64 saveSnapshotTicks = machine.Ticks;
+                _receiveCoreAction(CoreAction.RunUntil(0, 200000, null));
+                Thread.Sleep(100);
+
+                // Act
+                _receiveCoreAction(CoreAction.LoadSnapshot(0, 1));
+                Thread.Sleep(100);
+                UInt64 loadSnapshotTicks = machine.Ticks;
+
+                // Verify
+                Assert.AreEqual(loadSnapshotTicks, saveSnapshotTicks);
             }
         }
 
