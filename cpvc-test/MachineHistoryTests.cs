@@ -56,6 +56,27 @@ namespace CPvC.Test
             Assert.AreEqual(event2, event4.Children[0]);
         }
 
+        /// <summary>
+        /// Test ensuring that an event can't be added prior to the root event.
+        /// </summary>
+        [Test]
+        public void AddParentCheckpointRoot()
+        {
+            // Setup
+            MachineHistory history = new MachineHistory();
+            HistoryEvent event1 = HistoryEvent.CreateCheckpoint(1, 10, DateTime.UtcNow, null);
+            HistoryEvent event2 = HistoryEvent.CreateCheckpoint(2, 1, DateTime.UtcNow, null);
+
+            // Act
+            history.AddEvent(event1);
+            history.AddEvent(event2);
+
+            // Verify
+            Assert.AreEqual(event1, history.RootEvent);
+            Assert.AreEqual(0, event1.Children.Count);
+            Assert.AreEqual(0, event2.Children.Count);
+        }
+
         [Test]
         public void DeleteEvent()
         {
