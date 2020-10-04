@@ -866,6 +866,26 @@ namespace CPvC.Test
                 // Verify - this test is incomplete. Need checks for reversal of audio
                 //          samples. Probably easier to do this once the Core class is
                 //          hidden behind an interface and can be mocked.
+                Assert.AreEqual(RunningState.Reverse, machine.RunningState);
+            }
+        }
+
+        [TestCase(RunningState.Paused)]
+        [TestCase(RunningState.Running)]
+        public void ReverseStop(RunningState runningState)
+        {
+            using (Machine machine = CreateMachine())
+            {
+                RunForAWhile(machine, 100000, 6000);
+
+                machine.SetRunningState(runningState);
+                machine.Reverse();
+
+                // Act
+                machine.ReverseStop();
+
+                // Verify
+                Assert.AreEqual(runningState, machine.RunningState);
             }
         }
     }
