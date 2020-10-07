@@ -92,6 +92,10 @@ Indicates the amount of "virtual time" has elapsed for the currently selected ma
 
 A slider control that can be used to adjust the volume of the currently selected machine.
 
+## Reverse Mode
+
+Pressing the F1 key will run the currently selected machine in reverse for as long as the key is pressed (up to a maximum of 10 seconds).
+
 ## Turbo Mode
 
-Pressing the tilda (~) key will attempt to run the currently selected machine at 10 times normal speed for as long as the key is pressed.
+Pressing the F2 key will attempt to run the currently selected machine at 10 times normal speed for as long as the key is pressed.
