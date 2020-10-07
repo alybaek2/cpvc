@@ -8,15 +8,25 @@ namespace CPvC
         protected Core _core;
         protected string _filepath;
         private string _status;
-        protected bool _running;
+
+        protected RunningState _runningState;
+        protected object _runningStateLock;
+
         protected int _autoPauseCount;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
+        /// <summary>
+        /// Value indicating the relative volume level of rendered audio (0 = mute, 255 = loudest).
+        /// </summary>
+        private byte _volume;
+
         public CoreMachine()
         {
             _autoPauseCount = 0;
-            _running = false;
+            _runningState = RunningState.Paused;
+            _runningStateLock = new object();
+            _volume = 80;
         }
 
         public Core Core
@@ -56,7 +66,7 @@ namespace CPvC
 
                 OnPropertyChanged("Core");
                 OnPropertyChanged("Ticks");
-                OnPropertyChanged("Running");
+                OnPropertyChanged("RunningState");
                 OnPropertyChanged("Volume");
             }
         }
@@ -84,11 +94,11 @@ namespace CPvC
             }
         }
 
-        public bool Running
+        public RunningState RunningState
         {
             get
             {
-                return Core?.Running ?? false;
+                return Core?.RunningState ?? RunningState.Paused;
             }
         }
 
@@ -96,12 +106,18 @@ namespace CPvC
         {
             get
             {
-                return Core?.Volume ?? 0;
+                return _volume;
             }
 
             set
             {
-                Core.Volume = value;
+                if (_volume == value)
+                {
+                    return;
+                }
+
+                _volume = value;
+                OnPropertyChanged("Volume");
             }
         }
 
@@ -134,15 +150,24 @@ namespace CPvC
         /// <summary>
         /// Delegate for VSync events.
         /// </summary>
-        /// <param name="core">Core whose VSync signal went form low to high.</param>
-        protected void BeginVSync(Core core)
+        /// <param name="core">Core whose VSync signal went from low to high.</param>
+        protected virtual void BeginVSync(Core core)
         {
             Display.CopyFromBufferAsync();
         }
 
-        public int ReadAudio(byte[] buffer, int offset, int samplesRequested)
+        public virtual int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
-            return Core?.ReadAudio16BitStereo(buffer, offset, samplesRequested) ?? 0;
+            // Ensure that while we're reading audio, the running state of the machine can't be changed.
+            lock (_runningStateLock)
+            {
+                if (_core?.AudioBuffer == null)
+                {
+                    return 0;
+                }
+
+                return _core.AudioBuffer.Render16BitStereo(Volume, buffer, offset, samplesRequested, false);
+            }
         }
 
         public void AdvancePlayback(int samples)
@@ -160,34 +185,31 @@ namespace CPvC
                 return;
             }
 
-            bool shouldRun = (_running && _autoPauseCount == 0);
-            if (shouldRun && !_core.Running)
-            {
-                _core.Start();
-            }
-            else if (!shouldRun && _core.Running)
+            if (_autoPauseCount > 0)
             {
                 _core.Stop();
+            }
+            else
+            {
+                _core.SetRunningState(_runningState);
             }
         }
 
         public void Start()
         {
-            _running = true;
-            SetCoreRunning();
+            SetRunningState(RunningState.Running);
             Status = "Resumed";
         }
 
         public void Stop()
         {
-            _running = false;
-            SetCoreRunning();
+            SetRunningState(RunningState.Paused);
             Status = "Paused";
         }
 
         public void ToggleRunning()
         {
-            if (_running)
+            if (_runningState == RunningState.Running)
             {
                 Stop();
             }
@@ -207,14 +229,12 @@ namespace CPvC
             public AutoPauser(CoreMachine machine)
             {
                 _machine = machine;
-                _machine._autoPauseCount++;
-                _machine.SetCoreRunning();
+                _machine.IncrementAutoPause();
             }
 
             public void Dispose()
             {
-                _machine._autoPauseCount--;
-                _machine.SetCoreRunning();
+                _machine.DecrementAutoPause();
             }
         }
 
@@ -225,6 +245,36 @@ namespace CPvC
         public IDisposable AutoPause()
         {
             return new AutoPauser(this);
+        }
+
+        private void IncrementAutoPause()
+        {
+            lock (_runningStateLock)
+            {
+                _autoPauseCount++;
+                SetCoreRunning();
+            }
+        }
+
+        private void DecrementAutoPause()
+        {
+            lock (_runningStateLock)
+            {
+                _autoPauseCount--;
+                SetCoreRunning();
+            }
+        }
+
+        public RunningState SetRunningState(RunningState runningState)
+        {
+            lock (_runningStateLock)
+            {
+                RunningState previousRunningState = _runningState;
+                _runningState = runningState;
+                SetCoreRunning();
+
+                return previousRunningState;
+            }
         }
 
         protected void CorePropertyChanged(object sender, PropertyChangedEventArgs e)

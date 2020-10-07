@@ -150,11 +150,65 @@ namespace CPvC.Test
             Assert.AreEqual(!nullMachine && canClose, model.CloseCommand.CanExecute(null));
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ReverseStart(bool nullMachine)
+        {
+            // Setup
+            Mock<IReversibleMachine> mockMachine = new Mock<IReversibleMachine>();
+            Mock<ICoreMachine> mockCoreMachine = mockMachine.As<ICoreMachine>();
+            mockMachine.Setup(x => x.Reverse());
+            MachineViewModel model = new MachineViewModel(null, nullMachine ? null : mockCoreMachine.Object, null, null, null, null, null);
+
+            // Act
+            model.ReverseStartCommand.Execute(null);
+
+            // Verify
+            mockMachine.Verify(m => m.Reverse(), nullMachine ? Times.Never() : Times.Once());
+            Assert.AreEqual(!nullMachine, model.ReverseStartCommand.CanExecute(null));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ReverseStop(bool nullMachine)
+        {
+            // Setup
+            Mock<IReversibleMachine> mockMachine = new Mock<IReversibleMachine>();
+            Mock<ICoreMachine> mockCoreMachine = mockMachine.As<ICoreMachine>();
+            mockMachine.Setup(x => x.ReverseStop());
+            MachineViewModel model = new MachineViewModel(null, nullMachine ? null : mockCoreMachine.Object, null, null, null, null, null);
+
+            // Act
+            model.ReverseStopCommand.Execute(null);
+
+            // Verify
+            mockMachine.Verify(m => m.ReverseStop(), nullMachine ? Times.Never() : Times.Once());
+            Assert.AreEqual(!nullMachine, model.ReverseStopCommand.CanExecute(null));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void EnableTurbo(bool nullMachine)
+        {
+            // Setup
+            Mock<ITurboableMachine> mockMachine = new Mock<ITurboableMachine>();
+            Mock<ICoreMachine> mockCoreMachine = mockMachine.As<ICoreMachine>();
+            mockMachine.Setup(x => x.EnableTurbo(true));
+            MachineViewModel model = new MachineViewModel(null, nullMachine ? null : mockCoreMachine.Object, null, null, null, null, null);
+
+            // Act
+            model.TurboCommand.Execute(true);
+
+            // Verify
+            mockMachine.Verify(m => m.EnableTurbo(true), nullMachine ? Times.Never() : Times.Once());
+            Assert.AreEqual(!nullMachine, model.TurboCommand.CanExecute(null));
+        }
+
         [Test]
         public void Pause(
             [Values(false, true)] bool nullMachine,
             [Values(false, true)] bool requiresOpen,
-            [Values(false, true)] bool running,
+            [Values(RunningState.Paused, RunningState.Running)] RunningState runningState,
             [Values(false, true)] bool isOpenable)
         {
             // Setup
@@ -165,7 +219,7 @@ namespace CPvC.Test
                 mockOpenableMachine.SetupGet(x => x.RequiresOpen).Returns(requiresOpen);
             }
             Mock<IPausableMachine> mockPausableMachine = mockMachine.As<IPausableMachine>();
-            mockMachine.SetupGet(x => x.Running).Returns(running);
+            mockMachine.SetupGet(x => x.RunningState).Returns(runningState);
             MachineViewModel model = new MachineViewModel(null, nullMachine ? null : mockMachine.Object, null, null, null, null, null);
 
             // Act
@@ -173,14 +227,14 @@ namespace CPvC.Test
 
             // Verify
             mockPausableMachine.Verify(m => m.Stop(), nullMachine ? Times.Never() : Times.Once());
-            Assert.AreEqual(!nullMachine && (!isOpenable || !requiresOpen) && running, model.PauseCommand.CanExecute(null));
+            Assert.AreEqual(!nullMachine && (!isOpenable || !requiresOpen) && (runningState == RunningState.Running), model.PauseCommand.CanExecute(null));
         }
 
         [Test]
         public void Resume(
             [Values(false, true)] bool nullMachine,
             [Values(false, true)] bool requiresOpen,
-            [Values(false, true)] bool running,
+            [Values(RunningState.Paused, RunningState.Running)] RunningState runningState,
             [Values(false, true)] bool isOpenable)
         {
             // Setup
@@ -191,7 +245,7 @@ namespace CPvC.Test
                 mockOpenableMachine.SetupGet(x => x.RequiresOpen).Returns(requiresOpen);
             }
             Mock<IPausableMachine> mockPausableMachine = mockMachine.As<IPausableMachine>();
-            mockMachine.SetupGet(x => x.Running).Returns(running);
+            mockMachine.SetupGet(x => x.RunningState).Returns(runningState);
             MachineViewModel model = new MachineViewModel(null, nullMachine ? null : mockMachine.Object, null, null, null, null, null);
 
             // Act
@@ -199,7 +253,7 @@ namespace CPvC.Test
 
             // Verify
             mockPausableMachine.Verify(m => m.Start(), nullMachine ? Times.Never() : Times.Once());
-            Assert.AreEqual(!nullMachine && (!isOpenable || !requiresOpen) && !running, model.ResumeCommand.CanExecute(null));
+            Assert.AreEqual(!nullMachine && (!isOpenable || !requiresOpen) && (runningState == RunningState.Paused), model.ResumeCommand.CanExecute(null));
         }
 
         [TestCase(false, true, false, 0, false)]

@@ -84,22 +84,6 @@ namespace CPvC.Test
             }
         }
 
-        /// <summary>
-        /// Ensures a newly instantiated Core has no samples in the audio buffer.
-        /// </summary>
-        [Test]
-        public void ReadNoAudioSamples()
-        {
-            // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
-            {
-                // Verify
-                byte[] buffer = new byte[100];
-                int samplesRead = core.ReadAudio16BitStereo(buffer, 0, buffer.Length);
-                Assert.AreEqual(0, samplesRead);
-            }
-        }
-
         [Test]
         public void ProcessesActionsInCorrectOrder()
         {
@@ -125,33 +109,6 @@ namespace CPvC.Test
                 // Verify
                 _mockRequestProcessed.Verify();
                 _mockRequestProcessed.VerifyNoOtherCalls();
-            }
-        }
-
-        [TestCase(0, 1, true)]
-        [TestCase(100, 101, true)]
-        [TestCase(255, 0, true)]
-        [TestCase(255, 255, false)]
-        public void SetVolume(byte volume1, byte volume2, bool notified)
-        {
-            // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
-            {
-                core.Volume = volume1;
-                Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
-                core.PropertyChanged += propChanged.Object;
-
-                // Act
-                core.Volume = volume2;
-
-                // Verify
-                Assert.AreEqual(core.Volume, volume2);
-                if (notified)
-                {
-                    propChanged.Verify(PropertyChanged(core, "Volume"), Times.Once);
-                }
-
-                propChanged.VerifyNoOtherCalls();
             }
         }
 
@@ -220,7 +177,7 @@ namespace CPvC.Test
             core.BeginVSync += mock.Object;
 
             // Act
-            core.PushRequest(CoreRequest.RunUntilForce(100000));
+            core.PushRequest(CoreRequest.RunUntil(100000));
             ProcessQueueAndStop(core);
 
             // Verify
@@ -243,6 +200,81 @@ namespace CPvC.Test
             // Verify - this isn't the greatest test since we only have 1 version to test with.
             //          Once we have a new version, this test can be updated.
             Assert.AreEqual((IntPtr)screen, core.GetScreen());
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SaveAndLoadSnapshot(bool validSnapshot)
+        {
+            // Setup
+            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+
+            Mock<PropertyChangedEventHandler> mockPropChanged = new Mock<PropertyChangedEventHandler>();
+            core.PropertyChanged += mockPropChanged.Object;
+
+            core.SaveSnapshot(42);
+            byte[] state = core.GetState();
+            RunForAWhile(core, 100000);
+
+            // Act
+            core.LoadSnapshot(validSnapshot ? 42 : 0);
+            byte[] stateAfterLoadSnapshot = core.GetState();
+
+            // Verify
+            if (validSnapshot)
+            {
+                Assert.AreEqual(state, stateAfterLoadSnapshot);
+                mockPropChanged.Verify(p => p(core, It.Is<PropertyChangedEventArgs>(a => a != null && a.PropertyName == "Ticks")), Times.Once());
+            }
+            else
+            {
+                Assert.AreNotEqual(state, stateAfterLoadSnapshot);
+                mockPropChanged.Verify(p => p(core, It.Is<PropertyChangedEventArgs>(a => a != null && a.PropertyName == "Ticks")), Times.Never());
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SaveAndLoadSnapshotRequest(bool validSnapshotId)
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                Mock<RequestProcessedDelegate> mockAuditor = new Mock<RequestProcessedDelegate>();
+                core.Auditors += mockAuditor.Object;
+
+                Mock<PropertyChangedEventHandler> mockPropChanged = new Mock<PropertyChangedEventHandler>();
+                core.PropertyChanged += mockPropChanged.Object;
+
+                byte[] state = core.GetState();
+
+                // Act
+                CoreRequest saveRequest = CoreRequest.SaveSnapshot(42);
+                core.PushRequest(saveRequest);
+                RunForAWhile(core, 10000);
+                core.KeepRunning = false;
+                CoreRequest loadRequest = CoreRequest.LoadSnapshot(validSnapshotId ? 42 : 0);
+                core.PushRequest(loadRequest);
+                core.Start();
+
+                Thread.Sleep(100);
+                byte[] stateAfterLoadSnapshot = core.GetState();
+
+                // Verify
+                mockAuditor.Verify(a => a(core, saveRequest, It.Is<CoreAction>(action => action != null && action.Type == CoreRequest.Types.SaveSnapshot && action.SnapshotId == 42)));
+                if (validSnapshotId)
+                {
+                    mockAuditor.Verify(a => a(core, loadRequest, It.Is<CoreAction>(action => action != null && action.Type == CoreRequest.Types.LoadSnapshot && action.SnapshotId == 42)));
+                    Assert.AreEqual(state, stateAfterLoadSnapshot);
+                    mockPropChanged.Verify(p => p(core, It.Is<PropertyChangedEventArgs>(a => a != null && a.PropertyName == "Ticks")), Times.Once());
+                }
+                else
+                {
+                    mockAuditor.Verify(a => a(core, loadRequest, It.Is<CoreAction>(action => action != null && action.Type == CoreRequest.Types.LoadSnapshot)), Times.Never());
+                    Assert.AreNotEqual(state, stateAfterLoadSnapshot);
+                    mockPropChanged.Verify(p => p(core, It.Is<PropertyChangedEventArgs>(a => a != null && a.PropertyName == "Ticks")), Times.Never());
+                }
+            }
         }
 
         [Test]
@@ -277,7 +309,7 @@ namespace CPvC.Test
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
                 // Act and Verify
-                Assert.DoesNotThrow(() => core.Volume = 100);
+                Assert.DoesNotThrow(() => core.RunningState = RunningState.Reverse);
             }
         }
 
@@ -305,7 +337,7 @@ namespace CPvC.Test
                 };
 
                 // Act
-                core.Volume = 100;
+                core.RunningState = RunningState.Reverse;
 
                 // Verify
                 e.WaitOne(1000);
@@ -326,7 +358,9 @@ namespace CPvC.Test
                 // Act
                 core.PushRequest(request);
                 core.PushRequest(CoreRequest.Quit());
-                core.CoreThread();
+                core.Start();
+                Thread.Sleep(1000);
+                core.Stop();
 
                 // Verify
                 mockAuditor.Verify(a => a(core, request, null));
@@ -345,7 +379,7 @@ namespace CPvC.Test
                 core.Start();
 
                 // Verify
-                Assert.True(core.Running);
+                Assert.AreEqual(RunningState.Running, core.RunningState);
             }
         }
 
@@ -415,6 +449,44 @@ namespace CPvC.Test
                 {
                     Assert.Zero(core.Ticks);
                 }
+            }
+        }
+
+        [Test]
+        public void StopOnAudioOverrun()
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                // Act
+                core.Start();
+                bool overrun = RunUntilAudioOverrun(core, 1000);
+
+                // Verify
+                Assert.True(overrun);
+            }
+        }
+
+        [Test]
+        public void ResumeAfterAudioOverrun()
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                core.Start();
+                if (!RunUntilAudioOverrun(core, 1000))
+                {
+                    Assert.Fail("Failed to wait for audio overrun");
+                }
+
+                UInt64 ticks = core.Ticks;
+
+                // Act - empty out the audio buffer and continue running
+                core.AudioBuffer.Advance(12000);
+                RunForAWhile(core, 40000000);
+
+                // Verify
+                Assert.Greater(core.Ticks, ticks);
             }
         }
     }

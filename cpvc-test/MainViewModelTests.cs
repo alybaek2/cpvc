@@ -77,7 +77,7 @@ namespace CPvC.Test
             HistoryEvent historyEvent = null;
             using (Machine machine = CreateTestMachine())
             {
-                historyEvent = machine.CurrentEvent;
+                historyEvent = machine.History.CurrentEvent;
             }
 
             viewModel.OpenReplayMachine("Test Replay", historyEvent);
@@ -191,7 +191,7 @@ namespace CPvC.Test
             });
 
             // Act
-            Machine machine = viewModel.OpenMachine(prompt.Object, filepath, _mockFileSystem.Object);
+            MachineViewModel machineViewModel = viewModel.OpenMachine(prompt.Object, filepath, _mockFileSystem.Object);
 
             // Verify
             prompt.Verify(x => x(FileTypes.Machine, true), (filepath != null) ? Times.Never() : Times.Once());
@@ -201,8 +201,9 @@ namespace CPvC.Test
             {
                 Assert.AreEqual(1, viewModel.Machines.Count);
                 Assert.AreEqual(expectedMachineName, viewModel.Machines[0].Name);
-                Assert.IsNotNull(machine);
-                Assert.Contains(machine, viewModel.Machines);
+                Assert.IsNotNull(machineViewModel);
+                Assert.IsNotNull(machineViewModel.Machine);
+                Assert.Contains(machineViewModel.Machine, viewModel.Machines);
                 _mockSettings.VerifySet(x => x.RecentlyOpened = "test;test.cpvc", Times.Once);
             }
             else
@@ -385,48 +386,52 @@ namespace CPvC.Test
                 prompt.Verify(p => p(), Times.Once());
                 if (selectEvent)
                 {
-                    Assert.AreEqual(historyEvent, machine.CurrentEvent);
+                    Assert.AreEqual(historyEvent, machine.History.CurrentEvent);
                 }
                 else
                 {
-                    Assert.AreNotEqual(historyEvent, machine.CurrentEvent);
+                    Assert.AreNotEqual(historyEvent, machine.History.CurrentEvent);
                 }
             }
             else
             {
                 prompt.Verify(p => p(), Times.Never());
-                Assert.AreNotEqual(historyEvent, machine.CurrentEvent);
+                Assert.AreNotEqual(historyEvent, machine.History.CurrentEvent);
             }
         }
 
-        [TestCase(false, false)]
-        [TestCase(true, false)]
-        [TestCase(true, true)]
-        public void ReadAudio(bool active, bool replayMachine)
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ReadAudio(bool active)
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1, null, null, null);
-            Machine machine = viewModel.Machines[0];
-            machine.Open();
-            MachineViewModel machineViewModel = replayMachine ? viewModel.MachineViewModels[1] : viewModel.MachineViewModels[0];
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object, null, null, null, null, null, _mockSelectRemoveMachine.Object, _mockSelectServerPort.Object, () => _mockSocket.Object);
 
+            Mock<ICoreMachine> coreMachine = new Mock<ICoreMachine>();
+            MachineViewModel machineViewModel = new MachineViewModel(viewModel, coreMachine.Object, null, null, null, null, null);
+
+            Mock<ICoreMachine> coreMachine2 = new Mock<ICoreMachine>();
+            MachineViewModel machineViewModel2 = new MachineViewModel(viewModel, coreMachine2.Object, null, null, null, null, null);
+
+            viewModel.MachineViewModels.Add(machineViewModel);
+            viewModel.MachineViewModels.Add(machineViewModel2);
             viewModel.ActiveMachineViewModel = active ? machineViewModel : null;
-
-            // Run the machine enough to fill up the audio buffer.
-            Run(machineViewModel.Machine, 200, true);
 
             // Act
             byte[] buffer = new byte[4];
             int samples = viewModel.ReadAudio(buffer, 0, 1);
 
             // Verify
-            Assert.AreEqual(active ? 1 : 0, samples);
-
-            // Since the machine's audio buffer was been filled up, it should not have been runnable when calling
-            // RunUntil with StopReasons.AudioOverrun. If the call to ReadAudio above has been successful, then
-            // the machine's audio buffer won't be full and the machine can now be run.
-            UInt64 ticks = Run(machine, 1, true);
-            Assert.AreNotEqual(0, ticks);
+            if (active)
+            {
+                coreMachine.Verify(m => m.ReadAudio(buffer, 0, 1));
+                coreMachine2.Verify(m => m.AdvancePlayback(1));
+            }
+            else
+            {
+                coreMachine.Verify(m => m.AdvancePlayback(1));
+                coreMachine2.Verify(m => m.AdvancePlayback(1));
+            }
         }
 
         [TestCase(false)]
@@ -522,27 +527,6 @@ namespace CPvC.Test
             Assert.DoesNotThrow(() => viewModel.ActiveMachineViewModel.ToggleRunningCommand.Execute(null));
         }
 
-        [Test]
-        public void EnableTurbo()
-        {
-            // Setup
-            MainViewModel viewModel = SetupViewModel(1, null, null, null);
-            Machine machine = viewModel.Machines[0];
-            MachineViewModel machineViewModel = viewModel.MachineViewModels[0];
-            machine.Open();
-            viewModel.ActiveMachineViewModel = machineViewModel;
-
-            // Act - enable turbo mode and run for enough ticks that should cause 10 audio
-            //       samples to be written while in turbo mode.
-            viewModel.ActiveMachineViewModel.TurboCommand.Execute(true);
-            Run(machine, 8300, true);
-
-            // Verify
-            byte[] buffer = new byte[100];
-            int samples = machine.ReadAudio(buffer, 0, buffer.Length);
-            Assert.AreEqual(10, samples);
-        }
-
         /// <summary>
         /// Ensures that a Reset call is passed through from the view model to the machine.
         /// </summary>
@@ -587,7 +571,7 @@ namespace CPvC.Test
             ProcessQueueAndStop(machine.Core);
 
             // Verify
-            Assert.False(machine.Core.Running);
+            Assert.AreEqual(RunningState.Paused, machine.RunningState);
 
             Assert.AreEqual(active || !nullMachine, resetCalled);
             Times expectedResetTimes = (active || !nullMachine) ? Times.Once() : Times.Never();
@@ -627,11 +611,11 @@ namespace CPvC.Test
             // Verify
             if (active)
             {
-                Assert.IsNotNull(machine.CurrentEvent.Bookmark);
+                Assert.IsNotNull(machine.History.CurrentEvent.Bookmark);
             }
             else
             {
-                Assert.IsNull(machine.CurrentEvent.Bookmark);
+                Assert.IsNull(machine.History.CurrentEvent.Bookmark);
             }
         }
 

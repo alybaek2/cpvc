@@ -80,7 +80,7 @@ namespace CPvC.UI
             RefreshHistoryViewItems();
 
             // The initial selected item is set to the current event.
-            SelectedItem = Items.FirstOrDefault(i => i.HistoryEvent == _machine.CurrentEvent);
+            SelectedItem = Items.FirstOrDefault(i => i.HistoryEvent == _machine.History.CurrentEvent);
         }
 
         public void Dispose()
@@ -121,7 +121,7 @@ namespace CPvC.UI
                     HistoryEvent historyEvent = SelectedItem.HistoryEvent;
 
                     // Even though the current event doesn't necessarily have a bookmark, we can still populate the display.
-                    if (historyEvent == _machine.CurrentEvent)
+                    if (historyEvent == _machine.History.CurrentEvent)
                     {
                         bitmap = _machine.Display.Bitmap;
                     }
@@ -187,7 +187,7 @@ namespace CPvC.UI
             // Avoid calling this function recursively since the depth of the history could be large...
             List<Tuple<int, HistoryEvent>> eventStack = new List<Tuple<int, HistoryEvent>>
             {
-                new Tuple<int, HistoryEvent>(0, _machine.RootEvent)
+                new Tuple<int, HistoryEvent>(0, _machine.History.RootEvent)
             };
 
             // Note that items is sorted in ascending order of ticks (i.e. oldest to most recent).
@@ -250,7 +250,7 @@ namespace CPvC.UI
             for (int i = items.Count - 1; i >= 0; i--)
             {
                 HistoryViewItem item = items[i];
-                item.Draw(next, _machine.CurrentEvent);
+                item.Draw(next, _machine.History.CurrentEvent);
 
                 next = item;
             }

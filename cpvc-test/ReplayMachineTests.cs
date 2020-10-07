@@ -37,7 +37,7 @@ namespace CPvC.Test
                 _bookmarkTicks.Add(machine.Ticks);
                 Run(machine, 4000000, false);
 
-                _finalHistoryEvent = machine.CurrentEvent;
+                _finalHistoryEvent = machine.History.CurrentEvent;
             }
         }
 
@@ -54,18 +54,18 @@ namespace CPvC.Test
             // Setup
             using (ReplayMachine replayMachine = CreateMachine())
             {
-                bool runningState1 = replayMachine.Running;
+                RunningState runningState1 = replayMachine.RunningState;
 
                 // Act
                 replayMachine.Start();
-                bool runningState2 = replayMachine.Running;
+                RunningState runningState2 = replayMachine.RunningState;
                 replayMachine.Stop();
-                bool runningState3 = replayMachine.Running;
+                RunningState runningState3 = replayMachine.RunningState;
 
                 // Verify
-                Assert.False(runningState1);
-                Assert.True(runningState2);
-                Assert.False(runningState3);
+                Assert.AreEqual(RunningState.Paused, runningState1);
+                Assert.AreEqual(RunningState.Running, runningState2);
+                Assert.AreEqual(RunningState.Paused, runningState3);
             }
         }
 
@@ -89,15 +89,15 @@ namespace CPvC.Test
                 machine.Start();
 
                 // Act
-                bool running1 = machine.Running;
+                RunningState runningState1 = machine.RunningState;
                 machine.ToggleRunning();
-                bool running2 = machine.Running;
+                RunningState runningState2 = machine.RunningState;
                 machine.ToggleRunning();
 
                 // Verify
-                Assert.IsTrue(running1);
-                Assert.IsFalse(running2);
-                Assert.IsTrue(machine.Running);
+                Assert.AreEqual(RunningState.Running, runningState1);
+                Assert.AreEqual(RunningState.Paused, runningState2);
+                Assert.AreEqual(RunningState.Running, machine.RunningState);
             }
         }
 
@@ -182,7 +182,7 @@ namespace CPvC.Test
                 replayMachine.SeekToNextBookmark();
 
                 replayMachine.Start();
-                while (replayMachine.Running)
+                while (replayMachine.RunningState == RunningState.Running)
                 {
                     Thread.Sleep(10);
                 }
@@ -191,14 +191,14 @@ namespace CPvC.Test
                 Mock<MachineAuditorDelegate> auditor = new Mock<MachineAuditorDelegate>();
                 replayMachine.Auditors += auditor.Object;
                 replayMachine.Start();
-                while (replayMachine.Running)
+                while (replayMachine.RunningState == RunningState.Running)
                 {
                     Thread.Sleep(10);
                 }
 
                 // Verify
                 auditor.VerifyNoOtherCalls();
-                if (replayMachine.Running)
+                if (replayMachine.RunningState == RunningState.Running)
                 {
                     replayMachine.Stop();
                     Assert.Fail();
@@ -238,14 +238,14 @@ namespace CPvC.Test
             }
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public void SetRunning(bool running)
+        [TestCase(RunningState.Paused)]
+        [TestCase(RunningState.Running)]
+        public void SetRunning(RunningState runningState)
         {
             // Setup
             using (ReplayMachine replayMachine = CreateMachine())
             {
-                if (running)
+                if (runningState == RunningState.Running)
                 {
                     replayMachine.Start();
                 }
@@ -254,7 +254,7 @@ namespace CPvC.Test
                 replayMachine.SeekToNextBookmark();
 
                 // Verify
-                Assert.AreEqual(running, replayMachine.Running);
+                Assert.AreEqual(runningState, replayMachine.RunningState);
             }
         }
 
@@ -305,7 +305,7 @@ namespace CPvC.Test
                 replayMachine.Stop();
 
                 // Verify
-                auditor.Verify(a => a(It.Is<CoreAction>(coreAction => coreAction != null && coreAction.Type == CoreRequest.Types.RunUntilForce)), Times.AtLeastOnce());
+                auditor.Verify(a => a(It.Is<CoreAction>(coreAction => coreAction != null && coreAction.Type == CoreRequest.Types.RunUntil)), Times.AtLeastOnce());
             }
         }
     }

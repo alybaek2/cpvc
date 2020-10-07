@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 
 namespace CPvC
 {
@@ -21,6 +22,7 @@ namespace CPvC
         IBookmarkableMachine,
         IJumpableMachine,
         IPausableMachine,
+        IReversibleMachine,
         ITurboableMachine,
         ICompactableMachine,
         IMachineFileReader,
@@ -29,14 +31,23 @@ namespace CPvC
     {
         private string _name;
 
-        public HistoryEvent CurrentEvent { get; private set; }
-        public HistoryEvent RootEvent { get; private set; }
-        private Dictionary<int, HistoryEvent> _historyEventById;
+        public MachineHistory History
+        {
+            get
+            {
+                return _history;
+            }
+        }
 
-        private int _nextEventId;
+        private RunningState _previousRunningState;
 
         private readonly IFileSystem _fileSystem;
         private MachineFile _file;
+        private MachineHistory _history;
+
+        private const int _snapshotLimit = 500;
+        private List<SnapshotInfo> _snapshots;
+        private int _currentSnapshotIndex;
 
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
@@ -45,10 +56,14 @@ namespace CPvC
 
             Display = new Display();
 
-            _nextEventId = 0;
-            _historyEventById = new Dictionary<int, HistoryEvent>();
+            _previousRunningState = RunningState.Paused;
 
             _fileSystem = fileSystem;
+
+            _snapshots = new List<SnapshotInfo>();
+            _currentSnapshotIndex = -1;
+
+            _history = new MachineHistory();
         }
 
         public void Dispose()
@@ -57,6 +72,19 @@ namespace CPvC
 
             Display?.Dispose();
             Display = null;
+        }
+
+        private class SnapshotInfo
+        {
+            public SnapshotInfo(int id)
+            {
+                Id = id;
+                AudioBuffer = new AudioBuffer();
+            }
+
+            public int Id { get; }
+
+            public AudioBuffer AudioBuffer { get; }
         }
 
         /// <summary>
@@ -103,14 +131,14 @@ namespace CPvC
 
                 _file.ReadFile(this);
 
-                if (CurrentEvent == null)
+                if (_history.CurrentEvent == null)
                 {
                     // The machine file is either empty or has some other problem...
                     throw new Exception(String.Format("Unable to load file \"{0}\"; CurrentEvent is null!", Filepath));
                 }
 
                 // Rewind from the current event to the most recent one with a bookmark...
-                HistoryEvent bookmarkEvent = CurrentEvent;
+                HistoryEvent bookmarkEvent = _history.CurrentEvent;
                 while (bookmarkEvent != null && bookmarkEvent.Bookmark == null)
                 {
                     bookmarkEvent = bookmarkEvent.Parent;
@@ -118,7 +146,7 @@ namespace CPvC
 
                 core = GetCore(bookmarkEvent?.Bookmark);
 
-                CurrentEvent = bookmarkEvent ?? RootEvent;
+                _history.CurrentEvent = bookmarkEvent ?? _history.RootEvent;
 
                 Display.EnableGreyscale(false);
                 Display.GetFromBookmark(bookmarkEvent?.Bookmark);
@@ -130,7 +158,7 @@ namespace CPvC
                 }
 
                 CoreAction action = CoreAction.CoreVersion(Core.Ticks, Core.LatestVersion);
-                AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
+                AddEvent(HistoryEvent.CreateCoreAction(_history.NextEventId(), action), true);
             }
             catch (Exception)
             {
@@ -138,6 +166,16 @@ namespace CPvC
                 Dispose();
 
                 throw;
+            }
+        }
+
+        public void AddEvent(HistoryEvent historyEvent, bool writeToFile)
+        {
+            _history.AddEvent(historyEvent);
+
+            if (writeToFile)
+            {
+                _file.WriteHistoryEvent(historyEvent);
             }
         }
 
@@ -162,10 +200,10 @@ namespace CPvC
                 machine.SetCore(Core.Create(Core.LatestVersion, Core.Type.CPC6128));
 
                 CoreAction action = CoreAction.CoreVersion(machine.Core.Ticks, Core.LatestVersion);
-                machine.RootEvent = HistoryEvent.CreateCoreAction(machine.NextEventId(), action);
-                machine._file.WriteHistoryEvent(machine.RootEvent);
+                machine._history.RootEvent = HistoryEvent.CreateCoreAction(machine._history.NextEventId(), action);
+                machine._file.WriteHistoryEvent(machine._history.RootEvent);
 
-                machine.CurrentEvent = machine.RootEvent;
+                machine._history.CurrentEvent = machine._history.RootEvent;
 
                 return machine;
             }
@@ -193,9 +231,9 @@ namespace CPvC
                 {
                     // Create a system bookmark so the machine can resume from where it left off the next time it's loaded, but don't
                     // create one if we already have a system bookmark at the current event, or we're at the root event.
-                    if ((CurrentEvent.Ticks != Ticks) ||
-                        (CurrentEvent.Bookmark == null && CurrentEvent != RootEvent) ||
-                        (CurrentEvent.Bookmark != null && !CurrentEvent.Bookmark.System))
+                    if ((_history.CurrentEvent.Ticks != Ticks) ||
+                        (_history.CurrentEvent.Bookmark == null && _history.CurrentEvent != _history.RootEvent) ||
+                        (_history.CurrentEvent.Bookmark != null && !_history.CurrentEvent.Bookmark.System))
                     {
                         AddCheckpointWithBookmarkEvent(true);
                     }
@@ -208,14 +246,106 @@ namespace CPvC
 
             SetCore(null);
 
-            CurrentEvent = null;
-            RootEvent = null;
+            _history.CurrentEvent = null;
+            _history.RootEvent = null;
 
             Status = null;
 
-            _nextEventId = 0;
-
             Display?.EnableGreyscale(true);
+        }
+
+        /// <summary>
+        /// Delegate for VSync events.
+        /// </summary>
+        /// <param name="core">Core whose VSync signal went from low to high.</param>
+        protected override void BeginVSync(Core core)
+        {
+            TakeSnapshot();
+
+            base.BeginVSync(core);
+        }
+
+        public override int ReadAudio(byte[] buffer, int offset, int samplesRequested)
+        {
+            lock (_runningStateLock)
+            {
+                // Drive Reverse mode from here...
+                if (RunningState == RunningState.Reverse)
+                {
+                    return ReverseReadAudio(buffer, offset, samplesRequested);
+                }
+
+                return base.ReadAudio(buffer, offset, samplesRequested);
+            }
+        }
+
+        private int ReverseReadAudio(byte[] buffer, int offset, int samplesRequested)
+        {
+            int totalSamplesWritten = 0;
+            int currentSamplesRequested = samplesRequested;
+
+            while (totalSamplesWritten < samplesRequested && _currentSnapshotIndex >= 0)
+            {
+                SnapshotInfo currentSnapshot = _snapshots[_currentSnapshotIndex];
+                int samplesWritten = currentSnapshot.AudioBuffer.Render16BitStereo(Volume, buffer, offset, currentSamplesRequested, true);
+                if (samplesWritten == 0)
+                {
+                    _core.LoadSnapshot(currentSnapshot.Id);
+
+                    if (_currentSnapshotIndex == 0)
+                    {
+                        // We've reached the last snapshot.
+                        break;
+                    }
+
+                    Display.CopyFromBufferAsync();
+                    _snapshots.RemoveAt(_currentSnapshotIndex);
+                    _currentSnapshotIndex--;
+                }
+
+                totalSamplesWritten += samplesWritten;
+                currentSamplesRequested -= samplesWritten;
+                offset += 4 * samplesWritten;
+            }
+
+            return totalSamplesWritten;
+        }
+
+        private void TakeSnapshot()
+        {
+            SnapshotInfo oldestSnapshot = _snapshots.FirstOrDefault();
+
+            int newSnapshotId = 0;
+            if (_snapshots.Count >= _snapshotLimit)
+            {
+                _snapshots.RemoveAt(0);
+                newSnapshotId = oldestSnapshot.Id;
+            }
+            else
+            {
+                IEnumerable<int> snapshotIds = _snapshots.Select(s => s.Id);
+                newSnapshotId = -1;
+                for (int i = 0; i < _snapshotLimit; i++)
+                {
+                    if (!snapshotIds.Contains(i))
+                    {
+                        newSnapshotId = i;
+                        break;
+                    }
+                }
+
+                if (newSnapshotId == -1)
+                {
+                    // This should never happen!
+                    throw new Exception("Unable to find a free snapshot id");
+                }
+            }
+
+            SnapshotInfo newSnapshot = new SnapshotInfo(newSnapshotId);
+            _core.SaveSnapshot(newSnapshotId);
+
+            _snapshots.Add(newSnapshot);
+            _currentSnapshotIndex = _snapshots.Count - 1;
         }
 
         /// <summary>
@@ -230,9 +360,9 @@ namespace CPvC
             {
                 Auditors?.Invoke(action);
 
-                if (action.Type != CoreAction.Types.RunUntilForce)
+                if (action.Type != CoreAction.Types.RunUntil && action.Type != CoreAction.Types.LoadSnapshot && action.Type != CoreAction.Types.SaveSnapshot)
                 {
-                    AddEvent(HistoryEvent.CreateCoreAction(NextEventId(), action), true);
+                    AddEvent(HistoryEvent.CreateCoreAction(_history.NextEventId(), action), true);
 
                     switch (action.Type)
                     {
@@ -245,6 +375,16 @@ namespace CPvC
                         case CoreRequest.Types.Reset:
                             Status = "Reset";
                             break;
+                    }
+                }
+                else if (action.Type == CoreAction.Types.RunUntil)
+                {
+                    if (_currentSnapshotIndex >= 0 && action.AudioSamples != null)
+                    {
+                        foreach (UInt16 sample in action.AudioSamples)
+                        {
+                            _snapshots[_currentSnapshotIndex].AudioBuffer.Write(sample);
+                        }
                     }
                 }
             }
@@ -325,7 +465,7 @@ namespace CPvC
         /// </summary>
         public void JumpToMostRecentBookmark()
         {
-            HistoryEvent lastBookmarkEvent = CurrentEvent;
+            HistoryEvent lastBookmarkEvent = _history.CurrentEvent;
             while (lastBookmarkEvent != null)
             {
                 if (lastBookmarkEvent.Type == HistoryEvent.Types.Checkpoint && lastBookmarkEvent.Bookmark != null && !lastBookmarkEvent.Bookmark.System && lastBookmarkEvent.Ticks != Core.Ticks)
@@ -341,7 +481,7 @@ namespace CPvC
             }
 
             // No bookmarks? Go all the way back to the root!
-            JumpToBookmark(RootEvent);
+            JumpToBookmark(_history.RootEvent);
             Status = "Rewound to start";
         }
 
@@ -364,11 +504,9 @@ namespace CPvC
             // Add a checkpoint at the current position to properly mark the end of this branch...
             Core.Stop();
             SetCheckpoint();
-            byte volume = Core.Volume;
 
             Display.GetFromBookmark(bookmarkEvent.Bookmark);
             SetCore(Machine.GetCore(bookmarkEvent.Bookmark));
-            Core.Volume = volume;
 
             if (bookmarkEvent.Bookmark != null)
             {
@@ -380,7 +518,7 @@ namespace CPvC
             }
 
             _file.WriteCurrent(bookmarkEvent);
-            CurrentEvent = bookmarkEvent;
+            _history.CurrentEvent = bookmarkEvent;
 
             SetCoreRunning();
         }
@@ -392,19 +530,11 @@ namespace CPvC
         /// <param name="loading">Indicates whether the MachineFile is being loaded from a file.</param>
         private void DeleteEvent(HistoryEvent historyEvent, bool writeToFile)
         {
-            if (historyEvent.Parent == null)
-            {
-                return;
-            }
-
             using (AutoPause())
             {
-                historyEvent.Parent.RemoveChild(historyEvent);
-
-                // Remove the event and all its descendents from the lookup.
-                foreach (HistoryEvent e in historyEvent.GetSelfAndDescendents())
+                if (!_history.DeleteEvent(historyEvent))
                 {
-                    _historyEventById.Remove(e.Id);
+                    return;
                 }
 
                 if (writeToFile)
@@ -420,7 +550,7 @@ namespace CPvC
         /// <param name="historyEvent">HistoryEvent object which belongs to the branch to be removed.</param>
         public void TrimTimeline(HistoryEvent historyEvent)
         {
-            if (historyEvent == null || historyEvent.Children.Count != 0 || historyEvent == CurrentEvent || historyEvent.Parent == null)
+            if (historyEvent == null || historyEvent.Children.Count != 0 || historyEvent == _history.CurrentEvent || historyEvent.Parent == null)
             {
                 return;
             }
@@ -451,7 +581,7 @@ namespace CPvC
         {
             using (AutoPause())
             {
-                AddEvent(HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, null), true);
+                AddEvent(HistoryEvent.CreateCheckpoint(_history.NextEventId(), _core.Ticks, DateTime.UtcNow, null), true);
             }
         }
 
@@ -477,8 +607,8 @@ namespace CPvC
                     tempfile.DiffsEnabled = diffsEnabled;
 
                     tempfile.WriteName(_name);
-                    WriteEvent(tempfile, RootEvent);
-                    tempfile.WriteCurrent(CurrentEvent);
+                    WriteEvent(tempfile, _history.RootEvent);
+                    tempfile.WriteCurrent(_history.CurrentEvent);
                 }
                 finally
                 {
@@ -492,9 +622,8 @@ namespace CPvC
 
                 _fileSystem.ReplaceFile(Filepath, tempname);
 
-                RootEvent = null;
-                CurrentEvent = null;
-                _historyEventById.Clear();
+                _history.RootEvent = null;
+                _history.CurrentEvent = null;
 
                 _file = new MachineFile(_fileSystem, Filepath);
                 _file.ReadFile(this);
@@ -523,36 +652,10 @@ namespace CPvC
         private HistoryEvent AddCheckpointWithBookmarkEvent(bool system)
         {
             Bookmark bookmark = GetBookmark(system);
-            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark);
+            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(_history.NextEventId(), _core.Ticks, DateTime.UtcNow, bookmark);
             AddEvent(historyEvent, true);
 
             return historyEvent;
-        }
-
-        /// <summary>
-        /// Adds a historical event to the current event, and makes that event the new current event.
-        /// </summary>
-        /// <param name="historyEvent">The History event to be added.</param>
-        /// <param name="writeToFile">Indicates whether this event should be written to the machine file. Should be false only when loading a machine.</param>
-        private void AddEvent(HistoryEvent historyEvent, bool writeToFile)
-        {
-            if (RootEvent == null)
-            {
-                RootEvent = historyEvent;
-                _historyEventById[historyEvent.Id] = historyEvent;
-            }
-            else
-            {
-                CurrentEvent.AddChild(historyEvent);
-                _historyEventById[historyEvent.Id] = historyEvent;
-            }
-
-            if (writeToFile)
-            {
-                _file.WriteHistoryEvent(historyEvent);
-            }
-
-            CurrentEvent = historyEvent;
         }
 
         /// <summary>
@@ -595,7 +698,7 @@ namespace CPvC
                 }
 
                 // Don't write out non-root checkpoint nodes which have only one child and no bookmark.
-                if (currentEvent == RootEvent || currentEvent.Children.Count != 1 || currentEvent.Type != HistoryEvent.Types.Checkpoint || currentEvent.Bookmark != null)
+                if (currentEvent == _history.RootEvent || currentEvent.Children.Count != 1 || currentEvent.Type != HistoryEvent.Types.Checkpoint || currentEvent.Bookmark != null)
                 {
                     file.WriteHistoryEvent(currentEvent);
                 }
@@ -619,21 +722,12 @@ namespace CPvC
             {
                 Core core = Core.Create(Core.LatestVersion, bookmark.State.GetBytes());
 
-                // Ensure all keys are in an "up" state.
-                for (byte keycode = 0; keycode < 80; keycode++)
-                {
-                    core.KeyPress(keycode, false);
-                }
+                core.AllKeysUp();
 
                 return core;
             }
 
             return Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-        }
-
-        private int NextEventId()
-        {
-            return _nextEventId++;
         }
 
         // IMachineFileReader implementation.
@@ -644,33 +738,46 @@ namespace CPvC
 
         public void DeleteEvent(int id)
         {
-            if (_historyEventById.TryGetValue(id, out HistoryEvent historyEvent) && historyEvent != null)
-            {
-                DeleteEvent(historyEvent, false);
-            }
+            _history.DeleteEvent(id);
         }
 
         public void SetBookmark(int id, Bookmark bookmark)
         {
-            if (_historyEventById.TryGetValue(id, out HistoryEvent historyEvent) && historyEvent != null)
-            {
-                historyEvent.Bookmark = bookmark;
-            }
+            _history.SetBookmark(id, bookmark);
         }
 
         public void SetCurrentEvent(int id)
         {
-            if (_historyEventById.TryGetValue(id, out HistoryEvent historyEvent) && historyEvent != null)
-            {
-                CurrentEvent = historyEvent;
-            }
+            _history.SetCurrentEvent(id);
         }
 
         public void AddHistoryEvent(HistoryEvent historyEvent)
         {
             AddEvent(historyEvent, false);
+        }
 
-            _nextEventId = Math.Max(_nextEventId, historyEvent.Id + 1);
+        public void Reverse()
+        {
+            if (_core.RunningState == RunningState.Reverse || _currentSnapshotIndex < 0)
+            {
+                return;
+            }
+
+            SetCheckpoint();
+
+            _previousRunningState = SetRunningState(RunningState.Reverse);
+
+            // Ensure all keys are "up" once we come out of Reverse mode.
+            _core.AllKeysUp();
+
+            Status = "Reversing";
+        }
+
+        public void ReverseStop()
+        {
+            SetCheckpoint();
+
+            SetRunningState(_previousRunningState);
         }
     }
 }

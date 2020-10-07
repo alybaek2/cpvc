@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
-using System.Threading;
 using System.Windows.Input;
 
 namespace CPvC
@@ -258,22 +257,35 @@ namespace CPvC
             return machine;
         }
 
-        public Machine OpenMachine(PromptForFileDelegate promptForFile, string filepath, IFileSystem fileSystem)
+        public MachineViewModel OpenMachine(PromptForFileDelegate promptForFile, string filepath, IFileSystem fileSystem)
         {
             if (filepath == null)
             {
                 filepath = promptForFile(FileTypes.Machine, true);
+                if (filepath == null)
+                {
+                    return null;
+                }
             }
 
-            Machine machine = _model.Add(filepath, fileSystem);
-            if (machine != null)
+            string fullFilepath = System.IO.Path.GetFullPath(filepath);
+            MachineViewModel machineViewModel = _machineViewModels.FirstOrDefault(m => String.Compare(m.Machine.Filepath, fullFilepath, true) == 0);
+            if (machineViewModel == null)
             {
-                MachineViewModel machineViewModel = CreateMachineViewModel(machine);
-                AddMachineViewModel(machineViewModel);
+                Machine machine = _model.Add(filepath, fileSystem);
+                if (machine != null)
+                {
+                    machineViewModel = CreateMachineViewModel(machine);
+                    AddMachineViewModel(machineViewModel);
+                }
+            }
+
+            if (machineViewModel != null)
+            {
                 ActiveMachineViewModel = machineViewModel;
             }
 
-            return machine;
+            return machineViewModel;
         }
 
         public void Remove(MachineViewModel viewModel)

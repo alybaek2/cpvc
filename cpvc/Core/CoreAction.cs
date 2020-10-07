@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace CPvC
 {
@@ -12,9 +13,15 @@ namespace CPvC
         /// </summary>
         public UInt64 Ticks { get; }
 
+        /// <summary>
+        /// The set of audio samples that were generated during a RunUntil request.
+        /// </summary>
+        public List<UInt16> AudioSamples { get; private set; }
+
         public CoreAction(Types type, UInt64 ticks) : base(type)
         {
             Ticks = ticks;
+            AudioSamples = new List<UInt16>();
         }
 
         static public CoreAction Reset(UInt64 ticks)
@@ -33,11 +40,12 @@ namespace CPvC
             return action;
         }
 
-        static public CoreAction RunUntilForce(UInt64 ticks, UInt64 stopTicks)
+        static public CoreAction RunUntil(UInt64 ticks, UInt64 stopTicks, List<UInt16> audioSamples)
         {
-            CoreAction action = new CoreAction(Types.RunUntilForce, ticks)
+            CoreAction action = new CoreAction(Types.RunUntil, ticks)
             {
-                StopTicks = stopTicks
+                StopTicks = stopTicks,
+                AudioSamples = audioSamples
             };
 
             return action;
@@ -74,6 +82,26 @@ namespace CPvC
             return action;
         }
 
+        static public CoreAction LoadSnapshot(UInt64 ticks, int id)
+        {
+            CoreAction action = new CoreAction(Types.LoadSnapshot, ticks)
+            {
+                SnapshotId = id
+            };
+
+            return action;
+        }
+
+        static public CoreAction SaveSnapshot(UInt64 ticks, int id)
+        {
+            CoreAction action = new CoreAction(Types.SaveSnapshot, ticks)
+            {
+                SnapshotId = id
+            };
+
+            return action;
+        }
+
         static public CoreAction CoreVersion(UInt64 ticks, int version)
         {
             CoreAction action = new CoreAction(Types.CoreVersion, ticks)
@@ -100,10 +128,21 @@ namespace CPvC
                     return new CoreAction(Types.Quit, Ticks);
                 case Types.Reset:
                     return CoreAction.Reset(Ticks);
-                case Types.RunUntilForce:
-                    return CoreAction.RunUntilForce(Ticks, StopTicks);
+                case Types.RunUntil:
+                    {
+                        List<UInt16> samples = null;
+                        if (AudioSamples != null)
+                        {
+                            samples = new List<UInt16>(AudioSamples);
+                        }
+                        return CoreAction.RunUntil(Ticks, StopTicks, samples);
+                    }
                 case Types.LoadCore:
                     return CoreAction.LoadCore(Ticks, CoreState);
+                case Types.SaveSnapshot:
+                    return CoreAction.SaveSnapshot(Ticks, SnapshotId);
+                case Types.LoadSnapshot:
+                    return CoreAction.LoadSnapshot(Ticks, SnapshotId);
                 default:
                     return null;
             }

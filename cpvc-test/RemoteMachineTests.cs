@@ -41,12 +41,36 @@ namespace CPvC.Test
                 machine.Start();
 
                 // Act
-                _receiveCoreAction(CoreAction.RunUntilForce(0, 1));
+                _receiveCoreAction(CoreAction.RunUntil(0, 1, null));
                 Thread.Sleep(100);
                 machine.Stop();
 
                 // Verify
                 Assert.Greater(machine.Ticks, 0);
+            }
+        }
+
+        [Test]
+        public void ReceiveLoadSnapshot()
+        {
+            // Setup
+            using (RemoteMachine machine = new RemoteMachine(_mockRemote.Object))
+            {
+                machine.Start();
+                _receiveCoreAction(CoreAction.RunUntil(0, 100000, null));
+                Thread.Sleep(100);
+                _receiveCoreAction(CoreAction.SaveSnapshot(0, 1));
+                UInt64 saveSnapshotTicks = machine.Ticks;
+                _receiveCoreAction(CoreAction.RunUntil(0, 200000, null));
+                Thread.Sleep(100);
+
+                // Act
+                _receiveCoreAction(CoreAction.LoadSnapshot(0, 1));
+                Thread.Sleep(100);
+                UInt64 loadSnapshotTicks = machine.Ticks;
+
+                // Verify
+                Assert.AreEqual(loadSnapshotTicks, saveSnapshotTicks);
             }
         }
 
@@ -65,33 +89,10 @@ namespace CPvC.Test
                 }
 
                 // Act
-                _receiveCoreAction(CoreAction.RunUntilForce(0, 1));
+                _receiveCoreAction(CoreAction.RunUntil(0, 1, null));
 
                 // Verify
-                _mockAuditor.Verify(a => a(It.Is<CoreAction>(action => action.Type == CoreRequest.Types.RunUntilForce)), Times.Exactly(closed ? 0 : 1));
-            }
-        }
-
-        // Ensures that pings are "throttled". That is, if two CoreActions are processed
-        // in quick succession, only one ping will be sent. This test could probably be
-        // a bit more precise in terms of testing the 100 ms threshold for sending
-        // successive ping messages.
-        [Test]
-        public void SendOnePing()
-        {
-            // Setup
-            using (RemoteMachine machine = new RemoteMachine(_mockRemote.Object))
-            {
-                machine.Start();
-
-                // Act
-                _receiveCoreAction(CoreAction.RunUntilForce(0, 1));
-                _receiveCoreAction(CoreAction.RunUntilForce(0, 1));
-                Thread.Sleep(100);
-                machine.Stop();
-
-                // Verify
-                _mockRemote.Verify(r => r.SendPing(false, It.IsAny<UInt64>()), Times.Once());
+                _mockAuditor.Verify(a => a(It.Is<CoreAction>(action => action.Type == CoreRequest.Types.RunUntil)), Times.Exactly(closed ? 0 : 1));
             }
         }
 

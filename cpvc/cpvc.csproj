@@ -135,6 +135,9 @@
     <Compile Include="IO\SocketServer.cs" />
     <Compile Include="Config\ISettings.cs" />
     <Compile Include="Machine\Command.cs" />
+    <Compile Include="Machine\Interfaces\IReversibleMachine.cs" />
+    <Compile Include="Machine\MachineHistory.cs" />
+    <Compile Include="Miscellaneous\AudioBuffer.cs" />
     <Compile Include="Miscellaneous\IBlob.cs" />
     <Compile Include="Machine\Interfaces\IBookmarkableMachine.cs" />
     <Compile Include="Machine\Interfaces\IInteractiveMachine.cs" />
@@ -282,7 +285,7 @@
     <Resource Include="UI\Resources\floppy.png" />
     <Resource Include="UI\Resources\pause16.png" />
     <Resource Include="UI\Resources\paused.png" />
-    <Resource Include="UI\Resources\resume16.png" />
+    <Resource Include="UI\Resources\running16.png" />
     <Resource Include="UI\Resources\running.png" />
   </ItemGroup>
   <ItemGroup>
@@ -317,6 +320,10 @@
       <Project>{b8cb8856-640d-4fde-ad40-c4b409720ed1}</Project>
       <Name>cpvc-core-clr</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="UI\Resources\reverse.png" />
+    <Resource Include="UI\Resources\reverse16.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

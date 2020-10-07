@@ -92,7 +92,7 @@ namespace CPvC
             }
             catch (Exception ex)
             {
-                Diagnostics.Trace(String.Format("Exception thrown during audio callback: {0}.", ex.Message));
+                Diagnostics.Trace("Exception thrown during audio callback: {0}.", ex.Message);
             }
 
             // If no samples were written, ensure to write at least one empty sample.

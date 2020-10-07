@@ -55,7 +55,7 @@ namespace CPvC.Test
 
         static public CoreAction RunUntilActionForce()
         {
-            return It.Is<CoreAction>(r => r == null || r.Type == CoreRequest.Types.RunUntilForce);
+            return It.Is<CoreAction>(r => r == null || r.Type == CoreRequest.Types.RunUntil);
         }
 
         static public CoreRequest ResetRequest()
@@ -193,7 +193,7 @@ namespace CPvC.Test
         static public UInt64 Run(ICoreMachine machine, UInt64 ticks, bool stopOnAudioOverrun)
         {
             UInt64 beforeTicks = machine.Core.Ticks;
-            machine.Core.RunUntil(beforeTicks + ticks, stopOnAudioOverrun ? StopReasons.AudioOverrun : StopReasons.None);
+            machine.Core.RunUntil(beforeTicks + ticks, StopReasons.None, null);
 
             return machine.Core.Ticks - beforeTicks;
         }
@@ -202,19 +202,19 @@ namespace CPvC.Test
         /// Runs a machine for at least one instruction cycle.
         /// </summary>
         /// <param name="machine">The machine to run.</param>
-        static public void RunForAWhile(IPausableMachine machine)
+        static public void RunForAWhile(IPausableMachine machine, UInt32 ticksDuration = 1, int timeout = 1000)
         {
             UInt64 startTicks = machine.Ticks;
-            UInt64 endTicks = startTicks + 1;
+            UInt64 endTicks = startTicks + ticksDuration;
 
             int timeWaited = 0;
             int sleepTime = 10;
             machine.Start();
             while (machine.Ticks < endTicks)
             {
-                if (timeWaited > 1000)
+                if (timeWaited > timeout)
                 {
-                    throw new Exception(String.Format("Waited too long for Machine to run! {0} {1}", machine.Ticks, machine.Running));
+                    throw new Exception(String.Format("Waited too long for Machine to run! {0} {1}", machine.Ticks, machine.RunningState));
                 }
 
                 System.Threading.Thread.Sleep(sleepTime);
@@ -240,6 +240,18 @@ namespace CPvC.Test
             core.Stop();
         }
 
+        static public bool RunUntilAudioOverrun(Core core, int timeout)
+        {
+            int elapsed = 0;
+            while (!core.AudioBuffer.Overrun())
+            {
+                Thread.Sleep(10);
+                elapsed += 10;
+            }
+
+            return core.AudioBuffer.Overrun();
+        }
+
         static public string GetTempFilepath(string filename)
         {
             return String.Format("{0}\\{1}", System.IO.Path.GetTempPath(), filename);
@@ -253,7 +265,7 @@ namespace CPvC.Test
             int timeout = 30000;
             while (timeout > 0)
             {
-                if (!core.Running)
+                if (core.RunningState == RunningState.Paused)
                 {
                     break;
                 }
@@ -337,8 +349,11 @@ namespace CPvC.Test
                     return true;
                 case CoreRequest.Types.Reset:
                     return true;
-                case CoreRequest.Types.RunUntilForce:
+                case CoreRequest.Types.RunUntil:
                     return request1.StopTicks == request2.StopTicks;
+                case CoreRequest.Types.SaveSnapshot:
+                case CoreRequest.Types.LoadSnapshot:
+                    return request1.SnapshotId == request2.SnapshotId;
             }
 
             return false;

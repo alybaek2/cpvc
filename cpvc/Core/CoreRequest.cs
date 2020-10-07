@@ -19,8 +19,10 @@ namespace CPvC
             LoadDisc,
             LoadTape,
             CoreVersion,
-            RunUntilForce,
+            RunUntil,
             LoadCore,
+            SaveSnapshot,
+            LoadSnapshot,
             Quit
         }
 
@@ -61,6 +63,11 @@ namespace CPvC
         /// </summary>
         public IBlob CoreState { get; protected set; }
 
+        /// <summary>
+        /// For a load or save snapshot action, this indicates the id of the snapshot.
+        /// </summary>
+        public int SnapshotId { get; protected set; }
+
         static public CoreRequest Reset()
         {
             return new CoreRequest(Types.Reset);
@@ -77,9 +84,9 @@ namespace CPvC
             return request;
         }
 
-        static public CoreRequest RunUntilForce(UInt64 stopTicks)
+        static public CoreRequest RunUntil(UInt64 stopTicks)
         {
-            CoreRequest request = new CoreRequest(Types.RunUntilForce)
+            CoreRequest request = new CoreRequest(Types.RunUntil)
             {
                 StopTicks = stopTicks
             };
@@ -123,6 +130,26 @@ namespace CPvC
             CoreRequest request = new CoreRequest(Types.LoadCore)
             {
                 CoreState = state
+            };
+
+            return request;
+        }
+
+        static public CoreRequest SaveSnapshot(Int32 snapshotId)
+        {
+            CoreRequest request = new CoreRequest(Types.SaveSnapshot)
+            {
+                SnapshotId = snapshotId
+            };
+
+            return request;
+        }
+
+        static public CoreRequest LoadSnapshot(Int32 snapshotId)
+        {
+            CoreRequest request = new CoreRequest(Types.LoadSnapshot)
+            {
+                SnapshotId = snapshotId
             };
 
             return request;

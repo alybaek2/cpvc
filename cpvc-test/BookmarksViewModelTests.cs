@@ -97,7 +97,7 @@ namespace CPvC.Test
                 viewModel.SelectedItem = viewModel.Items[0];
 
                 // Verify
-                Assert.AreEqual(machine.CurrentEvent, viewModel.SelectedItem.HistoryEvent);
+                Assert.AreEqual(machine.History.CurrentEvent, viewModel.SelectedItem.HistoryEvent);
                 Assert.AreEqual(viewModel.Items[0], viewModel.SelectedItem);
                 Assert.IsNotNull(viewModel.Bitmap);
                 Assert.IsTrue(viewModel.DeleteBookmarksCommand.CanExecute(null));
@@ -116,7 +116,7 @@ namespace CPvC.Test
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
             RunForAWhile(machine);
             machine.AddBookmark(true);
-            HistoryEvent bookmarkEvent = machine.CurrentEvent;
+            HistoryEvent bookmarkEvent = machine.History.CurrentEvent;
             RunForAWhile(machine);
             machine.AddBookmark(true);
 
@@ -153,7 +153,7 @@ namespace CPvC.Test
                 viewModel.SelectedItem = viewModel.Items[1];
 
                 // Verify
-                Assert.AreEqual(machine.RootEvent, viewModel.SelectedItem.HistoryEvent);
+                Assert.AreEqual(machine.History.RootEvent, viewModel.SelectedItem.HistoryEvent);
                 Assert.AreEqual(viewModel.Items[1], viewModel.SelectedItem);
                 Assert.IsNull(viewModel.Bitmap);
                 Assert.IsFalse(viewModel.DeleteBookmarksCommand.CanExecute(null));
@@ -181,8 +181,8 @@ namespace CPvC.Test
             {
                 // Verify
                 Assert.AreEqual(2, viewModel.Items.Count);
-                Assert.AreEqual(machine.CurrentEvent, viewModel.Items[0].HistoryEvent);
-                Assert.AreEqual(machine.RootEvent, viewModel.Items[1].HistoryEvent);
+                Assert.AreEqual(machine.History.CurrentEvent, viewModel.Items[0].HistoryEvent);
+                Assert.AreEqual(machine.History.RootEvent, viewModel.Items[1].HistoryEvent);
                 Assert.IsNotNull(viewModel.Items[0].CreateDate);
                 Assert.IsNotNull(viewModel.Items[1].CreateDate);
             }
@@ -195,16 +195,16 @@ namespace CPvC.Test
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
             Run(machine, 100, true);
             machine.AddBookmark(false);
-            HistoryEvent event100 = machine.CurrentEvent;
+            HistoryEvent event100 = machine.History.CurrentEvent;
             Run(machine, 300, true);
             machine.JumpToMostRecentBookmark();
-            HistoryEvent event400 = machine.CurrentEvent.Children[0];
+            HistoryEvent event400 = machine.History.CurrentEvent.Children[0];
             Run(machine, 100, true);
             machine.AddBookmark(false);
-            HistoryEvent event200 = machine.CurrentEvent;
+            HistoryEvent event200 = machine.History.CurrentEvent;
             Run(machine, 100, true);
             machine.JumpToMostRecentBookmark();
-            HistoryEvent event300 = machine.CurrentEvent.Children[0];
+            HistoryEvent event300 = machine.History.CurrentEvent.Children[0];
             Run(machine, 300, true);
             machine.AddBookmark(true);
             Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
@@ -214,12 +214,12 @@ namespace CPvC.Test
             {
                 // Verify
                 Assert.AreEqual(6, viewModel.Items.Count);
-                Assert.AreEqual(machine.CurrentEvent, viewModel.Items[0].HistoryEvent);
+                Assert.AreEqual(machine.History.CurrentEvent, viewModel.Items[0].HistoryEvent);
                 Assert.AreEqual(event400, viewModel.Items[1].HistoryEvent);
                 Assert.AreEqual(event300, viewModel.Items[2].HistoryEvent);
                 Assert.AreEqual(event200, viewModel.Items[3].HistoryEvent);
                 Assert.AreEqual(event100, viewModel.Items[4].HistoryEvent);
-                Assert.AreEqual(machine.RootEvent, viewModel.Items[5].HistoryEvent);
+                Assert.AreEqual(machine.History.RootEvent, viewModel.Items[5].HistoryEvent);
             }
         }
 

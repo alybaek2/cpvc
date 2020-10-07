@@ -32,6 +32,8 @@ namespace CPvC
         private Command _keyDownCommand;
         private Command _keyUpCommand;
         private Command _turboCommand;
+        private Command _reverseStartCommand;
+        private Command _reverseStopCommand;
         private ICommand _removeCommand;
 
         public MachineViewModel(MainViewModel mainViewModel, ICoreMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, SelectItemDelegate selectItem)
@@ -48,11 +50,7 @@ namespace CPvC
             );
 
             _closeCommand = new Command(
-                p =>
-                {
-                    Close();
-                    mainViewModel?.Remove(this);
-                },
+                p => Close(),
                 p => machine?.CanClose() ?? false
             );
 
@@ -66,7 +64,7 @@ namespace CPvC
                     }
 
                     IOpenableMachine m = machine as IOpenableMachine;
-                    if (machine.Running && (m == null || !m.RequiresOpen))
+                    if ((machine.RunningState == RunningState.Running) && (m == null || !m.RequiresOpen))
                     {
                         return true;
                     }
@@ -85,7 +83,7 @@ namespace CPvC
                     }
 
                     IOpenableMachine m = machine as IOpenableMachine;
-                    if (!machine.Running && (m == null || !m.RequiresOpen))
+                    if ((machine.RunningState == RunningState.Paused) && (m == null || !m.RequiresOpen))
                     {
                         return true;
                     }
@@ -187,6 +185,16 @@ namespace CPvC
             _turboCommand = new Command(
                 p => (machine as ITurboableMachine)?.EnableTurbo((bool)p),
                 p => (machine as ITurboableMachine) != null
+            );
+
+            _reverseStartCommand = new Command(
+                p => (machine as IReversibleMachine)?.Reverse(),
+                p => (machine as IReversibleMachine) != null
+            );
+
+            _reverseStopCommand = new Command(
+                p => (machine as IReversibleMachine)?.ReverseStop(),
+                p => (machine as IReversibleMachine) != null
             );
         }
 
@@ -313,9 +321,19 @@ namespace CPvC
             set { _removeCommand = value; }
         }
 
+        public ICommand ReverseStartCommand
+        {
+            get { return _reverseStartCommand; }
+        }
+
+        public ICommand ReverseStopCommand
+        {
+            get { return _reverseStopCommand; }
+        }
+
         private void MachinePropChanged(object sender, PropertyChangedEventArgs args)
         {
-            if (args.PropertyName == "Running")
+            if (args.PropertyName == "RunningState")
             {
                 _resumeCommand.InvokeCanExecuteChanged(sender, args);
                 _pauseCommand.InvokeCanExecuteChanged(sender, args);
