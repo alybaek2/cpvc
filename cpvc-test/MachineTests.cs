@@ -14,6 +14,8 @@ namespace CPvC.Test
         private MockFileByteStream _mockBinaryWriter;
         private Mock<MachineAuditorDelegate> _mockAuditor;
 
+        private Machine _machine;
+
         public Machine CreateMachine()
         {
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
@@ -41,11 +43,15 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream("test.cpvc")).Returns(_mockBinaryWriter.Object);
 
             _mockAuditor = new Mock<MachineAuditorDelegate>();
+
+            _machine = CreateMachine();
         }
 
         [TearDown]
         public void Teardown()
         {
+            _machine.Dispose();
+            _machine = null;
             _mockFileSystem = null;
         }
 
@@ -59,21 +65,18 @@ namespace CPvC.Test
         [TestCase(true)]
         public void ConsecutiveSystemBookmarksOnClose(bool startBeforeClosing)
         {
-            // Act
-            UInt64 ticks = 0;
-            int endpos = 0;
-            using (Machine machine = CreateMachine())
+            // Setup
+            _machine.AddBookmark(true);
+
+            if (startBeforeClosing)
             {
-                machine.AddBookmark(true);
-
-                if (startBeforeClosing)
-                {
-                    RunForAWhile(machine);
-                }
-
-                ticks = machine.Core.Ticks;
-                endpos = _mockBinaryWriter.Content.Count;
+                RunForAWhile(_machine);
             }
+
+            int endpos = _mockBinaryWriter.Content.Count;
+
+            // Act
+            _machine.Close();
 
             // Verify
             if (startBeforeClosing)
@@ -95,12 +98,11 @@ namespace CPvC.Test
         [Test]
         public void NoSystemBookmarksOnClose()
         {
+            // Setup
+            int pos = _mockBinaryWriter.Content.Count;
+
             // Act
-            int pos = 0;
-            using (Machine machine = CreateMachine())
-            {
-                pos = _mockBinaryWriter.Content.Count;
-            }
+            _machine.Close();
 
             // Verify
             Assert.AreEqual(pos, _mockBinaryWriter.Content.Count);
@@ -115,26 +117,23 @@ namespace CPvC.Test
         public void AutoPause()
         {
             // Act and Verify
-            using (Machine machine = CreateMachine())
+            _machine.Start();
+
+            Assert.AreEqual(RunningState.Running, _machine.Core.RunningState);
+
+            using (_machine.AutoPause())
             {
-                machine.Start();
+                Assert.AreEqual(RunningState.Paused, _machine.Core.RunningState);
 
-                Assert.AreEqual(RunningState.Running, machine.Core.RunningState);
-
-                using (machine.AutoPause())
+                using (_machine.AutoPause())
                 {
-                    Assert.AreEqual(RunningState.Paused, machine.Core.RunningState);
-
-                    using (machine.AutoPause())
-                    {
-                        Assert.AreEqual(RunningState.Paused, machine.Core.RunningState);
-                    }
-
-                    Assert.AreEqual(RunningState.Paused, machine.Core.RunningState);
+                    Assert.AreEqual(RunningState.Paused, _machine.Core.RunningState);
                 }
 
-                Assert.AreEqual(RunningState.Running, machine.Core.RunningState);
+                Assert.AreEqual(RunningState.Paused, _machine.Core.RunningState);
             }
+
+            Assert.AreEqual(RunningState.Running, _machine.Core.RunningState);
         }
 
         /// <summary>
@@ -244,19 +243,16 @@ namespace CPvC.Test
         public void CanClose([Values(false, true)] bool requiresOpen)
         {
             // Setup
-            using (Machine machine = CreateMachine())
+            if (requiresOpen)
             {
-                if (requiresOpen)
-                {
-                    machine.Close();
-                }
-
-                // Act
-                bool canClose = machine.CanClose();
-
-                // Verify
-                Assert.AreEqual(!requiresOpen, canClose);
+                _machine.Close();
             }
+
+            // Act
+            bool canClose = _machine.CanClose();
+
+            // Verify
+            Assert.AreEqual(!requiresOpen, canClose);
         }
 
         /// <summary>
@@ -266,26 +262,24 @@ namespace CPvC.Test
         public void Open()
         {
             // Setup
-            using (Machine machine = CreateMachine())
-            {
-                RunForAWhile(machine);
-                machine.Key(Keys.A, true);
-                RunForAWhile(machine);
-                machine.LoadDisc(0, null);
-                RunForAWhile(machine);
-                machine.LoadTape(null);
-                RunForAWhile(machine);
-                machine.Reset();
-                RunForAWhile(machine);
-                machine.AddBookmark(false);
-                HistoryEvent bookmarkEvent = machine.History.CurrentEvent;
-                RunForAWhile(machine);
-                machine.JumpToMostRecentBookmark();
-                HistoryEvent eventToDelete = bookmarkEvent.Children[0];
-                RunForAWhile(machine);
-                machine.SetBookmark(bookmarkEvent, null);
-                machine.TrimTimeline(eventToDelete);
-            }
+            RunForAWhile(_machine);
+            _machine.Key(Keys.A, true);
+            RunForAWhile(_machine);
+            _machine.LoadDisc(0, null);
+            RunForAWhile(_machine);
+            _machine.LoadTape(null);
+            RunForAWhile(_machine);
+            _machine.Reset();
+            RunForAWhile(_machine);
+            _machine.AddBookmark(false);
+            HistoryEvent bookmarkEvent = _machine.History.CurrentEvent;
+            RunForAWhile(_machine);
+            _machine.JumpToMostRecentBookmark();
+            HistoryEvent eventToDelete = bookmarkEvent.Children[0];
+            RunForAWhile(_machine);
+            _machine.SetBookmark(bookmarkEvent, null);
+            _machine.TrimTimeline(eventToDelete);
+            _machine.Close();
 
             using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
             {
@@ -357,17 +351,15 @@ namespace CPvC.Test
         public void OpenWithMissingFinalBookmark()
         {
             // Setup
-            int endpos = 0;
-            using (Machine machine = CreateMachine())
-            {
-                RunForAWhile(machine);
-                machine.AddBookmark(false);
-                RunForAWhile(machine);
-                machine.LoadDisc(0, null);
-                RunForAWhile(machine);
+            RunForAWhile(_machine);
+            _machine.AddBookmark(false);
+            RunForAWhile(_machine);
+            _machine.LoadDisc(0, null);
+            RunForAWhile(_machine);
 
-                endpos = _mockBinaryWriter.Content.Count;
-            }
+            int endpos = _mockBinaryWriter.Content.Count;
+
+            _machine.Close();
 
             // Remove the final system bookmark that was added when the machine was closed.
             _mockBinaryWriter.Content.RemoveRange(endpos, _mockBinaryWriter.Content.Count - endpos);
@@ -393,14 +385,13 @@ namespace CPvC.Test
         public void OpenWithCorruptedFinalBookmark()
         {
             // Setup
-            using (Machine machine = CreateMachine())
-            {
-                RunForAWhile(machine);
-                machine.AddBookmark(true);
+            RunForAWhile(_machine);
+            _machine.AddBookmark(true);
 
-                Bookmark corruptedBookmark = new Bookmark(true, 5, new byte[] { }, new byte[] { });
-                machine.SetBookmark(machine.History.CurrentEvent, corruptedBookmark);
-            }
+            Bookmark corruptedBookmark = new Bookmark(true, 5, new byte[] { }, new byte[] { });
+            _machine.SetBookmark(_machine.History.CurrentEvent, corruptedBookmark);
+
+            _machine.Close();
 
             // Act and Verify
             Assert.Throws<System.IndexOutOfRangeException>(() =>
@@ -423,70 +414,62 @@ namespace CPvC.Test
         public void GetAudio(UInt64 ticks, int expectedSamples)
         {
             // Setup
-            using (Machine machine = CreateMachine())
-            {
-                machine.Core.SetLowerROM(new byte[0x4000]);
-                machine.Core.SetUpperROM(0, new byte[0x4000]);
-                machine.Core.SetUpperROM(7, new byte[0x4000]);
+            _machine.Core.SetLowerROM(new byte[0x4000]);
+            _machine.Core.SetUpperROM(0, new byte[0x4000]);
+            _machine.Core.SetUpperROM(7, new byte[0x4000]);
 
-                // Act
-                List<UInt16> audioSamples = new List<UInt16>();
-                machine.Core.RunUntil(ticks, StopReasons.None, audioSamples);
+            // Act
+            List<UInt16> audioSamples = new List<UInt16>();
+            _machine.Core.RunUntil(ticks, StopReasons.None, audioSamples);
 
-                // Verify
-                Assert.AreEqual(expectedSamples, audioSamples.Count);
-            }
+            // Verify
+            Assert.AreEqual(expectedSamples, audioSamples.Count);
         }
 
         [Test]
         public void Toggle()
         {
             // Setup
-            using (Machine machine = CreateMachine())
-            {
-                machine.Start();
+            _machine.Start();
 
-                // Act
-                RunningState state1 = machine.RunningState;
-                machine.ToggleRunning();
-                RunningState state2 = machine.RunningState;
-                machine.ToggleRunning();
+            // Act
+            RunningState state1 = _machine.RunningState;
+            _machine.ToggleRunning();
+            RunningState state2 = _machine.RunningState;
+            _machine.ToggleRunning();
 
-                // Verify
-                Assert.AreEqual(RunningState.Running, state1);
-                Assert.AreEqual(RunningState.Paused, state2);
-                Assert.AreEqual(RunningState.Running, machine.RunningState);
-            }
+            // Verify
+            Assert.AreEqual(RunningState.Running, state1);
+            Assert.AreEqual(RunningState.Paused, state2);
+            Assert.AreEqual(RunningState.Running, _machine.RunningState);
         }
 
         [Test]
         public void RewriteFile()
         {
             // Setup
-            using (Machine machine = CreateMachine())
-            {
-                RunForAWhile(machine);
-                machine.LoadDisc(0, null);
-                RunForAWhile(machine);
-                machine.AddBookmark(false);
-                RunForAWhile(machine);
+            RunForAWhile(_machine);
+            _machine.LoadDisc(0, null);
+            RunForAWhile(_machine);
+            _machine.AddBookmark(false);
+            RunForAWhile(_machine);
 
-                HistoryEvent bookmarkEvent = machine.History.CurrentEvent;
+            HistoryEvent bookmarkEvent = _machine.History.CurrentEvent;
 
-                machine.LoadDisc(0, null);
-                RunForAWhile(machine);
+            _machine.LoadDisc(0, null);
+            RunForAWhile(_machine);
 
-                HistoryEvent eventToDelete = machine.History.CurrentEvent;
+            HistoryEvent eventToDelete = _machine.History.CurrentEvent;
 
-                machine.JumpToMostRecentBookmark();
-                machine.LoadDisc(0, null);
-                RunForAWhile(machine);
-                machine.JumpToMostRecentBookmark();
-                machine.LoadTape(null);
-                RunForAWhile(machine);
-                machine.TrimTimeline(eventToDelete.Children[0]);
-                machine.SetBookmark(bookmarkEvent, null);
-            }
+            _machine.JumpToMostRecentBookmark();
+            _machine.LoadDisc(0, null);
+            RunForAWhile(_machine);
+            _machine.JumpToMostRecentBookmark();
+            _machine.LoadTape(null);
+            RunForAWhile(_machine);
+            _machine.TrimTimeline(eventToDelete.Children[0]);
+            _machine.SetBookmark(bookmarkEvent, null);
+            _machine.Close();
 
             using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
             {
@@ -525,32 +508,26 @@ namespace CPvC.Test
         [Test]
         public void EnableTurbo()
         {
-            // Setup
-            UInt64 turboDuration = 0;
-            UInt64 normalDuration = 0;
-            using (Machine machine = CreateMachine())
+            // Act
+            _machine.EnableTurbo(true);
+            _machine.Start();
+            if (!RunUntilAudioOverrun(_machine.Core, 10000))
             {
-                // Act
-                machine.EnableTurbo(true);
-                machine.Start();
-                if (!RunUntilAudioOverrun(machine.Core, 10000))
-                {
-                    Assert.Fail("Failed to wait for audio overrun.");
-                }
-
-                turboDuration = machine.Core.Ticks;
-
-                // Empty out the audio buffer.
-                machine.AdvancePlayback(1000000);
-
-                machine.EnableTurbo(false);
-                if (!RunUntilAudioOverrun(machine.Core, 10000))
-                {
-                    Assert.Fail("Failed to wait for audio overrun.");
-                }
-
-                normalDuration = machine.Core.Ticks - turboDuration;
+                Assert.Fail("Failed to wait for audio overrun.");
             }
+
+            UInt64 turboDuration = _machine.Core.Ticks;
+
+            // Empty out the audio buffer.
+            _machine.AdvancePlayback(1000000);
+
+            _machine.EnableTurbo(false);
+            if (!RunUntilAudioOverrun(_machine.Core, 10000))
+            {
+                Assert.Fail("Failed to wait for audio overrun.");
+            }
+
+            UInt64 normalDuration = _machine.Core.Ticks - turboDuration;
 
             // Verify - speed should be at least doubled.
             double actualSpeedFactor = ((double)turboDuration) / ((double)normalDuration);
@@ -649,177 +626,137 @@ namespace CPvC.Test
         public void TrimTimelineRoot()
         {
             // Setup
-            using (Machine machine = CreateMachine())
-            {
-                int pos = _mockBinaryWriter.Content.Count;
+            int pos = _mockBinaryWriter.Content.Count;
 
-                // Act
-                machine.TrimTimeline(machine.History.RootEvent);
+            // Act
+            _machine.TrimTimeline(_machine.History.RootEvent);
 
-                // Verify
-                Assert.IsNotNull(machine.History.RootEvent);
-                Assert.IsEmpty(machine.History.RootEvent.Children);
-                Assert.AreEqual(pos, _mockBinaryWriter.Content.Count);
-            }
+            // Verify
+            Assert.IsNotNull(_machine.History.RootEvent);
+            Assert.IsEmpty(_machine.History.RootEvent.Children);
+            Assert.AreEqual(pos, _mockBinaryWriter.Content.Count);
         }
 
         [Test]
         public void Volume()
         {
-            // Setup
-            using (Machine machine = CreateMachine())
-            {
-                // Act
-                machine.Volume = 100;
+            // Act
+            _machine.Volume = 100;
 
-                // Verify
-                Assert.AreEqual(100, machine.Volume);
-            }
+            // Verify
+            Assert.AreEqual(100, _machine.Volume);
         }
 
         [Test]
         public void RunningNoCore()
         {
-            // Setup
-            using (Machine machine = CreateMachine())
-            {
-                // Act
-                machine.Close();
+            // Act
+            _machine.Close();
 
-                // Verify
-                Assert.AreEqual(RunningState.Paused, machine.RunningState);
-            }
+            // Verify
+            Assert.AreEqual(RunningState.Paused, _machine.RunningState);
         }
 
         [Test]
         public void TicksNoCore()
         {
-            // Setup
-            using (Machine machine = CreateMachine())
-            {
-                // Act
-                RunForAWhile(machine);
-                machine.Close();
+            // Act
+            RunForAWhile(_machine);
+            _machine.Close();
 
-                // Verify
-                Assert.Zero(machine.Ticks);
-            }
+            // Verify
+            Assert.Zero(_machine.Ticks);
         }
 
         [Test]
         public void AdvancePlaybackNoCore()
         {
             // Setup
-            using (Machine machine = CreateMachine())
-            {
-                machine.Close();
+            _machine.Close();
 
-                // Act and Verify
-                Assert.DoesNotThrow(() => machine.AdvancePlayback(1));
-            }
+            // Act and Verify
+            Assert.DoesNotThrow(() => _machine.AdvancePlayback(1));
         }
 
         [Test]
         public void ReadAudioNoCore()
         {
             // Setup
-            using (Machine machine = CreateMachine())
-            {
-                machine.Close();
+            _machine.Close();
 
-                // Act and Verify
-                Assert.DoesNotThrow(() => machine.ReadAudio(null, 0, 1));
-            }
+            // Act and Verify
+            Assert.DoesNotThrow(() => _machine.ReadAudio(null, 0, 1));
         }
 
         [Test]
         public void SetSameCore()
         {
-            // Setup
-            using (Machine machine = CreateMachine())
+            // Act and Verify - note that if CoreMachine.Core_set didn't do a check for reference
+            //                  equality between the new core and current core, an exception would
+            //                  later be thrown due to Dispose() being called.
+            Assert.DoesNotThrow(() =>
             {
-                // Act and Verify - note that if CoreMachine.Core_set didn't do a check for reference
-                //                  equality between the new core and current core, an exception would
-                //                  later be thrown due to Dispose() being called.
-                Assert.DoesNotThrow(() =>
-                {
-                    machine.Core = machine.Core;
-                });
-            }
+                _machine.Core = _machine.Core;
+            });
         }
 
         [Test]
         public void SetCurrentEvent()
         {
             // Setup
-            using (Machine machine = CreateMachine())
+            for (byte k = 0; k < 80; k++)
             {
-                for (byte k = 0; k < 80; k++)
+                _machine.Key(k, true);
+            }
+
+            RunForAWhile(_machine);
+
+            _machine.AddBookmark(true);
+            HistoryEvent bookmarkEvent = _machine.History.CurrentEvent;
+            RunForAWhile(_machine);
+
+            // Act and Verify
+            _machine.JumpToBookmark(bookmarkEvent);
+            Assert.AreEqual(bookmarkEvent, _machine.History.CurrentEvent);
+
+            bool[] keys = new bool[80];
+            Array.Clear(keys, 0, keys.Length);
+            RequestProcessedDelegate auditor = (core, request, action) =>
+            {
+                if (request != null && request.Type == CoreRequest.Types.KeyPress)
                 {
-                    machine.Key(k, true);
+                    keys[request.KeyCode] = request.KeyDown;
                 }
+            };
 
-                RunForAWhile(machine);
+            _machine.Core.Auditors += auditor;
+            ProcessQueueAndStop(_machine.Core);
 
-                machine.AddBookmark(true);
-                HistoryEvent bookmarkEvent = machine.History.CurrentEvent;
-                RunForAWhile(machine);
-
-                // Act and Verify
-                machine.JumpToBookmark(bookmarkEvent);
-                Assert.AreEqual(bookmarkEvent, machine.History.CurrentEvent);
-
-                bool[] keys = new bool[80];
-                Array.Clear(keys, 0, keys.Length);
-                RequestProcessedDelegate auditor = (core, request, action) =>
-                {
-                    if (request != null && request.Type == CoreRequest.Types.KeyPress)
-                    {
-                        keys[request.KeyCode] = request.KeyDown;
-                    }
-                };
-
-                machine.Core.Auditors += auditor;
-                ProcessQueueAndStop(machine.Core);
-
-                for (byte j = 0; j < 80; j++)
-                {
-                    Assert.IsFalse(keys[j]);
-                }
+            for (byte j = 0; j < 80; j++)
+            {
+                Assert.IsFalse(keys[j]);
             }
         }
 
         [Test]
         public void DeleteEventInvalidId()
         {
-            // Setup
-            using (Machine machine = CreateMachine())
-            {
-                // Act and Verify - probably better to verify that the history is unchanged...
-                Assert.DoesNotThrow(() => machine.DeleteEvent(9999));
-            }
+            // Act and Verify - probably better to verify that the history is unchanged...
+            Assert.DoesNotThrow(() => _machine.DeleteEvent(9999));
         }
 
         [Test]
         public void SetBookmarkInvalidId()
         {
-            // Setup
-            using (Machine machine = CreateMachine())
-            {
-                // Act and Verify
-                Assert.DoesNotThrow(() => machine.SetBookmark(9999, null));
-            }
+            // Act and Verify
+            Assert.DoesNotThrow(() => _machine.SetBookmark(9999, null));
         }
 
         [Test]
         public void SetCurrentEventInvalidId()
         {
-            // Setup
-            using (Machine machine = CreateMachine())
-            {
-                // Act and Verify
-                Assert.DoesNotThrow(() => machine.SetCurrentEvent(9999));
-            }
+            // Act and Verify
+            Assert.DoesNotThrow(() => _machine.SetCurrentEvent(9999));
         }
 
         [TestCase(0, 1, true)]
@@ -829,46 +766,41 @@ namespace CPvC.Test
         public void SetVolume(byte volume1, byte volume2, bool notified)
         {
             // Setup
-            using (Machine machine = CreateMachine())
+            _machine.Volume = volume1;
+            Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
+            _machine.PropertyChanged += propChanged.Object;
+
+            // Act
+            _machine.Volume = volume2;
+
+            // Verify
+            Assert.AreEqual(_machine.Volume, volume2);
+            if (notified)
             {
-                machine.Volume = volume1;
-                Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
-                machine.PropertyChanged += propChanged.Object;
-
-                // Act
-                machine.Volume = volume2;
-
-                // Verify
-                Assert.AreEqual(machine.Volume, volume2);
-                if (notified)
-                {
-                    propChanged.Verify(PropertyChanged(machine, "Volume"), Times.Once);
-                }
-
-                propChanged.VerifyNoOtherCalls();
+                propChanged.Verify(PropertyChanged(_machine, "Volume"), Times.Once);
             }
+
+            propChanged.VerifyNoOtherCalls();
         }
 
         [Test]
         public void Reverse()
         {
             // Setup
-            using (Machine machine = CreateMachine())
-            {
-                // Run for long enough to generate one snapshot, so that we can enter reverse mode.
-                RunForAWhile(machine, 1000000, 60000);
 
-                // Act
-                machine.Reverse();
+            // Run for long enough to generate one snapshot, so that we can enter reverse mode.
+            RunForAWhile(_machine, 1000000, 60000);
 
-                byte[] buffer = new byte[48000];
-                machine.ReadAudio(buffer, 0, buffer.Length / 4);
+            // Act
+            _machine.Reverse();
 
-                // Verify - this test is incomplete. Need checks for reversal of audio
-                //          samples. Probably easier to do this once the Core class is
-                //          hidden behind an interface and can be mocked.
-                Assert.AreEqual(RunningState.Reverse, machine.RunningState);
-            }
+            byte[] buffer = new byte[48000];
+            _machine.ReadAudio(buffer, 0, buffer.Length / 4);
+
+            // Verify - this test is incomplete. Need checks for reversal of audio
+            //          samples. Probably easier to do this once the Core class is
+            //          hidden behind an interface and can be mocked.
+            Assert.AreEqual(RunningState.Reverse, _machine.RunningState);
         }
 
         /// <summary>
@@ -879,41 +811,38 @@ namespace CPvC.Test
         public void ReverseTwice()
         {
             // Setup
-            using (Machine machine = CreateMachine())
-            {
-                // Run for long enough to generate one snapshot, so that we can enter reverse mode.
-                RunForAWhile(machine, 1000000, 60000);
 
-                machine.SetRunningState(RunningState.Running);
-                machine.Reverse();
-                machine.Reverse();
+            // Run for long enough to generate one snapshot, so that we can enter reverse mode.
+            RunForAWhile(_machine, 1000000, 60000);
 
-                // Act
-                machine.ReverseStop();
+            _machine.SetRunningState(RunningState.Running);
+            _machine.Reverse();
+            _machine.Reverse();
 
-                // Verify
-                Assert.AreEqual(RunningState.Running, machine.RunningState);
-            }
+            // Act
+            _machine.ReverseStop();
+
+            // Verify
+            Assert.AreEqual(RunningState.Running, _machine.RunningState);
         }
 
         [TestCase(RunningState.Paused)]
         [TestCase(RunningState.Running)]
         public void ReverseStop(RunningState runningState)
         {
-            using (Machine machine = CreateMachine())
-            {
-                // Run for long enough to generate one snapshot, so that we can enter reverse mode.
-                RunForAWhile(machine, 100000, 6000);
+            // Setup
 
-                machine.SetRunningState(runningState);
-                machine.Reverse();
+            // Run for long enough to generate one snapshot, so that we can enter reverse mode.
+            RunForAWhile(_machine, 100000, 6000);
 
-                // Act
-                machine.ReverseStop();
+            _machine.SetRunningState(runningState);
+            _machine.Reverse();
 
-                // Verify
-                Assert.AreEqual(runningState, machine.RunningState);
-            }
+            // Act
+            _machine.ReverseStop();
+
+            // Verify
+            Assert.AreEqual(runningState, _machine.RunningState);
         }
     }
 }
