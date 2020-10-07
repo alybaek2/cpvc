@@ -855,6 +855,7 @@ namespace CPvC.Test
             // Setup
             using (Machine machine = CreateMachine())
             {
+                // Run for long enough to generate one snapshot, so that we can enter reverse mode.
                 RunForAWhile(machine, 1000000, 60000);
 
                 // Act
@@ -870,12 +871,38 @@ namespace CPvC.Test
             }
         }
 
+        /// <summary>
+        /// Test to ensure that multiple Reverse calls only require a single ReverseStop
+        /// call to get back to the original running state.
+        /// </summary>
+        [Test]
+        public void ReverseTwice()
+        {
+            // Setup
+            using (Machine machine = CreateMachine())
+            {
+                // Run for long enough to generate one snapshot, so that we can enter reverse mode.
+                RunForAWhile(machine, 1000000, 60000);
+
+                machine.SetRunningState(RunningState.Running);
+                machine.Reverse();
+                machine.Reverse();
+
+                // Act
+                machine.ReverseStop();
+
+                // Verify
+                Assert.AreEqual(RunningState.Running, machine.RunningState);
+            }
+        }
+
         [TestCase(RunningState.Paused)]
         [TestCase(RunningState.Running)]
         public void ReverseStop(RunningState runningState)
         {
             using (Machine machine = CreateMachine())
             {
+                // Run for long enough to generate one snapshot, so that we can enter reverse mode.
                 RunForAWhile(machine, 100000, 6000);
 
                 machine.SetRunningState(runningState);
