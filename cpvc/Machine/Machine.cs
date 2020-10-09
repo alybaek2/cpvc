@@ -290,7 +290,8 @@ namespace CPvC
                 int samplesWritten = currentSnapshot.AudioBuffer.Render16BitStereo(Volume, buffer, offset, currentSamplesRequested, true);
                 if (samplesWritten == 0)
                 {
-                    _core.LoadSnapshot(currentSnapshot.Id);
+                    CoreAction action = _core.LoadSnapshot(currentSnapshot.Id);
+                    Auditors?.Invoke(action);
 
                     if (_currentSnapshotIndex == 0)
                     {
@@ -342,7 +343,8 @@ namespace CPvC
             }
 
             SnapshotInfo newSnapshot = new SnapshotInfo(newSnapshotId);
-            _core.SaveSnapshot(newSnapshotId);
+            CoreAction action = _core.SaveSnapshot(newSnapshotId);
+            Auditors?.Invoke(action);
 
             _snapshots.Add(newSnapshot);
             _currentSnapshotIndex = _snapshots.Count - 1;
