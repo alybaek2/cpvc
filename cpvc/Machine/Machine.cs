@@ -47,7 +47,6 @@ namespace CPvC
 
         private const int _snapshotLimit = 500;
         private List<SnapshotInfo> _snapshots;
-        private int _currentSnapshotIndex;
 
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
@@ -61,7 +60,6 @@ namespace CPvC
             _fileSystem = fileSystem;
 
             _snapshots = new List<SnapshotInfo>();
-            _currentSnapshotIndex = -1;
 
             _history = new MachineHistory();
         }
@@ -284,24 +282,24 @@ namespace CPvC
             int totalSamplesWritten = 0;
             int currentSamplesRequested = samplesRequested;
 
-            while (totalSamplesWritten < samplesRequested && _currentSnapshotIndex >= 0)
+            SnapshotInfo currentSnapshot = _snapshots.LastOrDefault();
+            while (totalSamplesWritten < samplesRequested && currentSnapshot != null)
             {
-                SnapshotInfo currentSnapshot = _snapshots[_currentSnapshotIndex];
                 int samplesWritten = currentSnapshot.AudioBuffer.Render16BitStereo(Volume, buffer, offset, currentSamplesRequested, true);
                 if (samplesWritten == 0)
                 {
                     CoreAction action = _core.LoadSnapshot(currentSnapshot.Id);
                     Auditors?.Invoke(action);
 
-                    if (_currentSnapshotIndex == 0)
+                    if (_snapshots.Count <= 1)
                     {
                         // We've reached the last snapshot.
                         break;
                     }
 
                     Display.CopyFromBufferAsync();
-                    _snapshots.RemoveAt(_currentSnapshotIndex);
-                    _currentSnapshotIndex--;
+                    _snapshots.RemoveAt(_snapshots.Count - 1);
+                    currentSnapshot = _snapshots.LastOrDefault();
                 }
 
                 totalSamplesWritten += samplesWritten;
@@ -342,12 +340,7 @@ namespace CPvC
                 }
             }
 
-            SnapshotInfo newSnapshot = new SnapshotInfo(newSnapshotId);
-            CoreAction action = _core.SaveSnapshot(newSnapshotId);
-            Auditors?.Invoke(action);
-
-            _snapshots.Add(newSnapshot);
-            _currentSnapshotIndex = _snapshots.Count - 1;
+            _core.PushRequest(CoreRequest.SaveSnapshot(newSnapshotId));
         }
 
         /// <summary>
@@ -381,13 +374,19 @@ namespace CPvC
                 }
                 else if (action.Type == CoreAction.Types.RunUntil)
                 {
-                    if (_currentSnapshotIndex >= 0 && action.AudioSamples != null)
+                    SnapshotInfo snapshot = _snapshots.LastOrDefault();
+                    if (snapshot != null && action.AudioSamples != null)
                     {
                         foreach (UInt16 sample in action.AudioSamples)
                         {
-                            _snapshots[_currentSnapshotIndex].AudioBuffer.Write(sample);
+                            snapshot.AudioBuffer.Write(sample);
                         }
                     }
+                }
+                else if (action.Type == CoreAction.Types.SaveSnapshot)
+                {
+                    SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId);
+                    _snapshots.Add(newSnapshot);
                 }
             }
         }
@@ -760,7 +759,7 @@ namespace CPvC
 
         public void Reverse()
         {
-            if (_core.RunningState == RunningState.Reverse || _currentSnapshotIndex < 0)
+            if (_core.RunningState == RunningState.Reverse || _snapshots.LastOrDefault() == null)
             {
                 return;
             }
