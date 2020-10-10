@@ -142,9 +142,9 @@ namespace CPvC.Test
             // Act
             _receiveSelectMachine(_mockMachines[0].Object.Name);
             _receiveCoreAction(coreAction);
+
             _cores[0].Start();
-            Thread.Sleep(100);
-            _cores[0].Stop();
+            TestHelpers.ProcessRequest(_cores[0], coreAction);
 
             // Verify
             Assert.AreEqual(1000, _machines[0].Ticks);

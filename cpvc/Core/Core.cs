@@ -421,12 +421,9 @@ namespace CPvC
         {
             while (!_quitThread)
             {
-                if (RunningState == RunningState.Running)
+                if (ProcessNextRequest())
                 {
-                    if (ProcessNextRequest())
-                    {
-                        _quitThread = true;
-                    }
+                    _quitThread = true;
                 }
             }
 
@@ -501,7 +498,6 @@ namespace CPvC
 
             switch (runningState)
             {
-                case RunningState.Reverse:
                 case RunningState.Paused:
                     if (_coreThread != null && _coreThread.IsAlive)
                     {
@@ -510,6 +506,7 @@ namespace CPvC
                         _coreThread = null;
                     }
                     break;
+                case RunningState.Reverse:
                 case RunningState.Running:
                     if (_coreThread == null || !_coreThread.IsAlive)
                     {
@@ -640,7 +637,7 @@ namespace CPvC
             return false;
         }
 
-        public CoreAction SaveSnapshot(int snapshotId)
+        private CoreAction SaveSnapshot(int snapshotId)
         {
             _coreCLR.SaveSnapshot(snapshotId);
 

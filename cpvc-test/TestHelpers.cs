@@ -240,6 +240,78 @@ namespace CPvC.Test
             core.Stop();
         }
 
+        /// <summary>
+        /// Enqueues a request in a core and waits for it to be processed. If <c>request</c> is null, this method waits for the next request to be processed.
+        /// </summary>
+        /// <param name="core">Core to run.</param>
+        /// <param name="request">Request to be processed.</param>
+        static public void ProcessRequest(Core core, CoreRequest request)
+        {
+            ManualResetEvent e = new ManualResetEvent(false);
+            RequestProcessedDelegate processed = (c, r, a) =>
+            {
+                if (c == core && (r == null || r == request))
+                {
+                    e.Set();
+                }
+            };
+
+            core.Auditors += processed;
+
+            core.PushRequest(request);
+
+            bool result = e.WaitOne(1000);
+
+            core.Auditors -= processed;
+
+            if (!result)
+            {
+                throw new TimeoutException("Timeout while waiting for request to process.");
+            }
+        }
+
+        static public void ProcessRemoteRequest(RemoteMachine machine, ReceiveCoreActionDelegate receive, CoreAction action)
+        {
+            ManualResetEvent e = new ManualResetEvent(false);
+            RequestProcessedDelegate processed = (c, r, a) =>
+            {
+                if (c == machine.Core && (r == null || r == action))
+                {
+                    e.Set();
+                }
+            };
+
+            machine.Core.Auditors += processed;
+
+            receive(action);
+            machine.Start();
+
+            bool result = e.WaitOne(1000);
+
+            machine.Core.Auditors -= processed;
+
+            machine.Stop();
+
+            if (!result)
+            {
+                throw new TimeoutException("Timeout while waiting for request to process.");
+            }
+        }
+
+        static public bool WaitForNextRequestProcessed(Core core)
+        {
+            try
+            {
+                ProcessRequest(core, null);
+            }
+            catch (TimeoutException)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         static public bool RunUntilAudioOverrun(Core core, int timeout)
         {
             int elapsed = 0;

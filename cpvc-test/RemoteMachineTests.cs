@@ -41,9 +41,11 @@ namespace CPvC.Test
                 machine.Start();
 
                 // Act
-                _receiveCoreAction(CoreAction.RunUntil(0, 1, null));
-                Thread.Sleep(100);
-                machine.Stop();
+                CoreAction action = CoreAction.RunUntil(0, 1, null);
+                _receiveCoreAction(action);
+
+                TestHelpers.ProcessRequest(machine.Core, action);
+
 
                 // Verify
                 Assert.Greater(machine.Ticks, 0);
@@ -56,20 +58,19 @@ namespace CPvC.Test
             // Setup
             using (RemoteMachine machine = new RemoteMachine(_mockRemote.Object))
             {
-                machine.Start();
-                _receiveCoreAction(CoreAction.RunUntil(0, 100000, null));
-                Thread.Sleep(100);
-                _receiveCoreAction(CoreAction.SaveSnapshot(0, 1));
+                TestHelpers.ProcessRemoteRequest(machine, _receiveCoreAction, CoreAction.RunUntil(0, 100000, null));
+                TestHelpers.ProcessRemoteRequest(machine, _receiveCoreAction, CoreAction.SaveSnapshot(0, 1));
                 UInt64 saveSnapshotTicks = machine.Ticks;
-                _receiveCoreAction(CoreAction.RunUntil(0, 200000, null));
-                Thread.Sleep(100);
+
+                TestHelpers.ProcessRemoteRequest(machine, _receiveCoreAction, CoreAction.RunUntil(0, 200000, null));
+                UInt64 preLoadSnapshotTicks = machine.Ticks;
 
                 // Act
-                _receiveCoreAction(CoreAction.LoadSnapshot(0, 1));
-                Thread.Sleep(100);
+                TestHelpers.ProcessRemoteRequest(machine, _receiveCoreAction, CoreAction.LoadSnapshot(0, 1));
                 UInt64 loadSnapshotTicks = machine.Ticks;
 
                 // Verify
+                Assert.AreNotEqual(preLoadSnapshotTicks, loadSnapshotTicks);
                 Assert.AreEqual(loadSnapshotTicks, saveSnapshotTicks);
             }
         }

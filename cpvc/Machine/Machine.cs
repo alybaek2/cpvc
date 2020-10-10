@@ -288,16 +288,13 @@ namespace CPvC
                 int samplesWritten = currentSnapshot.AudioBuffer.Render16BitStereo(Volume, buffer, offset, currentSamplesRequested, true);
                 if (samplesWritten == 0)
                 {
-                    CoreAction action = _core.LoadSnapshot(currentSnapshot.Id);
-                    Auditors?.Invoke(action);
-
+                    _core.PushRequest(CoreRequest.LoadSnapshot(currentSnapshot.Id));
                     if (_snapshots.Count <= 1)
                     {
                         // We've reached the last snapshot.
                         break;
                     }
 
-                    Display.CopyFromBufferAsync();
                     _snapshots.RemoveAt(_snapshots.Count - 1);
                     currentSnapshot = _snapshots.LastOrDefault();
                 }
@@ -387,6 +384,10 @@ namespace CPvC
                 {
                     SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId);
                     _snapshots.Add(newSnapshot);
+                }
+                else if (action.Type == CoreAction.Types.LoadSnapshot)
+                {
+                    Display.CopyFromBufferAsync();
                 }
             }
         }

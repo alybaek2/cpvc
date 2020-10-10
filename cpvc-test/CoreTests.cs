@@ -207,70 +207,31 @@ namespace CPvC.Test
         public void SaveAndLoadSnapshot(bool validSnapshot)
         {
             // Setup
-            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-
-            Mock<PropertyChangedEventHandler> mockPropChanged = new Mock<PropertyChangedEventHandler>();
-            core.PropertyChanged += mockPropChanged.Object;
-
-            core.SaveSnapshot(42);
-            byte[] state = core.GetState();
-            RunForAWhile(core, 100000);
-
-            // Act
-            core.LoadSnapshot(validSnapshot ? 42 : 0);
-            byte[] stateAfterLoadSnapshot = core.GetState();
-
-            // Verify
-            if (validSnapshot)
-            {
-                Assert.AreEqual(state, stateAfterLoadSnapshot);
-                mockPropChanged.Verify(p => p(core, It.Is<PropertyChangedEventArgs>(a => a != null && a.PropertyName == "Ticks")), Times.Once());
-            }
-            else
-            {
-                Assert.AreNotEqual(state, stateAfterLoadSnapshot);
-                mockPropChanged.Verify(p => p(core, It.Is<PropertyChangedEventArgs>(a => a != null && a.PropertyName == "Ticks")), Times.Never());
-            }
-        }
-
-        [TestCase(false)]
-        [TestCase(true)]
-        public void SaveAndLoadSnapshotRequest(bool validSnapshotId)
-        {
-            // Setup
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
-                Mock<RequestProcessedDelegate> mockAuditor = new Mock<RequestProcessedDelegate>();
-                core.Auditors += mockAuditor.Object;
+                core.KeepRunning = false;
+                core.Start();
 
                 Mock<PropertyChangedEventHandler> mockPropChanged = new Mock<PropertyChangedEventHandler>();
                 core.PropertyChanged += mockPropChanged.Object;
 
+                TestHelpers.ProcessRequest(core, CoreRequest.SaveSnapshot(42));
                 byte[] state = core.GetState();
 
-                // Act
-                CoreRequest saveRequest = CoreRequest.SaveSnapshot(42);
-                core.PushRequest(saveRequest);
-                RunForAWhile(core, 10000);
-                core.KeepRunning = false;
-                CoreRequest loadRequest = CoreRequest.LoadSnapshot(validSnapshotId ? 42 : 0);
-                core.PushRequest(loadRequest);
-                core.Start();
+                TestHelpers.ProcessRequest(core, CoreRequest.RunUntil(100));
 
-                Thread.Sleep(100);
+                // Act
+                TestHelpers.ProcessRequest(core, CoreRequest.LoadSnapshot(validSnapshot ? 42 : 0));
                 byte[] stateAfterLoadSnapshot = core.GetState();
 
                 // Verify
-                mockAuditor.Verify(a => a(core, saveRequest, It.Is<CoreAction>(action => action != null && action.Type == CoreRequest.Types.SaveSnapshot && action.SnapshotId == 42)));
-                if (validSnapshotId)
+                if (validSnapshot)
                 {
-                    mockAuditor.Verify(a => a(core, loadRequest, It.Is<CoreAction>(action => action != null && action.Type == CoreRequest.Types.LoadSnapshot && action.SnapshotId == 42)));
                     Assert.AreEqual(state, stateAfterLoadSnapshot);
                     mockPropChanged.Verify(p => p(core, It.Is<PropertyChangedEventArgs>(a => a != null && a.PropertyName == "Ticks")), Times.Once());
                 }
                 else
                 {
-                    mockAuditor.Verify(a => a(core, loadRequest, It.Is<CoreAction>(action => action != null && action.Type == CoreRequest.Types.LoadSnapshot)), Times.Never());
                     Assert.AreNotEqual(state, stateAfterLoadSnapshot);
                     mockPropChanged.Verify(p => p(core, It.Is<PropertyChangedEventArgs>(a => a != null && a.PropertyName == "Ticks")), Times.Never());
                 }
@@ -354,13 +315,10 @@ namespace CPvC.Test
                 CoreRequest request = new CoreRequest((CoreRequest.Types)999);
                 Mock<RequestProcessedDelegate> mockAuditor = new Mock<RequestProcessedDelegate>();
                 core.Auditors += mockAuditor.Object;
+                core.Start();
 
                 // Act
-                core.PushRequest(request);
-                core.PushRequest(CoreRequest.Quit());
-                core.Start();
-                Thread.Sleep(1000);
-                core.Stop();
+                TestHelpers.ProcessRequest(core, request);
 
                 // Verify
                 mockAuditor.Verify(a => a(core, request, null));
@@ -438,7 +396,7 @@ namespace CPvC.Test
 
                 // Act
                 core.Start();
-                Thread.Sleep(200);
+                WaitForNextRequestProcessed(core);
 
                 // Verify
                 if (keepRunning)
