@@ -75,6 +75,7 @@ namespace CPvC.Test
         [TestCase(RunningState.Running, "running")]
         [TestCase(RunningState.Reverse, "reverse")]
         [TestCase(100, null)]
+        [TestCase((RunningState)101, null)]
         public void RunningIcon(object value, string expectedPath)
         {
             // Setup
@@ -85,7 +86,7 @@ namespace CPvC.Test
             object original = conv.ConvertBack(converted, null, null, null);
 
             // Verify
-            if (value == null || !(value is RunningState))
+            if (value == null || !(value is RunningState) || expectedPath == null)
             {
                 Assert.IsNull(converted);
             }
