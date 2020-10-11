@@ -160,8 +160,8 @@ namespace CPvC.Test
             _receiveSelectMachine(_machines[0].Name);
 
             // Act
-            _cores[0].PushRequest(CoreRequest.RunUntil(1));
-            RunForAWhile(_cores[0], 1);
+            _cores[0].Start();
+            TestHelpers.ProcessRequest(_cores[0], CoreRequest.RunUntil(_cores[0].Ticks + 1));
 
             // Verify
             _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.RunUntil)));

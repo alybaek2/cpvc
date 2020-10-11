@@ -188,18 +188,23 @@ namespace CPvC.Test
         public void CoreVersion()
         {
             // Setup
-            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-            UnmanagedMemory screen = new UnmanagedMemory(Display.Width * Display.Pitch, 0);
-            core.SetScreen(screen);
-            RunForAWhile(core, 1);
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                core.KeepRunning = false;
+                core.Start();
 
-            // Act
-            core.PushRequest(CoreRequest.CoreVersion(1));
-            RunForAWhile(core, 1);
+                UnmanagedMemory screen = new UnmanagedMemory(Display.Width * Display.Pitch, 0);
+                core.SetScreen(screen);
+                TestHelpers.ProcessRequest(core, CoreRequest.RunUntil(core.Ticks + 1));
 
-            // Verify - this isn't the greatest test since we only have 1 version to test with.
-            //          Once we have a new version, this test can be updated.
-            Assert.AreEqual((IntPtr)screen, core.GetScreen());
+                // Act
+                TestHelpers.ProcessRequest(core, CoreRequest.CoreVersion(1));
+                TestHelpers.ProcessRequest(core, CoreRequest.RunUntil(core.Ticks + 1));
+
+                // Verify - this isn't the greatest test since we only have 1 version to test with.
+                //          Once we have a new version, this test can be updated.
+                Assert.AreEqual((IntPtr)screen, core.GetScreen());
+            }
         }
 
         [TestCase(false)]
@@ -370,18 +375,22 @@ namespace CPvC.Test
             // Setup
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
-                core.KeyPress(Keys.A, true);
-                RunForAWhile(core, 1);
+                core.KeepRunning = false;
+                core.Start();
+
+                TestHelpers.ProcessRequest(core, CoreRequest.KeyPress(Keys.A, true));
+                TestHelpers.ProcessRequest(core, CoreRequest.RunUntil(core.Ticks + 1));
                 byte[] state = core.GetState();
-                RunForAWhile(core, 1);
+                TestHelpers.ProcessRequest(core, CoreRequest.RunUntil(core.Ticks + 1));
 
                 // Act
-                core.LoadCoreState(new MemoryBlob(state));
-                ProcessQueueAndStop(core);
+                byte[] preloadedState = core.GetState();
+                TestHelpers.ProcessRequest(core, CoreRequest.LoadCore(new MemoryBlob(state)));
 
                 // Verify
                 byte[] loadedState = core.GetState();
                 Assert.AreEqual(state, loadedState);
+                Assert.AreNotEqual(preloadedState, loadedState);
             }
         }
 
@@ -441,7 +450,7 @@ namespace CPvC.Test
 
                 // Act - empty out the audio buffer and continue running
                 core.AudioBuffer.Advance(12000);
-                RunForAWhile(core, 40000000);
+                TestHelpers.ProcessRequest(core, CoreRequest.RunUntil(ticks + 4000000));
 
                 // Verify
                 Assert.Greater(core.Ticks, ticks);

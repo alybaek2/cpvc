@@ -227,19 +227,6 @@ namespace CPvC.Test
             machine.Stop();
         }
 
-        static public void RunForAWhile(Core core, UInt64 duration)
-        {
-            UInt64 endTicks = core.Ticks + duration;
-            core.Start();
-            while (core.Ticks < endTicks)
-            {
-                // Empty out the audio buffer just in case on an overrun.
-                core.AdvancePlayback(10000);
-            }
-
-            core.Stop();
-        }
-
         /// <summary>
         /// Enqueues a request in a core and waits for it to be processed. If <c>request</c> is null, this method waits for the next request to be processed.
         /// </summary>
@@ -250,7 +237,7 @@ namespace CPvC.Test
             ManualResetEvent e = new ManualResetEvent(false);
             RequestProcessedDelegate processed = (c, r, a) =>
             {
-                if (c == core && (r == null || r == request))
+                if (c == core && (request == null || r == request))
                 {
                     e.Set();
                 }
