@@ -53,11 +53,6 @@ namespace CPvC
             {
                 return _serverInfo;
             }
-
-            set
-            {
-                _serverInfo = value;
-            }
         }
 
         public RemoteMachine Machine
