@@ -425,8 +425,11 @@ namespace CPvC.Test
                 core.IdleRequest = null;
                 core.Start();
 
-                // Act and Verify
-                Assert.Throws<TimeoutException>(() => TestHelpers.WaitForNextRequestProcessed(core));
+                // Act
+                bool result = TestHelpers.WaitForNextRequestProcessed(core);
+
+                // Verify
+                Assert.False(result);
             }
         }
 
