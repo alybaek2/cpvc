@@ -530,11 +530,8 @@ namespace CPvC.Test
         /// <summary>
         /// Ensures that a Reset call is passed through from the view model to the machine.
         /// </summary>
-        /// <param name="active">Indicates whether the machine should be set as the view model's active machine.</param>
-        /// <param name="nullMachine">Indicates whether Reset should be called with a null parameter instead of a machine.</param>
-        [TestCase(true, false)]
-        [TestCase(true, true)]
-        public void Reset(bool active, bool nullMachine)
+        [TestCase]
+        public void Reset()
         {
             // Setup
             Mock<RequestProcessedDelegate> mockAuditor = new Mock<RequestProcessedDelegate>();
@@ -562,7 +559,7 @@ namespace CPvC.Test
 
             machine.Open();
             machine.Core.Auditors += auditor;
-            viewModel.ActiveMachineViewModel = active ? machineViewModel : null;
+            viewModel.ActiveMachineViewModel = machineViewModel;
 
             // Act
             machineViewModel.ResetCommand.Execute(null);
@@ -573,15 +570,15 @@ namespace CPvC.Test
             // Verify
             Assert.AreEqual(RunningState.Paused, machine.RunningState);
 
-            Assert.AreEqual(active || !nullMachine, resetCalled);
-            Times expectedResetTimes = (active || !nullMachine) ? Times.Once() : Times.Never();
-            Times expectedKeyTimes = active ? Times.Once() : Times.Never();
+            Assert.True(resetCalled);
+            Times expectedResetTimes = Times.Once();
+            Times expectedKeyTimes = Times.Once();
 
             for (byte k = 0; k < 80; k++)
             {
                 if (k == Keys.A)
                 {
-                    Assert.AreEqual(active, keys[k]);
+                    Assert.True(keys[k]);
                 }
                 else
                 {

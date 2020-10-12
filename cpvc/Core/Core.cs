@@ -26,6 +26,12 @@ namespace CPvC
     public delegate void BeginVSyncDelegate(Core core);
 
     /// <summary>
+    /// Delegate to be called by the core thread to get a request when none exists in the request queue.
+    /// </summary>
+    /// <returns>The CoreRequest that is to be processed.</returns>
+    public delegate CoreRequest IdleRequestDelegate();
+
+    /// <summary>
     /// Class that wraps the CoreCLR class and provides callbacks for auditors and vsync events. Also runs the core in a background thread.
     /// </summary>
     public sealed class Core : INotifyPropertyChanged, IDisposable
@@ -49,8 +55,6 @@ namespace CPvC
 
         private RunningState _runningState;
 
-        private bool _keepRunning;
-
         /// <summary>
         /// Frequency (in samples per second) at which the Core will populate its audio buffers.
         /// </summary>
@@ -61,6 +65,7 @@ namespace CPvC
 
         public RequestProcessedDelegate Auditors { get; set; }
         public BeginVSyncDelegate BeginVSync { get; set; }
+        public IdleRequestDelegate IdleRequest { get; set; }
 
         public AudioBuffer AudioBuffer
         {
@@ -95,8 +100,6 @@ namespace CPvC
 
             _quitThread = false;
             _coreThread = null;
-
-            _keepRunning = true;
 
             BeginVSync = null;
 
@@ -275,14 +278,6 @@ namespace CPvC
             }
         }
 
-        public bool KeepRunning
-        {
-            set
-            {
-                _keepRunning = value;
-            }
-        }
-
         /// <summary>
         /// Indicates the number of ticks that have elapsed since the core was started. Note that each tick is exactly 0.25 microseconds.
         /// </summary>
@@ -293,6 +288,17 @@ namespace CPvC
                 lock (_lockObject)
                 {
                     return _coreCLR.Ticks();
+                }
+            }
+        }
+
+        public bool RequestQueueEmpty
+        {
+            get
+            {
+                lock (_requests)
+                {
+                    return _requests.Count == 0;
                 }
             }
         }
@@ -523,116 +529,116 @@ namespace CPvC
         {
             bool success = true;
 
-            CoreRequest request = FirstRequest();
+            CoreRequest firstRequest = FirstRequest();
+            CoreRequest request = firstRequest;
             CoreAction action = null;
 
             if (request == null)
             {
-                if (_keepRunning)
+                if (IdleRequest != null)
                 {
-                    action = RunForAWhile(Ticks + 1000);
+                    request = IdleRequest();
                 }
-                else
+
+                if (request == null)
                 {
                     _requestQueueNonEmpty.WaitOne(10);
                     return false;
                 }
             }
-            else
+            
+            UInt64 ticks = Ticks;
+            switch (request.Type)
             {
-                UInt64 ticks = Ticks;
-                switch (request.Type)
-                {
-                    case CoreRequest.Types.KeyPress:
-                        lock (_lockObject)
+                case CoreRequest.Types.KeyPress:
+                    lock (_lockObject)
+                    {
+                        if (_coreCLR.KeyPress(request.KeyCode, request.KeyDown))
                         {
-                            if (_coreCLR.KeyPress(request.KeyCode, request.KeyDown))
-                            {
-                                action = CoreAction.KeyPress(ticks, request.KeyCode, request.KeyDown);
-                            }
+                            action = CoreAction.KeyPress(ticks, request.KeyCode, request.KeyDown);
                         }
-                        break;
-                    case CoreRequest.Types.Reset:
-                        lock (_lockObject)
-                        {
-                            _coreCLR.Reset();
-                        }
-                        action = CoreAction.Reset(ticks);
-                        break;
-                    case CoreRequest.Types.LoadDisc:
-                        lock (_lockObject)
-                        {
-                            _coreCLR.LoadDisc(request.Drive, request.MediaBuffer.GetBytes());
-                        }
-                        action = CoreAction.LoadDisc(ticks, request.Drive, request.MediaBuffer);
-                        break;
-                    case CoreRequest.Types.LoadTape:
-                        lock (_lockObject)
-                        {
-                            _coreCLR.LoadTape(request.MediaBuffer.GetBytes());
-                        }
-                        action = CoreAction.LoadTape(ticks, request.MediaBuffer);
-                        break;
-                    case CoreRequest.Types.RunUntil:
-                        {
-                            action = RunForAWhile(request.StopTicks);
+                    }
+                    break;
+                case CoreRequest.Types.Reset:
+                    lock (_lockObject)
+                    {
+                        _coreCLR.Reset();
+                    }
+                    action = CoreAction.Reset(ticks);
+                    break;
+                case CoreRequest.Types.LoadDisc:
+                    lock (_lockObject)
+                    {
+                        _coreCLR.LoadDisc(request.Drive, request.MediaBuffer.GetBytes());
+                    }
+                    action = CoreAction.LoadDisc(ticks, request.Drive, request.MediaBuffer);
+                    break;
+                case CoreRequest.Types.LoadTape:
+                    lock (_lockObject)
+                    {
+                        _coreCLR.LoadTape(request.MediaBuffer.GetBytes());
+                    }
+                    action = CoreAction.LoadTape(ticks, request.MediaBuffer);
+                    break;
+                case CoreRequest.Types.RunUntil:
+                    {
+                        action = RunForAWhile(request.StopTicks);
 
-                            success = (request.StopTicks <= Ticks);
-                        }
-                        break;
-                    case CoreRequest.Types.CoreVersion:
-                        lock (_lockObject)
-                        {
-                            byte[] state = GetState();
+                        success = (request.StopTicks <= Ticks);
+                    }
+                    break;
+                case CoreRequest.Types.CoreVersion:
+                    lock (_lockObject)
+                    {
+                        byte[] state = GetState();
 
-                            ICore newCore = Core.CreateVersionedCore(request.Version);
-                            newCore.LoadState(state);
+                        ICore newCore = Core.CreateVersionedCore(request.Version);
+                        newCore.LoadState(state);
 
-                            IntPtr pScr = _coreCLR.GetScreen();
+                        IntPtr pScr = _coreCLR.GetScreen();
 
-                            _coreCLR.Dispose();
-                            _coreCLR = newCore;
+                        _coreCLR.Dispose();
+                        _coreCLR = newCore;
 
-                            SetScreen(pScr);
-                        }
-                        break;
-                    case CoreRequest.Types.LoadCore:
-                        lock (_lockObject)
-                        {
-                            _coreCLR.LoadState(request.CoreState.GetBytes());
-                        }
+                        SetScreen(pScr);
+                    }
+                    break;
+                case CoreRequest.Types.LoadCore:
+                    lock (_lockObject)
+                    {
+                        _coreCLR.LoadState(request.CoreState.GetBytes());
+                    }
 
-                        action = CoreAction.LoadCore(ticks, request.CoreState);
-                        break;
-                    case CoreRequest.Types.SaveSnapshot:
-                        lock (_lockObject)
-                        {
-                            action = SaveSnapshot(request.SnapshotId);
-                        }
+                    action = CoreAction.LoadCore(ticks, request.CoreState);
+                    break;
+                case CoreRequest.Types.SaveSnapshot:
+                    lock (_lockObject)
+                    {
+                        action = SaveSnapshot(request.SnapshotId);
+                    }
 
-                        break;
-                    case CoreRequest.Types.LoadSnapshot:
-                        lock (_lockObject)
-                        {
-                            action = LoadSnapshot(request.SnapshotId);
-                        }
+                    break;
+                case CoreRequest.Types.LoadSnapshot:
+                    lock (_lockObject)
+                    {
+                        action = LoadSnapshot(request.SnapshotId);
+                    }
 
-                        break;
-                    case CoreRequest.Types.Quit:
-                        RemoveFirstRequest();
-                        return true;
-                    default:
-                        Diagnostics.Trace("Unknown core request type {0}. Ignoring request.", request.Type);
-                        break;
-                }
+                    break;
+                case CoreRequest.Types.Quit:
+                    RemoveFirstRequest();
+                    return true;
+                default:
+                    Diagnostics.Trace("Unknown core request type {0}. Ignoring request.", request.Type);
+                    break;
             }
 
-            Auditors?.Invoke(this, request, action);
-
-            if (request != null && success)
+            if (request == firstRequest && success)
             {
                 RemoveFirstRequest();
             }
+
+            Auditors?.Invoke(this, request, action);
 
             return false;
         }

@@ -289,6 +289,10 @@ namespace CPvC
                 if (samplesWritten == 0)
                 {
                     _core.PushRequest(CoreRequest.LoadSnapshot(currentSnapshot.Id));
+
+                    // Ensure all keys are "up" once we come out of Reverse mode.
+                    _core.AllKeysUp();
+
                     if (_snapshots.Count <= 1)
                     {
                         // We've reached the last snapshot.
@@ -348,46 +352,49 @@ namespace CPvC
         /// <param name="action">The action taken.</param>
         private void RequestProcessed(Core core, CoreRequest request, CoreAction action)
         {
-            if (core == _core && action != null)
+            if (core == _core)
             {
-                Auditors?.Invoke(action);
-
-                if (action.Type != CoreAction.Types.RunUntil && action.Type != CoreAction.Types.LoadSnapshot && action.Type != CoreAction.Types.SaveSnapshot)
+                if (action != null)
                 {
-                    AddEvent(HistoryEvent.CreateCoreAction(_history.NextEventId(), action), true);
+                    Auditors?.Invoke(action);
 
-                    switch (action.Type)
+                    if (action.Type != CoreAction.Types.RunUntil && action.Type != CoreAction.Types.LoadSnapshot && action.Type != CoreAction.Types.SaveSnapshot)
                     {
-                        case CoreRequest.Types.LoadDisc:
-                            Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded disc" : "Ejected disc";
-                            break;
-                        case CoreRequest.Types.LoadTape:
-                            Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded tape" : "Ejected tape";
-                            break;
-                        case CoreRequest.Types.Reset:
-                            Status = "Reset";
-                            break;
-                    }
-                }
-                else if (action.Type == CoreAction.Types.RunUntil)
-                {
-                    SnapshotInfo snapshot = _snapshots.LastOrDefault();
-                    if (snapshot != null && action.AudioSamples != null)
-                    {
-                        foreach (UInt16 sample in action.AudioSamples)
+                        AddEvent(HistoryEvent.CreateCoreAction(_history.NextEventId(), action), true);
+
+                        switch (action.Type)
                         {
-                            snapshot.AudioBuffer.Write(sample);
+                            case CoreRequest.Types.LoadDisc:
+                                Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded disc" : "Ejected disc";
+                                break;
+                            case CoreRequest.Types.LoadTape:
+                                Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded tape" : "Ejected tape";
+                                break;
+                            case CoreRequest.Types.Reset:
+                                Status = "Reset";
+                                break;
                         }
                     }
-                }
-                else if (action.Type == CoreAction.Types.SaveSnapshot)
-                {
-                    SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId);
-                    _snapshots.Add(newSnapshot);
-                }
-                else if (action.Type == CoreAction.Types.LoadSnapshot)
-                {
-                    Display.CopyFromBufferAsync();
+                    else if (action.Type == CoreAction.Types.RunUntil)
+                    {
+                        SnapshotInfo snapshot = _snapshots.LastOrDefault();
+                        if (snapshot != null && action.AudioSamples != null)
+                        {
+                            foreach (UInt16 sample in action.AudioSamples)
+                            {
+                                snapshot.AudioBuffer.Write(sample);
+                            }
+                        }
+                    }
+                    else if (action.Type == CoreAction.Types.SaveSnapshot)
+                    {
+                        SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId);
+                        _snapshots.Add(newSnapshot);
+                    }
+                    else if (action.Type == CoreAction.Types.LoadSnapshot)
+                    {
+                        Display.CopyFromBufferAsync();
+                    }
                 }
             }
         }
@@ -508,7 +515,7 @@ namespace CPvC
             SetCheckpoint();
 
             Display.GetFromBookmark(bookmarkEvent.Bookmark);
-            SetCore(Machine.GetCore(bookmarkEvent.Bookmark));
+            SetCore(GetCore(bookmarkEvent.Bookmark));
 
             if (bookmarkEvent.Bookmark != null)
             {
@@ -718,18 +725,28 @@ namespace CPvC
         /// </summary>
         /// <param name="bookmark">Bookmark to create the core from. If null, then a new core is created.</param>
         /// <returns>If <c>bookmark</c> is not null, returns a core based on that bookmark. If the HistoryEvent is null, a newly-instantiated core is returned.</returns>
-        static private Core GetCore(Bookmark bookmark)
+        private Core GetCore(Bookmark bookmark)
         {
+            Core core = null;
             if (bookmark != null)
             {
-                Core core = Core.Create(Core.LatestVersion, bookmark.State.GetBytes());
+                core = Core.Create(Core.LatestVersion, bookmark.State.GetBytes());
+                core.IdleRequest = IdleRequest;
 
                 core.AllKeysUp();
 
                 return core;
             }
 
-            return Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            core.IdleRequest = IdleRequest;
+
+            return core;
+        }
+
+        private CoreRequest IdleRequest()
+        {
+            return CoreRequest.RunUntil(Ticks + 1000);
         }
 
         // IMachineFileReader implementation.
@@ -768,9 +785,6 @@ namespace CPvC
             SetCheckpoint();
 
             _previousRunningState = SetRunningState(RunningState.Reverse);
-
-            // Ensure all keys are "up" once we come out of Reverse mode.
-            _core.AllKeysUp();
 
             Status = "Reversing";
         }

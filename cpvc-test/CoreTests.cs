@@ -66,6 +66,7 @@ namespace CPvC.Test
             Mock<BeginVSyncDelegate> mockVSync = new Mock<BeginVSyncDelegate>();
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
+                core.IdleRequest = () => CoreRequest.RunUntil(core.Ticks + 1000);
                 core.BeginVSync += mockVSync.Object;
 
                 // Act - run for at least as long as two VSync's (one VSync would be about 4000000 / 50, or 80000 ticks).
@@ -190,7 +191,6 @@ namespace CPvC.Test
             // Setup
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
-                core.KeepRunning = false;
                 core.Start();
 
                 UnmanagedMemory screen = new UnmanagedMemory(Display.Width * Display.Pitch, 0);
@@ -214,7 +214,6 @@ namespace CPvC.Test
             // Setup
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
-                core.KeepRunning = false;
                 core.Start();
 
                 Mock<PropertyChangedEventHandler> mockPropChanged = new Mock<PropertyChangedEventHandler>();
@@ -352,6 +351,7 @@ namespace CPvC.Test
             // Setup
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
+                core.IdleRequest = () => CoreRequest.RunUntil(core.Ticks + 1000);
                 Mock<PropertyChangedEventHandler> mockPropChanged = new Mock<PropertyChangedEventHandler>();
                 core.PropertyChanged += mockPropChanged.Object;
 
@@ -375,7 +375,6 @@ namespace CPvC.Test
             // Setup
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
-                core.KeepRunning = false;
                 core.Start();
 
                 TestHelpers.ProcessRequest(core, CoreRequest.KeyPress(Keys.A, true));
@@ -394,28 +393,40 @@ namespace CPvC.Test
             }
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public void KeepRunning(bool keepRunning)
+        /// <summary>
+        /// Ensures that a core calls its IdleRequest delegate when the request queue is empty.
+        /// </summary>
+        [Test]
+        public void IdleRequest()
         {
             // Setup
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
-                core.KeepRunning = keepRunning;
+                core.IdleRequest = () => CoreRequest.RunUntil(core.Ticks + 1000);
+                core.Start();
 
                 // Act
-                core.Start();
-                WaitForNextRequestProcessed(core);
+                TestHelpers.WaitForNextRequestProcessed(core);
 
                 // Verify
-                if (keepRunning)
-                {
-                    Assert.AreNotEqual(0, core.Ticks);
-                }
-                else
-                {
-                    Assert.Zero(core.Ticks);
-                }
+                Assert.Greater(core.Ticks, 0);
+            }
+        }
+
+        /// <summary>
+        /// Ensures that a core doesn't process any requests if it has no IdleRequest delegate.
+        /// </summary>
+        [Test]
+        public void NullIdleRequest()
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                core.IdleRequest = null;
+                core.Start();
+
+                // Act and Verify
+                Assert.Throws<TimeoutException>(() => TestHelpers.WaitForNextRequestProcessed(core));
             }
         }
 
@@ -425,6 +436,8 @@ namespace CPvC.Test
             // Setup
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
+                core.IdleRequest = () => CoreRequest.RunUntil(core.Ticks + 1000);
+
                 // Act
                 core.Start();
                 bool overrun = RunUntilAudioOverrun(core, 1000);
@@ -440,6 +453,7 @@ namespace CPvC.Test
             // Setup
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
+                core.IdleRequest = () => CoreRequest.RunUntil(core.Ticks + 1000);
                 core.Start();
                 if (!RunUntilAudioOverrun(core, 1000))
                 {

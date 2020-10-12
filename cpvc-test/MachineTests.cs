@@ -27,6 +27,8 @@ namespace CPvC.Test
             machine.Core.SetUpperROM(0, zeroROM);
             machine.Core.SetUpperROM(7, zeroROM);
 
+            machine.Core.IdleRequest = () => CoreRequest.RunUntil(machine.Core.Ticks + 1000);
+
             return machine;
         }
 
@@ -148,6 +150,7 @@ namespace CPvC.Test
             // Setup
             using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
             {
+                machine.Core.IdleRequest = () => CoreRequest.RunUntil(machine.Core.Ticks + 1000);
                 machine.Auditors += _mockAuditor.Object;
 
                 if (createBookmark)

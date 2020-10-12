@@ -32,7 +32,6 @@ namespace CPvC.Test
             for (int i = 0; i < _mockMachines.Length; i++)
             {
                 Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-                core.KeepRunning = false;
 
                 _cores.Add(core);
 

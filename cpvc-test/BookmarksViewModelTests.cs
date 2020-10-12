@@ -62,6 +62,7 @@ namespace CPvC.Test
         {
             // Setup
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
+            machine.Core.IdleRequest = () => CoreRequest.RunUntil(machine.Core.Ticks + 1000);
             RunForAWhile(machine);
             machine.AddBookmark(true);
             Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
@@ -86,6 +87,7 @@ namespace CPvC.Test
         {
             // Setup
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
+            machine.Core.IdleRequest = () => CoreRequest.RunUntil(machine.Core.Ticks + 1000);
             RunForAWhile(machine);
             machine.AddBookmark(true);
             Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
@@ -114,6 +116,7 @@ namespace CPvC.Test
             Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
 
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
+            machine.Core.IdleRequest = () => CoreRequest.RunUntil(machine.Core.Ticks + 1000);
             RunForAWhile(machine);
             machine.AddBookmark(true);
             HistoryEvent bookmarkEvent = machine.History.CurrentEvent;
@@ -142,6 +145,7 @@ namespace CPvC.Test
         {
             // Setup
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
+            machine.Core.IdleRequest = () => CoreRequest.RunUntil(machine.Core.Ticks + 1000);
             RunForAWhile(machine);
             machine.AddBookmark(true);
             Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
@@ -168,6 +172,7 @@ namespace CPvC.Test
         {
             // Setup
             Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
+            machine.Core.IdleRequest = () => CoreRequest.RunUntil(machine.Core.Ticks + 1000);
             RunForAWhile(machine);
             machine.Key(Keys.A, true);
             RunForAWhile(machine);

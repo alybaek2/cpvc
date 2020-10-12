@@ -36,7 +36,6 @@ namespace CPvC
             Display.GetFromBookmark(null);
 
             Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-            core.KeepRunning = false;
             Core = core;
             core.Auditors += RequestProcessed;
 
