@@ -847,5 +847,23 @@ namespace CPvC.Test
             // Verify
             Assert.AreEqual(runningState, _machine.RunningState);
         }
+
+        /// <summary>
+        /// Ensures that a newly-created machine has an IdleRequest handler. This is checked indirectly by
+        /// running a machine and ensuring the Ticks property increases.
+        /// </summary>
+        [Test]
+        public void NewMachineHasIdleRequestHandler()
+        {
+            // Setup
+            using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
+            {
+                // Act
+                RunForAWhile(machine);
+
+                // Verify
+                Assert.Greater(machine.Ticks, 0);
+            }
+        }
     }
 }

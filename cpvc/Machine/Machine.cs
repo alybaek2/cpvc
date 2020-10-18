@@ -195,7 +195,9 @@ namespace CPvC
                 machine._file = new MachineFile(fileSystem, machine.Filepath);
                 machine.Name = name;
 
-                machine.SetCore(Core.Create(Core.LatestVersion, Core.Type.CPC6128));
+                Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+                core.IdleRequest = machine.IdleRequest;
+                machine.SetCore(core);
 
                 CoreAction action = CoreAction.CoreVersion(machine.Core.Ticks, Core.LatestVersion);
                 machine._history.RootEvent = HistoryEvent.CreateCoreAction(machine._history.NextEventId(), action);
