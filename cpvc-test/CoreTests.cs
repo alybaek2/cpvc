@@ -45,17 +45,15 @@ namespace CPvC.Test
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.Auditors += mockRequestProcessed.Object;
+                core.Start();
 
                 // Act
-                core.KeyPress(Keys.Space, true);
-                core.KeyPress(Keys.Space, true);
-
-                ProcessQueueAndStop(core);
+                ProcessRequest(core, CoreRequest.KeyPress(Keys.Space, true));
+                ProcessRequest(core, CoreRequest.KeyPress(Keys.Space, true));
 
                 // Verify
                 mockRequestProcessed.Verify(x => x(core, KeyRequest(Keys.Space, true), KeyAction(Keys.Space, true)), Times.Once);
                 mockRequestProcessed.Verify(x => x(core, KeyRequest(Keys.Space, true), null), Times.Once);
-                mockRequestProcessed.VerifyNoOtherCalls();
             }
         }
 
@@ -100,16 +98,15 @@ namespace CPvC.Test
                 _mockRequestProcessed.InSequence(sequence).Setup(x => x(core, ResetRequest(), ResetAction())).Verifiable();
 
                 // Act
+                core.Start();
                 core.KeyPress(Keys.Space, true);
                 core.LoadTape(null);
                 core.LoadDisc(0, null);
                 core.Reset();
-
-                ProcessQueueAndStop(core);
+                ProcessRequest(core, CoreRequest.Null());
 
                 // Verify
                 _mockRequestProcessed.Verify();
-                _mockRequestProcessed.VerifyNoOtherCalls();
             }
         }
 
@@ -176,10 +173,12 @@ namespace CPvC.Test
             Mock<BeginVSyncDelegate> mock = new Mock<BeginVSyncDelegate>();
             Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
             core.BeginVSync += mock.Object;
+            core.Start();
 
             // Act
             core.PushRequest(CoreRequest.RunUntil(100000));
-            ProcessQueueAndStop(core);
+
+            ProcessRequest(core, CoreRequest.Null());
 
             // Verify
             mock.Verify(v => v(core), Times.Once);
@@ -273,8 +272,11 @@ namespace CPvC.Test
             // Setup
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
+                core.Start();
+                ProcessRequest(core, CoreRequest.SaveSnapshot(0));
+
                 // Act and Verify
-                Assert.DoesNotThrow(() => core.RunningState = RunningState.Reverse);
+                Assert.DoesNotThrow(() => core.LoadSnapshot(0));
             }
         }
 
@@ -301,8 +303,11 @@ namespace CPvC.Test
                     e.Set();
                 };
 
+                core.Start();
+                ProcessRequest(core, CoreRequest.SaveSnapshot(0));
+
                 // Act
-                core.RunningState = RunningState.Reverse;
+                core.LoadSnapshot(0);
 
                 // Verify
                 e.WaitOne(1000);
@@ -341,7 +346,7 @@ namespace CPvC.Test
                 core.Start();
 
                 // Verify
-                Assert.AreEqual(RunningState.Running, core.RunningState);
+                Assert.DoesNotThrow(() => ProcessRequest(core, CoreRequest.RunUntil(10)));
             }
         }
 

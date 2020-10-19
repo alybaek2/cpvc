@@ -237,6 +237,9 @@ namespace CPvC.Test
             ManualResetEvent e = new ManualResetEvent(false);
             RequestProcessedDelegate processed = (c, r, a) =>
             {
+                // Advance the audio playback so RunUntil requests don't stall.
+                core.AdvancePlayback(100000);
+
                 if (c == core && (request == null || r == request))
                 {
                     e.Set();
@@ -314,29 +317,6 @@ namespace CPvC.Test
         static public string GetTempFilepath(string filename)
         {
             return String.Format("{0}\\{1}", System.IO.Path.GetTempPath(), filename);
-        }
-
-        static public void ProcessQueueAndStop(Core core)
-        {
-            core.Quit();
-            core.Start();
-
-            int timeout = 30000;
-            while (timeout > 0)
-            {
-                if (core.RunningState == RunningState.Paused)
-                {
-                    break;
-                }
-
-                Thread.Sleep(20);
-                timeout -= 20;
-            }
-
-            // This seems to be necessary for some tests to succeed. For example, MainViewModelTests.Reset sometimes
-            // fails without this because resetCalled is set only after it's tested in an assertion. Need to investigate
-            // this more to understand what's going on.
-            Thread.Sleep(500);
         }
 
         static public Machine CreateTestMachine()

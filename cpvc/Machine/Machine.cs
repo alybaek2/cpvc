@@ -779,7 +779,7 @@ namespace CPvC
 
         public void Reverse()
         {
-            if (_core.RunningState == RunningState.Reverse || _snapshots.LastOrDefault() == null)
+            if (_runningState == RunningState.Reverse || _snapshots.LastOrDefault() == null)
             {
                 return;
             }

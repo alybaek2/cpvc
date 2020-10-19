@@ -121,21 +121,21 @@ namespace CPvC.Test
             // Act and Verify
             _machine.Start();
 
-            Assert.AreEqual(RunningState.Running, _machine.Core.RunningState);
+            Assert.AreEqual(RunningState.Running, _machine.RunningState);
 
             using (_machine.AutoPause())
             {
-                Assert.AreEqual(RunningState.Paused, _machine.Core.RunningState);
+                Assert.AreEqual(RunningState.Paused, _machine.RunningState);
 
                 using (_machine.AutoPause())
                 {
-                    Assert.AreEqual(RunningState.Paused, _machine.Core.RunningState);
+                    Assert.AreEqual(RunningState.Paused, _machine.RunningState);
                 }
 
-                Assert.AreEqual(RunningState.Paused, _machine.Core.RunningState);
+                Assert.AreEqual(RunningState.Paused, _machine.RunningState);
             }
 
-            Assert.AreEqual(RunningState.Running, _machine.Core.RunningState);
+            Assert.AreEqual(RunningState.Running, _machine.RunningState);
         }
 
         /// <summary>
@@ -733,7 +733,9 @@ namespace CPvC.Test
             };
 
             _machine.Core.Auditors += auditor;
-            ProcessQueueAndStop(_machine.Core);
+            _machine.Start();
+
+            ProcessRequest(_machine.Core, CoreRequest.Null());
 
             for (byte j = 0; j < 80; j++)
             {

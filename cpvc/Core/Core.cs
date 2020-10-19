@@ -5,13 +5,6 @@ using System.Threading;
 
 namespace CPvC
 {
-    public enum RunningState
-    {
-        Paused,
-        Running,
-        Reverse
-    }
-
     /// <summary>
     /// Delegate for auditing the actions taken by a Core.
     /// </summary>
@@ -117,8 +110,6 @@ namespace CPvC
             // doing this, such as wrapping add and remove for Command.CanExecuteChanged in a lambda that
             // calls the target on its own SynchronizationContext.
             _syncContext = SynchronizationContext.Current;
-
-            RunningState = RunningState.Paused;
         }
 
         static private ICore CreateVersionedCore(int version)
@@ -257,28 +248,6 @@ namespace CPvC
         }
 
         /// <summary>
-        /// Indicates the current running state of the core.
-        /// </summary>
-        public RunningState RunningState
-        {
-            get
-            {
-                return _runningState;
-            }
-
-            set
-            {
-                if (_runningState == value)
-                {
-                    return;
-                }
-
-                _runningState = value;
-                OnPropertyChanged("RunningState");
-            }
-        }
-
-        /// <summary>
         /// Indicates the number of ticks that have elapsed since the core was started. Note that each tick is exactly 0.25 microseconds.
         /// </summary>
         public UInt64 Ticks
@@ -287,7 +256,7 @@ namespace CPvC
             {
                 lock (_lockObject)
                 {
-                    return _coreCLR.Ticks();
+                    return _coreCLR?.Ticks() ?? 0;
                 }
             }
         }
@@ -367,12 +336,12 @@ namespace CPvC
 
         public void Start()
         {
-            SetRunning(RunningState.Running);
+            SetCoreThreadState(true);
         }
 
         public void Stop()
         {
-            SetRunning(RunningState.Paused);
+            SetCoreThreadState(false);
         }
 
         public void SetLowerROM(byte[] lowerROM)
@@ -434,7 +403,6 @@ namespace CPvC
             }
 
             _quitThread = false;
-            RunningState = RunningState.Paused;
         }
 
         /// <summary>
@@ -490,39 +458,25 @@ namespace CPvC
             }
         }
 
-        public void SetRunningState(RunningState runningState)
+        public void SetCoreThreadState(bool running)
         {
-            SetRunning(runningState);
-        }
-
-        private void SetRunning(RunningState runningState)
-        {
-            if (runningState == RunningState)
+            if (running)
             {
-                return;
+                if (_coreThread == null || !_coreThread.IsAlive)
+                {
+                    _coreThread = new Thread(CoreThread);
+                    _coreThread.Start();
+                }
             }
-
-            switch (runningState)
+            else
             {
-                case RunningState.Paused:
-                    if (_coreThread != null && _coreThread.IsAlive)
-                    {
-                        _quitThread = true;
-                        _coreThread.Join();
-                        _coreThread = null;
-                    }
-                    break;
-                case RunningState.Reverse:
-                case RunningState.Running:
-                    if (_coreThread == null || !_coreThread.IsAlive)
-                    {
-                        _coreThread = new Thread(CoreThread);
-                        _coreThread.Start();
-                    }
-                    break;
+                if (_coreThread != null && _coreThread.IsAlive)
+                {
+                    _quitThread = true;
+                    _coreThread.Join();
+                    _coreThread = null;
+                }
             }
-
-            RunningState = runningState;
         }
 
         private bool ProcessNextRequest()
@@ -550,6 +504,9 @@ namespace CPvC
             UInt64 ticks = Ticks;
             switch (request.Type)
             {
+                case CoreRequest.Types.Null:
+                    action = new CoreAction(CoreRequest.Types.Null, ticks);
+                    break;
                 case CoreRequest.Types.KeyPress:
                     lock (_lockObject)
                     {

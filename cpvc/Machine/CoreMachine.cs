@@ -3,6 +3,13 @@ using System.ComponentModel;
 
 namespace CPvC
 {
+    public enum RunningState
+    {
+        Paused,
+        Running,
+        Reverse
+    }
+
     public abstract class CoreMachine
     {
         protected Core _core;
@@ -98,7 +105,14 @@ namespace CPvC
         {
             get
             {
-                return Core?.RunningState ?? RunningState.Paused;
+                if (_autoPauseCount >= 1)
+                {
+                    return RunningState.Paused;
+                }
+                else
+                {
+                    return _runningState;
+                }
             }
         }
 
@@ -191,8 +205,10 @@ namespace CPvC
             }
             else
             {
-                _core.SetRunningState(_runningState);
+                _core.SetCoreThreadState(_runningState != RunningState.Paused);
             }
+
+            OnPropertyChanged("RunningState");
         }
 
         public void Start()
@@ -272,6 +288,8 @@ namespace CPvC
                 RunningState previousRunningState = _runningState;
                 _runningState = runningState;
                 SetCoreRunning();
+
+                OnPropertyChanged("RunningState");
 
                 return previousRunningState;
             }

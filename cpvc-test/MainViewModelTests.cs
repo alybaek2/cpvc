@@ -560,16 +560,15 @@ namespace CPvC.Test
             machine.Open();
             machine.Core.Auditors += auditor;
             viewModel.ActiveMachineViewModel = machineViewModel;
+            machine.Start();
 
             // Act
             machineViewModel.ResetCommand.Execute(null);
             machineViewModel.KeyDownCommand.Execute(Keys.A);
 
-            ProcessQueueAndStop(machine.Core);
+            ProcessRequest(machine.Core, CoreRequest.Null());
 
             // Verify
-            Assert.AreEqual(RunningState.Paused, machine.RunningState);
-
             Assert.True(resetCalled);
             Times expectedResetTimes = Times.Once();
             Times expectedKeyTimes = Times.Once();
