@@ -192,11 +192,6 @@ namespace CPvC
             PushRequest(CoreRequest.Quit());
         }
 
-        public void LoadCoreState(IBlob state)
-        {
-            PushRequest(CoreRequest.LoadCore(state));
-        }
-
         /// <summary>
         /// Asynchronously loads a disc.
         /// </summary>
@@ -254,17 +249,6 @@ namespace CPvC
                 lock (_lockObject)
                 {
                     return _coreCLR?.Ticks() ?? 0;
-                }
-            }
-        }
-
-        public bool RequestQueueEmpty
-        {
-            get
-            {
-                lock (_requests)
-                {
-                    return _requests.Count == 0;
                 }
             }
         }

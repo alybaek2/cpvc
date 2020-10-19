@@ -106,7 +106,7 @@ namespace CPvC
             }
 
             core.PushRequest(CoreRequest.RunUntil(_endTicks));
-            core.PushRequest(CoreRequest.Quit());
+            core.Quit();
 
             Core = core;
             Core.Auditors = RequestProcessed;
