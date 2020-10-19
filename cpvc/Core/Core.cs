@@ -46,8 +46,6 @@ namespace CPvC
         private bool _quitThread;
         private Thread _coreThread;
 
-        private RunningState _runningState;
-
         /// <summary>
         /// Frequency (in samples per second) at which the Core will populate its audio buffers.
         /// </summary>
@@ -73,7 +71,6 @@ namespace CPvC
 
         private AudioBuffer _audioBuffer;
 
-        private const UInt64 _totalSnapshots = 500;
         private SynchronizationContext _syncContext;
 
         public int Version
