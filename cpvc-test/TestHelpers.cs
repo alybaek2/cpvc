@@ -260,6 +260,40 @@ namespace CPvC.Test
             }
         }
 
+        /// <summary>
+        /// Returns once all the requests currently in the core's request queue are processed.
+        /// </summary>
+        /// <param name="core">Core to run.</param>
+        static public void WaitForQueueToProcess(Core core)
+        {
+            // Insert a request that will effectively do nothing and wait for it
+            // to be processed.
+            CoreRequest request = CoreRequest.RunUntil(0);
+            ManualResetEvent e = new ManualResetEvent(false);
+            RequestProcessedDelegate processed = (c, r, a) =>
+            {
+                // Advance the audio playback so RunUntil requests don't stall.
+                core.AdvancePlayback(100000);
+
+                if (c == core && (request == null || r == request))
+                {
+                    e.Set();
+                }
+            };
+
+            core.Auditors += processed;
+            core.PushRequest(request);
+
+            // Wait for at most one second.
+            bool result = e.WaitOne(1000);
+
+            core.Auditors -= processed;
+            if (!result)
+            {
+                throw new TimeoutException("Timeout while waiting for request to process.");
+            }
+        }
+
         static public void ProcessRemoteRequest(RemoteMachine machine, ReceiveCoreActionDelegate receive, CoreAction action)
         {
             ManualResetEvent e = new ManualResetEvent(false);

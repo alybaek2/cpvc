@@ -565,8 +565,7 @@ namespace CPvC.Test
             // Act
             machineViewModel.ResetCommand.Execute(null);
             machineViewModel.KeyDownCommand.Execute(Keys.A);
-
-            ProcessRequest(machine.Core, CoreRequest.Null());
+            WaitForQueueToProcess(machine.Core);
 
             // Verify
             Assert.True(resetCalled);

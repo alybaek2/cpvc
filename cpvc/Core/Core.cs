@@ -485,9 +485,6 @@ namespace CPvC
             UInt64 ticks = Ticks;
             switch (request.Type)
             {
-                case CoreRequest.Types.Null:
-                    action = new CoreAction(CoreRequest.Types.Null, ticks);
-                    break;
                 case CoreRequest.Types.KeyPress:
                     lock (_lockObject)
                     {

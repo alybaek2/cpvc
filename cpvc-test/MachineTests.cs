@@ -735,7 +735,7 @@ namespace CPvC.Test
             _machine.Core.Auditors += auditor;
             _machine.Start();
 
-            ProcessRequest(_machine.Core, CoreRequest.Null());
+            WaitForQueueToProcess(_machine.Core);
 
             for (byte j = 0; j < 80; j++)
             {

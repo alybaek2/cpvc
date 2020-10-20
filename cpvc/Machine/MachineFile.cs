@@ -181,8 +181,6 @@ namespace CPvC
                 case CoreRequest.Types.CoreVersion:
                     WriteVersion(id, ticks, action.Version);
                     break;
-                case CoreRequest.Types.Null:
-                    break;
                 default:
                     throw new Exception(String.Format("Unrecognized core action type {0}.", action.Type));
             }

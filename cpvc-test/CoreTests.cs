@@ -48,8 +48,9 @@ namespace CPvC.Test
                 core.Start();
 
                 // Act
-                ProcessRequest(core, CoreRequest.KeyPress(Keys.Space, true));
-                ProcessRequest(core, CoreRequest.KeyPress(Keys.Space, true));
+                core.KeyPress(Keys.Space, true);
+                core.KeyPress(Keys.Space, true);
+                WaitForQueueToProcess(core);
 
                 // Verify
                 mockRequestProcessed.Verify(x => x(core, KeyRequest(Keys.Space, true), KeyAction(Keys.Space, true)), Times.Once);
@@ -102,8 +103,7 @@ namespace CPvC.Test
                 core.KeyPress(Keys.Space, true);
                 core.LoadTape(null);
                 core.LoadDisc(0, null);
-                core.Reset();
-                ProcessRequest(core, CoreRequest.Null());
+                ProcessRequest(core, CoreRequest.Reset());
 
                 // Verify
                 _mockRequestProcessed.Verify();
@@ -176,9 +176,7 @@ namespace CPvC.Test
             core.Start();
 
             // Act
-            core.PushRequest(CoreRequest.RunUntil(100000));
-
-            ProcessRequest(core, CoreRequest.Null());
+            ProcessRequest(core, CoreRequest.RunUntil(100000));
 
             // Verify
             mock.Verify(v => v(core), Times.Once);

@@ -14,7 +14,6 @@ namespace CPvC
 
         public enum Types
         {
-            Null,
             Reset,
             KeyPress,
             LoadDisc,
@@ -159,11 +158,6 @@ namespace CPvC
         static public CoreRequest Quit()
         {
             return new CoreRequest(Types.Quit);
-        }
-
-        static public CoreRequest Null()
-        {
-            return new CoreRequest(Types.Null);
         }
     }
 }
