@@ -234,30 +234,8 @@ namespace CPvC.Test
         /// <param name="request">Request to be processed.</param>
         static public void ProcessRequest(Core core, CoreRequest request)
         {
-            ManualResetEvent e = new ManualResetEvent(false);
-            RequestProcessedDelegate processed = (c, r, a) =>
-            {
-                // Advance the audio playback so RunUntil requests don't stall.
-                core.AdvancePlayback(100000);
-
-                if (c == core && (request == null || r == request))
-                {
-                    e.Set();
-                }
-            };
-
-            core.Auditors += processed;
-
             core.PushRequest(request);
-
-            bool result = e.WaitOne(1000);
-
-            core.Auditors -= processed;
-
-            if (!result)
-            {
-                throw new TimeoutException("Timeout while waiting for request to process.");
-            }
+            WaitForQueueToProcess(core);
         }
 
         /// <summary>

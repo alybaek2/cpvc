@@ -46,7 +46,6 @@ namespace CPvC.Test
 
                 TestHelpers.ProcessRequest(machine.Core, action);
 
-
                 // Verify
                 Assert.Greater(machine.Ticks, 0);
             }
