@@ -18,6 +18,11 @@ namespace CPvC
         /// </summary>
         public List<UInt16> AudioSamples { get; private set; }
 
+        /// <summary>
+        /// For a create snapshot action, this indicates the id of the parent snapshot.
+        /// </summary>
+        public int CreatedSnapshotId { get; private set; }
+
         public CoreAction(Types type, UInt64 ticks) : base(type)
         {
             Ticks = ticks;
@@ -102,6 +107,37 @@ namespace CPvC
             return action;
         }
 
+        static public CoreAction CreateSnapshot(UInt64 ticks, int parentSnapshotId, int id)
+        {
+            CoreAction action = new CoreAction(Types.CreateSnapshot, ticks)
+            {
+                SnapshotId = parentSnapshotId,
+                CreatedSnapshotId = id
+            };
+
+            return action;
+        }
+
+        static public CoreAction DeleteSnapshot(UInt64 ticks, int id)
+        {
+            CoreAction action = new CoreAction(Types.DeleteSnapshot, ticks)
+            {
+                SnapshotId = id
+            };
+
+            return action;
+        }
+
+        static public CoreAction RevertToSnapshot(UInt64 ticks, int id)
+        {
+            CoreAction action = new CoreAction(Types.RevertToSnapshot, ticks)
+            {
+                SnapshotId = id
+            };
+
+            return action;
+        }
+
         static public CoreAction CoreVersion(UInt64 ticks, int version)
         {
             CoreAction action = new CoreAction(Types.CoreVersion, ticks)
@@ -141,6 +177,8 @@ namespace CPvC
                     return CoreAction.LoadCore(Ticks, CoreState);
                 case Types.SaveSnapshot:
                     return CoreAction.SaveSnapshot(Ticks, SnapshotId);
+                case Types.CreateSnapshot:
+                    return CoreAction.CreateSnapshot(Ticks, SnapshotId, CreatedSnapshotId);
                 case Types.LoadSnapshot:
                     return CoreAction.LoadSnapshot(Ticks, SnapshotId);
                 default:

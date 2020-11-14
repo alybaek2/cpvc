@@ -15,6 +15,9 @@ namespace CPvC
         public const byte _coreActionCoreVersion = 7;
         public const byte _coreActionSaveSnapshot = 8;
         public const byte _coreActionLoadSnapshot = 9;
+        public const byte _coreActionCreateSnapshot = 10;
+        public const byte _coreActionDeleteSnapshot = 11;
+        public const byte _coreActionRevertToSnapshot = 12;
 
         static public void SelectMachineToBytes(MemoryByteStream stream, string machineName)
         {
@@ -89,6 +92,18 @@ namespace CPvC
                     stream.Write(_coreActionSaveSnapshot);
                     stream.Write(request.SnapshotId);
                     break;
+                case CoreRequest.Types.CreateSnapshot:
+                    stream.Write(_coreActionCreateSnapshot);
+                    stream.Write(request.SnapshotId);
+                    break;
+                case CoreRequest.Types.DeleteSnapshot:
+                    stream.Write(_coreActionDeleteSnapshot);
+                    stream.Write(request.SnapshotId);
+                    break;
+                case CoreRequest.Types.RevertToSnapshot:
+                    stream.Write(_coreActionRevertToSnapshot);
+                    stream.Write(request.SnapshotId);
+                    break;
                 case CoreRequest.Types.LoadSnapshot:
                     stream.Write(_coreActionLoadSnapshot);
                     stream.Write(request.SnapshotId);
@@ -140,6 +155,22 @@ namespace CPvC
                     break;
                 case CoreRequest.Types.SaveSnapshot:
                     stream.Write(_coreActionSaveSnapshot);
+                    stream.Write(action.Ticks);
+                    stream.Write(action.SnapshotId);
+                    break;
+                case CoreRequest.Types.CreateSnapshot:
+                    stream.Write(_coreActionCreateSnapshot);
+                    stream.Write(action.Ticks);
+                    stream.Write(action.CreatedSnapshotId);
+                    stream.Write(action.SnapshotId);
+                    break;
+                case CoreRequest.Types.DeleteSnapshot:
+                    stream.Write(_coreActionDeleteSnapshot);
+                    stream.Write(action.Ticks);
+                    stream.Write(action.SnapshotId);
+                    break;
+                case CoreRequest.Types.RevertToSnapshot:
+                    stream.Write(_coreActionRevertToSnapshot);
                     stream.Write(action.Ticks);
                     stream.Write(action.SnapshotId);
                     break;
@@ -215,6 +246,14 @@ namespace CPvC
 
                         return CoreAction.SaveSnapshot(ticks, snapshotId);
                     }
+                case _coreActionCreateSnapshot:
+                    {
+                        UInt64 ticks = stream.ReadUInt64();
+                        Int32 createdSnapshotId = stream.ReadInt32();
+                        Int32 parentSnapshotId = stream.ReadInt32();
+
+                        return CoreAction.CreateSnapshot(ticks, parentSnapshotId, createdSnapshotId);
+                    }
                 case _coreActionLoadSnapshot:
                     {
                         UInt64 ticks = stream.ReadUInt64();
@@ -279,6 +318,12 @@ namespace CPvC
                         Int32 snapshotId = stream.ReadInt32();
 
                         return CoreRequest.SaveSnapshot(snapshotId);
+                    }
+                case _coreActionCreateSnapshot:
+                    {
+                        Int32 parentSnapshotId = stream.ReadInt32();
+
+                        return CoreRequest.CreateSnapshot(parentSnapshotId);
                     }
                 case _coreActionLoadSnapshot:
                     {

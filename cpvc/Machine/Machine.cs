@@ -47,6 +47,8 @@ namespace CPvC
 
         private const int _snapshotLimit = 500;
         private List<SnapshotInfo> _snapshots;
+        private int _lastTakenSnapshotId = -1;
+        private List<SnapshotInfo> _newSnapshots;
 
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
@@ -60,6 +62,7 @@ namespace CPvC
             _fileSystem = fileSystem;
 
             _snapshots = new List<SnapshotInfo>();
+            _newSnapshots = new List<SnapshotInfo>();
 
             _history = new MachineHistory();
         }
@@ -284,25 +287,26 @@ namespace CPvC
             int totalSamplesWritten = 0;
             int currentSamplesRequested = samplesRequested;
 
-            SnapshotInfo currentSnapshot = _snapshots.LastOrDefault();
+            SnapshotInfo currentSnapshot = _newSnapshots.LastOrDefault();
             while (totalSamplesWritten < samplesRequested && currentSnapshot != null)
             {
                 int samplesWritten = currentSnapshot.AudioBuffer.Render16BitStereo(Volume, buffer, offset, currentSamplesRequested, true);
                 if (samplesWritten == 0)
                 {
-                    _core.PushRequest(CoreRequest.LoadSnapshot(currentSnapshot.Id));
+                    _core.PushRequest(CoreRequest.RevertToSnapshot(currentSnapshot.Id));
 
                     // Ensure all keys are "up" once we come out of Reverse mode.
                     _core.AllKeysUp();
 
-                    if (_snapshots.Count <= 1)
+                    if (_newSnapshots.Count <= 1)
                     {
                         // We've reached the last snapshot.
                         break;
                     }
 
-                    _snapshots.RemoveAt(_snapshots.Count - 1);
-                    currentSnapshot = _snapshots.LastOrDefault();
+                    _core.PushRequest(CoreRequest.DeleteSnapshot(currentSnapshot.Id));
+                    _newSnapshots.RemoveAt(_newSnapshots.Count - 1);
+                    currentSnapshot = _newSnapshots.LastOrDefault();
                 }
 
                 totalSamplesWritten += samplesWritten;
@@ -315,35 +319,7 @@ namespace CPvC
 
         private void TakeSnapshot()
         {
-            SnapshotInfo oldestSnapshot = _snapshots.FirstOrDefault();
-
-            int newSnapshotId = 0;
-            if (_snapshots.Count >= _snapshotLimit)
-            {
-                _snapshots.RemoveAt(0);
-                newSnapshotId = oldestSnapshot.Id;
-            }
-            else
-            {
-                IEnumerable<int> snapshotIds = _snapshots.Select(s => s.Id);
-                newSnapshotId = -1;
-                for (int i = 0; i < _snapshotLimit; i++)
-                {
-                    if (!snapshotIds.Contains(i))
-                    {
-                        newSnapshotId = i;
-                        break;
-                    }
-                }
-
-                if (newSnapshotId == -1)
-                {
-                    // This should never happen!
-                    throw new Exception("Unable to find a free snapshot id");
-                }
-            }
-
-            _core.PushRequest(CoreRequest.SaveSnapshot(newSnapshotId));
+            _core.PushRequest(CoreRequest.CreateSnapshot(_lastTakenSnapshotId));
         }
 
         /// <summary>
@@ -360,7 +336,12 @@ namespace CPvC
                 {
                     Auditors?.Invoke(action);
 
-                    if (action.Type != CoreAction.Types.RunUntil && action.Type != CoreAction.Types.LoadSnapshot && action.Type != CoreAction.Types.SaveSnapshot)
+                    if (action.Type != CoreAction.Types.RunUntil &&
+                        action.Type != CoreAction.Types.LoadSnapshot &&
+                        action.Type != CoreAction.Types.SaveSnapshot &&
+                        action.Type != CoreAction.Types.CreateSnapshot &&
+                        action.Type != CoreAction.Types.DeleteSnapshot &&
+                        action.Type != CoreAction.Types.RevertToSnapshot)
                     {
                         AddEvent(HistoryEvent.CreateCoreAction(_history.NextEventId(), action), true);
 
@@ -387,6 +368,15 @@ namespace CPvC
                                 snapshot.AudioBuffer.Write(sample);
                             }
                         }
+
+                        SnapshotInfo newSnapshot = _newSnapshots.LastOrDefault();
+                        if (newSnapshot != null && action.AudioSamples != null)
+                        {
+                            foreach (UInt16 sample in action.AudioSamples)
+                            {
+                                newSnapshot.AudioBuffer.Write(sample);
+                            }
+                        }
                     }
                     else if (action.Type == CoreAction.Types.SaveSnapshot)
                     {
@@ -396,6 +386,23 @@ namespace CPvC
                     else if (action.Type == CoreAction.Types.LoadSnapshot)
                     {
                         Display.CopyFromBufferAsync();
+                    }
+                    else if (action.Type == CoreAction.Types.RevertToSnapshot)
+                    {
+                        Display.CopyFromBufferAsync();
+                    }
+                    else if (action.Type == CoreAction.Types.CreateSnapshot)
+                    {
+                        _lastTakenSnapshotId = action.CreatedSnapshotId;
+                        SnapshotInfo newSnapshot = new SnapshotInfo(action.CreatedSnapshotId);
+                        _newSnapshots.Add(newSnapshot);
+
+                        if (_newSnapshots.Count > 500)
+                        {
+                            SnapshotInfo snapshot = _newSnapshots[0];
+                            _newSnapshots.RemoveAt(0);
+                            _core.PushRequest(CoreRequest.DeleteSnapshot(snapshot.Id));
+                        }
                     }
                 }
             }
@@ -779,7 +786,7 @@ namespace CPvC
 
         public void Reverse()
         {
-            if (_runningState == RunningState.Reverse || _snapshots.LastOrDefault() == null)
+            if (_runningState == RunningState.Reverse || _newSnapshots.LastOrDefault() == null)
             {
                 return;
             }

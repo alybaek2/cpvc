@@ -553,6 +553,27 @@ namespace CPvC
                     }
 
                     break;
+                case CoreRequest.Types.CreateSnapshot:
+                    lock (_lockObject)
+                    {
+                        action = CreateSnapshot(request.SnapshotId);
+                    }
+
+                    break;
+                case CoreRequest.Types.DeleteSnapshot:
+                    lock (_lockObject)
+                    {
+                        action = DeleteSnapshot(request.SnapshotId);
+                    }
+
+                    break;
+                case CoreRequest.Types.RevertToSnapshot:
+                    lock (_lockObject)
+                    {
+                        action = RevertToSnapshot(request.SnapshotId);
+                    }
+
+                    break;
                 case CoreRequest.Types.LoadSnapshot:
                     lock (_lockObject)
                     {
@@ -583,6 +604,34 @@ namespace CPvC
             _coreCLR.SaveSnapshot(snapshotId);
 
             return CoreAction.SaveSnapshot(Ticks, snapshotId);
+        }
+
+        private CoreAction CreateSnapshot(int parentId)
+        {
+            int id = _coreCLR.CreateSnapshot(parentId);
+
+            return CoreAction.CreateSnapshot(Ticks, parentId, id);
+        }
+
+        private CoreAction DeleteSnapshot(int id)
+        {
+            _coreCLR.DeleteSnapshot(id);
+
+            return CoreAction.DeleteSnapshot(Ticks, id);
+        }
+
+        private CoreAction RevertToSnapshot(int id)
+        {
+            bool result = _coreCLR.RevertToSnapshot(id);
+            if (!result)
+            {
+                return null;
+            }
+
+            _lastTicksNotified = 0;
+            OnPropertyChanged("Ticks");
+
+            return CoreAction.RevertToSnapshot(Ticks, id);
         }
 
         public CoreAction LoadSnapshot(int snapshotId)

@@ -20,5 +20,8 @@ namespace CPvC
         void LoadState(byte[] state);
         bool LoadSnapshot(int id);
         void SaveSnapshot(int id);
+        int CreateSnapshot(int parentId);
+        void DeleteSnapshot(int id);
+        bool RevertToSnapshot(int id);
     }
 }
