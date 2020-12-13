@@ -58,14 +58,14 @@ namespace CPvC.Test
             using (RemoteMachine machine = new RemoteMachine(_mockRemote.Object))
             {
                 TestHelpers.ProcessRemoteRequest(machine, _receiveCoreAction, CoreAction.RunUntil(0, 100000, null));
-                TestHelpers.ProcessRemoteRequest(machine, _receiveCoreAction, CoreAction.SaveSnapshot(0, 1));
+                TestHelpers.ProcessRemoteRequest(machine, _receiveCoreAction, CoreAction.CreateSnapshot(0, 0));
                 UInt64 saveSnapshotTicks = machine.Ticks;
 
                 TestHelpers.ProcessRemoteRequest(machine, _receiveCoreAction, CoreAction.RunUntil(0, 200000, null));
                 UInt64 preLoadSnapshotTicks = machine.Ticks;
 
                 // Act
-                TestHelpers.ProcessRemoteRequest(machine, _receiveCoreAction, CoreAction.LoadSnapshot(0, 1));
+                TestHelpers.ProcessRemoteRequest(machine, _receiveCoreAction, CoreAction.RevertToSnapshot(0, 0));
                 UInt64 loadSnapshotTicks = machine.Ticks;
 
                 // Verify

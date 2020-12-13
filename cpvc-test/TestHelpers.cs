@@ -404,8 +404,9 @@ namespace CPvC.Test
                     return true;
                 case CoreRequest.Types.RunUntil:
                     return request1.StopTicks == request2.StopTicks;
-                case CoreRequest.Types.SaveSnapshot:
-                case CoreRequest.Types.LoadSnapshot:
+                case CoreRequest.Types.CreateSnapshot:
+                case CoreRequest.Types.RevertToSnapshot:
+                case CoreRequest.Types.DeleteSnapshot:
                     return request1.SnapshotId == request2.SnapshotId;
             }
 

@@ -21,7 +21,7 @@ namespace CPvC
         /// <summary>
         /// For a create snapshot action, this indicates the id of the parent snapshot.
         /// </summary>
-        public int CreatedSnapshotId { get; private set; }
+        //public int CreatedSnapshotId { get; private set; }
 
         public CoreAction(Types type, UInt64 ticks) : base(type)
         {
@@ -87,32 +87,11 @@ namespace CPvC
             return action;
         }
 
-        static public CoreAction LoadSnapshot(UInt64 ticks, int id)
-        {
-            CoreAction action = new CoreAction(Types.LoadSnapshot, ticks)
-            {
-                SnapshotId = id
-            };
-
-            return action;
-        }
-
-        static public CoreAction SaveSnapshot(UInt64 ticks, int id)
-        {
-            CoreAction action = new CoreAction(Types.SaveSnapshot, ticks)
-            {
-                SnapshotId = id
-            };
-
-            return action;
-        }
-
-        static public CoreAction CreateSnapshot(UInt64 ticks, int parentSnapshotId, int id)
+        static public CoreAction CreateSnapshot(UInt64 ticks, int id)
         {
             CoreAction action = new CoreAction(Types.CreateSnapshot, ticks)
             {
-                SnapshotId = parentSnapshotId,
-                CreatedSnapshotId = id
+                SnapshotId = id
             };
 
             return action;
@@ -175,12 +154,10 @@ namespace CPvC
                     }
                 case Types.LoadCore:
                     return CoreAction.LoadCore(Ticks, CoreState);
-                case Types.SaveSnapshot:
-                    return CoreAction.SaveSnapshot(Ticks, SnapshotId);
                 case Types.CreateSnapshot:
-                    return CoreAction.CreateSnapshot(Ticks, SnapshotId, CreatedSnapshotId);
-                case Types.LoadSnapshot:
-                    return CoreAction.LoadSnapshot(Ticks, SnapshotId);
+                    return CoreAction.CreateSnapshot(Ticks, SnapshotId);
+                case Types.RevertToSnapshot:
+                    return CoreAction.RevertToSnapshot(Ticks, SnapshotId);
                 default:
                     return null;
             }

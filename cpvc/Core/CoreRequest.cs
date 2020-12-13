@@ -21,8 +21,6 @@ namespace CPvC
             CoreVersion,
             RunUntil,
             LoadCore,
-            SaveSnapshot,
-            LoadSnapshot,
             CreateSnapshot,
             DeleteSnapshot,
             RevertToSnapshot,
@@ -138,16 +136,6 @@ namespace CPvC
             return request;
         }
 
-        static public CoreRequest SaveSnapshot(Int32 snapshotId)
-        {
-            CoreRequest request = new CoreRequest(Types.SaveSnapshot)
-            {
-                SnapshotId = snapshotId
-            };
-
-            return request;
-        }
-
         static public CoreRequest CreateSnapshot(Int32 parentSnapshotId)
         {
             CoreRequest request = new CoreRequest(Types.CreateSnapshot)
@@ -171,16 +159,6 @@ namespace CPvC
         static public CoreRequest DeleteSnapshot(Int32 snapshotId)
         {
             CoreRequest request = new CoreRequest(Types.DeleteSnapshot)
-            {
-                SnapshotId = snapshotId
-            };
-
-            return request;
-        }
-
-        static public CoreRequest LoadSnapshot(Int32 snapshotId)
-        {
-            CoreRequest request = new CoreRequest(Types.LoadSnapshot)
             {
                 SnapshotId = snapshotId
             };

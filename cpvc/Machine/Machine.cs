@@ -337,8 +337,6 @@ namespace CPvC
                     Auditors?.Invoke(action);
 
                     if (action.Type != CoreAction.Types.RunUntil &&
-                        action.Type != CoreAction.Types.LoadSnapshot &&
-                        action.Type != CoreAction.Types.SaveSnapshot &&
                         action.Type != CoreAction.Types.CreateSnapshot &&
                         action.Type != CoreAction.Types.DeleteSnapshot &&
                         action.Type != CoreAction.Types.RevertToSnapshot)
@@ -378,23 +376,14 @@ namespace CPvC
                             }
                         }
                     }
-                    else if (action.Type == CoreAction.Types.SaveSnapshot)
-                    {
-                        SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId);
-                        _snapshots.Add(newSnapshot);
-                    }
-                    else if (action.Type == CoreAction.Types.LoadSnapshot)
-                    {
-                        Display.CopyFromBufferAsync();
-                    }
                     else if (action.Type == CoreAction.Types.RevertToSnapshot)
                     {
                         Display.CopyFromBufferAsync();
                     }
                     else if (action.Type == CoreAction.Types.CreateSnapshot)
                     {
-                        _lastTakenSnapshotId = action.CreatedSnapshotId;
-                        SnapshotInfo newSnapshot = new SnapshotInfo(action.CreatedSnapshotId);
+                        _lastTakenSnapshotId = action.SnapshotId;
+                        SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId);
                         _newSnapshots.Add(newSnapshot);
 
                         if (_newSnapshots.Count > 500)

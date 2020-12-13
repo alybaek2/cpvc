@@ -546,17 +546,10 @@ namespace CPvC
 
                     action = CoreAction.LoadCore(ticks, request.CoreState);
                     break;
-                case CoreRequest.Types.SaveSnapshot:
-                    lock (_lockObject)
-                    {
-                        action = SaveSnapshot(request.SnapshotId);
-                    }
-
-                    break;
                 case CoreRequest.Types.CreateSnapshot:
                     lock (_lockObject)
                     {
-                        action = CreateSnapshot(request.SnapshotId);
+                        action = CreateSnapshot();
                     }
 
                     break;
@@ -571,13 +564,6 @@ namespace CPvC
                     lock (_lockObject)
                     {
                         action = RevertToSnapshot(request.SnapshotId);
-                    }
-
-                    break;
-                case CoreRequest.Types.LoadSnapshot:
-                    lock (_lockObject)
-                    {
-                        action = LoadSnapshot(request.SnapshotId);
                     }
 
                     break;
@@ -599,18 +585,11 @@ namespace CPvC
             return false;
         }
 
-        private CoreAction SaveSnapshot(int snapshotId)
+        private CoreAction CreateSnapshot()
         {
-            _coreCLR.SaveSnapshot(snapshotId);
+            int id = _coreCLR.CreateSnapshot();
 
-            return CoreAction.SaveSnapshot(Ticks, snapshotId);
-        }
-
-        private CoreAction CreateSnapshot(int parentId)
-        {
-            int id = _coreCLR.CreateSnapshot(parentId);
-
-            return CoreAction.CreateSnapshot(Ticks, parentId, id);
+            return CoreAction.CreateSnapshot(Ticks, id);
         }
 
         private CoreAction DeleteSnapshot(int id)
@@ -632,19 +611,6 @@ namespace CPvC
             OnPropertyChanged("Ticks");
 
             return CoreAction.RevertToSnapshot(Ticks, id);
-        }
-
-        public CoreAction LoadSnapshot(int snapshotId)
-        {
-            if (_coreCLR.LoadSnapshot(snapshotId))
-            {
-                _lastTicksNotified = 0;
-                OnPropertyChanged("Ticks");
-
-                return CoreAction.LoadSnapshot(Ticks, snapshotId);
-            }
-
-            return null;
         }
 
         private CoreAction RunForAWhile(UInt64 stopTicks)

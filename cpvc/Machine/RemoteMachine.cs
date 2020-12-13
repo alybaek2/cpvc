@@ -114,7 +114,7 @@ namespace CPvC
         {
             if (core == _core && action != null)
             {
-                if (action.Type == CoreAction.Types.LoadSnapshot)
+                if (action.Type == CoreAction.Types.RevertToSnapshot)
                 {
                     // Ensure to update the display.
                     Display.CopyFromBufferAsync();
