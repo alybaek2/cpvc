@@ -386,7 +386,7 @@ namespace CPvC
                         SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId);
                         _newSnapshots.Add(newSnapshot);
 
-                        if (_newSnapshots.Count > 500)
+                        if (_newSnapshots.Count > _snapshotLimit)
                         {
                             SnapshotInfo snapshot = _newSnapshots[0];
                             _newSnapshots.RemoveAt(0);
