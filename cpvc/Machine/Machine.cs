@@ -46,9 +46,8 @@ namespace CPvC
         private MachineHistory _history;
 
         private const int _snapshotLimit = 500;
-        private List<SnapshotInfo> _snapshots;
         private int _lastTakenSnapshotId = -1;
-        private List<SnapshotInfo> _newSnapshots;
+        private List<SnapshotInfo> _snapshots;
 
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
@@ -62,7 +61,6 @@ namespace CPvC
             _fileSystem = fileSystem;
 
             _snapshots = new List<SnapshotInfo>();
-            _newSnapshots = new List<SnapshotInfo>();
 
             _history = new MachineHistory();
         }
@@ -287,7 +285,7 @@ namespace CPvC
             int totalSamplesWritten = 0;
             int currentSamplesRequested = samplesRequested;
 
-            SnapshotInfo currentSnapshot = _newSnapshots.LastOrDefault();
+            SnapshotInfo currentSnapshot = _snapshots.LastOrDefault();
             while (totalSamplesWritten < samplesRequested && currentSnapshot != null)
             {
                 int samplesWritten = currentSnapshot.AudioBuffer.Render16BitStereo(Volume, buffer, offset, currentSamplesRequested, true);
@@ -298,15 +296,15 @@ namespace CPvC
                     // Ensure all keys are "up" once we come out of Reverse mode.
                     _core.AllKeysUp();
 
-                    if (_newSnapshots.Count <= 1)
+                    if (_snapshots.Count <= 1)
                     {
                         // We've reached the last snapshot.
                         break;
                     }
 
                     _core.PushRequest(CoreRequest.DeleteSnapshot(currentSnapshot.Id));
-                    _newSnapshots.RemoveAt(_newSnapshots.Count - 1);
-                    currentSnapshot = _newSnapshots.LastOrDefault();
+                    _snapshots.RemoveAt(_snapshots.Count - 1);
+                    currentSnapshot = _snapshots.LastOrDefault();
                 }
 
                 totalSamplesWritten += samplesWritten;
@@ -358,16 +356,7 @@ namespace CPvC
                     }
                     else if (action.Type == CoreAction.Types.RunUntil)
                     {
-                        SnapshotInfo snapshot = _snapshots.LastOrDefault();
-                        if (snapshot != null && action.AudioSamples != null)
-                        {
-                            foreach (UInt16 sample in action.AudioSamples)
-                            {
-                                snapshot.AudioBuffer.Write(sample);
-                            }
-                        }
-
-                        SnapshotInfo newSnapshot = _newSnapshots.LastOrDefault();
+                        SnapshotInfo newSnapshot = _snapshots.LastOrDefault();
                         if (newSnapshot != null && action.AudioSamples != null)
                         {
                             foreach (UInt16 sample in action.AudioSamples)
@@ -384,12 +373,12 @@ namespace CPvC
                     {
                         _lastTakenSnapshotId = action.SnapshotId;
                         SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId);
-                        _newSnapshots.Add(newSnapshot);
+                        _snapshots.Add(newSnapshot);
 
-                        if (_newSnapshots.Count > _snapshotLimit)
+                        if (_snapshots.Count > _snapshotLimit)
                         {
-                            SnapshotInfo snapshot = _newSnapshots[0];
-                            _newSnapshots.RemoveAt(0);
+                            SnapshotInfo snapshot = _snapshots[0];
+                            _snapshots.RemoveAt(0);
                             _core.PushRequest(CoreRequest.DeleteSnapshot(snapshot.Id));
                         }
                     }
@@ -775,7 +764,7 @@ namespace CPvC
 
         public void Reverse()
         {
-            if (_runningState == RunningState.Reverse || _newSnapshots.LastOrDefault() == null)
+            if (_runningState == RunningState.Reverse || _snapshots.LastOrDefault() == null)
             {
                 return;
             }
