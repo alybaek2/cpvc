@@ -54,6 +54,8 @@ namespace CPvC
                 return false;
             }
 
+            bool overrunBefore = Overrun();
+
             if (back)
             {
                 _writePosition--;
@@ -65,7 +67,7 @@ namespace CPvC
                 _readPosition++;
             }
 
-            if (!Overrun())
+            if (overrunBefore && !Overrun())
             {
                 _underrunEvent.Set();
             }

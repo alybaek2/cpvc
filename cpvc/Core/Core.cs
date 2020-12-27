@@ -42,6 +42,7 @@ namespace CPvC
         private int _version;
         private readonly List<CoreRequest> _requests;
         private object _lockObject;
+        private int _nextSnapshotId;
 
         private bool _quitThread;
         private Thread _coreThread;
@@ -91,6 +92,7 @@ namespace CPvC
             _quitThread = false;
             _coreThread = null;
 
+            _nextSnapshotId = 0;
             BeginVSync = null;
 
             SetScreen(IntPtr.Zero);
@@ -587,9 +589,11 @@ namespace CPvC
 
         private CoreAction CreateSnapshot()
         {
-            int id = _coreCLR.CreateSnapshot();
+            bool success = _coreCLR.CreateSnapshot(_nextSnapshotId);
+            CoreAction coreAction = CoreAction.CreateSnapshot(Ticks, _nextSnapshotId);
+            _nextSnapshotId++;
 
-            return CoreAction.CreateSnapshot(Ticks, id);
+            return coreAction;
         }
 
         private CoreAction DeleteSnapshot(int id)
