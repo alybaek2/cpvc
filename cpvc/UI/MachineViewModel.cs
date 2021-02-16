@@ -35,6 +35,7 @@ namespace CPvC
         private Command _reverseStartCommand;
         private Command _reverseStopCommand;
         private ICommand _removeCommand;
+        private Command _toggleSnapshotCommand;
 
         public MachineViewModel(MainViewModel mainViewModel, ICoreMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, SelectItemDelegate selectItem)
         {
@@ -196,6 +197,11 @@ namespace CPvC
                 p => (machine as IReversibleMachine)?.ReverseStop(),
                 p => (machine as IReversibleMachine) != null
             );
+
+            _toggleSnapshotCommand = new Command(
+                p => (machine as IReversibleMachine)?.ToggleReversibilityEnabled(),
+                p => (machine as IReversibleMachine) != null
+            );
         }
 
         public ICoreMachine Machine { get; }
@@ -329,6 +335,11 @@ namespace CPvC
         public ICommand ReverseStopCommand
         {
             get { return _reverseStopCommand; }
+        }
+
+        public ICommand ToggleReversibility
+        {
+            get { return _toggleSnapshotCommand; }
         }
 
         private void MachinePropChanged(object sender, PropertyChangedEventArgs args)

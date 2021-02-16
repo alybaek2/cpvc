@@ -45,9 +45,25 @@ namespace CPvC
         private MachineFile _file;
         private MachineHistory _history;
 
-        private const int _snapshotLimit = 500;
+        private int _snapshotLimit = 500;
         private int _lastTakenSnapshotId = -1;
         private List<SnapshotInfo> _snapshots;
+
+        public int SnapshotLimit
+        {
+            get
+            {
+                return _snapshotLimit;
+            }
+
+            set
+            {
+                _snapshotLimit = value;
+
+                OnPropertyChanged("SnapshotLimit");
+            }
+        }
+
 
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
@@ -375,7 +391,7 @@ namespace CPvC
                         SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId);
                         _snapshots.Add(newSnapshot);
 
-                        if (_snapshots.Count > _snapshotLimit)
+                        while (_snapshots.Count > _snapshotLimit)
                         {
                             SnapshotInfo snapshot = _snapshots[0];
                             _snapshots.RemoveAt(0);
@@ -781,6 +797,18 @@ namespace CPvC
             SetCheckpoint();
 
             SetRunningState(_previousRunningState);
+        }
+
+        public void ToggleReversibilityEnabled()
+        {
+            if (SnapshotLimit == 0)
+            {
+                SnapshotLimit = 500;
+            }
+            else
+            {
+                SnapshotLimit = 0;
+            }
         }
     }
 }

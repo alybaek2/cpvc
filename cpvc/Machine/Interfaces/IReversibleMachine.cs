@@ -4,5 +4,7 @@
     {
         void Reverse();
         void ReverseStop();
+
+        void ToggleReversibilityEnabled();
     }
 }
