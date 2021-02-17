@@ -64,7 +64,6 @@ namespace CPvC
             }
         }
 
-
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
             _name = name;
@@ -94,7 +93,7 @@ namespace CPvC
             public SnapshotInfo(int id)
             {
                 Id = id;
-                AudioBuffer = new AudioBuffer();
+                AudioBuffer = new AudioBuffer(48000 / 50);
             }
 
             public int Id { get; }
@@ -375,10 +374,7 @@ namespace CPvC
                         SnapshotInfo newSnapshot = _snapshots.LastOrDefault();
                         if (newSnapshot != null && action.AudioSamples != null)
                         {
-                            foreach (UInt16 sample in action.AudioSamples)
-                            {
-                                newSnapshot.AudioBuffer.Write(sample);
-                            }
+                            newSnapshot.AudioBuffer.Write(action.AudioSamples);
                         }
                     }
                     else if (action.Type == CoreAction.Types.RevertToSnapshot)

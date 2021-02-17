@@ -3,14 +3,14 @@ using System;
 
 namespace CPvC.Test
 {
-    public class AudioBufferTests
+    public class CircularAudioBufferTests
     {
-        private AudioBuffer _audioBuffer;
+        private CircularAudioBuffer _audioBuffer;
 
         [SetUp]
         public void Setup()
         {
-            _audioBuffer = new AudioBuffer();
+            _audioBuffer = new CircularAudioBuffer();
         }
 
         // Using the following values for testing:
