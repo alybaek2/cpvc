@@ -57,7 +57,11 @@ namespace CPvC
 
                 if (value != null)
                 {
-                    value.SetScreen(Display.Buffer);
+                    value.SetScreen();
+                    if (Display != null)
+                    {
+                        Display.Core = value;
+                    }
 
                     if (_core != null)
                     {
@@ -167,7 +171,7 @@ namespace CPvC
         /// <param name="core">Core whose VSync signal went from low to high.</param>
         protected virtual void BeginVSync(Core core)
         {
-            Display.CopyFromBufferAsync();
+            Display.CopyScreenAsync();
         }
 
         public virtual int ReadAudio(byte[] buffer, int offset, int samplesRequested)

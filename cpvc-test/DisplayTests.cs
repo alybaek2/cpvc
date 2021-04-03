@@ -6,28 +6,6 @@ namespace CPvC.Test
 {
     public class DisplayTests
     {
-        [Test]
-        public void CopyFromNullBuffer()
-        {
-            // Setup
-            Display display = new Display();
-            display.Dispose();
-
-            // Act and Verify
-            Assert.DoesNotThrow(() => display.CopyFromBuffer());
-        }
-
-        [Test]
-        public void DisposeTwice()
-        {
-            // Setup
-            Display display = new Display();
-            display.Dispose();
-
-            // Act and Verify
-            Assert.DoesNotThrow(() => display.Dispose());
-        }
-
         /// <summary>
         /// Tests that the display doesn't throw an exception when there are no PropertyChanged
         /// handlers registered and a property is changed.

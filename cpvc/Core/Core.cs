@@ -95,7 +95,7 @@ namespace CPvC
             _nextSnapshotId = 0;
             BeginVSync = null;
 
-            SetScreen(IntPtr.Zero);
+            SetScreen();
 
             _audioSamplingFrequency = 48000;
             EnableTurbo(false);
@@ -223,21 +223,21 @@ namespace CPvC
         }
 
         /// <summary>
-        /// Sets a Pointer to a block of unmanaged memory to be used by the core for video rendering.
+        /// Sets width, height, and pitch of the screen.
         /// </summary>
-        public void SetScreen(IntPtr screenBuffer)
+        public void SetScreen()
         {
             lock (_lockObject)
             {
-                _coreCLR.SetScreen(screenBuffer, Display.Pitch, Display.Height, Display.Width);
+                _coreCLR.SetScreen(Display.Pitch, Display.Height, Display.Width);
             }
         }
 
-        public IntPtr GetScreen()
+        public void CopyScreen(IntPtr screenBuffer, UInt64 size)
         {
             lock (_lockObject)
             {
-                return _coreCLR.GetScreen();
+                _coreCLR?.CopyScreen(screenBuffer, size);
             }
         }
 
@@ -532,12 +532,8 @@ namespace CPvC
                         ICore newCore = Core.CreateVersionedCore(request.Version);
                         newCore.LoadState(state);
 
-                        IntPtr pScr = _coreCLR.GetScreen();
-
                         _coreCLR.Dispose();
                         _coreCLR = newCore;
-
-                        SetScreen(pScr);
                     }
                     break;
                 case CoreRequest.Types.LoadCore:

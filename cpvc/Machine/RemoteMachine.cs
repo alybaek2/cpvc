@@ -73,9 +73,6 @@ namespace CPvC
         public void Dispose()
         {
             Close();
-
-            Display?.Dispose();
-            Display = null;
         }
 
         public bool CanClose()
@@ -117,7 +114,7 @@ namespace CPvC
                 if (action.Type == CoreAction.Types.RevertToSnapshot)
                 {
                     // Ensure to update the display.
-                    Display.CopyFromBufferAsync();
+                    Display.CopyScreenAsync();
                 }
             }
         }

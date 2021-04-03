@@ -83,9 +83,6 @@ namespace CPvC
         public void Dispose()
         {
             Close();
-
-            Display?.Dispose();
-            Display = null;
         }
 
         private class SnapshotInfo
@@ -379,7 +376,7 @@ namespace CPvC
                     }
                     else if (action.Type == CoreAction.Types.RevertToSnapshot)
                     {
-                        Display.CopyFromBufferAsync();
+                        Display.CopyScreenAsync();
                     }
                     else if (action.Type == CoreAction.Types.CreateSnapshot)
                     {

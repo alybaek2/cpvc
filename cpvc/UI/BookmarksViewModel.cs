@@ -11,7 +11,7 @@ namespace CPvC.UI
     /// <summary>
     /// View model for the Bookmarks window.
     /// </summary>
-    public class BookmarksViewModel : INotifyPropertyChanged, IDisposable
+    public class BookmarksViewModel : INotifyPropertyChanged
     {
         public delegate void ItemSelectedDelegate();
 
@@ -81,17 +81,6 @@ namespace CPvC.UI
 
             // The initial selected item is set to the current event.
             SelectedItem = Items.FirstOrDefault(i => i.HistoryEvent == _machine.History.CurrentEvent);
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            _display?.Dispose();
-            _display = null;
         }
 
         /// <summary>

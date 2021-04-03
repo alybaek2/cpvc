@@ -6,7 +6,7 @@ namespace CPvC.UI.Forms
     /// <summary>
     /// Interaction logic for BookmarkSelectWindow.xaml
     /// </summary>
-    public sealed partial class BookmarkSelectWindow : Window, IDisposable
+    public sealed partial class BookmarkSelectWindow : Window
     {
         private readonly Machine _machine;
         private BookmarksViewModel _viewModel;
@@ -38,12 +38,6 @@ namespace CPvC.UI.Forms
             Owner = owner;
 
             DataContext = _viewModel;
-        }
-
-        public void Dispose()
-        {
-            _viewModel?.Dispose();
-            _viewModel = null;
         }
 
         public void ItemSelected()
