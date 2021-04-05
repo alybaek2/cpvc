@@ -139,9 +139,13 @@ namespace CPvC
             }
         }
 
+        /// <summary>
+        /// Enables or disables turbo mode.
+        /// </summary>
+        /// <param name="enabled">Indicates whether turbo mode is to be enabled.</param>
         public void EnableTurbo(bool enabled)
         {
-            _core.EnableTurbo(enabled);
+            Core.AudioBuffer.Step = (byte) (enabled ? 10 : 1);
 
             Status = enabled ? "Turbo enabled" : "Turbo disabled";
         }
@@ -183,6 +187,10 @@ namespace CPvC
                 {
                     return 0;
                 }
+
+                // We need to make sure that our overrun threshold is enough so that we can fully satisfy at
+                // least the next callback from NAudio. Without this, CPvC playback can become "stuttery."
+                _core.AudioBuffer.OverrunThreshold = samplesRequested * 2;
 
                 return _core.AudioBuffer.Render16BitStereo(Volume, buffer, offset, samplesRequested, false);
             }

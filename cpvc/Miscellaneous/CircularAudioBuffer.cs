@@ -8,7 +8,10 @@ namespace CPvC
         private UInt16[] _buffer;
         private int _writePosition;
         private int _readPosition;
-        private AutoResetEvent _underrunEvent;
+        private ManualResetEvent _underrunEvent;
+
+        public int OverrunThreshold { get; set; }
+        public byte Step { get; set; }
 
         public CircularAudioBuffer()
         {
@@ -16,17 +19,19 @@ namespace CPvC
 
             _writePosition = 0;
             _readPosition = 0;
-            _underrunEvent = new AutoResetEvent(true);
+            _underrunEvent = new ManualResetEvent(true);
+            OverrunThreshold = 2000;
+            Step = 1;
         }
 
         protected override bool ReadFront(out UInt16 sample)
         {
-            return Read(out sample, false);
+            return Read(false, out sample);
         }
 
         protected override bool ReadBack(out UInt16 sample)
         {
-            return Read(out sample, true);
+            return Read(true, out sample);
         }
 
         public void Advance(int samples)
@@ -39,30 +44,33 @@ namespace CPvC
             {
                 _readPosition += samples;
             }
+
+            if (!Overrun())
+            {
+                _underrunEvent.Set();
+            }
         }
 
-        private bool Read(out UInt16 sample, bool back)
+        private bool Read(bool back, out UInt16 sample)
         {
-            if (_writePosition <= _readPosition)
+            if ((_writePosition - _readPosition) < Step)
             {
                 sample = 0;
                 return false;
             }
 
-            bool overrunBefore = Overrun();
-
             if (back)
             {
-                _writePosition--;
+                _writePosition -= Step;
                 sample = _buffer[_writePosition % _buffer.Length];
             }
             else
             {
                 sample = _buffer[_readPosition % _buffer.Length];
-                _readPosition++;
+                _readPosition += Step;
             }
 
-            if (overrunBefore && !Overrun())
+            if (!Overrun())
             {
                 _underrunEvent.Set();
             }
@@ -89,7 +97,7 @@ namespace CPvC
 
         public bool Overrun()
         {
-            return (_writePosition - _readPosition) > 2000;
+            return (_writePosition - _readPosition) > (OverrunThreshold * Step);
         }
     }
 }

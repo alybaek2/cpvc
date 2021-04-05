@@ -16,9 +16,10 @@ namespace CPvC
         /// <summary>
         /// Converts three-channel CPC audio samples to 16-bit signed stereo samples.
         /// </summary>
+        /// <param name="volume">Volume at which audio should be rendered. 0 is muted, 255 is </param>
         /// <param name="buffer">Buffer to write audio samples to.</param>
         /// <param name="offset">Offset to begin writing at.</param>
-        /// <param name="samplesRequested">The maximum number of sameples to write.</param>
+        /// <param name="samplesRequested">The maximum number of samples to write.</param>
         /// <param name="samples">The buffer containing the CPC audio samples.</param>
         /// <param name="reverse">Indicates if the CPC audio samples should be read in reverse.</param>
         /// <returns>The number of samples written to <c>buffer</c>.</returns>

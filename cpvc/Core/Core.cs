@@ -47,14 +47,6 @@ namespace CPvC
         private bool _quitThread;
         private Thread _coreThread;
 
-        /// <summary>
-        /// Frequency (in samples per second) at which the Core will populate its audio buffers.
-        /// </summary>
-        /// <remarks>
-        /// Note that this rate divided by the rate audio samples are read gives the speed at which the CPvC instance will run.
-        /// </remarks>
-        private UInt32 _audioSamplingFrequency;
-
         public RequestProcessedDelegate Auditors { get; set; }
         public BeginVSyncDelegate BeginVSync { get; set; }
         public IdleRequestDelegate IdleRequest { get; set; }
@@ -96,9 +88,6 @@ namespace CPvC
             BeginVSync = null;
 
             SetScreen();
-
-            _audioSamplingFrequency = 48000;
-            EnableTurbo(false);
 
             _audioReady = new AutoResetEvent(true);
             _requestQueueNonEmpty = new AutoResetEvent(false);
@@ -381,26 +370,11 @@ namespace CPvC
             {
                 if (ProcessNextRequest())
                 {
-                    _quitThread = true;
+                    break;
                 }
             }
 
             _quitThread = false;
-        }
-
-        /// <summary>
-        /// Enables or disables turbo mode.
-        /// </summary>
-        /// <param name="enabled">Indicates whether turbo mode is to be enabled.</param>
-        public void EnableTurbo(bool enabled)
-        {
-            // For now, hard-code turbo mode to 10 times normal speed.
-            UInt32 frequency = enabled ? (_audioSamplingFrequency / 10) : _audioSamplingFrequency;
-
-            lock (_lockObject)
-            {
-                _coreCLR.AudioSampleFrequency(frequency);
-            }
         }
 
         public void PushRequest(CoreRequest request)
@@ -479,7 +453,7 @@ namespace CPvC
 
                 if (request == null)
                 {
-                    _requestQueueNonEmpty.WaitOne(10);
+                    _requestQueueNonEmpty.WaitOne(20);
                     return false;
                 }
             }
@@ -617,13 +591,10 @@ namespace CPvC
         {
             UInt64 ticks = Ticks;
 
-            // Check for audio overrun.
-            if (_audioBuffer.Overrun())
+            // Only proceed on an audio buffer underrun.
+            if (!_audioBuffer.WaitForUnderrun(20))
             {
-                if (!_audioBuffer.WaitForUnderrun(10))
-                {
-                    return null;
-                }
+                return null;
             }
 
             List<UInt16> audioSamples = new List<UInt16>();

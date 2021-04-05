@@ -20,17 +20,17 @@ namespace CPvC
 
         protected override bool ReadFront(out UInt16 sample)
         {
-            return Read(out sample, false);
+            return Read(false, out sample);
         }
 
         protected override bool ReadBack(out UInt16 sample)
         {
-            return Read(out sample, true);
+            return Read(true, out sample);
         }
 
-        private bool Read(out UInt16 sample, bool back)
+        private bool Read(bool back, out UInt16 sample)
         {
-            if (_writePosition <= _readPosition)
+            if ((_writePosition - _readPosition) < 1)
             {
                 sample = 0;
                 return false;
@@ -56,6 +56,5 @@ namespace CPvC
 
             _writePosition += samples.Count();
         }
-
     }
 }
