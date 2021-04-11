@@ -90,7 +90,7 @@ namespace CPvC
             public SnapshotInfo(int id)
             {
                 Id = id;
-                AudioBuffer = new AudioBuffer(48000 / 50);
+                AudioBuffer = new AudioBuffer(-1);
             }
 
             public int Id { get; }

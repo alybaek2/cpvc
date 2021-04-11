@@ -51,7 +51,7 @@ namespace CPvC
         public BeginVSyncDelegate BeginVSync { get; set; }
         public IdleRequestDelegate IdleRequest { get; set; }
 
-        public CircularAudioBuffer AudioBuffer
+        public AudioBuffer AudioBuffer
         {
             get
             {
@@ -62,7 +62,7 @@ namespace CPvC
         private AutoResetEvent _audioReady;
         private AutoResetEvent _requestQueueNonEmpty;
 
-        private CircularAudioBuffer _audioBuffer;
+        private AudioBuffer _audioBuffer;
 
         private SynchronizationContext _syncContext;
 
@@ -92,7 +92,7 @@ namespace CPvC
             _audioReady = new AutoResetEvent(true);
             _requestQueueNonEmpty = new AutoResetEvent(false);
 
-            _audioBuffer = new CircularAudioBuffer();
+            _audioBuffer = new AudioBuffer(48000);
 
             // Ensure any OnPropChanged calls are executed on the main thread. There may be a better way of
             // doing this, such as wrapping add and remove for Command.CanExecuteChanged in a lambda that
