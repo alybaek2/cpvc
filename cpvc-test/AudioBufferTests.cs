@@ -102,8 +102,8 @@ namespace CPvC.Test
         /// <param name="samples"></param>
         /// <param name="expectedOverrun"></param>
         [TestCase(0, false)]
-        [TestCase(2000, false)]
-        [TestCase(2001, true)]
+        [TestCase(1999, false)]
+        [TestCase(2000, true)]
         public void Overrun(int samples, bool expectedOverrun)
         {
             // Setup
@@ -113,19 +113,19 @@ namespace CPvC.Test
             }
 
             // Verify
-            Assert.AreEqual(expectedOverrun, _audioBuffer.Overrun());
             Assert.AreEqual(!expectedOverrun, _audioBuffer.WaitForUnderrun(0));
         }
 
         /// <summary>
         /// Test to ensure that Overrun is set to false after being true.
         /// </summary>
-        [TestCase(0, false)]
-        [TestCase(2001, false)]
-        [TestCase(2002, true)]
-        public void OverrunAfterRender(int samples, bool expectedOverrun)
+        [TestCase(0, true)]
+        [TestCase(2, true)]
+        [TestCase(3, false)]
+        public void UnderrunAfterRender(int samples, bool expectedUnderrun)
         {
             // Setup
+            _audioBuffer.OverrunThreshold = 2;
             for (int i = 0; i < samples; i++)
             {
                 _audioBuffer.Write(0);
@@ -136,31 +136,27 @@ namespace CPvC.Test
             _audioBuffer.Render16BitStereo(255, buffer, 0, 1, false);
 
             // Verify
-            Assert.AreEqual(expectedOverrun, _audioBuffer.Overrun());
-            Assert.AreEqual(!expectedOverrun, _audioBuffer.WaitForUnderrun(0));
+            Assert.AreEqual(expectedUnderrun, _audioBuffer.WaitForUnderrun(0));
         }
 
-        [TestCase(0, 2, false)]
-        [TestCase(1, 1, false)]
-        [TestCase(2, 0, false)]
-        [TestCase(3, 0, false)]
-        [TestCase(0, 2, true)]
-        [TestCase(1, 1, true)]
-        [TestCase(2, 0, true)]
-        [TestCase(3, 0, true)]
-        public void Advance(int advanceSamples, int expectedSamplesWritten, bool reverse)
+        [TestCase(5, 2, 3, false)]
+        [TestCase(5, 2, 4, true)]
+        public void Advance(int samples, int overrunThreshold, int advanceSamples, bool expectedUnderrun)
         {
             // Setup
-            _audioBuffer.Write(1);
-            _audioBuffer.Write(2);
+            _audioBuffer.OverrunThreshold = overrunThreshold;
+            _audioBuffer.ReadSpeed = 1;
+
+            for (int i = 0; i < samples; i++)
+            {
+                _audioBuffer.Write(1);
+            }
 
             // Act
             _audioBuffer.Advance(advanceSamples);
 
             // Verify
-            byte[] buffer = new byte[8];
-            int samplesWritten = _audioBuffer.Render16BitStereo(255, buffer, 0, 2, reverse);
-            Assert.AreEqual(expectedSamplesWritten, samplesWritten);
+            Assert.AreEqual(expectedUnderrun, _audioBuffer.WaitForUnderrun(0));
         }
     }
 }

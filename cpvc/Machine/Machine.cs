@@ -60,7 +60,7 @@ namespace CPvC
             {
                 _snapshotLimit = value;
 
-                OnPropertyChanged("SnapshotLimit");
+                OnPropertyChanged();
             }
         }
 
@@ -439,7 +439,7 @@ namespace CPvC
                 _name = value;
                 _file.WriteName(_name);
 
-                OnPropertyChanged("Name");
+                OnPropertyChanged();
             }
         }
 

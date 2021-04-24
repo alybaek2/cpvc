@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace CPvC.Test
 {
@@ -26,7 +27,7 @@ namespace CPvC.Test
                 set
                 {
                     _flag = value;
-                    OnPropertyChanged("Flag");
+                    OnPropertyChanged();
                 }
             }
 
@@ -40,13 +41,13 @@ namespace CPvC.Test
                 set
                 {
                     _child = value;
-                    OnPropertyChanged("Child");
+                    OnPropertyChanged();
                 }
             }
 
             public event PropertyChangedEventHandler PropertyChanged;
 
-            protected void OnPropertyChanged(string name)
+            protected void OnPropertyChanged([CallerMemberName] string name = null)
             {
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
             }

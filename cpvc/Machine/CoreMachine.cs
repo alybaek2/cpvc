@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace CPvC
 {
@@ -135,7 +136,7 @@ namespace CPvC
                 }
 
                 _volume = value;
-                OnPropertyChanged("Volume");
+                OnPropertyChanged();
             }
         }
 
@@ -145,7 +146,7 @@ namespace CPvC
         /// <param name="enabled">Indicates whether turbo mode is to be enabled.</param>
         public void EnableTurbo(bool enabled)
         {
-            Core.AudioBuffer.Step = (byte) (enabled ? 10 : 1);
+            Core.AudioBuffer.ReadSpeed = (byte) (enabled ? 10 : 1);
 
             Status = enabled ? "Turbo enabled" : "Turbo disabled";
         }
@@ -160,7 +161,7 @@ namespace CPvC
             set
             {
                 _status = value;
-                OnPropertyChanged("Status");
+                OnPropertyChanged();
             }
         }
 
@@ -312,7 +313,7 @@ namespace CPvC
             OnPropertyChanged(e.PropertyName);
         }
 
-        protected void OnPropertyChanged(string name)
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }

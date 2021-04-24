@@ -26,7 +26,7 @@ namespace CPvC
             {
                 _name = value;
 
-                OnPropertyChanged("Name");
+                OnPropertyChanged();
             }
         }
 

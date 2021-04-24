@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
@@ -146,7 +147,7 @@ namespace CPvC
 
                 _bitmap = value;
 
-                OnPropertyChanged("Bitmap");
+                OnPropertyChanged();
             }
         }
 
@@ -219,7 +220,7 @@ namespace CPvC
             }
         }
 
-        private void OnPropertyChanged(string name)
+        private void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }

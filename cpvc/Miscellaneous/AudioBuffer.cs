@@ -21,7 +21,7 @@ namespace CPvC
         private int _maxSize;
 
         public int OverrunThreshold { get; set; }
-        public byte Step { get; set; }
+        public byte ReadSpeed { get; set; }
 
         public AudioBuffer(int maxSize)
         {
@@ -35,7 +35,7 @@ namespace CPvC
             _maxSize = maxSize;
 
             OverrunThreshold = 2000;
-            Step = 1;
+            ReadSpeed = 1;
         }
 
         /// <summary>
@@ -61,12 +61,7 @@ namespace CPvC
 
             while (samplesWritten < samplesRequested && (offset + 3) < bufferSize)
             {
-                UInt16 sample = 0;
-                if (!reverse && !ReadFront(out sample))
-                {
-                    break;
-                }
-                else if (reverse && !ReadBack(out sample))
+                if (!Read(reverse, out UInt16 sample))
                 {
                     break;
                 }
@@ -96,26 +91,15 @@ namespace CPvC
             return samplesWritten;
         }
 
-        protected bool ReadFront(out UInt16 sample)
-        {
-            return Read(false, out sample);
-        }
-
-        protected bool ReadBack(out UInt16 sample)
-        {
-            return Read(true, out sample);
-        }
-
         public void Advance(int samples)
         {
-            if ((_readPosition + samples) > _writePosition)
+            int maxSamples = _writePosition - _readPosition;
+            if (samples > maxSamples)
             {
-                _readPosition = _writePosition;
+                samples = maxSamples;
             }
-            else
-            {
-                _readPosition += samples;
-            }
+
+            _readPosition += samples;
 
             if (!Overrun())
             {
@@ -137,7 +121,7 @@ namespace CPvC
 
         private bool Read(bool back, out UInt16 sample)
         {
-            if ((_writePosition - _readPosition) < 1)
+            if ((_writePosition - _readPosition) < ReadSpeed)
             {
                 sample = 0;
                 return false;
@@ -145,13 +129,13 @@ namespace CPvC
 
             if (back)
             {
-                _writePosition--;
+                _writePosition -= ReadSpeed;
                 sample = _buffer[BufferPos(_writePosition)];
             }
             else
             {
                 sample = _buffer[BufferPos(_readPosition)];
-                _readPosition++;
+                _readPosition += ReadSpeed;
             }
 
             if (!Overrun())
@@ -162,9 +146,9 @@ namespace CPvC
             return true;
         }
 
-        public bool Overrun()
+        private bool Overrun()
         {
-            return (_writePosition - _readPosition) > (OverrunThreshold * Step);
+            return (_writePosition - _readPosition) >= (OverrunThreshold * ReadSpeed);
         }
 
         public bool WaitForUnderrun(int timeout)
@@ -177,14 +161,13 @@ namespace CPvC
             if ((_maxSize == -1) || (_writePosition < _maxSize))
             {
                 _buffer.Add(sample);
-                _writePosition++;
             }
             else
             {
                 _buffer[BufferPos(_writePosition)] = sample;
-
-                _writePosition++;
             }
+
+            _writePosition++;
 
             if (Overrun())
             {
