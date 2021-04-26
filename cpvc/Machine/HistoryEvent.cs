@@ -114,12 +114,25 @@ namespace CPvC
         /// <returns></returns>
         public UInt64 GetMaxDescendentTicks()
         {
-            if (Children.Count == 0)
+            List<HistoryEvent> events = new List<HistoryEvent>();
+            events.Add(this);
+
+            int i = 0;
+            while (i < events.Count)
             {
-                return Ticks;
+                HistoryEvent e = events[0];
+                if (e.Children.Count == 0)
+                {
+                    i++;
+                }
+                else
+                {
+                    events.AddRange(e.Children);
+                    events.RemoveAt(0);
+                }
             }
 
-            return Children.Select(x => x.GetMaxDescendentTicks()).Max();
+            return events.Select(x => x.Ticks).Max();
         }
 
         public HistoryEvent CloneWithoutChildren()

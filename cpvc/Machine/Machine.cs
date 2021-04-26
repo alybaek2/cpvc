@@ -297,31 +297,34 @@ namespace CPvC
             int totalSamplesWritten = 0;
             int currentSamplesRequested = samplesRequested;
 
-            SnapshotInfo currentSnapshot = _snapshots.LastOrDefault();
-            while (totalSamplesWritten < samplesRequested && currentSnapshot != null)
+            lock (_snapshots)
             {
-                int samplesWritten = currentSnapshot.AudioBuffer.Render16BitStereo(Volume, buffer, offset, currentSamplesRequested, true);
-                if (samplesWritten == 0)
+                SnapshotInfo currentSnapshot = _snapshots.LastOrDefault();
+                while (totalSamplesWritten < samplesRequested && currentSnapshot != null)
                 {
-                    _core.PushRequest(CoreRequest.RevertToSnapshot(currentSnapshot.Id));
-
-                    // Ensure all keys are "up" once we come out of Reverse mode.
-                    _core.AllKeysUp();
-
-                    if (_snapshots.Count <= 1)
+                    int samplesWritten = currentSnapshot.AudioBuffer.Render16BitStereo(Volume, buffer, offset, currentSamplesRequested, true);
+                    if (samplesWritten == 0)
                     {
-                        // We've reached the last snapshot.
-                        break;
+                        _core.PushRequest(CoreRequest.RevertToSnapshot(currentSnapshot.Id));
+
+                        // Ensure all keys are "up" once we come out of Reverse mode.
+                        _core.AllKeysUp();
+
+                        if (_snapshots.Count <= 1)
+                        {
+                            // We've reached the last snapshot.
+                            break;
+                        }
+
+                        _core.PushRequest(CoreRequest.DeleteSnapshot(currentSnapshot.Id));
+                        _snapshots.RemoveAt(_snapshots.Count - 1);
+                        currentSnapshot = _snapshots.LastOrDefault();
                     }
 
-                    _core.PushRequest(CoreRequest.DeleteSnapshot(currentSnapshot.Id));
-                    _snapshots.RemoveAt(_snapshots.Count - 1);
-                    currentSnapshot = _snapshots.LastOrDefault();
+                    totalSamplesWritten += samplesWritten;
+                    currentSamplesRequested -= samplesWritten;
+                    offset += 4 * samplesWritten;
                 }
-
-                totalSamplesWritten += samplesWritten;
-                currentSamplesRequested -= samplesWritten;
-                offset += 4 * samplesWritten;
             }
 
             return totalSamplesWritten;
@@ -368,10 +371,13 @@ namespace CPvC
                     }
                     else if (action.Type == CoreAction.Types.RunUntil)
                     {
-                        SnapshotInfo newSnapshot = _snapshots.LastOrDefault();
-                        if (newSnapshot != null && action.AudioSamples != null)
+                        lock (_snapshots)
                         {
-                            newSnapshot.AudioBuffer.Write(action.AudioSamples);
+                            SnapshotInfo newSnapshot = _snapshots.LastOrDefault();
+                            if (newSnapshot != null && action.AudioSamples != null)
+                            {
+                                newSnapshot.AudioBuffer.Write(action.AudioSamples);
+                            }
                         }
                     }
                     else if (action.Type == CoreAction.Types.RevertToSnapshot)
@@ -380,15 +386,18 @@ namespace CPvC
                     }
                     else if (action.Type == CoreAction.Types.CreateSnapshot)
                     {
-                        _lastTakenSnapshotId = action.SnapshotId;
-                        SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId);
-                        _snapshots.Add(newSnapshot);
-
-                        while (_snapshots.Count > _snapshotLimit)
+                        lock (_snapshots)
                         {
-                            SnapshotInfo snapshot = _snapshots[0];
-                            _snapshots.RemoveAt(0);
-                            _core.PushRequest(CoreRequest.DeleteSnapshot(snapshot.Id));
+                            _lastTakenSnapshotId = action.SnapshotId;
+                            SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId);
+                            _snapshots.Add(newSnapshot);
+
+                            while (_snapshots.Count > _snapshotLimit)
+                            {
+                                SnapshotInfo snapshot = _snapshots[0];
+                                _snapshots.RemoveAt(0);
+                                _core.PushRequest(CoreRequest.DeleteSnapshot(snapshot.Id));
+                            }
                         }
                     }
                 }
@@ -703,7 +712,9 @@ namespace CPvC
                 }
 
                 // Don't write out non-root checkpoint nodes which have only one child and no bookmark.
-                if (currentEvent == _history.RootEvent || currentEvent.Children.Count != 1 || currentEvent.Type != HistoryEvent.Types.Checkpoint || currentEvent.Bookmark != null)
+                bool isRedundantChild = (currentEvent.Children.Count == 0 && currentEvent.Type == HistoryEvent.Types.Checkpoint && currentEvent.Bookmark == null && currentEvent.Parent != null && currentEvent.Parent.Ticks == currentEvent.Ticks);
+                if (!isRedundantChild &&
+                    (currentEvent == _history.RootEvent || currentEvent.Children.Count != 1 || currentEvent.Type != HistoryEvent.Types.Checkpoint || currentEvent.Bookmark != null))
                 {
                     file.WriteHistoryEvent(currentEvent);
                 }
@@ -742,6 +753,11 @@ namespace CPvC
 
         private CoreRequest IdleRequest()
         {
+            if (_runningState == RunningState.Reverse)
+            {
+                return null;
+            }
+
             return CoreRequest.RunUntil(Ticks + 1000);
         }
 
@@ -773,9 +789,12 @@ namespace CPvC
 
         public void Reverse()
         {
-            if (_runningState == RunningState.Reverse || _snapshots.LastOrDefault() == null)
+            lock (_snapshots)
             {
-                return;
+                if (_runningState == RunningState.Reverse || _snapshots.LastOrDefault() == null)
+                {
+                    return;
+                }
             }
 
             SetCheckpoint();
