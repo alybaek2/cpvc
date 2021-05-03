@@ -40,7 +40,7 @@ namespace CPvC
 
         private ICore _coreCLR;
         private int _version;
-        private readonly List<CoreRequest> _requests;
+        private readonly Queue<CoreRequest> _requests;
         private object _lockObject;
         private int _nextSnapshotId;
 
@@ -78,7 +78,7 @@ namespace CPvC
         {
             _version = version;
             _coreCLR = CreateVersionedCore(version);
-            _requests = new List<CoreRequest>();
+            _requests = new Queue<CoreRequest>();
             _lockObject = new object();
 
             _quitThread = false;
@@ -381,7 +381,7 @@ namespace CPvC
         {
             lock (_requests)
             {
-                _requests.Add(request);
+                _requests.Enqueue(request);
                 _requestQueueNonEmpty.Set();
             }
         }
@@ -392,7 +392,7 @@ namespace CPvC
             {
                 if (_requests.Count > 0)
                 {
-                    return _requests[0];
+                    return _requests.Peek();
                 }
 
                 return null;
@@ -405,7 +405,7 @@ namespace CPvC
             {
                 if (_requests.Count > 0)
                 {
-                    _requests.RemoveAt(0);
+                    _requests.Dequeue(); // RemoveAt(0);
 
                     if (_requests.Count > 0)
                     {

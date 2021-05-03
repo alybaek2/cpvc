@@ -306,16 +306,6 @@ namespace CPvC
                     if (samplesWritten == 0)
                     {
                         _core.PushRequest(CoreRequest.RevertToSnapshot(currentSnapshot.Id));
-
-                        // Ensure all keys are "up" once we come out of Reverse mode.
-                        _core.AllKeysUp();
-
-                        if (_snapshots.Count <= 1)
-                        {
-                            // We've reached the last snapshot.
-                            break;
-                        }
-
                         _core.PushRequest(CoreRequest.DeleteSnapshot(currentSnapshot.Id));
                         _snapshots.RemoveAt(_snapshots.Count - 1);
                         currentSnapshot = _snapshots.LastOrDefault();
@@ -808,7 +798,12 @@ namespace CPvC
         {
             SetCheckpoint();
 
-            SetRunningState(_previousRunningState);
+            lock (_runningStateLock)
+            {
+                SetRunningState(_previousRunningState);
+
+                _core.AllKeysUp();
+            }
         }
 
         public void ToggleReversibilityEnabled()
