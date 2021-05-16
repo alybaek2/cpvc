@@ -322,7 +322,10 @@ namespace CPvC
 
         private void TakeSnapshot()
         {
-            _core.PushRequest(CoreRequest.CreateSnapshot(_lastTakenSnapshotId));
+            if (SnapshotLimit > 0)
+            {
+                _core.PushRequest(CoreRequest.CreateSnapshot(_lastTakenSnapshotId));
+            }
         }
 
         /// <summary>
