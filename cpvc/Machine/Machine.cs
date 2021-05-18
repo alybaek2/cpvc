@@ -746,11 +746,6 @@ namespace CPvC
 
         private CoreRequest IdleRequest()
         {
-            if (_runningState == RunningState.Reverse)
-            {
-                return null;
-            }
-
             return CoreRequest.RunUntil(Ticks + 1000);
         }
 
@@ -792,7 +787,11 @@ namespace CPvC
 
             SetCheckpoint();
 
-            _previousRunningState = SetRunningState(RunningState.Reverse);
+            lock (_runningStateLock)
+            {
+                _previousRunningState = SetRunningState(RunningState.Reverse);
+                Core.IdleRequest = null;
+            }
 
             Status = "Reversing";
         }
@@ -804,6 +803,14 @@ namespace CPvC
             lock (_runningStateLock)
             {
                 SetRunningState(_previousRunningState);
+                if (_previousRunningState != RunningState.Reverse)
+                {
+                    Core.IdleRequest = IdleRequest;
+                }
+                else
+                {
+                    Core.IdleRequest = null;
+                }
 
                 _core.AllKeysUp();
             }
