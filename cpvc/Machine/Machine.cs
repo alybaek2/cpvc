@@ -746,7 +746,7 @@ namespace CPvC
 
         private CoreRequest IdleRequest()
         {
-            return CoreRequest.RunUntil(Ticks + 1000);
+            return (RunningState == RunningState.Running) ? CoreRequest.RunUntil(Ticks + 1000) : null;
         }
 
         // IMachineFileReader implementation.
@@ -790,7 +790,6 @@ namespace CPvC
             lock (_runningStateLock)
             {
                 _previousRunningState = SetRunningState(RunningState.Reverse);
-                Core.IdleRequest = null;
             }
 
             Status = "Reversing";
@@ -803,14 +802,6 @@ namespace CPvC
             lock (_runningStateLock)
             {
                 SetRunningState(_previousRunningState);
-                if (_previousRunningState != RunningState.Reverse)
-                {
-                    Core.IdleRequest = IdleRequest;
-                }
-                else
-                {
-                    Core.IdleRequest = null;
-                }
 
                 _core.AllKeysUp();
             }
