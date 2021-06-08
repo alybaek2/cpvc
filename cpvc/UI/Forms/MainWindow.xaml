@@ -130,6 +130,19 @@
                 <Separator/>
                 <MenuItem Header="Rename machine..." Command="{Binding ActiveMachineViewModel.RenameCommand}"/>
                 <MenuItem Header="Compact machine file" Command="{Binding ActiveMachineViewModel.CompactCommand}"/>
+                <Separator/>
+                <MenuItem Header="Reversible" Command="{Binding ActiveMachineViewModel.ToggleReversibility}" IsCheckable="True">
+                    <MenuItem.Style>
+                        <Style TargetType="MenuItem">
+                            <Setter Property="IsChecked" Value="True"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Machine.SnapshotLimit}" Value="0">
+                                    <Setter Property="IsChecked" Value="False"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </MenuItem.Style>
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="Remote">
                 <MenuItem Header="Start Server" Command="{Binding StartServerCommand}"/>

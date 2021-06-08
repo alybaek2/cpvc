@@ -45,8 +45,24 @@ namespace CPvC
         private MachineFile _file;
         private MachineHistory _history;
 
-        private const int _snapshotLimit = 500;
+        private int _snapshotLimit = 500;
+        private int _lastTakenSnapshotId = -1;
         private List<SnapshotInfo> _snapshots;
+
+        public int SnapshotLimit
+        {
+            get
+            {
+                return _snapshotLimit;
+            }
+
+            set
+            {
+                _snapshotLimit = value;
+
+                OnPropertyChanged();
+            }
+        }
 
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
@@ -67,9 +83,6 @@ namespace CPvC
         public void Dispose()
         {
             Close();
-
-            Display?.Dispose();
-            Display = null;
         }
 
         private class SnapshotInfo
@@ -77,7 +90,7 @@ namespace CPvC
             public SnapshotInfo(int id)
             {
                 Id = id;
-                AudioBuffer = new AudioBuffer();
+                AudioBuffer = new AudioBuffer(-1);
             }
 
             public int Id { get; }
@@ -284,30 +297,24 @@ namespace CPvC
             int totalSamplesWritten = 0;
             int currentSamplesRequested = samplesRequested;
 
-            SnapshotInfo currentSnapshot = _snapshots.LastOrDefault();
-            while (totalSamplesWritten < samplesRequested && currentSnapshot != null)
+            lock (_snapshots)
             {
-                int samplesWritten = currentSnapshot.AudioBuffer.Render16BitStereo(Volume, buffer, offset, currentSamplesRequested, true);
-                if (samplesWritten == 0)
+                SnapshotInfo currentSnapshot = _snapshots.LastOrDefault();
+                while (totalSamplesWritten < samplesRequested && currentSnapshot != null)
                 {
-                    _core.PushRequest(CoreRequest.LoadSnapshot(currentSnapshot.Id));
-
-                    // Ensure all keys are "up" once we come out of Reverse mode.
-                    _core.AllKeysUp();
-
-                    if (_snapshots.Count <= 1)
+                    int samplesWritten = currentSnapshot.AudioBuffer.Render16BitStereo(Volume, buffer, offset, currentSamplesRequested, true);
+                    if (samplesWritten == 0)
                     {
-                        // We've reached the last snapshot.
-                        break;
+                        _core.PushRequest(CoreRequest.RevertToSnapshot(currentSnapshot.Id));
+                        _core.PushRequest(CoreRequest.DeleteSnapshot(currentSnapshot.Id));
+                        _snapshots.RemoveAt(_snapshots.Count - 1);
+                        currentSnapshot = _snapshots.LastOrDefault();
                     }
 
-                    _snapshots.RemoveAt(_snapshots.Count - 1);
-                    currentSnapshot = _snapshots.LastOrDefault();
+                    totalSamplesWritten += samplesWritten;
+                    currentSamplesRequested -= samplesWritten;
+                    offset += 4 * samplesWritten;
                 }
-
-                totalSamplesWritten += samplesWritten;
-                currentSamplesRequested -= samplesWritten;
-                offset += 4 * samplesWritten;
             }
 
             return totalSamplesWritten;
@@ -315,35 +322,10 @@ namespace CPvC
 
         private void TakeSnapshot()
         {
-            SnapshotInfo oldestSnapshot = _snapshots.FirstOrDefault();
-
-            int newSnapshotId = 0;
-            if (_snapshots.Count >= _snapshotLimit)
+            if (SnapshotLimit > 0)
             {
-                _snapshots.RemoveAt(0);
-                newSnapshotId = oldestSnapshot.Id;
+                _core.PushRequest(CoreRequest.CreateSnapshot(_lastTakenSnapshotId));
             }
-            else
-            {
-                IEnumerable<int> snapshotIds = _snapshots.Select(s => s.Id);
-                newSnapshotId = -1;
-                for (int i = 0; i < _snapshotLimit; i++)
-                {
-                    if (!snapshotIds.Contains(i))
-                    {
-                        newSnapshotId = i;
-                        break;
-                    }
-                }
-
-                if (newSnapshotId == -1)
-                {
-                    // This should never happen!
-                    throw new Exception("Unable to find a free snapshot id");
-                }
-            }
-
-            _core.PushRequest(CoreRequest.SaveSnapshot(newSnapshotId));
         }
 
         /// <summary>
@@ -360,7 +342,10 @@ namespace CPvC
                 {
                     Auditors?.Invoke(action);
 
-                    if (action.Type != CoreAction.Types.RunUntil && action.Type != CoreAction.Types.LoadSnapshot && action.Type != CoreAction.Types.SaveSnapshot)
+                    if (action.Type != CoreAction.Types.RunUntil &&
+                        action.Type != CoreAction.Types.CreateSnapshot &&
+                        action.Type != CoreAction.Types.DeleteSnapshot &&
+                        action.Type != CoreAction.Types.RevertToSnapshot)
                     {
                         AddEvent(HistoryEvent.CreateCoreAction(_history.NextEventId(), action), true);
 
@@ -379,23 +364,34 @@ namespace CPvC
                     }
                     else if (action.Type == CoreAction.Types.RunUntil)
                     {
-                        SnapshotInfo snapshot = _snapshots.LastOrDefault();
-                        if (snapshot != null && action.AudioSamples != null)
+                        lock (_snapshots)
                         {
-                            foreach (UInt16 sample in action.AudioSamples)
+                            SnapshotInfo newSnapshot = _snapshots.LastOrDefault();
+                            if (newSnapshot != null && action.AudioSamples != null)
                             {
-                                snapshot.AudioBuffer.Write(sample);
+                                newSnapshot.AudioBuffer.Write(action.AudioSamples);
                             }
                         }
                     }
-                    else if (action.Type == CoreAction.Types.SaveSnapshot)
+                    else if (action.Type == CoreAction.Types.RevertToSnapshot)
                     {
-                        SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId);
-                        _snapshots.Add(newSnapshot);
+                        Display.CopyScreenAsync();
                     }
-                    else if (action.Type == CoreAction.Types.LoadSnapshot)
+                    else if (action.Type == CoreAction.Types.CreateSnapshot)
                     {
-                        Display.CopyFromBufferAsync();
+                        lock (_snapshots)
+                        {
+                            _lastTakenSnapshotId = action.SnapshotId;
+                            SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId);
+                            _snapshots.Add(newSnapshot);
+
+                            while (_snapshots.Count > _snapshotLimit)
+                            {
+                                SnapshotInfo snapshot = _snapshots[0];
+                                _snapshots.RemoveAt(0);
+                                _core.PushRequest(CoreRequest.DeleteSnapshot(snapshot.Id));
+                            }
+                        }
                     }
                 }
             }
@@ -445,7 +441,7 @@ namespace CPvC
                 _name = value;
                 _file.WriteName(_name);
 
-                OnPropertyChanged("Name");
+                OnPropertyChanged();
             }
         }
 
@@ -709,7 +705,9 @@ namespace CPvC
                 }
 
                 // Don't write out non-root checkpoint nodes which have only one child and no bookmark.
-                if (currentEvent == _history.RootEvent || currentEvent.Children.Count != 1 || currentEvent.Type != HistoryEvent.Types.Checkpoint || currentEvent.Bookmark != null)
+                bool isRedundantChild = (currentEvent.Children.Count == 0 && currentEvent.Type == HistoryEvent.Types.Checkpoint && currentEvent.Bookmark == null && currentEvent.Parent != null && currentEvent.Parent.Ticks == currentEvent.Ticks);
+                if (!isRedundantChild &&
+                    (currentEvent == _history.RootEvent || currentEvent.Children.Count != 1 || currentEvent.Type != HistoryEvent.Types.Checkpoint || currentEvent.Bookmark != null))
                 {
                     file.WriteHistoryEvent(currentEvent);
                 }
@@ -748,7 +746,7 @@ namespace CPvC
 
         private CoreRequest IdleRequest()
         {
-            return CoreRequest.RunUntil(Ticks + 1000);
+            return (RunningState == RunningState.Running) ? CoreRequest.RunUntil(Ticks + 1000) : null;
         }
 
         // IMachineFileReader implementation.
@@ -779,14 +777,20 @@ namespace CPvC
 
         public void Reverse()
         {
-            if (_runningState == RunningState.Reverse || _snapshots.LastOrDefault() == null)
+            lock (_snapshots)
             {
-                return;
+                if (_runningState == RunningState.Reverse || _snapshots.LastOrDefault() == null)
+                {
+                    return;
+                }
             }
 
             SetCheckpoint();
 
-            _previousRunningState = SetRunningState(RunningState.Reverse);
+            lock (_runningStateLock)
+            {
+                _previousRunningState = SetRunningState(RunningState.Reverse);
+            }
 
             Status = "Reversing";
         }
@@ -795,7 +799,24 @@ namespace CPvC
         {
             SetCheckpoint();
 
-            SetRunningState(_previousRunningState);
+            lock (_runningStateLock)
+            {
+                SetRunningState(_previousRunningState);
+
+                _core.AllKeysUp();
+            }
+        }
+
+        public void ToggleReversibilityEnabled()
+        {
+            if (SnapshotLimit == 0)
+            {
+                SnapshotLimit = 500;
+            }
+            else
+            {
+                SnapshotLimit = 0;
+            }
         }
     }
 }

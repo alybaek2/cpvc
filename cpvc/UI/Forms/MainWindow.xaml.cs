@@ -267,26 +267,24 @@ namespace CPvC.UI.Forms
                 // Set a checkpoint here so the UI shows the current timeline position correctly.
                 machine.SetCheckpoint();
 
-                using (BookmarkSelectWindow dialog = new BookmarkSelectWindow(this, machine))
+                BookmarkSelectWindow dialog = new BookmarkSelectWindow(this, machine);
+                bool? result = dialog.ShowDialog();
+                if (result.HasValue && result.Value)
                 {
-                    bool? result = dialog.ShowDialog();
-                    if (result.HasValue && result.Value)
+                    if (dialog.SelectedReplayEvent != null)
                     {
-                        if (dialog.SelectedReplayEvent != null)
-                        {
-                            string name = String.Format("{0} (Replay)", machine.Name);
-                            _mainViewModel.OpenReplayMachine(name, dialog.SelectedReplayEvent);
+                        string name = String.Format("{0} (Replay)", machine.Name);
+                        _mainViewModel.OpenReplayMachine(name, dialog.SelectedReplayEvent);
 
-                            return null;
-                        }
-                        else if (dialog.SelectedJumpEvent?.Bookmark != null)
-                        {
-                            return dialog.SelectedJumpEvent;
-                        }
+                        return null;
                     }
-
-                    return null;
+                    else if (dialog.SelectedJumpEvent?.Bookmark != null)
+                    {
+                        return dialog.SelectedJumpEvent;
+                    }
                 }
+
+                return null;
             }
         }
 

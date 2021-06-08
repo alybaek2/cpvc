@@ -143,7 +143,6 @@
     <Compile Include="SocketConnectionTests.cs" />
     <Compile Include="SocketServerTests.cs" />
     <Compile Include="TestHelpers.cs" />
-    <Compile Include="UnmanagedMemoryTests.cs" />
     <Compile Include="CommandTests.cs" />
   </ItemGroup>
   <ItemGroup>

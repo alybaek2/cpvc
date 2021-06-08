@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows.Input;
 
 namespace CPvC
@@ -197,7 +198,7 @@ namespace CPvC
             set
             {
                 _active = value;
-                OnPropertyChanged("ActiveItem");
+                OnPropertyChanged();
                 OnPropertyChanged("ActiveMachineViewModel");
             }
         }
@@ -226,7 +227,7 @@ namespace CPvC
                 }
 
                 OnPropertyChanged("ActiveItem");
-                OnPropertyChanged("ActiveMachineViewModel");
+                OnPropertyChanged();
             }
         }
 
@@ -348,7 +349,7 @@ namespace CPvC
             return machineViewModel;
         }
 
-        protected void OnPropertyChanged(string name)
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }

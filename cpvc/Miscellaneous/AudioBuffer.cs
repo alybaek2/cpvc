@@ -1,105 +1,50 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace CPvC
 {
     public class AudioBuffer
     {
-        private UInt16[] _buffer;
-        private int _writePosition;
-        private int _readPosition;
-        private AutoResetEvent _underrunEvent;
-
         // AY volume table (c) by Hacker KAY (http://kay27.narod.ru/ay.html)
         private static readonly ushort[] _amplitudes = {
             0, 836, 1212, 1773, 2619, 3875, 5397, 8823,
             10392, 16706, 23339, 29292, 36969, 46421, 55195, 65535
         };
 
-        public AudioBuffer()
+        private List<UInt16> _buffer;
+        private int _writePosition;
+        private int _readPosition;
+        private ManualResetEvent _underrunEvent;
+
+        private int _maxSize;
+
+        public int OverrunThreshold { get; set; }
+        public byte ReadSpeed { get; set; }
+
+        public AudioBuffer(int maxSize)
         {
-            _buffer = new UInt16[48000];
+            _buffer = new List<UInt16>();
+
             _writePosition = 0;
             _readPosition = 0;
-            _underrunEvent = new AutoResetEvent(true);
-        }
 
-        private bool ReadFront(out UInt16 sample)
-        {
-            return Read(out sample, false);
-        }
+            _underrunEvent = new ManualResetEvent(true);
 
-        private bool ReadBack(out UInt16 sample)
-        {
-            return Read(out sample, true);
-        }
+            _maxSize = maxSize;
 
-        public void Advance(int samples)
-        {
-            if ((_readPosition + samples) > _writePosition)
-            {
-                _readPosition = _writePosition;
-            }
-            else
-            {
-                _readPosition += samples;
-            }
-        }
-
-        private bool Read(out UInt16 sample, bool back)
-        {
-            if (_writePosition <= _readPosition)
-            {
-                sample = 0;
-                return false;
-            }
-
-            if (back)
-            {
-                _writePosition--;
-                sample = _buffer[_writePosition % _buffer.Length];
-            }
-            else
-            {
-                sample = _buffer[_readPosition % _buffer.Length];
-                _readPosition++;
-            }
-
-            if (!Overrun())
-            {
-                _underrunEvent.Set();
-            }
-
-            return true;
-        }
-
-        public bool WaitForUnderrun(int timeout)
-        {
-            return _underrunEvent.WaitOne(timeout);
-        }
-
-        public void Write(UInt16 sample)
-        {
-            _buffer[_writePosition % _buffer.Length] = sample;
-            _writePosition++;
-
-            if (Overrun())
-            {
-                _underrunEvent.Reset();
-            }
-        }
-
-        public bool Overrun()
-        {
-            return (_writePosition - _readPosition) > 2000;
+            OverrunThreshold = 2000;
+            ReadSpeed = 1;
         }
 
         /// <summary>
         /// Converts three-channel CPC audio samples to 16-bit signed stereo samples.
         /// </summary>
+        /// <param name="volume">Volume at which audio should be rendered. 0 is muted, 255 is </param>
         /// <param name="buffer">Buffer to write audio samples to.</param>
         /// <param name="offset">Offset to begin writing at.</param>
-        /// <param name="samplesRequested">The maximum number of sameples to write.</param>
+        /// <param name="samplesRequested">The maximum number of samples to write.</param>
         /// <param name="samples">The buffer containing the CPC audio samples.</param>
         /// <param name="reverse">Indicates if the CPC audio samples should be read in reverse.</param>
         /// <returns>The number of samples written to <c>buffer</c>.</returns>
@@ -116,12 +61,7 @@ namespace CPvC
 
             while (samplesWritten < samplesRequested && (offset + 3) < bufferSize)
             {
-                UInt16 sample = 0;
-                if (!reverse && !ReadFront(out sample))
-                {
-                    break;
-                }
-                else if (reverse && !ReadBack(out sample))
+                if (!Read(reverse, out UInt16 sample))
                 {
                     break;
                 }
@@ -149,6 +89,98 @@ namespace CPvC
             }
 
             return samplesWritten;
+        }
+
+        public void Advance(int samples)
+        {
+            int maxSamples = _writePosition - _readPosition;
+            if (samples > maxSamples)
+            {
+                samples = maxSamples;
+            }
+
+            _readPosition += samples;
+
+            if (!Overrun())
+            {
+                _underrunEvent.Set();
+            }
+        }
+
+        private int BufferPos(int position)
+        {
+            if (_maxSize == -1)
+            {
+                return position;
+            }
+            else
+            {
+                return position % _maxSize;
+            }
+        }
+
+        private bool Read(bool back, out UInt16 sample)
+        {
+            if ((_writePosition - _readPosition) < ReadSpeed)
+            {
+                sample = 0;
+                return false;
+            }
+
+            if (back)
+            {
+                _writePosition -= ReadSpeed;
+                sample = _buffer[BufferPos(_writePosition)];
+            }
+            else
+            {
+                sample = _buffer[BufferPos(_readPosition)];
+                _readPosition += ReadSpeed;
+            }
+
+            if (!Overrun())
+            {
+                _underrunEvent.Set();
+            }
+
+            return true;
+        }
+
+        private bool Overrun()
+        {
+            return (_writePosition - _readPosition) >= (OverrunThreshold * ReadSpeed);
+        }
+
+        public bool WaitForUnderrun(int timeout)
+        {
+            return _underrunEvent.WaitOne(timeout);
+        }
+
+        public void Write(UInt16 sample)
+        {
+            if ((_maxSize == -1) || (_writePosition < _maxSize))
+            {
+                _buffer.Add(sample);
+            }
+            else
+            {
+                _buffer[BufferPos(_writePosition)] = sample;
+            }
+
+            _writePosition++;
+
+            if (Overrun())
+            {
+                _underrunEvent.Reset();
+            }
+        }
+
+        public void Write(IEnumerable<UInt16> samples)
+        {
+            foreach(UInt16 sample in samples)
+            {
+                Write(sample);
+            }
         }
     }
 }

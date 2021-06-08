@@ -317,13 +317,13 @@ namespace CPvC.Test
         static public bool RunUntilAudioOverrun(Core core, int timeout)
         {
             int elapsed = 0;
-            while (!core.AudioBuffer.Overrun())
+            while ((elapsed < timeout) && core.AudioBuffer.WaitForUnderrun(0))
             {
                 Thread.Sleep(10);
                 elapsed += 10;
             }
 
-            return core.AudioBuffer.Overrun();
+            return (elapsed < timeout);
         }
 
         static public string GetTempFilepath(string filename)
@@ -404,8 +404,9 @@ namespace CPvC.Test
                     return true;
                 case CoreRequest.Types.RunUntil:
                     return request1.StopTicks == request2.StopTicks;
-                case CoreRequest.Types.SaveSnapshot:
-                case CoreRequest.Types.LoadSnapshot:
+                case CoreRequest.Types.CreateSnapshot:
+                case CoreRequest.Types.RevertToSnapshot:
+                case CoreRequest.Types.DeleteSnapshot:
                     return request1.SnapshotId == request2.SnapshotId;
             }
 

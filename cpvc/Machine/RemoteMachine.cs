@@ -26,7 +26,7 @@ namespace CPvC
             {
                 _name = value;
 
-                OnPropertyChanged("Name");
+                OnPropertyChanged();
             }
         }
 
@@ -73,9 +73,6 @@ namespace CPvC
         public void Dispose()
         {
             Close();
-
-            Display?.Dispose();
-            Display = null;
         }
 
         public bool CanClose()
@@ -114,10 +111,10 @@ namespace CPvC
         {
             if (core == _core && action != null)
             {
-                if (action.Type == CoreAction.Types.LoadSnapshot)
+                if (action.Type == CoreAction.Types.RevertToSnapshot)
                 {
                     // Ensure to update the display.
-                    Display.CopyFromBufferAsync();
+                    Display.CopyScreenAsync();
                 }
             }
         }

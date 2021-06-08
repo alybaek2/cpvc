@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
@@ -11,7 +12,7 @@ namespace CPvC.UI
     /// <summary>
     /// View model for the Bookmarks window.
     /// </summary>
-    public class BookmarksViewModel : INotifyPropertyChanged, IDisposable
+    public class BookmarksViewModel : INotifyPropertyChanged
     {
         public delegate void ItemSelectedDelegate();
 
@@ -83,17 +84,6 @@ namespace CPvC.UI
             SelectedItem = Items.FirstOrDefault(i => i.HistoryEvent == _machine.History.CurrentEvent);
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            _display?.Dispose();
-            _display = null;
-        }
-
         /// <summary>
         /// Represents the currently selected HistoryViewItem. Note that when this is
         /// changed, other properties are recalculated as well.
@@ -113,7 +103,7 @@ namespace CPvC.UI
                 }
 
                 _selectedItem = value;
-                OnPropertyChanged("SelectedItem");
+                OnPropertyChanged();
 
                 WriteableBitmap bitmap = null;
                 if (_selectedItem != null)
@@ -303,7 +293,7 @@ namespace CPvC.UI
             }
         }
 
-        protected void OnPropertyChanged(string name)
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChangedEventArgs args = new PropertyChangedEventArgs(name);
 

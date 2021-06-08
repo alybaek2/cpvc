@@ -40,19 +40,12 @@ namespace CPvC
 
         private ICore _coreCLR;
         private int _version;
-        private readonly List<CoreRequest> _requests;
+        private readonly Queue<CoreRequest> _requests;
         private object _lockObject;
+        private int _nextSnapshotId;
 
         private bool _quitThread;
         private Thread _coreThread;
-
-        /// <summary>
-        /// Frequency (in samples per second) at which the Core will populate its audio buffers.
-        /// </summary>
-        /// <remarks>
-        /// Note that this rate divided by the rate audio samples are read gives the speed at which the CPvC instance will run.
-        /// </remarks>
-        private UInt32 _audioSamplingFrequency;
 
         public RequestProcessedDelegate Auditors { get; set; }
         public BeginVSyncDelegate BeginVSync { get; set; }
@@ -85,23 +78,21 @@ namespace CPvC
         {
             _version = version;
             _coreCLR = CreateVersionedCore(version);
-            _requests = new List<CoreRequest>();
+            _requests = new Queue<CoreRequest>();
             _lockObject = new object();
 
             _quitThread = false;
             _coreThread = null;
 
+            _nextSnapshotId = 0;
             BeginVSync = null;
 
-            SetScreen(IntPtr.Zero);
-
-            _audioSamplingFrequency = 48000;
-            EnableTurbo(false);
+            SetScreen();
 
             _audioReady = new AutoResetEvent(true);
             _requestQueueNonEmpty = new AutoResetEvent(false);
 
-            _audioBuffer = new AudioBuffer();
+            _audioBuffer = new AudioBuffer(48000);
 
             // Ensure any OnPropChanged calls are executed on the main thread. There may be a better way of
             // doing this, such as wrapping add and remove for Command.CanExecuteChanged in a lambda that
@@ -221,21 +212,21 @@ namespace CPvC
         }
 
         /// <summary>
-        /// Sets a Pointer to a block of unmanaged memory to be used by the core for video rendering.
+        /// Sets width, height, and pitch of the screen.
         /// </summary>
-        public void SetScreen(IntPtr screenBuffer)
+        public void SetScreen()
         {
             lock (_lockObject)
             {
-                _coreCLR.SetScreen(screenBuffer, Display.Pitch, Display.Height, Display.Width);
+                _coreCLR.SetScreen(Display.Pitch, Display.Height, Display.Width);
             }
         }
 
-        public IntPtr GetScreen()
+        public void CopyScreen(IntPtr screenBuffer, UInt64 size)
         {
             lock (_lockObject)
             {
-                return _coreCLR.GetScreen();
+                _coreCLR?.CopyScreen(screenBuffer, size);
             }
         }
 
@@ -379,33 +370,18 @@ namespace CPvC
             {
                 if (ProcessNextRequest())
                 {
-                    _quitThread = true;
+                    break;
                 }
             }
 
             _quitThread = false;
         }
 
-        /// <summary>
-        /// Enables or disables turbo mode.
-        /// </summary>
-        /// <param name="enabled">Indicates whether turbo mode is to be enabled.</param>
-        public void EnableTurbo(bool enabled)
-        {
-            // For now, hard-code turbo mode to 10 times normal speed.
-            UInt32 frequency = enabled ? (_audioSamplingFrequency / 10) : _audioSamplingFrequency;
-
-            lock (_lockObject)
-            {
-                _coreCLR.AudioSampleFrequency(frequency);
-            }
-        }
-
         public void PushRequest(CoreRequest request)
         {
             lock (_requests)
             {
-                _requests.Add(request);
+                _requests.Enqueue(request);
                 _requestQueueNonEmpty.Set();
             }
         }
@@ -416,7 +392,7 @@ namespace CPvC
             {
                 if (_requests.Count > 0)
                 {
-                    return _requests[0];
+                    return _requests.Peek();
                 }
 
                 return null;
@@ -429,7 +405,7 @@ namespace CPvC
             {
                 if (_requests.Count > 0)
                 {
-                    _requests.RemoveAt(0);
+                    _requests.Dequeue(); // RemoveAt(0);
 
                     if (_requests.Count > 0)
                     {
@@ -477,7 +453,7 @@ namespace CPvC
 
                 if (request == null)
                 {
-                    _requestQueueNonEmpty.WaitOne(10);
+                    _requestQueueNonEmpty.WaitOne(20);
                     return false;
                 }
             }
@@ -530,12 +506,8 @@ namespace CPvC
                         ICore newCore = Core.CreateVersionedCore(request.Version);
                         newCore.LoadState(state);
 
-                        IntPtr pScr = _coreCLR.GetScreen();
-
                         _coreCLR.Dispose();
                         _coreCLR = newCore;
-
-                        SetScreen(pScr);
                     }
                     break;
                 case CoreRequest.Types.LoadCore:
@@ -546,17 +518,24 @@ namespace CPvC
 
                     action = CoreAction.LoadCore(ticks, request.CoreState);
                     break;
-                case CoreRequest.Types.SaveSnapshot:
+                case CoreRequest.Types.CreateSnapshot:
                     lock (_lockObject)
                     {
-                        action = SaveSnapshot(request.SnapshotId);
+                        action = CreateSnapshot();
                     }
 
                     break;
-                case CoreRequest.Types.LoadSnapshot:
+                case CoreRequest.Types.DeleteSnapshot:
                     lock (_lockObject)
                     {
-                        action = LoadSnapshot(request.SnapshotId);
+                        action = DeleteSnapshot(request.SnapshotId);
+                    }
+
+                    break;
+                case CoreRequest.Types.RevertToSnapshot:
+                    lock (_lockObject)
+                    {
+                        action = RevertToSnapshot(request.SnapshotId);
                     }
 
                     break;
@@ -578,37 +557,44 @@ namespace CPvC
             return false;
         }
 
-        private CoreAction SaveSnapshot(int snapshotId)
+        private CoreAction CreateSnapshot()
         {
-            _coreCLR.SaveSnapshot(snapshotId);
+            bool success = _coreCLR.CreateSnapshot(_nextSnapshotId);
+            CoreAction coreAction = CoreAction.CreateSnapshot(Ticks, _nextSnapshotId);
+            _nextSnapshotId++;
 
-            return CoreAction.SaveSnapshot(Ticks, snapshotId);
+            return coreAction;
         }
 
-        public CoreAction LoadSnapshot(int snapshotId)
+        private CoreAction DeleteSnapshot(int id)
         {
-            if (_coreCLR.LoadSnapshot(snapshotId))
-            {
-                _lastTicksNotified = 0;
-                OnPropertyChanged("Ticks");
+            _coreCLR.DeleteSnapshot(id);
 
-                return CoreAction.LoadSnapshot(Ticks, snapshotId);
+            return CoreAction.DeleteSnapshot(Ticks, id);
+        }
+
+        private CoreAction RevertToSnapshot(int id)
+        {
+            bool result = _coreCLR.RevertToSnapshot(id);
+            if (!result)
+            {
+                return null;
             }
 
-            return null;
+            _lastTicksNotified = 0;
+            OnPropertyChanged("Ticks");
+
+            return CoreAction.RevertToSnapshot(Ticks, id);
         }
 
         private CoreAction RunForAWhile(UInt64 stopTicks)
         {
             UInt64 ticks = Ticks;
 
-            // Check for audio overrun.
-            if (_audioBuffer.Overrun())
+            // Only proceed on an audio buffer underrun.
+            if (!_audioBuffer.WaitForUnderrun(20))
             {
-                if (!_audioBuffer.WaitForUnderrun(10))
-                {
-                    return null;
-                }
+                return null;
             }
 
             List<UInt16> audioSamples = new List<UInt16>();

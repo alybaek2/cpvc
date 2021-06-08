@@ -18,6 +18,11 @@ namespace CPvC
         /// </summary>
         public List<UInt16> AudioSamples { get; private set; }
 
+        /// <summary>
+        /// For a create snapshot action, this indicates the id of the parent snapshot.
+        /// </summary>
+        //public int CreatedSnapshotId { get; private set; }
+
         public CoreAction(Types type, UInt64 ticks) : base(type)
         {
             Ticks = ticks;
@@ -82,9 +87,9 @@ namespace CPvC
             return action;
         }
 
-        static public CoreAction LoadSnapshot(UInt64 ticks, int id)
+        static public CoreAction CreateSnapshot(UInt64 ticks, int id)
         {
-            CoreAction action = new CoreAction(Types.LoadSnapshot, ticks)
+            CoreAction action = new CoreAction(Types.CreateSnapshot, ticks)
             {
                 SnapshotId = id
             };
@@ -92,9 +97,19 @@ namespace CPvC
             return action;
         }
 
-        static public CoreAction SaveSnapshot(UInt64 ticks, int id)
+        static public CoreAction DeleteSnapshot(UInt64 ticks, int id)
         {
-            CoreAction action = new CoreAction(Types.SaveSnapshot, ticks)
+            CoreAction action = new CoreAction(Types.DeleteSnapshot, ticks)
+            {
+                SnapshotId = id
+            };
+
+            return action;
+        }
+
+        static public CoreAction RevertToSnapshot(UInt64 ticks, int id)
+        {
+            CoreAction action = new CoreAction(Types.RevertToSnapshot, ticks)
             {
                 SnapshotId = id
             };
@@ -139,10 +154,10 @@ namespace CPvC
                     }
                 case Types.LoadCore:
                     return CoreAction.LoadCore(Ticks, CoreState);
-                case Types.SaveSnapshot:
-                    return CoreAction.SaveSnapshot(Ticks, SnapshotId);
-                case Types.LoadSnapshot:
-                    return CoreAction.LoadSnapshot(Ticks, SnapshotId);
+                case Types.CreateSnapshot:
+                    return CoreAction.CreateSnapshot(Ticks, SnapshotId);
+                case Types.RevertToSnapshot:
+                    return CoreAction.RevertToSnapshot(Ticks, SnapshotId);
                 default:
                     return null;
             }

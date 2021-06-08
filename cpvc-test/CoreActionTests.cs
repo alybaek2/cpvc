@@ -138,31 +138,31 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void CloneLoadSnapshot()
+        public void CloneRevertToSnapshot()
         {
             // Setup
-            CoreAction action = CoreAction.LoadSnapshot(100, 42);
+            CoreAction action = CoreAction.RevertToSnapshot(100, 42);
 
             // Act
             CoreAction clone = action.Clone();
 
             // Verify
-            Assert.AreEqual(CoreRequest.Types.LoadSnapshot, clone.Type);
+            Assert.AreEqual(CoreRequest.Types.RevertToSnapshot, clone.Type);
             Assert.AreEqual(100, clone.Ticks);
             Assert.AreEqual(42, clone.SnapshotId);
         }
 
         [Test]
-        public void CloneSaveSnapshot()
+        public void CloneCreateSnapshot()
         {
             // Setup
-            CoreAction action = CoreAction.SaveSnapshot(100, 42);
+            CoreAction action = CoreAction.CreateSnapshot(100, 42);
 
             // Act
             CoreAction clone = action.Clone();
 
             // Verify
-            Assert.AreEqual(CoreRequest.Types.SaveSnapshot, clone.Type);
+            Assert.AreEqual(CoreRequest.Types.CreateSnapshot, clone.Type);
             Assert.AreEqual(100, clone.Ticks);
             Assert.AreEqual(42, clone.SnapshotId);
         }

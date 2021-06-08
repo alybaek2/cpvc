@@ -9,8 +9,7 @@ namespace CPvC
         IPausableMachine,
         ITurboableMachine,
         IPrerecordedMachine,
-        INotifyPropertyChanged,
-        IDisposable
+        INotifyPropertyChanged
     {
         private UInt64 _endTicks;
 
@@ -46,14 +45,6 @@ namespace CPvC
         public override string Name
         {
             get; set;
-        }
-
-        public void Dispose()
-        {
-            Close();
-
-            Display?.Dispose();
-            Display = null;
         }
 
         public bool CanClose()

@@ -15,6 +15,9 @@ namespace CPvC
         public const byte _coreActionCoreVersion = 7;
         public const byte _coreActionSaveSnapshot = 8;
         public const byte _coreActionLoadSnapshot = 9;
+        public const byte _coreActionCreateSnapshot = 10;
+        public const byte _coreActionDeleteSnapshot = 11;
+        public const byte _coreActionRevertToSnapshot = 12;
 
         static public void SelectMachineToBytes(MemoryByteStream stream, string machineName)
         {
@@ -85,12 +88,16 @@ namespace CPvC
                     stream.Write(_coreActionCoreVersion);
                     stream.Write(request.Version);
                     break;
-                case CoreRequest.Types.SaveSnapshot:
-                    stream.Write(_coreActionSaveSnapshot);
+                case CoreRequest.Types.CreateSnapshot:
+                    stream.Write(_coreActionCreateSnapshot);
                     stream.Write(request.SnapshotId);
                     break;
-                case CoreRequest.Types.LoadSnapshot:
-                    stream.Write(_coreActionLoadSnapshot);
+                case CoreRequest.Types.DeleteSnapshot:
+                    stream.Write(_coreActionDeleteSnapshot);
+                    stream.Write(request.SnapshotId);
+                    break;
+                case CoreRequest.Types.RevertToSnapshot:
+                    stream.Write(_coreActionRevertToSnapshot);
                     stream.Write(request.SnapshotId);
                     break;
                 default:
@@ -138,13 +145,18 @@ namespace CPvC
                     stream.Write(action.Ticks);
                     stream.Write(action.Version);
                     break;
-                case CoreRequest.Types.SaveSnapshot:
-                    stream.Write(_coreActionSaveSnapshot);
+                case CoreRequest.Types.CreateSnapshot:
+                    stream.Write(_coreActionCreateSnapshot);
                     stream.Write(action.Ticks);
                     stream.Write(action.SnapshotId);
                     break;
-                case CoreRequest.Types.LoadSnapshot:
-                    stream.Write(_coreActionLoadSnapshot);
+                case CoreRequest.Types.DeleteSnapshot:
+                    stream.Write(_coreActionDeleteSnapshot);
+                    stream.Write(action.Ticks);
+                    stream.Write(action.SnapshotId);
+                    break;
+                case CoreRequest.Types.RevertToSnapshot:
+                    stream.Write(_coreActionRevertToSnapshot);
                     stream.Write(action.Ticks);
                     stream.Write(action.SnapshotId);
                     break;
@@ -208,19 +220,26 @@ namespace CPvC
 
                         return CoreAction.CoreVersion(ticks, version);
                     }
-                case _coreActionSaveSnapshot:
+                case _coreActionCreateSnapshot:
                     {
                         UInt64 ticks = stream.ReadUInt64();
                         Int32 snapshotId = stream.ReadInt32();
 
-                        return CoreAction.SaveSnapshot(ticks, snapshotId);
+                        return CoreAction.CreateSnapshot(ticks, snapshotId);
                     }
-                case _coreActionLoadSnapshot:
+                case _coreActionDeleteSnapshot:
                     {
                         UInt64 ticks = stream.ReadUInt64();
                         Int32 snapshotId = stream.ReadInt32();
 
-                        return CoreAction.LoadSnapshot(ticks, snapshotId);
+                        return CoreAction.DeleteSnapshot(ticks, snapshotId);
+                    }
+                case _coreActionRevertToSnapshot:
+                    {
+                        UInt64 ticks = stream.ReadUInt64();
+                        Int32 snapshotId = stream.ReadInt32();
+
+                        return CoreAction.RevertToSnapshot(ticks, snapshotId);
                     }
                 default:
                     throw new Exception(String.Format("Unknown CoreAction type {0}!", type));
@@ -274,17 +293,23 @@ namespace CPvC
 
                         return CoreRequest.CoreVersion(version);
                     }
-                case _coreActionSaveSnapshot:
+                case _coreActionCreateSnapshot:
                     {
                         Int32 snapshotId = stream.ReadInt32();
 
-                        return CoreRequest.SaveSnapshot(snapshotId);
+                        return CoreRequest.CreateSnapshot(snapshotId);
                     }
-                case _coreActionLoadSnapshot:
+                case _coreActionDeleteSnapshot:
                     {
                         Int32 snapshotId = stream.ReadInt32();
 
-                        return CoreRequest.LoadSnapshot(snapshotId);
+                        return CoreRequest.DeleteSnapshot(snapshotId);
+                    }
+                case _coreActionRevertToSnapshot:
+                    {
+                        Int32 snapshotId = stream.ReadInt32();
+
+                        return CoreRequest.RevertToSnapshot(snapshotId);
                     }
                 default:
                     throw new Exception(String.Format("Unknown CoreRequest type {0}!", type));

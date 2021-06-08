@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace CPvC
 {
@@ -57,7 +58,11 @@ namespace CPvC
 
                 if (value != null)
                 {
-                    value.SetScreen(Display.Buffer);
+                    value.SetScreen();
+                    if (Display != null)
+                    {
+                        Display.Core = value;
+                    }
 
                     if (_core != null)
                     {
@@ -131,13 +136,17 @@ namespace CPvC
                 }
 
                 _volume = value;
-                OnPropertyChanged("Volume");
+                OnPropertyChanged();
             }
         }
 
+        /// <summary>
+        /// Enables or disables turbo mode.
+        /// </summary>
+        /// <param name="enabled">Indicates whether turbo mode is to be enabled.</param>
         public void EnableTurbo(bool enabled)
         {
-            _core.EnableTurbo(enabled);
+            Core.AudioBuffer.ReadSpeed = (byte) (enabled ? 10 : 1);
 
             Status = enabled ? "Turbo enabled" : "Turbo disabled";
         }
@@ -152,7 +161,7 @@ namespace CPvC
             set
             {
                 _status = value;
-                OnPropertyChanged("Status");
+                OnPropertyChanged();
             }
         }
 
@@ -167,7 +176,7 @@ namespace CPvC
         /// <param name="core">Core whose VSync signal went from low to high.</param>
         protected virtual void BeginVSync(Core core)
         {
-            Display.CopyFromBufferAsync();
+            Display.CopyScreenAsync();
         }
 
         public virtual int ReadAudio(byte[] buffer, int offset, int samplesRequested)
@@ -179,6 +188,10 @@ namespace CPvC
                 {
                     return 0;
                 }
+
+                // We need to make sure that our overrun threshold is enough so that we can fully satisfy at
+                // least the next callback from NAudio. Without this, CPvC playback can become "stuttery."
+                _core.AudioBuffer.OverrunThreshold = samplesRequested * 2;
 
                 return _core.AudioBuffer.Render16BitStereo(Volume, buffer, offset, samplesRequested, false);
             }
@@ -300,7 +313,7 @@ namespace CPvC
             OnPropertyChanged(e.PropertyName);
         }
 
-        protected void OnPropertyChanged(string name)
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }

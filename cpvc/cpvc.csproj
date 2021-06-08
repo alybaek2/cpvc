@@ -201,7 +201,6 @@
     <Compile Include="UI\MainModel.cs" />
     <Compile Include="UI\MainViewModel.cs" />
     <Compile Include="UI\RemoteViewModel.cs" />
-    <Compile Include="Miscellaneous\UnmanagedMemory.cs" />
     <Page Include="UI\Forms\ConnectWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
