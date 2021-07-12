@@ -46,6 +46,7 @@ namespace CPvC.Test
             HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
             HistoryEvent event2 = history.AddCoreAction(CoreAction.KeyPress(200, 12, true));
             HistoryEvent event3 = history.AddCoreAction(CoreAction.RunUntil(200, 300, null));
+            history.SetCurrent(event1);
 
             // Act
             bool result = history.DeleteEventAndChildren(event2);

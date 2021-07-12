@@ -35,7 +35,7 @@ namespace CPvC.Test
                 RunForAWhile(machine);
                 machine.AddBookmark(false);
                 _bookmarkTicks.Add(machine.Ticks);
-                Run(machine, 4000000, false);
+                Run(machine, 4000000);
 
                 _finalHistoryEvent = machine.History.CurrentEvent;
             }

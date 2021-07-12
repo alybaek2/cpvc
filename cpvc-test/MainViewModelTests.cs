@@ -378,7 +378,7 @@ namespace CPvC.Test
             machine.AddBookmark(false);
             event2 = machine.History.CurrentEvent;
             prompt.Setup(p => p()).Returns(selectEvent ? event2 : null);
-            TestHelpers.Run(machine, 1000, false);
+            TestHelpers.Run(machine, 1000);
 
             machine.AddBookmark(false);
 
