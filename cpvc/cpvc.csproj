@@ -179,7 +179,6 @@
     <Compile Include="UI\Forms\RenameWindow.xaml.cs">
       <DependentUpon>RenameWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Machine\HistoryEvent.cs" />
     <Compile Include="UI\Converters\RunningIcon.cs" />
     <Compile Include="Core\Core.cs" />
     <Compile Include="UI\Display.cs" />

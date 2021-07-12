@@ -64,9 +64,8 @@ namespace CPvC.Test
             _settingGet = String.Join(",", Enumerable.Range(0, machineCount).Select(x => String.Format("Test{0};test{0}.cpvc", x)));
             _mockBinaryWriter.Content = new List<byte>
             {
-                0x05,
+                0x01,
                       0x00, 0x00, 0x00, 0x00,
-                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                       0x00
             };
@@ -183,11 +182,9 @@ namespace CPvC.Test
             }
 
             _mockBinaryWriter.Content.AddRange(new byte[] {
-                0x05,
+                0x0b,
                       0x00, 0x00, 0x00, 0x00,
-                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      0x00
+                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
             });
 
             // Act
@@ -220,7 +217,7 @@ namespace CPvC.Test
             Mock<ISocket> mockSocket = new Mock<ISocket>();
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, null, null, null, null, null, null, null, () => mockSocket.Object);
             Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, "test.cpvc");
-            _mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(true);
+            _mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream(AnyString())).Throws(new Exception());
 
             // Act and Verify
             Assert.Throws<Exception>(() => viewModel.OpenMachine(prompt.Object, "test.cpvc", _mockFileSystem.Object));
@@ -232,6 +229,7 @@ namespace CPvC.Test
             // Setup
             Mock<ISocket> mockSocket = new Mock<ISocket>();
             _settingGet = "Test;test.cpvc";
+            _mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream(AnyString())).Throws(new Exception());
 
             // Act
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, null, null, null, null, null, null, null, () => mockSocket.Object);
@@ -368,13 +366,22 @@ namespace CPvC.Test
         public void SelectBookmark(bool active, bool selectEvent)
         {
             // Setup
+            MachineHistory history = new MachineHistory();
+
+            HistoryEvent event2 = null;
             Mock<MainViewModel.PromptForBookmarkDelegate> prompt = new Mock<MainViewModel.PromptForBookmarkDelegate>(MockBehavior.Strict);
-            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(0, 0, DateTime.Now, null);
-            prompt.Setup(p => p()).Returns(selectEvent ? historyEvent : null);
             MainViewModel viewModel = SetupViewModel(1, null, prompt, null);
             MachineViewModel machineViewModel = viewModel.MachineViewModels[0];
             Machine machine = machineViewModel.Machine as Machine;
             machine.Open();
+
+            machine.AddBookmark(false);
+            event2 = machine.History.CurrentEvent;
+            prompt.Setup(p => p()).Returns(selectEvent ? event2 : null);
+            TestHelpers.Run(machine, 1000, false);
+
+            machine.AddBookmark(false);
+
             viewModel.ActiveMachineViewModel = active ? machineViewModel : null;
 
             // Act
@@ -386,17 +393,17 @@ namespace CPvC.Test
                 prompt.Verify(p => p(), Times.Once());
                 if (selectEvent)
                 {
-                    Assert.AreEqual(historyEvent, machine.History.CurrentEvent);
+                    Assert.AreEqual(event2, machine.History.CurrentEvent);
                 }
                 else
                 {
-                    Assert.AreNotEqual(historyEvent, machine.History.CurrentEvent);
+                    Assert.AreNotEqual(event2, machine.History.CurrentEvent);
                 }
             }
             else
             {
                 prompt.Verify(p => p(), Times.Never());
-                Assert.AreNotEqual(historyEvent, machine.History.CurrentEvent);
+                Assert.AreNotEqual(event2, machine.History.CurrentEvent);
             }
         }
 

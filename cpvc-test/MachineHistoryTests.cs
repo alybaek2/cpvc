@@ -11,69 +11,30 @@ namespace CPvC.Test
     public class MachineHistoryTests
     {
         [Test]
+        public void Root()
+        {
+            // Setup
+            MachineHistory history = new MachineHistory();
+
+            // Verify
+            Assert.AreEqual(HistoryEventType.None, history.RootEvent.Type);
+        }
+
+        [Test]
         public void AddEvent()
         {
             // Setup
             MachineHistory history = new MachineHistory();
-            HistoryEvent event1 = HistoryEvent.CreateCheckpoint(1, 1, DateTime.UtcNow, null);
-            HistoryEvent event2 = HistoryEvent.CreateCheckpoint(2, 100, DateTime.UtcNow, null);
 
             // Act
-            history.AddEvent(event1);
-            history.AddEvent(event2);
+            HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+            HistoryEvent event2 = history.AddCoreAction(CoreAction.KeyPress(200, 12, true));
 
             // Verify
-            Assert.AreEqual(event1, history.RootEvent);
+            Assert.AreEqual(1, history.RootEvent.Children.Count);
+            Assert.AreEqual(event1, history.RootEvent.Children[0]);
             Assert.AreEqual(1, event1.Children.Count);
-        }
-
-        [Test]
-        public void AddParentCheckpoint()
-        {
-            // Setup
-            MachineHistory history = new MachineHistory();
-            HistoryEvent event1 = HistoryEvent.CreateCheckpoint(1, 1, DateTime.UtcNow, null);
-            HistoryEvent event2 = HistoryEvent.CreateCheckpoint(2, 10, DateTime.UtcNow, null);
-            HistoryEvent event3 = HistoryEvent.CreateCheckpoint(3, 50, DateTime.UtcNow, null);
-            HistoryEvent event4 = HistoryEvent.CreateCheckpoint(4, 5, DateTime.UtcNow, null);
-
-            // Act
-            history.AddEvent(event1);
-            history.AddEvent(event2);
-            history.AddEvent(event3);
-            history.AddEvent(event4);
-
-            // Verify
-            Assert.AreEqual(event1, history.RootEvent);
-            Assert.AreEqual(1, event1.Children.Count);
-            Assert.AreEqual(1, event2.Children.Count);
-            Assert.AreEqual(1, event4.Children.Count);
-            Assert.AreEqual(0, event3.Children.Count);
-            Assert.AreEqual(event4, event2.Parent);
-            Assert.AreEqual(event2, event3.Parent);
-            Assert.AreEqual(event1, event4.Parent);
-            Assert.AreEqual(event4, event1.Children[0]);
-            Assert.AreEqual(event2, event4.Children[0]);
-        }
-
-        /// <summary>
-        /// Test ensuring that an event can't be added prior to the root event.
-        /// </summary>
-        [Test]
-        public void AddParentCheckpointRoot()
-        {
-            // Setup
-            MachineHistory history = new MachineHistory();
-            HistoryEvent event1 = HistoryEvent.CreateCheckpoint(1, 10, DateTime.UtcNow, null);
-            HistoryEvent event2 = HistoryEvent.CreateCheckpoint(2, 1, DateTime.UtcNow, null);
-
-            // Act
-            history.AddEvent(event1);
-            history.AddEvent(event2);
-
-            // Verify
-            Assert.AreEqual(event1, history.RootEvent);
-            Assert.AreEqual(0, event1.Children.Count);
+            Assert.AreEqual(event2, event1.Children[0]);
             Assert.AreEqual(0, event2.Children.Count);
         }
 
@@ -82,15 +43,12 @@ namespace CPvC.Test
         {
             // Setup
             MachineHistory history = new MachineHistory();
-            HistoryEvent event1 = HistoryEvent.CreateCheckpoint(1, 1, DateTime.UtcNow, null);
-            HistoryEvent event2 = HistoryEvent.CreateCheckpoint(2, 50, DateTime.UtcNow, null);
-            HistoryEvent event3 = HistoryEvent.CreateCheckpoint(3, 100, DateTime.UtcNow, null);
-            history.AddEvent(event1);
-            event1.AddChild(event2);
-            event2.AddChild(event3);
+            HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+            HistoryEvent event2 = history.AddCoreAction(CoreAction.KeyPress(200, 12, true));
+            HistoryEvent event3 = history.AddCoreAction(CoreAction.RunUntil(200, 300, null));
 
             // Act
-            bool result = history.DeleteEvent(event2);
+            bool result = history.DeleteEventAndChildren(event2);
 
             // Verify
             Assert.True(result);
@@ -98,33 +56,38 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void DeleteRootEvent()
+        public void DeleteRoot()
         {
             // Setup
             MachineHistory history = new MachineHistory();
-            HistoryEvent event1 = HistoryEvent.CreateCheckpoint(1, 1, DateTime.UtcNow, null);
-            history.AddEvent(event1);
+            HistoryEvent root = history.RootEvent;
 
             // Act
-            bool result = history.DeleteEvent(event1);
+            bool result = history.DeleteEventAndChildren(history.RootEvent);
 
             // Verify
             Assert.False(result);
+            Assert.AreEqual(root, history.RootEvent);
         }
 
         [Test]
-        public void DeleteRootEventById()
+        public void CollapseRunUntilActions()
         {
             // Setup
             MachineHistory history = new MachineHistory();
-            HistoryEvent event1 = HistoryEvent.CreateCheckpoint(1, 1, DateTime.UtcNow, null);
-            history.AddEvent(event1);
 
             // Act
-            bool result = history.DeleteEvent(1);
+            HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+            HistoryEvent event2 = history.AddCoreAction(CoreAction.RunUntil(200, 300, null));
 
             // Verify
-            Assert.False(result);
+            Assert.AreEqual(1, history.RootEvent.Children.Count);
+            Assert.AreEqual(event1, history.RootEvent.Children[0]);
+            Assert.AreEqual(0, event1.Children.Count);
+            Assert.AreEqual(event1, event2);
+            Assert.AreEqual(CoreAction.Types.RunUntil, event1.CoreAction.Type);
+            Assert.AreEqual(100, event1.CoreAction.Ticks);
+            Assert.AreEqual(300, event1.CoreAction.StopTicks);
         }
 
         [Test]
@@ -132,32 +95,45 @@ namespace CPvC.Test
         {
             // Setup
             MachineHistory history = new MachineHistory();
-            HistoryEvent event1 = HistoryEvent.CreateCheckpoint(1, 1, DateTime.UtcNow, null);
-            HistoryEvent event2 = HistoryEvent.CreateCheckpoint(2, 50, DateTime.UtcNow, null);
-            history.AddEvent(event1);
-            history.AddEvent(event2);
+            HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+            HistoryEvent event2 = history.AddCoreAction(CoreAction.KeyPress(200, 12, true));
+            HistoryEvent event3 = history.AddCoreAction(CoreAction.RunUntil(200, 300, null));
 
             // Act
-            history.SetCurrentEvent(1);
+            history.SetCurrent(event1);
 
             // Verify
             Assert.AreEqual(event1, history.CurrentEvent);
         }
 
         [Test]
+        public void SetRootCurrentEvent()
+        {
+            // Setup
+            MachineHistory history = new MachineHistory();
+            HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+
+            // Act
+            history.SetCurrent(history.RootEvent);
+
+            // Verify
+            Assert.AreEqual(history.RootEvent, history.CurrentEvent);
+        }
+
+        [Test]
         public void SetBookmark()
         {
             // Setup
-            Bookmark bookmark = new Bookmark(false, 1, (byte[])null, (byte[])null);
             MachineHistory history = new MachineHistory();
-            HistoryEvent event1 = HistoryEvent.CreateCheckpoint(1, 1, DateTime.UtcNow, null);
-            history.AddEvent(event1);
+            HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+            HistoryEvent event2 = history.AddCoreAction(CoreAction.KeyPress(200, 12, true));
 
             // Act
-            history.SetBookmark(1, bookmark);
+            HistoryEvent event3 = history.AddBookmark(200, new Bookmark(false, Core.LatestVersion, new byte[] { }, new byte[] { }));
 
             // Verify
-            Assert.AreEqual(bookmark, event1.Bookmark);
+            Assert.AreEqual(event3, history.CurrentEvent);
+            Assert.AreEqual(HistoryEventType.AddBookmark, event3.Type);
         }
     }
 }

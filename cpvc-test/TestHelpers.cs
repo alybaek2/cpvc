@@ -68,47 +68,47 @@ namespace CPvC.Test
             return It.Is<CoreAction>(r => r != null && r.Type == CoreRequest.Types.Reset);
         }
 
-        static public HistoryEvent CoreActionEvent(int id, CoreRequest.Types type)
-        {
-            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction.Type == type && h.Id == id);
-        }
+        //static public HistoryEvent CoreActionEvent(int id, CoreRequest.Types type)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction.Type == type && h.Id == id);
+        //}
 
-        static public HistoryEvent CoreActionEvent(int id, UInt64 ticks, CoreRequest.Types type)
-        {
-            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction.Type == type && h.Ticks == ticks && h.Id == id);
-        }
+        //static public HistoryEvent CoreActionEvent(int id, UInt64 ticks, CoreRequest.Types type)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction.Type == type && h.Ticks == ticks && h.Id == id);
+        //}
 
-        static public HistoryEvent KeyPressEvent(int id, UInt64 ticks, byte keyCode, bool keyDown)
-        {
-            return It.Is<HistoryEvent>(h => h != null &&
-                                            h.Type == HistoryEvent.Types.CoreAction &&
-                                            h.CoreAction.Type == CoreRequest.Types.KeyPress &&
-                                            h.CoreAction.KeyCode == keyCode &&
-                                            h.CoreAction.KeyDown == keyDown &&
-                                            h.Ticks == ticks &&
-                                            h.Id == id);
-        }
+        //static public HistoryEvent KeyPressEvent(int id, UInt64 ticks, byte keyCode, bool keyDown)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null &&
+        //                                    h.Type == HistoryEvent.Types.CoreAction &&
+        //                                    h.CoreAction.Type == CoreRequest.Types.KeyPress &&
+        //                                    h.CoreAction.KeyCode == keyCode &&
+        //                                    h.CoreAction.KeyDown == keyDown &&
+        //                                    h.Ticks == ticks &&
+        //                                    h.Id == id);
+        //}
 
-        static public HistoryEvent LoadDiscEvent(int id, UInt64 ticks, byte drive, byte[] disc)
-        {
-            return It.Is<HistoryEvent>(h => h != null &&
-                                            h.Type == HistoryEvent.Types.CoreAction &&
-                                            h.CoreAction.Type == CoreRequest.Types.LoadDisc &&
-                                            h.CoreAction.Drive == drive &&
-                                            h.CoreAction.MediaBuffer.GetBytes().SequenceEqual(disc) &&
-                                            h.Ticks == ticks &&
-                                            h.Id == id);
-        }
+        //static public HistoryEvent LoadDiscEvent(int id, UInt64 ticks, byte drive, byte[] disc)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null &&
+        //                                    h.Type == HistoryEvent.Types.CoreAction &&
+        //                                    h.CoreAction.Type == CoreRequest.Types.LoadDisc &&
+        //                                    h.CoreAction.Drive == drive &&
+        //                                    h.CoreAction.MediaBuffer.GetBytes().SequenceEqual(disc) &&
+        //                                    h.Ticks == ticks &&
+        //                                    h.Id == id);
+        //}
 
-        static public HistoryEvent LoadTapeEvent(int id, UInt64 ticks, byte[] tape)
-        {
-            return It.Is<HistoryEvent>(h => h != null &&
-                                            h.Type == HistoryEvent.Types.CoreAction &&
-                                            h.CoreAction.Type == CoreRequest.Types.LoadTape &&
-                                            h.CoreAction.MediaBuffer.GetBytes().SequenceEqual(tape) &&
-                                            h.Ticks == ticks &&
-                                            h.Id == id);
-        }
+        //static public HistoryEvent LoadTapeEvent(int id, UInt64 ticks, byte[] tape)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null &&
+        //                                    h.Type == HistoryEvent.Types.CoreAction &&
+        //                                    h.CoreAction.Type == CoreRequest.Types.LoadTape &&
+        //                                    h.CoreAction.MediaBuffer.GetBytes().SequenceEqual(tape) &&
+        //                                    h.Ticks == ticks &&
+        //                                    h.Id == id);
+        //}
 
         static public Bookmark BookmarkMatch(bool system, int version, int statePos, int screenPos)
         {
@@ -120,33 +120,33 @@ namespace CPvC.Test
                 ((IStreamBlob)(b.Screen)).Position == screenPos);
         }
 
-        static public HistoryEvent VersionEvent(int id)
-        {
-            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction != null && h.CoreAction.Type == CoreRequest.Types.CoreVersion && h.Id == id);
-        }
+        //static public HistoryEvent VersionEvent(int id)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction != null && h.CoreAction.Type == CoreRequest.Types.CoreVersion && h.Id == id);
+        //}
 
-        static public HistoryEvent CheckpointEvent(int id)
-        {
-            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id);
-        }
+        //static public HistoryEvent CheckpointEvent(int id)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id);
+        //}
 
-        static public HistoryEvent CheckpointWithBookmarkEvent(int id, UInt64 ticks, bool system, int version, int stateBlobPos, int screenBlobPos)
-        {
-            return It.Is<HistoryEvent>(h => h != null &&
-                                            h.Type == HistoryEvent.Types.Checkpoint &&
-                                            h.Id == id &&
-                                            h.Ticks == ticks &&
-                                            h.Bookmark != null &&
-                                            h.Bookmark.System == system &&
-                                            h.Bookmark.Version == version &&
-                                            ((IStreamBlob)(h.Bookmark.State)).Position == stateBlobPos &&
-                                            ((IStreamBlob)(h.Bookmark.Screen)).Position == screenBlobPos);
-        }
+        //static public HistoryEvent CheckpointWithBookmarkEvent(int id, UInt64 ticks, bool system, int version, int stateBlobPos, int screenBlobPos)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null &&
+        //                                    h.Type == HistoryEvent.Types.Checkpoint &&
+        //                                    h.Id == id &&
+        //                                    h.Ticks == ticks &&
+        //                                    h.Bookmark != null &&
+        //                                    h.Bookmark.System == system &&
+        //                                    h.Bookmark.Version == version &&
+        //                                    ((IStreamBlob)(h.Bookmark.State)).Position == stateBlobPos &&
+        //                                    ((IStreamBlob)(h.Bookmark.Screen)).Position == screenBlobPos);
+        //}
 
-        static public HistoryEvent CheckpointWithoutBookmarkEvent(int id, UInt64 ticks)
-        {
-            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id && h.Ticks == ticks && h.Bookmark == null);
-        }
+        //static public HistoryEvent CheckpointWithoutBookmarkEvent(int id, UInt64 ticks)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id && h.Ticks == ticks && h.Bookmark == null);
+        //}
 
         /// <summary>
         /// Returns a lambda representing the invocation of the IFileSystem.ReadBytes method with a specific filename.

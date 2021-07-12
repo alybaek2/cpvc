@@ -72,7 +72,12 @@ namespace CPvC.UI
 
             _deleteBranchesCommand = new Command(
                 p => DeleteBranches(),
-                p => (SelectedItem as HistoryViewItem)?.HistoryEvent != null
+                p =>
+                {
+                    HistoryEvent historyEvent = (SelectedItem as HistoryViewItem)?.HistoryEvent;
+
+                    return !historyEvent?.IsEqualToOrAncestorOf(machine.History.CurrentEvent) ?? false;
+                }
             );
 
             _display = new Display();
@@ -115,7 +120,7 @@ namespace CPvC.UI
                     {
                         bitmap = _machine.Display.Bitmap;
                     }
-                    else if (historyEvent.Type == HistoryEvent.Types.Checkpoint && historyEvent.Bookmark != null)
+                    else if (historyEvent.Type == HistoryEventType.AddBookmark && historyEvent.Bookmark != null)
                     {
                         _display.GetFromBookmark(historyEvent.Bookmark);
 
@@ -140,7 +145,7 @@ namespace CPvC.UI
                 return true;
             }
 
-            if (historyEvent.Type == HistoryEvent.Types.Checkpoint && historyEvent.Bookmark != null)
+            if (historyEvent.Type == HistoryEventType.AddBookmark && historyEvent.Bookmark != null)
             {
                 return true;
             }
@@ -194,7 +199,7 @@ namespace CPvC.UI
                     HistoryViewItem item = new HistoryViewItem(historyEvent);
 
                     // Figure out where this new item should be placed.
-                    int itemIndex = items.FindIndex(x => x.Ticks > historyEvent.Ticks);
+                    int itemIndex = items.FindIndex(x => x.Ticks > historyEvent.EndTicks);
                     if (itemIndex == -1)
                     {
                         // Not found? Add the item to the end.
@@ -259,7 +264,7 @@ namespace CPvC.UI
         {
             if (SelectedItem?.HistoryEvent.Bookmark != null)
             {
-                _machine.SetBookmark(SelectedItem.HistoryEvent, null);
+                _machine.DeleteEvent(SelectedItem.HistoryEvent);
 
                 RefreshHistoryViewItems();
             }

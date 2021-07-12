@@ -38,7 +38,7 @@ namespace CPvC
         {
             get
             {
-                return HistoryEvent?.Ticks ?? 0;
+                return HistoryEvent?.EndTicks ?? 0;
             }
         }
 

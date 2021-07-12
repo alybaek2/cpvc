@@ -264,9 +264,6 @@ namespace CPvC.UI.Forms
 
             using (machine.AutoPause())
             {
-                // Set a checkpoint here so the UI shows the current timeline position correctly.
-                machine.SetCheckpoint();
-
                 BookmarkSelectWindow dialog = new BookmarkSelectWindow(this, machine);
                 bool? result = dialog.ShowDialog();
                 if (result.HasValue && result.Value)

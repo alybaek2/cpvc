@@ -52,7 +52,7 @@ namespace CPvC
         /// <summary>
         /// For a request, indicates the desired ticks to stop at. For an action represents the actual ticks value that the core stopped at.
         /// </summary>
-        public UInt64 StopTicks { get; protected set; }
+        public UInt64 StopTicks { get; set; }
 
         /// <summary>
         /// For an action, this indicates the version of the core to switch to.
