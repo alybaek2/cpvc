@@ -7,45 +7,49 @@ using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
 {
-    [TestFixture]
+    internal class MemoryFileByteStream : MemoryByteStream, IFileByteStream
+    {
+        public void Close()
+        {
+        }
+
+        public void Dispose()
+        {
+        }
+    }
     public class MachineFileTests
     {
-        private List<string> _lines;
-        private MockFileByteStream _mockBinaryWriter;
-        private MachineFile _file;
-
-        [SetUp]
-        public void Setup()
+        static private object[] CoreActionCases =
         {
-            _lines = new List<string>();
-            _mockBinaryWriter = new MockFileByteStream();
-            _file = new MachineFile(_mockBinaryWriter.Object);
-        }
+            CoreAction.KeyPress(100, 42, true),
+            CoreAction.CoreVersion(100, 2),
+            CoreAction.LoadDisc(100, 1, new MemoryBlob(new byte[] { 0x01, 0x02 })),
+            CoreAction.LoadTape(100, new MemoryBlob(new byte[] { 0x01, 0x02 })),
+            CoreAction.KeyPress(100, 42, true),
+            CoreAction.Reset(100)
+        };
 
-        [TearDown]
-        public void Teardown()
-        {
-            _lines = null;
-            _mockBinaryWriter = null;
-            _file = null;
-        }
-
-        [Test]
-        public void WriteName()
+        [TestCaseSource(nameof(CoreActionCases))]
+        public void WriteAndReadCoreAction(CoreAction coreAction)
         {
             // Setup
-            byte[] expected = new byte[]
-            {
-                0x00,
-                      0x04, 0x00, 0x00, 0x00,
-                      (byte)'t', (byte)'e', (byte)'s', (byte)'t'
-            };
+            MemoryFileByteStream memStream = new MemoryFileByteStream();
+            MachineFile file = new MachineFile(memStream);
+            MachineHistory writeHistory = new MachineHistory();
+            file.SetMachineHistory(writeHistory);
 
             // Act
-            _file.WriteName("test");
+            writeHistory.AddCoreAction(coreAction);
+            file = new MachineFile(memStream);
+            MachineHistory readHistory = new MachineHistory();
+            file.SetMachineHistory(readHistory);
+            file.ReadFile();
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
+            Assert.AreEqual(1, readHistory.RootEvent.Children.Count);
+            Assert.AreEqual(0, readHistory.RootEvent.Children[0].Children.Count);
+            Assert.AreEqual(HistoryEventType.AddCoreAction, readHistory.RootEvent.Children[0].Type);
+            Assert.True(CoreActionsEqual(coreAction, readHistory.RootEvent.Children[0].CoreAction));
         }
 
         //[Test]

@@ -138,13 +138,20 @@ namespace CPvC
             }
         }
 
-        public void ReadFile(Machine machine)
+        public void ReadFile()
         {
             lock (_byteStream)
             {
                 // Should probably clear history first...
-                _machine.PropertyChanged -= Machine_PropertyChanged;
-                _machineHistory.Auditors -= HistoryEventHappened;
+                if (_machine != null)
+                {
+                    _machine.PropertyChanged -= Machine_PropertyChanged;
+                }
+
+                if (_machineHistory != null)
+                {
+                    _machineHistory.Auditors -= HistoryEventHappened;
+                }
 
                 _byteStream.Position = 0;
 
@@ -195,8 +202,15 @@ namespace CPvC
                     }
                 }
 
-                _machineHistory.Auditors += HistoryEventHappened;
-                _machine.PropertyChanged += Machine_PropertyChanged;
+                if (_machineHistory != null)
+                {
+                    _machineHistory.Auditors += HistoryEventHappened;
+                }
+
+                if (_machine != null)
+                {
+                    _machine.PropertyChanged += Machine_PropertyChanged;
+                }
             }
         }
 

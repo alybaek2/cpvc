@@ -47,7 +47,7 @@ namespace CPvC.Test
             new object[] { new CoreAction((CoreRequest.Types) 99, 0x01234567), new byte[] { 99 }, true }
         };
 
-        [TestCaseSource("CoreRequestCases")]
+        [TestCaseSource(nameof(CoreRequestCases))]
         public void CoreRequestToBytes(CoreRequest coreRequest, byte[] expectedBytes, bool throws)
         {
             // Setup
@@ -66,7 +66,7 @@ namespace CPvC.Test
             }
         }
 
-        [TestCaseSource("CoreRequestCases")]
+        [TestCaseSource(nameof(CoreRequestCases))]
         public void CoreRequestFromBytes(CoreRequest expectedCoreRequest, byte[] expectedBytes, bool throws)
         {
             // Setup
@@ -85,7 +85,7 @@ namespace CPvC.Test
             }
         }
 
-        [TestCaseSource("CoreActionCases")]
+        [TestCaseSource(nameof(CoreActionCases))]
         public void CoreActionToBytes(CoreAction coreAction, byte[] expectedBytes, bool throws)
         {
             // Setup
@@ -105,7 +105,7 @@ namespace CPvC.Test
             }
         }
 
-        [TestCaseSource("CoreActionCases")]
+        [TestCaseSource(nameof(CoreActionCases))]
         public void CoreActionFromBytes(CoreAction expectedCoreAction, byte[] bytes, bool throws)
         {
             // Setup

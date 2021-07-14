@@ -141,7 +141,7 @@ namespace CPvC
                 _file.SetMachine(this);
                 _file.SetMachineHistory(_history);
 
-                _file.ReadFile(this);
+                _file.ReadFile();
 
                 // Rewind from the current event to the most recent one with a bookmark...
                 HistoryEvent e = _history.CurrentEvent;
@@ -610,7 +610,7 @@ namespace CPvC
                 _file = new MachineFile(_fileSystem, Filepath);
                 _file.SetMachine(this);
                 _file.SetMachineHistory(_history);
-                _file.ReadFile(this);
+                _file.ReadFile();
 
                 Status = String.Format("Compacted machine file by {0}%", (Int64)(100 * ((double)(oldLength - newLength)) / ((double)oldLength)));
             }

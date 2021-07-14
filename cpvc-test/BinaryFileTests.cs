@@ -65,7 +65,7 @@ namespace CPvC.Test
             new object[] { new byte[] { 0x34, 0x56 }, new byte[] { 0x01, 0x02, 0x00, 0x00, 0x00, 0x34, 0x56 } }
         };
 
-        [TestCaseSource("ByteCases")]
+        [TestCaseSource(nameof(ByteCases))]
         public void ReadByte(int expected, byte[] content)
         {
             // Setup
@@ -80,7 +80,7 @@ namespace CPvC.Test
             Assert.AreEqual(expected, b);
         }
 
-        [TestCaseSource("BoolCases")]
+        [TestCaseSource(nameof(BoolCases))]
         public void WriteBool(bool b, byte[] expected)
         {
             // Setup
@@ -94,7 +94,7 @@ namespace CPvC.Test
             Assert.AreEqual(expected, mock.Content);
         }
 
-        [TestCaseSource("BoolCases")]
+        [TestCaseSource(nameof(BoolCases))]
         public void ReadBool(bool expected, byte[] content)
         {
             // Setup
@@ -109,7 +109,7 @@ namespace CPvC.Test
             Assert.AreEqual(expected, b);
         }
 
-        [TestCaseSource("ByteCases")]
+        [TestCaseSource(nameof(ByteCases))]
         public void WriteByte(byte b, byte[] expected)
         {
             // Setup
@@ -123,7 +123,7 @@ namespace CPvC.Test
             Assert.AreEqual(expected, mock.Content);
         }
 
-        [TestCaseSource("Int32Cases")]
+        [TestCaseSource(nameof(Int32Cases))]
         public void ReadInt32(int expected, byte[] content)
         {
             // Setup
@@ -138,7 +138,7 @@ namespace CPvC.Test
             Assert.AreEqual(expected, i);
         }
 
-        [TestCaseSource("Int32Cases")]
+        [TestCaseSource(nameof(Int32Cases))]
         public void WriteInt32(int i, byte[] expected)
         {
             // Setup
@@ -152,7 +152,7 @@ namespace CPvC.Test
             Assert.AreEqual(expected, mock.Content);
         }
 
-        [TestCaseSource("UInt64Cases")]
+        [TestCaseSource(nameof(UInt64Cases))]
         public void ReadInt64(UInt64 expected, byte[] content)
         {
             // Setup
@@ -167,7 +167,7 @@ namespace CPvC.Test
             Assert.AreEqual(expected, u);
         }
 
-        [TestCaseSource("UInt64Cases")]
+        [TestCaseSource(nameof(UInt64Cases))]
         public void WriteInt64(UInt64 u, byte[] expected)
         {
             // Setup
@@ -181,7 +181,7 @@ namespace CPvC.Test
             Assert.AreEqual(expected, mock.Content);
         }
 
-        [TestCaseSource("VariableLengthByteArrayCases")]
+        [TestCaseSource(nameof(VariableLengthByteArrayCases))]
         public void ReadVariableLengthByteArray(byte[] expected, byte[] content)
         {
             // Setup
@@ -196,7 +196,7 @@ namespace CPvC.Test
             Assert.AreEqual(expected, array);
         }
 
-        [TestCaseSource("VariableLengthByteArrayCases")]
+        [TestCaseSource(nameof(VariableLengthByteArrayCases))]
         public void WriteVariableLengthByteArray(byte[] array, byte[] expected)
         {
             // Setup
@@ -210,7 +210,7 @@ namespace CPvC.Test
             Assert.AreEqual(expected, mock.Content);
         }
 
-        [TestCaseSource("StringCases")]
+        [TestCaseSource(nameof(StringCases))]
         public void ReadString(string expected, byte[] content)
         {
             // Setup
@@ -225,7 +225,7 @@ namespace CPvC.Test
             Assert.AreEqual(expected, str);
         }
 
-        [TestCaseSource("StringCases")]
+        [TestCaseSource(nameof(StringCases))]
         public void WriteString(string str, byte[] expected)
         {
             // Setup
@@ -239,7 +239,7 @@ namespace CPvC.Test
             Assert.AreEqual(expected, mock.Content);
         }
 
-        [TestCaseSource("BytesBlobCases")]
+        [TestCaseSource(nameof(BytesBlobCases))]
         public void ReadBytesBlob(byte[] expected, byte[] content)
         {
             // Setup
@@ -255,7 +255,7 @@ namespace CPvC.Test
             Assert.AreEqual(expected, bytes);
         }
 
-        [TestCaseSource("BytesBlobCases")]
+        [TestCaseSource(nameof(BytesBlobCases))]
         public void WriteBytesBlob(byte[] array, byte[] expected)
         {
             // Setup
