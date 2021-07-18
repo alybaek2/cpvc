@@ -576,6 +576,7 @@ namespace CPvC
         {
             using (AutoPause())
             {
+                Machine machine = new Machine(String.Empty, String.Empty, null);
                 MachineHistory newHistory = new MachineHistory();
 
                 string tempname = Filepath + ".new";
@@ -585,13 +586,11 @@ namespace CPvC
                 {
                     tempfile = new MachineFile(_fileSystem, tempname);
                     tempfile.DiffsEnabled = diffsEnabled;
+                    tempfile.SetMachine(machine);
                     tempfile.SetMachineHistory(newHistory);
 
-                    tempfile.WriteName(_name);
+                    machine.Name = _name;
                     _history.Copy(newHistory);
-
-                    //WriteEvent(tempfile, _history.RootEvent);
-                    //tempfile.WriteCurrent(_history.CurrentEvent);
                 }
                 finally
                 {

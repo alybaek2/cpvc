@@ -385,6 +385,57 @@ namespace CPvC.Test
             return machine;
         }
 
+        static public bool ByteArraysEqual(byte[] bytes1, byte[] bytes2)
+        {
+            if (bytes1 == bytes2)
+            {
+                return true;
+            }
+
+            if (bytes1 == null || bytes2 == null)
+            {
+                return false;
+            }
+
+            return bytes1.SequenceEqual(bytes2);
+        }
+
+        static public bool BookmarksEqual(Bookmark bookmark1, Bookmark bookmark2)
+        {
+            if (bookmark1 == bookmark2)
+            {
+                return true;
+            }
+
+            if (bookmark1 == null || bookmark2 == null)
+            {
+                return false;
+            }
+
+            if (bookmark1.System != bookmark2.System)
+            {
+                return false;
+            }
+
+            if (bookmark1.Version != bookmark2.Version)
+            {
+                return false;
+            }
+
+            if (!ByteArraysEqual(bookmark1.Screen.GetBytes(), bookmark2.Screen.GetBytes()))
+            {
+                return false;
+            }
+
+            if (!ByteArraysEqual(bookmark1.State.GetBytes(), bookmark2.State.GetBytes()))
+            {
+                return false;
+            }
+
+            return true;
+
+        }
+
         static public bool CoreRequestsEqual(CoreRequest request1, CoreRequest request2)
         {
             if (request1 == request2)
@@ -457,6 +508,75 @@ namespace CPvC.Test
             }
 
             return true;
+        }
+
+        static public bool HistoryEventsEqual(HistoryEvent event1, HistoryEvent event2)
+        {
+            if (event1 == event2)
+            {
+                return true;
+            }
+
+            if (event1 == null || event2 == null)
+            {
+                return false;
+            }
+
+            if (event1.Children.Count != event2.Children.Count)
+            {
+                return false;
+            }
+
+            if (event1.Type != event2.Type)
+            {
+                return false;
+            }
+
+            switch (event1.Type)
+            {
+                case HistoryEventType.AddBookmark:
+                    if (!BookmarksEqual(event1.Bookmark, event2.Bookmark))
+                    {
+                        return false;
+                    }
+                    break;
+                case HistoryEventType.AddCoreAction:
+                    if (!CoreActionsEqual(event1.CoreAction, event2.CoreAction))
+                    {
+                        return false;
+                    }
+                    break;
+                case HistoryEventType.None:
+                    break;
+                default:
+                    throw new Exception(String.Format("Unknown history event type {0}", event1.Type));
+            }
+
+            // This assumes the children are in the same order. Might need to change this in the future...
+            for (int i = 0; i < event1.Children.Count; i++)
+            {
+                if (!HistoryEventsEqual(event1.Children[i], event2.Children[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        static public bool HistoriesEqual(MachineHistory history1, MachineHistory history2)
+        {
+            if (history1 == history2)
+            {
+                return true;
+            }
+
+            if (history1 == null || history2 == null)
+            {
+                return false;
+            }
+
+            return HistoryEventsEqual(history1.RootEvent, history2.RootEvent);
         }
     }
 }
