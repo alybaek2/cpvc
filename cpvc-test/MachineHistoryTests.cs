@@ -8,8 +8,31 @@ using System.Threading.Tasks;
 
 namespace CPvC.Test
 {
+    [TestFixture]
     public class MachineHistoryTests
     {
+        private MachineHistory _history;
+        private HistoryEvent _event0;
+        private HistoryEvent _event00;
+        private HistoryEvent _event01;
+        private HistoryEvent _event010;
+
+        private MachineHistory _historyCopy;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _history = new MachineHistory();
+            _event0 = _history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+            _event00 = _history.AddCoreAction(CoreAction.KeyPress(200, 12, true));
+            _history.SetCurrent(_event0);
+            _event01 = _history.AddCoreAction(CoreAction.Reset(300));
+            _event010 = _history.AddBookmark(400, new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 }));
+
+            _historyCopy = new MachineHistory();
+            _history.Copy(_historyCopy);
+        }
+
         [Test]
         public void Root()
         {
@@ -39,39 +62,6 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void DeleteEvent()
-        {
-            // Setup
-            MachineHistory history = new MachineHistory();
-            HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
-            HistoryEvent event2 = history.AddCoreAction(CoreAction.KeyPress(200, 12, true));
-            HistoryEvent event3 = history.AddCoreAction(CoreAction.RunUntil(200, 300, null));
-            history.SetCurrent(event1);
-
-            // Act
-            bool result = history.DeleteEventAndChildren(event2);
-
-            // Verify
-            Assert.True(result);
-            Assert.AreEqual(0, event1.Children.Count);
-        }
-
-        [Test]
-        public void DeleteRoot()
-        {
-            // Setup
-            MachineHistory history = new MachineHistory();
-            HistoryEvent root = history.RootEvent;
-
-            // Act
-            bool result = history.DeleteEventAndChildren(history.RootEvent);
-
-            // Verify
-            Assert.False(result);
-            Assert.AreEqual(root, history.RootEvent);
-        }
-
-        [Test]
         public void CollapseRunUntilActions()
         {
             // Setup
@@ -94,31 +84,21 @@ namespace CPvC.Test
         [Test]
         public void SetCurrentEvent()
         {
-            // Setup
-            MachineHistory history = new MachineHistory();
-            HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
-            HistoryEvent event2 = history.AddCoreAction(CoreAction.KeyPress(200, 12, true));
-            HistoryEvent event3 = history.AddCoreAction(CoreAction.RunUntil(200, 300, null));
-
             // Act
-            history.SetCurrent(event1);
+            _history.SetCurrent(_event01);
 
             // Verify
-            Assert.AreEqual(event1, history.CurrentEvent);
+            Assert.AreEqual(_event01, _history.CurrentEvent);
         }
 
         [Test]
         public void SetRootCurrentEvent()
         {
-            // Setup
-            MachineHistory history = new MachineHistory();
-            HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
-
             // Act
-            history.SetCurrent(history.RootEvent);
+            _history.SetCurrent(_history.RootEvent);
 
             // Verify
-            Assert.AreEqual(history.RootEvent, history.CurrentEvent);
+            Assert.AreEqual(_history.RootEvent, _history.CurrentEvent);
         }
 
         [Test]
@@ -140,21 +120,90 @@ namespace CPvC.Test
         [Test]
         public void Copy()
         {
-            // Setup
-            MachineHistory history = new MachineHistory();
-            HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
-            HistoryEvent event2 = history.AddCoreAction(CoreAction.KeyPress(200, 12, true));
-            history.SetCurrent(event1);
-            HistoryEvent event3 = history.AddCoreAction(CoreAction.Reset(300));
-            HistoryEvent event4 = history.AddBookmark(400, new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 }));
-
-            // Act
-            MachineHistory historyCopy = new MachineHistory();
-            history.Copy(historyCopy);
-
             // Verify
-            Assert.True(TestHelpers.HistoriesEqual(history, historyCopy));
+            Assert.True(TestHelpers.HistoriesEqual(_history, _historyCopy));
         }
 
+        [Test]
+        public void DeleteCurrentAndChildren()
+        {
+            // Act
+            bool result = _history.DeleteEventAndChildren(_history.CurrentEvent);
+
+            // Verify
+            Assert.False(result);
+        }
+
+        [Test]
+        public void DeleteEventAndChildren()
+        {
+            // Setup
+            _history.SetCurrent(_event0);
+
+            // Act
+            bool result = _history.DeleteEventAndChildren(_event01);
+
+            // Verify
+            Assert.True(result);
+            Assert.AreEqual(1, _event0.Children.Count);
+        }
+
+        [Test]
+        public void DeleteRootAndChildren()
+        {
+            // Act and Verify
+            Assert.Throws<Exception>(() => _history.DeleteEventAndChildren(_history.RootEvent));
+        }
+
+        [Test]
+        public void DeleteEvent()
+        {
+            // Act
+            bool result = _history.DeleteEvent(_event01);
+
+            // Verify
+            Assert.True(result);
+            Assert.AreEqual(2, _event0.Children.Count);
+            Assert.AreEqual(_event0.Children[1], _event010);
+            Assert.AreEqual(_event0, _event010.Parent);
+        }
+
+        [Test]
+        public void DeleteCurrent()
+        {
+            // Act
+            bool result = _history.DeleteEvent(_history.CurrentEvent);
+
+            // Verify
+            Assert.False(result);
+        }
+
+        [Test]
+        public void DeleteRoot()
+        {
+            // Act and Verify
+            Assert.Throws<Exception>(() => _history.DeleteEvent(_history.RootEvent));
+        }
+
+        [Test]
+        public void DeleteEventNotOurNode()
+        {
+            // Act and Verify
+            Assert.Throws<Exception>(() => _history.DeleteEvent(_historyCopy.CurrentEvent));
+        }
+
+        [Test]
+        public void DeleteEventAndChildrenNotOurNode()
+        {
+            // Act and Verify
+            Assert.Throws<Exception>(() => _history.DeleteEventAndChildren(_historyCopy.CurrentEvent));
+        }
+
+        [Test]
+        public void SetCurrentNotOurNode()
+        {
+            // Act and Verify
+            Assert.Throws<Exception>(() => _history.SetCurrent(_historyCopy.CurrentEvent));
+        }
     }
 }

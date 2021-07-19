@@ -714,14 +714,14 @@ namespace CPvC
             _name = name;
         }
 
-        public void DeleteEventAndChildren(HistoryEvent e)
+        public bool DeleteEventAndChildren(HistoryEvent e)
         {
-            _history.DeleteEventAndChildren(e);
+            return _history.DeleteEventAndChildren(e);
         }
 
-        public void DeleteEvent(HistoryEvent e)
+        public bool DeleteEvent(HistoryEvent e)
         {
-            _history.DeleteEvent(e);
+            return _history.DeleteEvent(e);
         }
 
         public void SetCurrentEvent(HistoryEvent e)

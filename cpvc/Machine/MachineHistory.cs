@@ -257,6 +257,11 @@ namespace CPvC
             HistoryNode historyNode = historyEvent._historyNode;
             if (_nodes.Contains(historyNode))
             {
+                if (historyNode == _rootNode)
+                {
+                    throw new Exception("Can't delete root node!");
+                }
+
                 if (historyEvent.IsEqualToOrAncestorOf(_currentNode.HistoryEvent))
                 {
                     return false;
@@ -294,11 +299,21 @@ namespace CPvC
             }
         }
 
-        public void DeleteEvent(HistoryEvent historyEvent)
+        public bool DeleteEvent(HistoryEvent historyEvent)
         {
             HistoryNode historyNode = historyEvent._historyNode;
             if (_nodes.Contains(historyNode))
             {
+                if (historyNode == _rootNode)
+                {
+                    throw new Exception("Can't delete root node!");
+                }
+
+                if (historyNode == _currentNode)
+                {
+                    return false;
+                }
+
                 foreach (HistoryNode child in historyNode.Children)
                 {
                     child.Parent = historyNode.Parent;
@@ -310,6 +325,8 @@ namespace CPvC
                 historyNode.Parent = null;
 
                 Auditors?.Invoke(historyEvent, 0, HistoryEventType.DeleteEvent, null, null);
+
+                return true;
             }
             else
             {
