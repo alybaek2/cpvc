@@ -136,5 +136,25 @@ namespace CPvC.Test
             Assert.AreEqual(event3, history.CurrentEvent);
             Assert.AreEqual(HistoryEventType.AddBookmark, event3.Type);
         }
+
+        [Test]
+        public void Copy()
+        {
+            // Setup
+            MachineHistory history = new MachineHistory();
+            HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+            HistoryEvent event2 = history.AddCoreAction(CoreAction.KeyPress(200, 12, true));
+            history.SetCurrent(event1);
+            HistoryEvent event3 = history.AddCoreAction(CoreAction.Reset(300));
+            HistoryEvent event4 = history.AddBookmark(400, new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 }));
+
+            // Act
+            MachineHistory historyCopy = new MachineHistory();
+            history.Copy(historyCopy);
+
+            // Verify
+            Assert.True(TestHelpers.HistoriesEqual(history, historyCopy));
+        }
+
     }
 }

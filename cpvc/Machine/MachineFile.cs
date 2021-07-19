@@ -232,7 +232,7 @@ namespace CPvC
             }
         }
 
-        public void WriteName(string name)
+        private void WriteName(string name)
         {
             lock (_byteStream)
             {
@@ -241,7 +241,7 @@ namespace CPvC
             }
         }
 
-        public void WriteAddBookmark(int id, UInt64 ticks, Bookmark bookmark)
+        private void WriteAddBookmark(int id, UInt64 ticks, Bookmark bookmark)
         {
             if (bookmark == null)
             {
@@ -262,7 +262,7 @@ namespace CPvC
             }
         }
 
-        public void ReadAddBookmark()
+        private void ReadAddBookmark()
         {
             lock (_byteStream)
             {
@@ -303,7 +303,7 @@ namespace CPvC
             }
         }
 
-        public void WriteCoreAction(int id, UInt64 ticks, CoreAction action)
+        private void WriteCoreAction(int id, UInt64 ticks, CoreAction action)
         {
             switch (action.Type)
             {

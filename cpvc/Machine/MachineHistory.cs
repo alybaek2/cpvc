@@ -102,11 +102,6 @@ namespace CPvC
             {
                 return _historyNode.Bookmark;
             }
-
-            set
-            {
-                _historyNode.Bookmark = value;
-            }
         }
 
         public CoreAction CoreAction
@@ -324,17 +319,7 @@ namespace CPvC
 
         public void SetCurrent(HistoryEvent historyEvent)
         {
-            HistoryNode historyNode = historyEvent._historyNode;
-            if (_nodes.Contains(historyNode))
-            {
-                SetCurrentNode(historyNode);
-
-                Auditors?.Invoke(historyEvent, 0, HistoryEventType.SetCurrent, null, null);
-            }
-            else
-            {
-                throw new Exception("This history event doesn't belong to us!");
-            }
+            SetCurrentNode(historyEvent._historyNode);
         }
 
         public void Copy(MachineHistory newHistory)
@@ -343,8 +328,9 @@ namespace CPvC
             List<HistoryNode> historyNodes = new List<HistoryNode>();
             historyNodes.AddRange(_rootNode.Children);
 
-            HistoryEvent cnode = null;
-            Dictionary<HistoryNode, HistoryEvent> newNodes = new Dictionary<HistoryNode, HistoryEvent>();
+            HistoryNode newCurrentNode = null;
+
+            Dictionary<HistoryNode, HistoryNode> nodeMap = new Dictionary<HistoryNode, HistoryNode>();
 
             HistoryNode previousNode = null;
             while (historyNodes.Count > 0)
@@ -353,10 +339,10 @@ namespace CPvC
 
                 if (previousNode != currentNode.Parent && previousNode != null)
                 {
-                    newHistory.SetCurrent(newNodes[currentNode.Parent]);
+                    newHistory.SetCurrentNode(nodeMap[currentNode.Parent]);
                 }
 
-                HistoryEvent newEvent = null;
+                HistoryEvent newEvent;
                 switch (currentNode.Type)
                 {
                     case HistoryEventType.AddCoreAction:
@@ -369,10 +355,11 @@ namespace CPvC
                         throw new Exception("Unexpected node type!");
                 }
 
-                newNodes[currentNode] = newEvent;
+                nodeMap[currentNode] = newEvent._historyNode;
+
                 if (currentNode == _currentNode)
                 {
-                    cnode = newEvent;
+                    newCurrentNode = newEvent._historyNode;
                 }
 
                 historyNodes.RemoveAt(0);
@@ -382,9 +369,9 @@ namespace CPvC
                 historyNodes.InsertRange(0, currentNode.Children);
             }
 
-            if (cnode != null)
+            if (newCurrentNode != null)
             {
-                newHistory.SetCurrent(cnode);
+                newHistory.SetCurrentNode(newCurrentNode);
             }
         }
 
@@ -407,20 +394,30 @@ namespace CPvC
 
         private void SetCurrentNode(HistoryNode historyNode)
         {
-            // If the current node is a RunUntil, finish it off by sending a notification...
-            if (_currentNode.Type == HistoryEventType.AddCoreAction && _currentNode.CoreAction.Type == CoreRequest.Types.RunUntil)
+            if (_nodes.Contains(historyNode))
             {
-                Auditors?.Invoke(_currentNode.HistoryEvent, _currentNode.Ticks, _currentNode.Type, _currentNode.CoreAction, _currentNode.Bookmark);
-            }
+                // If the current node is a RunUntil, finish it off by sending a notification...
+                if (_currentNode.Type == HistoryEventType.AddCoreAction && _currentNode.CoreAction.Type == CoreRequest.Types.RunUntil)
+                {
+                    Auditors?.Invoke(_currentNode.HistoryEvent, _currentNode.Ticks, _currentNode.Type, _currentNode.CoreAction, _currentNode.Bookmark);
+                }
 
-            _currentNode = historyNode;
+                _currentNode = historyNode;
+
+                Auditors?.Invoke(historyNode.HistoryEvent, 0, HistoryEventType.SetCurrent, null, null);
+            }
+            else
+            {
+                throw new Exception("This history event doesn't belong to us!");
+            }
         }
 
         private void AddChildNode(HistoryNode historyNode, bool notify)
         {
             _currentNode.Children.Add(historyNode);
-            SetCurrentNode(historyNode);
             _nodes.Add(historyNode);
+
+            SetCurrentNode(historyNode);
 
             if (notify)
             {
