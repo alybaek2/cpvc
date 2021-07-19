@@ -416,8 +416,7 @@ namespace CPvC
         {
             _currentNode.Children.Add(historyNode);
             _nodes.Add(historyNode);
-
-            SetCurrentNode(historyNode);
+            _currentNode = historyNode;
 
             if (notify)
             {
