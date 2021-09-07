@@ -23,7 +23,7 @@ namespace CPvC.UI.Forms
         {
             _settings = new Settings();
             _fileSystem = new FileSystem();
-            _mainViewModel = new MainViewModel(_settings, _fileSystem, SelectItem, PromptForFile, PromptForBookmark, PromptForName, ReportError, SelectRemoteMachine, SelectServerPort, () => new Socket());
+            _mainViewModel = new MainViewModel(_settings, _fileSystem, SelectItem, PromptForFile, PromptForBookmark, PromptForName, ReportError, SelectRemoteMachine, SelectServerPort, () => new Socket(), ConfirmClose);
             _audio = new Audio(_mainViewModel.ReadAudio);
 
             InitializeComponent();
@@ -343,6 +343,13 @@ namespace CPvC.UI.Forms
             return (result.HasValue && result.Value) ? dialog.Machine : null;
         }
 
+        private bool ConfirmClose(string message)
+        {
+            MessageBoxResult result = MessageBox.Show(this, message, "CPvC", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            return result == MessageBoxResult.Yes;
+        }
+
         private void ReportError(string message)
         {
             // Need to replace this with a messagebox that is centred over its parent. This option
@@ -354,14 +361,14 @@ namespace CPvC.UI.Forms
         {
             if (sender is FrameworkElement element && element.DataContext is MachineViewModel machineViewModel)
             {
-                ICoreMachine machine = machineViewModel.Machine as ICoreMachine;
                 try
                 {
+                    machineViewModel.OpenCommand.Execute(null);
                     _mainViewModel.ActiveMachineViewModel = machineViewModel;
                 }
                 catch (Exception ex)
                 {
-                    ReportError(String.Format("Unable to open {0}.\n\n{1}", machine.Name, ex.Message));
+                    ReportError(String.Format("Unable to open {0}.\n\n{1}", machineViewModel.Machine.Name, ex.Message));
                 }
             }
         }
@@ -378,7 +385,9 @@ namespace CPvC.UI.Forms
         {
             if (e.Item is MachineViewModel machineViewModel)
             {
-                e.Accepted = !((machineViewModel.Machine as IOpenableMachine)?.RequiresOpen ?? false);
+                ICoreMachine cm = machineViewModel.Machine;
+                IPersistableMachine pm = cm as IPersistableMachine;
+                e.Accepted = (pm == null || pm.IsOpen);
             }
             else
             {

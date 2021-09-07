@@ -69,6 +69,8 @@ namespace CPvC
         /// </summary>
         public int SnapshotId { get; protected set; }
 
+        public object UserData { get; private set; }
+
         static public CoreRequest Reset()
         {
             return new CoreRequest(Types.Reset);
@@ -146,11 +148,12 @@ namespace CPvC
             return request;
         }
 
-        static public CoreRequest RevertToSnapshot(Int32 snapshotId)
+        static public CoreRequest RevertToSnapshot(Int32 snapshotId, object userData)
         {
             CoreRequest request = new CoreRequest(Types.RevertToSnapshot)
             {
-                SnapshotId = snapshotId
+                SnapshotId = snapshotId,
+                UserData = userData
             };
 
             return request;

@@ -65,11 +65,6 @@ namespace CPvC
             get; set;
         }
 
-        public bool CanClose()
-        {
-            return true;
-        }
-
         public void Close()
         {
             Core = null;

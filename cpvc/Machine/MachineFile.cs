@@ -20,51 +20,100 @@ namespace CPvC
         private const byte _idDeleteEvent = 13;
 
         private Dictionary<HistoryEvent, int> _historyEventToId;
-        private Dictionary<int, HistoryEvent> _persistedIdToIds;
+        private Dictionary<int, HistoryEvent> _idToHistoryEvent;
         private MachineHistory _machineHistory;
         private int _nextPersistentId;
 
         private Machine _machine;
 
+        static private Dictionary<string, Machine> _machines = new Dictionary<string, Machine>();
+
+        public Machine Machine
+        {
+            set
+            {
+                if (_machine != null)
+                {
+                    _machine.PropertyChanged -= Machine_PropertyChanged;
+                }
+
+                _machine = value;
+
+                if (_machine != null)
+                {
+                    _machine.PropertyChanged += Machine_PropertyChanged;
+                }
+
+                //if (_machineHistory != null)
+                //{
+                //    _machineHistory.Auditors -= HistoryEventHappened;
+                //}
+
+                //_machineHistory = _machine?.History;
+
+                //if (_machineHistory != null)
+                //{
+                //    _machineHistory.Auditors += HistoryEventHappened;
+                //}
+            }
+        }
+
+        public MachineHistory History
+        {
+            get
+            {
+                return _machineHistory;
+            }
+
+            set
+            {
+                if (_machineHistory != null)
+                {
+                    _machineHistory.Auditors -= HistoryEventHappened;
+                }
+
+                _machineHistory = value;
+
+                if (_machineHistory != null)
+                {
+                    _machineHistory.Auditors += HistoryEventHappened;
+                }
+            }
+        }
+
+        static public Machine Open(IFileSystem fileSystem, string filepath)
+        {
+            if (_machines.TryGetValue(filepath, out Machine machine))
+            {
+                return machine;
+            }
+
+            return null;
+        }
+
+        public override void Close()
+        {
+            Machine = null;
+            History = null;
+
+            base.Close();
+        }
+
+        static public bool Save(IFileSystem fileSystem, Machine machine, string filepath)
+        {
+            return false;
+        }
+
+
         public MachineFile(IFileByteStream byteStream) : base(byteStream)
         {
             _historyEventToId = new Dictionary<HistoryEvent, int>();
-            _persistedIdToIds = new Dictionary<int, HistoryEvent>();
+            _idToHistoryEvent = new Dictionary<int, HistoryEvent>();
             _nextPersistentId = 0;
         }
 
         public MachineFile(IFileSystem fileSystem, string filepath) : this(fileSystem.OpenFileByteStream(filepath))
         {
-        }
-
-        public void SetMachine(Machine machine)
-        {
-            if (_machine != null)
-            {
-                _machine.PropertyChanged -= Machine_PropertyChanged;
-            }
-
-            _machine = machine;
-
-            if (_machine != null)
-            {
-                _machine.PropertyChanged += Machine_PropertyChanged;
-            }
-        }
-
-        public void SetMachineHistory(MachineHistory history)
-        {
-            if (_machineHistory != null)
-            {
-                _machineHistory.Auditors -= HistoryEventHappened;
-            }
-
-            _machineHistory = history;
-
-            if (_machineHistory != null)
-            {
-                _machineHistory.Auditors += HistoryEventHappened;
-            }
         }
 
         private void HistoryEventHappened(HistoryEvent historyEvent, UInt64 ticks, HistoryEventType type, CoreAction coreAction, Bookmark bookmark)
@@ -77,7 +126,7 @@ namespace CPvC
                         WriteAddBookmark(id, ticks, historyEvent.Bookmark);
 
                         _historyEventToId[historyEvent] = id;
-                        _persistedIdToIds[id] = historyEvent;
+                        _idToHistoryEvent[id] = historyEvent;
 
                     }
                     break;
@@ -87,7 +136,7 @@ namespace CPvC
                         WriteCoreAction(id, ticks, historyEvent.CoreAction);
 
                         _historyEventToId[historyEvent] = id;
-                        _persistedIdToIds[id] = historyEvent;
+                        _idToHistoryEvent[id] = historyEvent;
                     }
                     break;
                 case HistoryEventType.DeleteEventAndChildren:
@@ -138,8 +187,12 @@ namespace CPvC
             }
         }
 
-        public void ReadFile()
+        public void ReadFile(out string name, out MachineHistory history)
         {
+            name = null;
+            history = new MachineHistory();
+            _machineHistory = history;
+
             lock (_byteStream)
             {
                 // Should probably clear history first...
@@ -153,6 +206,8 @@ namespace CPvC
                     _machineHistory.Auditors -= HistoryEventHappened;
                 }
 
+                CPvC.Diagnostics.Trace("Read File STARTING!!!");
+
                 _byteStream.Position = 0;
 
                 while (_byteStream.Position < _byteStream.Length)
@@ -162,7 +217,7 @@ namespace CPvC
                     switch (blockType)
                     {
                         case _idName:
-                            ReadName();
+                            name = ReadName();
                             break;
                         case _idCurrent:
                             ReadCurrent();
@@ -195,12 +250,16 @@ namespace CPvC
                             ReadRunUntil();
                             break;
                         case _idSetCurrentToRoot:
+                            CPvC.Diagnostics.Trace("[SetCurrentToRoot]");
+
                             _machineHistory.SetCurrent(_machineHistory.RootEvent);
                             break;
                         default:
                             throw new Exception("Unknown block type!");
                     }
                 }
+
+                CPvC.Diagnostics.Trace("Read File DONE!!!");
 
                 if (_machineHistory != null)
                 {
@@ -222,17 +281,16 @@ namespace CPvC
             }
         }
 
-        private void ReadName()
+        private string ReadName()
         {
             string name = ReadString();
 
-            if (_machine != null)
-            {
-                _machine.Name = name;
-            }
+            CPvC.Diagnostics.Trace("[Name] {0}", name);
+
+            return name;
         }
 
-        private void WriteName(string name)
+        public void WriteName(string name)
         {
             lock (_byteStream)
             {
@@ -275,12 +333,14 @@ namespace CPvC
                 IBlob stateBlob = ReadBlob();
                 IBlob screenBlob = ReadBlob();
 
+                CPvC.Diagnostics.Trace("[AddBookmark] Id: {0} Ticks: {1}", id, ticks);
+
                 bookmark = new Bookmark(system, version, stateBlob, screenBlob);
 
                 HistoryEvent historyEvent = _machineHistory.AddBookmark(ticks, bookmark);
 
                 _historyEventToId[historyEvent] = id;
-                _persistedIdToIds[id] = historyEvent;
+                _idToHistoryEvent[id] = historyEvent;
 
                 _nextPersistentId = Math.Max(_nextPersistentId, id + 1);
             }
@@ -292,7 +352,9 @@ namespace CPvC
             {
                 int id = ReadInt32();
 
-                if (_persistedIdToIds.TryGetValue(id, out HistoryEvent newId))
+                //CPvC.Diagnostics.Trace("[SetCurrent] {0}", id);
+
+                if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
                 {
                     _machineHistory.SetCurrent(newId);
                 }
@@ -340,6 +402,8 @@ namespace CPvC
                 byte keyCode = (byte)(keyCodeAndDown & 0x7F);
                 bool keyDown = ((keyCodeAndDown & 0x80) != 0);
 
+                //CPvC.Diagnostics.Trace("[Key] Id: {0} Ticks: {1} Code: {2}, Down: {3}", id, ticks, keyCode, keyDown);
+
                 CoreAction action = CoreAction.KeyPress(ticks, keyCode, keyDown);
 
                 AddCoreAction(id, action);
@@ -378,6 +442,8 @@ namespace CPvC
                 int id = ReadInt32();
                 UInt64 ticks = ReadUInt64();
                 CoreAction action = CoreAction.Reset(ticks);
+
+                CPvC.Diagnostics.Trace("[Reset] {0} {1}", id, ticks);
 
                 AddCoreAction(id, action);
             }
@@ -428,6 +494,8 @@ namespace CPvC
                 UInt64 ticks = ReadUInt64();
                 int version = ReadInt32();
 
+                CPvC.Diagnostics.Trace("[Version] Id: {0} Ticks: {1} Version: {2}", id, ticks, version);
+
                 CoreAction action = CoreAction.CoreVersion(ticks, version);
 
                 AddCoreAction(id, action);
@@ -440,6 +508,8 @@ namespace CPvC
             {
                 int id = ReadInt32();
                 UInt64 ticks = ReadUInt64();
+
+                CPvC.Diagnostics.Trace("[RunUntil] Id: {0} Ticks: {1}", id, ticks);
 
                 CoreAction action = CoreAction.RunUntil(ticks, ticks, null);
 
@@ -487,7 +557,7 @@ namespace CPvC
         {
             HistoryEvent historyEvent = _machineHistory.AddCoreAction(coreAction);
             _historyEventToId[historyEvent] = id;
-            _persistedIdToIds[id] = historyEvent;
+            _idToHistoryEvent[id] = historyEvent;
 
             _nextPersistentId = Math.Max(_nextPersistentId, id + 1);
 
@@ -498,7 +568,10 @@ namespace CPvC
         {
             int id = ReadInt32();
 
-            if (_persistedIdToIds.TryGetValue(id, out HistoryEvent newId))
+            CPvC.Diagnostics.Trace("[Delete] {0}", id);
+
+
+            if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
             {
                 _machineHistory.DeleteEvent(newId);
             }
@@ -512,7 +585,9 @@ namespace CPvC
         {
             int id = ReadInt32();
 
-            if (_persistedIdToIds.TryGetValue(id, out HistoryEvent newId))
+            CPvC.Diagnostics.Trace("[Delete with Children] {0}", id);
+
+            if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
             {
                 bool b = _machineHistory.DeleteEventAndChildren(newId);
                 if (!b)

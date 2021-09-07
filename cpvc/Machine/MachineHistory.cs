@@ -143,7 +143,7 @@ namespace CPvC
 
         public bool IsEqualToOrAncestorOf(HistoryEvent ancestor)
         {
-            return _historyNode.IsEqualToOrAncestorOf(ancestor._historyNode);
+            return _historyNode.IsEqualToOrAncestorOf(ancestor?._historyNode);
         }
 
         /// <summary>
@@ -155,23 +155,28 @@ namespace CPvC
         {
             List<HistoryEvent> events = new List<HistoryEvent>();
             events.Add(this);
+            UInt64 maxTicks = EndTicks;
 
             int i = 0;
             while (i < events.Count)
             {
                 HistoryEvent e = events[0];
+                events.RemoveAt(0);
+
                 if (e.Children.Count == 0)
                 {
-                    i++;
+                    if (e.EndTicks > maxTicks)
+                    {
+                        maxTicks = e.EndTicks;
+                    }
                 }
                 else
                 {
                     events.AddRange(e.Children);
-                    events.RemoveAt(0);
                 }
             }
 
-            return events.Select(x => x.EndTicks).Max();
+            return maxTicks;
         }
     }
 
@@ -238,6 +243,14 @@ namespace CPvC
 
         public HistoryEvent AddBookmark(UInt64 ticks, Bookmark bookmark)
         {
+            if (_currentNode.Children.Count == 0 &&
+                _currentNode.Type == HistoryEventType.AddCoreAction &&
+                _currentNode.CoreAction.Type == CoreRequest.Types.RunUntil)
+            {
+                // This should probably be added to AddChildNode!
+                Auditors?.Invoke(_currentNode.HistoryEvent, _currentNode.Ticks, _currentNode.Type, _currentNode.CoreAction, _currentNode.Bookmark);
+            }
+
             HistoryNode historyNode = new HistoryNode
             {
                 Type = HistoryEventType.AddBookmark,
@@ -246,6 +259,11 @@ namespace CPvC
                 Parent = _currentNode,
                 CreateDate = DateTime.Now
             };
+
+            if (ticks < _currentNode.Ticks)
+            {
+                throw new Exception("Can't add a bookmark with a smaller ticks than current!");
+            }
 
             AddChildNode(historyNode, true);
 
@@ -339,7 +357,7 @@ namespace CPvC
             SetCurrentNode(historyEvent._historyNode);
         }
 
-        public void Copy(MachineHistory newHistory)
+        public void CopyTo(MachineHistory newHistory)
         {
             // As the history tree could be very deep, keep a "stack" of history events in order to avoid recursive calls.
             List<HistoryNode> historyNodes = new List<HistoryNode>();

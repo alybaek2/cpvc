@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using static CPvC.MainViewModel;
 
 namespace CPvC
 {
-    public class MachineViewModel
+    public class MachineViewModel : INotifyPropertyChanged
     {
         private Command _driveACommand;
         private Command _driveAEjectCommand;
@@ -16,8 +17,9 @@ namespace CPvC
         private Command _tapeCommand;
         private Command _tapeEjectCommand;
         private Command _resetCommand;
+        private Command _persistCommand;
         private Command _openCommand;
-        private Command _closeCommand;
+        //private Command _closeCommand;
         private Command _pauseCommand;
         private Command _resumeCommand;
         private Command _toggleRunningCommand;
@@ -34,177 +36,208 @@ namespace CPvC
         private Command _turboCommand;
         private Command _reverseStartCommand;
         private Command _reverseStopCommand;
-        private ICommand _removeCommand;
+        //private Command _removeCommand;
         private Command _toggleSnapshotCommand;
 
-        public MachineViewModel(MainViewModel mainViewModel, ICoreMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, SelectItemDelegate selectItem)
+        private readonly  ICoreMachine _machine;
+
+        private PromptForFileDelegate _promptForFile;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public MachineViewModel(ICoreMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, SelectItemDelegate selectItem, ConfirmCloseDelegate confirmClose, ReportErrorDelegate reportError)
         {
-            Machine = machine;
-            if (machine != null)
-            {
-                Machine.PropertyChanged += MachinePropChanged;
-            }
+            _promptForFile = promptForFile;
+
+            _machine = machine;
 
             _openCommand = new Command(
-                p => (machine as IOpenableMachine)?.Open(),
-                p => (machine as IOpenableMachine)?.RequiresOpen ?? false
+                p => Open(fileSystem),
+                p => !(_machine as IPersistableMachine)?.IsOpen ?? false,
+                _machine,
+                new List<string> { nameof(IPersistableMachine.IsOpen) }
             );
 
-            _closeCommand = new Command(
-                p => Close(),
-                p => machine?.CanClose() ?? false
-            );
-
-            _pauseCommand = new Command(
-                p => (machine as IPausableMachine)?.Stop(),
+            _persistCommand = new Command(
                 p =>
                 {
-                    if (machine == null)
+                    try
+                    {
+                        Persist(fileSystem, promptForFile);
+                    }
+                    catch (Exception ex)
+                    {
+                        reportError(ex.Message);
+                    }
+                },
+                p =>
+                {
+                    IPersistableMachine pm = Machine as IPersistableMachine;
+                    if (pm != null)
+                    {
+                        return pm.PersistantFilepath == null;
+                    }
+
+                    return false;
+                },
+                _machine,
+                new List<string> { nameof(IPersistableMachine.PersistantFilepath) });
+
+            _pauseCommand = new Command(
+                p => (_machine as IPausableMachine)?.Stop(),
+                p =>
+                {
+                    if (_machine == null)
                     {
                         return false;
                     }
 
-                    IOpenableMachine m = machine as IOpenableMachine;
-                    if ((machine.RunningState == RunningState.Running) && (m == null || !m.RequiresOpen))
-                    {
-                        return true;
-                    }
-
-                    return false;
-                }
+                    return (_machine.RunningState == RunningState.Running);
+                },
+                _machine,
+                new List<string> { nameof(IPausableMachine.RunningState) }
             );
 
             _resumeCommand = new Command(
-                p => (machine as IPausableMachine)?.Start(),
+                p => (Machine as IPausableMachine)?.Start(),
                 p =>
                 {
-                    if (machine == null)
+                    if (_machine == null)
                     {
                         return false;
                     }
 
-                    IOpenableMachine m = machine as IOpenableMachine;
-                    if ((machine.RunningState == RunningState.Paused) && (m == null || !m.RequiresOpen))
+                    // Should really add "CanResume" and "CanPause" to IPausableMachine?
+                    IPersistableMachine pm = Machine as IPersistableMachine;
+                    if (pm != null && !pm.IsOpen)
                     {
-                        return true;
+                        return false;
                     }
 
-                    return false;
-                }
+                    return (_machine.RunningState != RunningState.Running);
+                },
+                _machine,
+                new List<string> { nameof(IPausableMachine.RunningState) }
             );
 
             _resetCommand = new Command(
-                p => (machine as IInteractiveMachine)?.Reset(),
-                p => (machine as IInteractiveMachine) != null
+                p => (Machine as IInteractiveMachine)?.Reset(),
+                p => (Machine as IInteractiveMachine) != null
             );
 
             _driveACommand = new Command(
-                p => LoadDisc(machine as IInteractiveMachine, 0, fileSystem, promptForFile, selectItem),
-                p => (machine as IInteractiveMachine) != null
+                p => LoadDisc(Machine as IInteractiveMachine, 0, fileSystem, promptForFile, selectItem),
+                p => (Machine as IInteractiveMachine) != null
             );
 
             _driveAEjectCommand = new Command(
-                p => (machine as IInteractiveMachine)?.LoadDisc(0, null),
-                p => (machine as IInteractiveMachine) != null
+                p => (Machine as IInteractiveMachine)?.LoadDisc(0, null),
+                p => (Machine as IInteractiveMachine) != null
             );
 
             _driveBCommand = new Command(
-                p => LoadDisc(machine as IInteractiveMachine, 1, fileSystem, promptForFile, selectItem),
-                p => (machine as IInteractiveMachine) != null
+                p => LoadDisc(Machine as IInteractiveMachine, 1, fileSystem, promptForFile, selectItem),
+                p => (Machine as IInteractiveMachine) != null
             );
 
             _driveBEjectCommand = new Command(
-                p => (machine as IInteractiveMachine)?.LoadDisc(1, null),
-                p => (machine as IInteractiveMachine) != null
+                p => (Machine as IInteractiveMachine)?.LoadDisc(1, null),
+                p => (Machine as IInteractiveMachine) != null
             );
 
             _tapeCommand = new Command(
-                p => LoadTape(machine as IInteractiveMachine, fileSystem, promptForFile, selectItem),
-                p => (machine as IInteractiveMachine) != null
+                p => LoadTape(Machine as IInteractiveMachine, fileSystem, promptForFile, selectItem),
+                p => (Machine as IInteractiveMachine) != null
             );
 
             _tapeEjectCommand = new Command(
-                p => (machine as IInteractiveMachine)?.LoadTape(null),
-                p => (machine as IInteractiveMachine) != null
+                p => (Machine as IInteractiveMachine)?.LoadTape(null),
+                p => (Machine as IInteractiveMachine) != null
             );
 
             _toggleRunningCommand = new Command(
-                p => (machine as IPausableMachine)?.ToggleRunning(),
-                p => (machine as IPausableMachine) != null
+                p => (Machine as IPausableMachine)?.ToggleRunning(),
+                p => (Machine as IPausableMachine) != null
             );
 
             _addBookmarkCommand = new Command(
-                p => (machine as IBookmarkableMachine)?.AddBookmark(false),
-                p => (machine as IBookmarkableMachine) != null
+                p => (Machine as IBookmarkableMachine)?.AddBookmark(false),
+                p => (Machine as IBookmarkableMachine) != null
             );
 
             _jumpToMostRecentBookmarkCommand = new Command(
-                p => (machine as IJumpableMachine)?.JumpToMostRecentBookmark(),
-                p => (machine as IJumpableMachine) != null
+                p => (Machine as IJumpableMachine)?.JumpToMostRecentBookmark(),
+                p => (Machine as IJumpableMachine) != null
             );
 
             _browseBookmarksCommand = new Command(
-                p => SelectBookmark(machine as IJumpableMachine, promptForBookmark),
-                p => (machine as IJumpableMachine) != null
+                p => SelectBookmark(Machine as IJumpableMachine, promptForBookmark),
+                p => (Machine as IJumpableMachine) != null
             );
 
             _compactCommand = new Command(
-                p => (machine as ICompactableMachine)?.Compact(false),
-                p => (machine as ICompactableMachine) != null
+                p => (Machine as ICompactableMachine)?.Compact(false),
+                p => (Machine as ICompactableMachine) != null
             );
 
             _renameCommand = new Command(
-                p => RenameMachine(machine as Machine, promptForName),
-                p => machine != null
+                p => RenameMachine(Machine as Machine, promptForName),
+                p => Machine != null
             );
 
             _seekToNextBookmarkCommand = new Command(
-                p => (machine as IPrerecordedMachine)?.SeekToNextBookmark(),
-                p => (machine as IPrerecordedMachine) != null
+                p => (Machine as IPrerecordedMachine)?.SeekToNextBookmark(),
+                p => (Machine as IPrerecordedMachine) != null
             );
 
             _seekToPrevBookmarkCommand = new Command(
-                p => (machine as IPrerecordedMachine)?.SeekToPreviousBookmark(),
-                p => (machine as IPrerecordedMachine) != null
+                p => (Machine as IPrerecordedMachine)?.SeekToPreviousBookmark(),
+                p => (Machine as IPrerecordedMachine) != null
             );
 
             _seekToStartCommand = new Command(
-                p => (machine as IPrerecordedMachine)?.SeekToStart(),
-                p => (machine as IPrerecordedMachine) != null
+                p => (Machine as IPrerecordedMachine)?.SeekToStart(),
+                p => (Machine as IPrerecordedMachine) != null
             );
 
             _keyDownCommand = new Command(
-                p => (machine as IInteractiveMachine)?.Key((byte)p, true),
-                p => (machine as IInteractiveMachine) != null
+                p => (Machine as IInteractiveMachine)?.Key((byte)p, true),
+                p => (Machine as IInteractiveMachine) != null
             );
 
             _keyUpCommand = new Command(
-                p => (machine as IInteractiveMachine)?.Key((byte)p, false),
-                p => (machine as IInteractiveMachine) != null
+                p => (Machine as IInteractiveMachine)?.Key((byte)p, false),
+                p => (Machine as IInteractiveMachine) != null
             );
 
             _turboCommand = new Command(
-                p => (machine as ITurboableMachine)?.EnableTurbo((bool)p),
-                p => (machine as ITurboableMachine) != null
+                p => (Machine as ITurboableMachine)?.EnableTurbo((bool)p),
+                p => (Machine as ITurboableMachine) != null
             );
 
             _reverseStartCommand = new Command(
-                p => (machine as IReversibleMachine)?.Reverse(),
-                p => (machine as IReversibleMachine) != null
+                p => (Machine as IReversibleMachine)?.Reverse(),
+                p => (Machine as IReversibleMachine) != null
             );
 
             _reverseStopCommand = new Command(
-                p => (machine as IReversibleMachine)?.ReverseStop(),
-                p => (machine as IReversibleMachine) != null
+                p => (Machine as IReversibleMachine)?.ReverseStop(),
+                p => (Machine as IReversibleMachine) != null
             );
 
             _toggleSnapshotCommand = new Command(
-                p => (machine as IReversibleMachine)?.ToggleReversibilityEnabled(),
-                p => (machine as IReversibleMachine) != null
+                p => (Machine as IReversibleMachine)?.ToggleReversibilityEnabled(),
+                p => (Machine as IReversibleMachine) != null
             );
         }
 
-        public ICoreMachine Machine { get; }
+        public ICoreMachine Machine
+        {
+            get
+            {
+                return _machine;
+            }
+        }
 
         public ICommand ResetCommand
         {
@@ -241,14 +274,14 @@ namespace CPvC
             get { return _tapeEjectCommand; }
         }
 
+        public Command PersistCommand
+        {
+            get { return _persistCommand; }
+        }
+
         public ICommand OpenCommand
         {
             get { return _openCommand; }
-        }
-
-        public ICommand CloseCommand
-        {
-            get { return _closeCommand; }
         }
 
         public ICommand PauseCommand
@@ -321,12 +354,6 @@ namespace CPvC
             get { return _turboCommand; }
         }
 
-        public ICommand RemoveCommand
-        {
-            get { return _removeCommand; }
-            set { _removeCommand = value; }
-        }
-
         public ICommand ReverseStartCommand
         {
             get { return _reverseStartCommand; }
@@ -340,20 +367,6 @@ namespace CPvC
         public ICommand ToggleReversibility
         {
             get { return _toggleSnapshotCommand; }
-        }
-
-        private void MachinePropChanged(object sender, PropertyChangedEventArgs args)
-        {
-            if (args.PropertyName == "RunningState")
-            {
-                _resumeCommand.InvokeCanExecuteChanged(sender, args);
-                _pauseCommand.InvokeCanExecuteChanged(sender, args);
-            }
-            else if (args.PropertyName == "RequiresOpen")
-            {
-                _openCommand.InvokeCanExecuteChanged(sender, args);
-                _closeCommand.InvokeCanExecuteChanged(sender, args);
-            }
         }
 
         private void LoadDisc(IInteractiveMachine machine, byte drive, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
@@ -478,9 +491,60 @@ namespace CPvC
             }
         }
 
-        public void Close()
+        public void Open(IFileSystem fileSystem)
         {
-            Machine?.Close();
+            Machine machine = Machine as Machine;
+            if (machine == null)
+            {
+                return;
+            }
+
+            machine.OpenFromFile(fileSystem);
+            machine.Start();
+        }
+
+        public void Persist(IFileSystem fileSystem, PromptForFileDelegate promptForFile)
+        {
+            if (!(_machine is IPersistableMachine machine))
+            {
+                throw new InvalidOperationException("Cannot persist this machine!");
+            }
+
+            if (!String.IsNullOrEmpty(machine.PersistantFilepath))
+            {
+                // Should throw exception here?
+                return;
+            }
+
+            string filepath = _promptForFile(FileTypes.Machine, false);
+            machine.Persist(fileSystem, filepath);
+        }
+
+        public bool Close(ConfirmCloseDelegate confirmClose)
+        {
+            if (Machine != null)
+            {
+                IPersistableMachine pm = Machine as IPersistableMachine;
+                if (pm != null && pm.PersistantFilepath == null)
+                {
+                    if (!confirmClose(String.Format("Are you sure you want to close the \"{0}\" machine without persisting it?", Machine.Name)))
+                    {
+                        return false;
+                    }
+                }
+
+                Machine.Close();
+            }
+
+            return true;
+        }
+
+        private void OnPropertyChanged([CallerMemberName] string name = null)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(name));
+            }
         }
     }
 }

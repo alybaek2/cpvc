@@ -29,65 +29,114 @@ namespace CPvC.Test
             CoreAction.Reset(100)
         };
 
-        [TestCaseSource(nameof(CoreActionCases))]
-        public void WriteAndReadCoreAction(CoreAction coreAction)
-        {
-            // Setup
-            MemoryFileByteStream memStream = new MemoryFileByteStream();
-            MachineFile file = new MachineFile(memStream);
-            MachineHistory writeHistory = new MachineHistory();
-            file.SetMachineHistory(writeHistory);
+        //[TestCaseSource(nameof(CoreActionCases))]
+        //public void WriteAndReadCoreAction(CoreAction coreAction)
+        //{
+        //    // Setup
+        //    MemoryFileByteStream memStream = new MemoryFileByteStream();
+        //    MachineFile file = new MachineFile(memStream);
+        //    MachineHistory writeHistory = new MachineHistory();
+        //    file.SetMachineHistory(writeHistory);
 
-            // Act
-            writeHistory.AddCoreAction(coreAction);
-            file = new MachineFile(memStream);
-            MachineHistory readHistory = new MachineHistory();
-            file.SetMachineHistory(readHistory);
-            file.ReadFile();
+        //    // Act
+        //    writeHistory.AddCoreAction(coreAction);
+        //    file = new MachineFile(memStream);
+        //    MachineHistory readHistory = new MachineHistory();
+        //    file.SetMachineHistory(readHistory);
+        //    file.ReadFile();
 
-            // Verify
-            Assert.True(HistoriesEqual(readHistory, writeHistory));
-        }
+        //    // Verify
+        //    Assert.True(HistoriesEqual(readHistory, writeHistory));
+        //}
 
-        [Test]
-        public void WriteAndReadBookmark()
-        {
-            // Setup
-            MemoryFileByteStream memStream = new MemoryFileByteStream();
-            MachineFile file = new MachineFile(memStream);
-            MachineHistory writeHistory = new MachineHistory();
-            file.SetMachineHistory(writeHistory);
-            Bookmark bookmark = new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 });
+        //[Test]
+        //public void WriteAndReadBookmark()
+        //{
+        //    // Setup
+        //    MemoryFileByteStream memStream = new MemoryFileByteStream();
+        //    MachineFile file = new MachineFile(memStream);
+        //    MachineHistory writeHistory = new MachineHistory();
+        //    file.SetMachineHistory(writeHistory);
+        //    Bookmark bookmark = new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 });
 
-            // Act
-            writeHistory.AddBookmark(100, bookmark);
-            file = new MachineFile(memStream);
-            MachineHistory readHistory = new MachineHistory();
-            file.SetMachineHistory(readHistory);
-            file.ReadFile();
+        //    // Act
+        //    writeHistory.AddBookmark(100, bookmark);
+        //    file = new MachineFile(memStream);
+        //    MachineHistory readHistory = new MachineHistory();
+        //    file.SetMachineHistory(readHistory);
+        //    file.ReadFile();
 
-            // Verify
-            Assert.True(HistoriesEqual(readHistory, writeHistory));
-        }
+        //    // Verify
+        //    Assert.True(HistoriesEqual(readHistory, writeHistory));
+        //}
 
-        [Test]
-        public void WriteAndReadName()
-        {
-            // Setup
-            MemoryFileByteStream memStream = new MemoryFileByteStream();
-            MachineFile file = new MachineFile(memStream);
-            Machine machine = new Machine(String.Empty, String.Empty, null);
-            file.SetMachine(machine);
+        //[Test]
+        //public void WriteAndReadDelete()
+        //{
+        //    // Setup
+        //    MemoryFileByteStream memStream = new MemoryFileByteStream();
+        //    MachineFile file = new MachineFile(memStream);
+        //    MachineHistory writeHistory = new MachineHistory();
+        //    file.SetMachineHistory(writeHistory);
+        //    Bookmark bookmark = new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 });
 
-            // Act
-            machine.Name = "Test";
-            file = new MachineFile(memStream);
-            Machine newMachine = new Machine(String.Empty, String.Empty, null);
-            file.SetMachine(newMachine);
-            file.ReadFile();
+        //    // Act
+        //    writeHistory.AddBookmark(100, bookmark);
+        //    HistoryEvent historyEvent = writeHistory.CurrentEvent;
+        //    writeHistory.SetCurrent(writeHistory.RootEvent);
+        //    writeHistory.DeleteEvent(historyEvent);
+        //    file = new MachineFile(memStream);
+        //    MachineHistory readHistory = new MachineHistory();
+        //    file.SetMachineHistory(readHistory);
+        //    file.ReadFile();
 
-            // Verify
-            Assert.AreEqual(machine.Name, newMachine.Name);
-        }
+        //    // Verify
+        //    Assert.True(HistoriesEqual(readHistory, writeHistory));
+        //}
+
+        //[Test]
+        //public void WriteAndReadDeleteAndChildren()
+        //{
+        //    // Setup
+        //    MemoryFileByteStream memStream = new MemoryFileByteStream();
+        //    MachineFile file = new MachineFile(memStream);
+        //    MachineHistory writeHistory = new MachineHistory();
+        //    file.SetMachineHistory(writeHistory);
+        //    Bookmark bookmark = new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 });
+
+        //    // Act
+        //    writeHistory.AddBookmark(100, bookmark);
+        //    HistoryEvent historyEvent = writeHistory.CurrentEvent;
+        //    writeHistory.AddBookmark(200, bookmark);
+        //    writeHistory.SetCurrent(writeHistory.RootEvent);
+        //    writeHistory.DeleteEventAndChildren(historyEvent);
+        //    file = new MachineFile(memStream);
+        //    MachineHistory readHistory = new MachineHistory();
+        //    file.SetMachineHistory(readHistory);
+        //    file.ReadFile();
+
+        //    // Verify
+        //    Assert.True(HistoriesEqual(readHistory, writeHistory));
+        //}
+
+        //[Test]
+        //public void WriteAndReadName()
+        //{
+        //    // Setup
+        //    MemoryFileByteStream memStream = new MemoryFileByteStream();
+        //    MachineFile file = new MachineFile(memStream);
+        //    Machine machine = new Machine(String.Empty, String.Empty, null);
+        //    file.SetMachine(machine);
+
+        //    // Act
+        //    machine.Name = "Test";
+        //    file = new MachineFile(memStream);
+        //    Machine newMachine = new Machine(String.Empty, String.Empty, null);
+        //    file.SetMachine(newMachine);
+        //    file.ReadFile();
+
+        //    // Verify
+        //    Assert.AreEqual(machine.Name, newMachine.Name);
+        //}
     }
 }

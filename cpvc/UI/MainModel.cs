@@ -1,112 +1,177 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
 
 namespace CPvC
 {
-    /// <summary>
-    /// Data model for the main window.
-    /// </summary>
     public class MainModel
     {
         private readonly ISettings _settings;
+
+        private ObservableCollection<ICoreMachine> _machines = new ObservableCollection<ICoreMachine>();
+
+        public ReadOnlyObservableCollection<ICoreMachine> Machines { get; }
 
         public MainModel(ISettings settings, IFileSystem fileSystem)
         {
             _settings = settings;
 
-            Machines = new ObservableCollection<Machine>();
+            Machines = new ReadOnlyObservableCollection<ICoreMachine>(_machines);
 
             LoadFromSettings(fileSystem);
+
+            // Start observing the machines collection only after we've finished loading it.
+            _machines.CollectionChanged += Machines_CollectionChanged;
         }
 
-        /// <summary>
-        /// Represents the set of machines that are currently open or closed.
-        /// </summary>
-        public ObservableCollection<Machine> Machines { get; }
-
-        /// <summary>
-        /// Adds a machine to the model if it doesn't already exist.
-        /// </summary>
-        /// <param name="filepath">The filepath of the machine to add.</param>
-        /// <param name="fileSystem">The IFileSystem interface to use to access <c>filepath</c>.</param>
-        /// <returns></returns>
-        public Machine Add(string filepath, IFileSystem fileSystem)
+        private void Machines_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            if (filepath == null)
+            switch (e.Action)
             {
-                return null;
-            }
-
-            lock (Machines)
-            {
-                Machine machine = null;
-
-                // Check to see if we've already got a machine with the same filepath open. Note that the check here using GetFullPath
-                // isn't foolproof, as the same file could have different paths (e.g. "C:\test.cpvc" and "\\machine\c$\test.cpvc").
-                string fullFilepath = System.IO.Path.GetFullPath(filepath);
-                machine = Machines.FirstOrDefault(m => String.Compare(System.IO.Path.GetFullPath(m.Filepath), fullFilepath, true) == 0);
-                if (machine == null)
-                {
-                    try
+                case NotifyCollectionChangedAction.Add:
                     {
-                        if (fileSystem.Exists(filepath))
+                        foreach (object item in e.NewItems)
                         {
-                            machine = Machine.Open("", filepath, fileSystem, false);
-                        }
-                        else
-                        {
-                            string name = System.IO.Path.GetFileNameWithoutExtension(filepath);
-                            machine = Machine.New(name, filepath, fileSystem);
+                            ICoreMachine machine = (ICoreMachine)item;
+                            machine.PropertyChanged += Machine_PropertyChanged;
                         }
                     }
-                    catch (Exception ex)
+                    break;
+                case NotifyCollectionChangedAction.Remove:
                     {
-                        Diagnostics.Trace("Exception caught while opening {0}: {1}", filepath, ex.Message);
-
-                        throw;
+                        foreach (object item in e.OldItems)
+                        {
+                            ICoreMachine machine = (ICoreMachine)item;
+                            machine.PropertyChanged -= Machine_PropertyChanged;
+                        }
                     }
-
-                    Machines.Add(machine);
-
-                    UpdateSettings();
-                }
-
-                return machine;
-            }
-        }
-
-        /// <summary>
-        /// Removes a machine from the model.
-        /// </summary>
-        /// <param name="machine">The machine to remove.</param>
-        public void Remove(Machine machine)
-        {
-            lock (Machines)
-            {
-                Machines.Remove(machine);
+                    break;
+                default:
+                    throw new Exception("Needs implementation!");
             }
 
             UpdateSettings();
         }
 
+        private void Machine_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(Machine.PersistantFilepath))
+            {
+                UpdateSettings();
+            }
+        }
+
+        public ICoreMachine AddPreview(string filepath, IFileSystem fileSystem)
+        {
+            if (String.IsNullOrEmpty(filepath))
+            {
+                return null;
+            }
+
+            lock (_machines)
+            {
+                ICoreMachine existingMachine = _machines.FirstOrDefault(
+                    m => {
+                        if (m is IPersistableMachine pm)
+                        {
+                            return String.Compare(pm.PersistantFilepath, filepath, true) == 0;
+                        }
+
+                        return false;
+                });
+
+                if (existingMachine != null)
+                {
+                    return existingMachine;
+                }
+
+                Machine machine = Machine.OpenPreview(fileSystem, filepath);
+
+                _machines.Add(machine);
+
+                return machine;
+            }
+        }
+
+        public ICoreMachine AddMachine(string filepath, IFileSystem fileSystem)
+        {
+            if (String.IsNullOrEmpty(filepath))
+            {
+                return null;
+            }
+
+            lock (_machines)
+            {
+                ICoreMachine existingMachine = _machines.FirstOrDefault(
+                    m => {
+                        if (m is IPersistableMachine pm)
+                        {
+                            return String.Compare(pm.PersistantFilepath, filepath, true) == 0;
+                        }
+
+                        return false;
+
+                    });
+
+                if (existingMachine != null)
+                {
+                    return existingMachine;
+                }
+
+                // Ugly!!!
+                Machine machine = Machine.OpenPreview(fileSystem, filepath);
+                machine.OpenFromFile(fileSystem);
+                machine.Start();
+
+                _machines.Add(machine);
+
+                return machine;
+            }
+        }
+
+        public void AddMachine(ICoreMachine machine)
+        {
+            lock (_machines)
+            {
+                _machines.Add(machine);
+            }
+        }
+
+        public void RemoveMachine(ICoreMachine machine)
+        {
+            lock (_machines)
+            {
+                _machines.Remove(machine);
+            }
+        }
+
         /// <summary>
         /// Updates the config settings with all the machines in OpenMachines and ClosedMachines.
         /// </summary>
-        private void UpdateSettings()
+        public void UpdateSettings()
         {
             Dictionary<string, string> machineFilepathNameMap = new Dictionary<string, string>();
 
             lock (Machines)
             {
-                foreach (Machine machine in Machines)
+                foreach (ICoreMachine machine in _machines)
                 {
-                    machineFilepathNameMap[machine.Filepath.ToLower()] = machine.Name;
+                    IPersistableMachine pm = machine as IPersistableMachine;
+                    if (pm == null || pm.PersistantFilepath == null)
+                    {
+                        continue;
+                    }
+
+                    machineFilepathNameMap[pm.PersistantFilepath.ToLower()] = machine.Name;
                 }
             }
 
-            _settings.RecentlyOpened = Helpers.JoinWithEscape(',', machineFilepathNameMap.Select(kv => Helpers.JoinWithEscape(';', new List<string> { kv.Value, kv.Key })));
+            _settings.RecentlyOpened = Helpers.JoinWithEscape(',', machineFilepathNameMap.Keys); // machineFilepathNameMap.Select(kv => Helpers.JoinWithEscape(';', new List<string> { kv.Value, kv.Key })));
         }
 
         /// <summary>
@@ -115,7 +180,7 @@ namespace CPvC
         /// <param name="fileSystem">File system required by MachineInfo to load a thumbnail for each machine.</param>
         private void LoadFromSettings(IFileSystem fileSystem)
         {
-            string recent = _settings.RecentlyOpened;
+            string recent = _settings?.RecentlyOpened;
             if (recent == null)
             {
                 return;
@@ -125,20 +190,13 @@ namespace CPvC
             {
                 foreach (string machineStr in Helpers.SplitWithEscape(',', recent))
                 {
-                    List<string> tokens = Helpers.SplitWithEscape(';', machineStr);
-                    if (tokens.Count < 2)
-                    {
-                        continue;
-                    }
-
                     try
                     {
-                        Machine machine = Machine.Open(tokens[0], tokens[1], fileSystem, true);
-                        Machines.Add(machine);
+                        AddPreview(machineStr, fileSystem);
                     }
                     catch
                     {
-                        Diagnostics.Trace("Unable to load \"{0}\".", tokens[1]);
+                        Diagnostics.Trace("Unable to load \"{0}\".", machineStr);
                     }
                 }
             }

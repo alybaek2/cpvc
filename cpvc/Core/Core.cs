@@ -42,7 +42,6 @@ namespace CPvC
         private int _version;
         private readonly Queue<CoreRequest> _requests;
         private object _lockObject;
-        private int _nextSnapshotId;
 
         private bool _quitThread;
         private Thread _coreThread;
@@ -84,7 +83,6 @@ namespace CPvC
             _quitThread = false;
             _coreThread = null;
 
-            _nextSnapshotId = 0;
             BeginVSync = null;
 
             SetScreen();
@@ -111,7 +109,6 @@ namespace CPvC
             }
         }
 
-        private UInt64 _lastTicksNotified = 0;
         public event PropertyChangedEventHandler PropertyChanged;
 
         private void OnPropertyChanged(string name)
@@ -505,6 +502,7 @@ namespace CPvC
 
                         ICore newCore = Core.CreateVersionedCore(request.Version);
                         newCore.LoadState(state);
+                        newCore.SetScreen(Display.Pitch, Display.Height, Display.Width);
 
                         _coreCLR.Dispose();
                         _coreCLR = newCore;
@@ -521,7 +519,7 @@ namespace CPvC
                 case CoreRequest.Types.CreateSnapshot:
                     lock (_lockObject)
                     {
-                        action = CreateSnapshot();
+                        action = CreateSnapshot(request.SnapshotId);
                     }
 
                     break;
@@ -557,11 +555,10 @@ namespace CPvC
             return false;
         }
 
-        private CoreAction CreateSnapshot()
+        private CoreAction CreateSnapshot(int id)
         {
-            bool success = _coreCLR.CreateSnapshot(_nextSnapshotId);
-            CoreAction coreAction = CoreAction.CreateSnapshot(Ticks, _nextSnapshotId);
-            _nextSnapshotId++;
+            bool success = _coreCLR.CreateSnapshot(id);
+            CoreAction coreAction = CoreAction.CreateSnapshot(Ticks, id);
 
             return coreAction;
         }
@@ -581,7 +578,6 @@ namespace CPvC
                 return null;
             }
 
-            _lastTicksNotified = 0;
             OnPropertyChanged("Ticks");
 
             return CoreAction.RevertToSnapshot(Ticks, id);
@@ -597,6 +593,9 @@ namespace CPvC
                 return null;
             }
 
+            // Limit how long we can run for to reduce audio lag.
+            stopTicks = Math.Min(stopTicks, Ticks + 1000);
+
             List<UInt16> audioSamples = new List<UInt16>();
             byte stopReason = RunUntil(stopTicks, (byte)(StopReasons.VSync), audioSamples);
 
@@ -607,16 +606,8 @@ namespace CPvC
 
             if ((stopReason & StopReasons.VSync) != 0)
             {
-                BeginVSync?.Invoke(this);
-            }
-
-            // Don't fire a Ticks notification more than once a second. Otherwise, this can fire
-            // a hundred times per second, consuming a lot of CPU and causing the machine to 
-            // lock up whenever turbo mode is enabled.
-            if (Ticks > (_lastTicksNotified + 4000000))
-            {
                 OnPropertyChanged("Ticks");
-                _lastTicksNotified = Ticks;
+                BeginVSync?.Invoke(this);
             }
 
             return CoreAction.RunUntil(ticks, Ticks, audioSamples);

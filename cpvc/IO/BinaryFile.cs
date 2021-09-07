@@ -3,7 +3,7 @@ using System.Text;
 
 namespace CPvC
 {
-    public class BinaryFile : IBinaryFile
+    public class BinaryFile : IBinaryFile, IDisposable
     {
         public IFileByteStream _byteStream;
         private bool _diffsEnabled;
@@ -30,7 +30,12 @@ namespace CPvC
             }
         }
 
-        public void Close()
+        public void Dispose()
+        {
+            Close();
+        }
+
+        public virtual void Close()
         {
             _byteStream.Close();
         }

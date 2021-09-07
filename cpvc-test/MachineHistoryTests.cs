@@ -30,7 +30,7 @@ namespace CPvC.Test
             _event010 = _history.AddBookmark(400, new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 }));
 
             _historyCopy = new MachineHistory();
-            _history.Copy(_historyCopy);
+            _history.CopyTo(_historyCopy);
         }
 
         [Test]

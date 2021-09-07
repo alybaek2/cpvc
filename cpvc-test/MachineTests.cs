@@ -18,7 +18,7 @@ namespace CPvC.Test
 
         public Machine CreateMachine()
         {
-            Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object);
+            Machine machine = Machine.Create("test", null);
             machine.Auditors += _mockAuditor.Object;
 
             // For consistency with automated builds, use all zero ROMs.
@@ -90,102 +90,102 @@ namespace CPvC.Test
         /// to that state. If no previous bookmark exists, the machine reverts to the root event (equivalent to a hard reset).
         /// </summary>
         /// <param name="createBookmark">Indicates if a bookmark should be created prior to calling SeekToLastBookmark.</param>
-        //[TestCase(true)]
-        //[TestCase(false)]
-        //public void SeekToLastBookmark(bool createBookmark)
+        [TestCase(true)]
+        [TestCase(false)]
+        public void SeekToLastBookmark(bool createBookmark)
+        {
+            // Setup
+            using (Machine machine = Machine.Create("test", null))
+            {
+                machine.Core.IdleRequest = () => CoreRequest.RunUntil(machine.Core.Ticks + 1000);
+                machine.Auditors += _mockAuditor.Object;
+
+                if (createBookmark)
+                {
+                    RunForAWhile(machine);
+                    machine.AddBookmark(false);
+                }
+
+                UInt64 ticks = machine.Core.Ticks;
+                HistoryEvent bookmarkEvent = machine.History.CurrentEvent;
+                byte[] state = machine.Core.GetState();
+
+                RunForAWhile(machine);
+
+                // Act
+                machine.JumpToMostRecentBookmark();
+
+                // Verify
+                Assert.AreEqual(machine.History.CurrentEvent, bookmarkEvent);
+                Assert.AreEqual(machine.Core.Ticks, ticks);
+                Assert.AreEqual(state, machine.Core.GetState());
+
+                if (createBookmark)
+                {
+                    _mockAuditor.Verify(a => a(It.Is<CoreAction>(c => c.Type == CoreRequest.Types.LoadCore && c.Ticks == ticks)), Times.Once);
+                }
+                else
+                {
+                    _mockAuditor.Verify(a => a(It.Is<CoreAction>(c => c.Type == CoreRequest.Types.Reset && c.Ticks == 0)), Times.Once);
+                }
+            }
+        }
+
+        ///// <summary>
+        ///// Ensures that a machine opened "lazily" sets the appropriate RequiresOpen property.
+        ///// </summary>
+        //[Test]
+        //public void OpenLazy()
         //{
         //    // Setup
-        //    using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
+        //    _mockBinaryWriter.Content = new List<byte>
         //    {
-        //        machine.Core.IdleRequest = () => CoreRequest.RunUntil(machine.Core.Ticks + 1000);
-        //        machine.Auditors += _mockAuditor.Object;
+        //        0x00,
+        //              0x04, 0x00, 0x00, 0x00,
+        //              (byte)'T', (byte)'e', (byte)'s', (byte)'t'
+        //    };
 
-        //        if (createBookmark)
-        //        {
-        //            RunForAWhile(machine);
-        //            machine.AddBookmark(false);
-        //        }
-
-        //        UInt64 ticks = machine.Core.Ticks;
-        //        int bookmarkId = machine.History.CurrentEvent.Id;
-        //        byte[] state = machine.Core.GetState();
-
-        //        RunForAWhile(machine);
-
-        //        // Act
-        //        machine.JumpToMostRecentBookmark();
-
+        //    // Act
+        //    using (Machine machine = Machine.Open("Test", "test.cpvc", _mockFileSystem.Object, true))
+        //    {
         //        // Verify
-        //        Assert.AreEqual(machine.History.CurrentEvent.Id, bookmarkId);
-        //        Assert.AreEqual(machine.Core.Ticks, ticks);
-        //        Assert.AreEqual(state, machine.Core.GetState());
-
-        //        if (createBookmark)
-        //        {
-        //            _mockAuditor.Verify(a => a(It.Is<CoreAction>(c => c.Type == CoreRequest.Types.LoadCore && c.Ticks == ticks)), Times.Once);
-        //        }
-        //        else
-        //        {
-        //            _mockAuditor.Verify(a => a(It.Is<CoreAction>(c => c.Type == CoreRequest.Types.Reset && c.Ticks == 0)), Times.Once);
-        //        }
+        //        Assert.IsTrue(machine.RequiresOpen);
+        //        Assert.AreEqual(machine.Filepath, "test.cpvc");
+        //        Assert.AreEqual(machine.Name, "Test");
         //    }
         //}
 
-        /// <summary>
-        /// Ensures that a machine opened "lazily" sets the appropriate RequiresOpen property.
-        /// </summary>
-        [Test]
-        public void OpenLazy()
-        {
-            // Setup
-            _mockBinaryWriter.Content = new List<byte>
-            {
-                0x00,
-                      0x04, 0x00, 0x00, 0x00,
-                      (byte)'T', (byte)'e', (byte)'s', (byte)'t'
-            };
+        //[Test]
+        //public void OpenInvalidBlockType()
+        //{
+        //    // Setup
+        //    _mockBinaryWriter.Content = new List<byte>
+        //    {
+        //        0x7f  // Unknown block type - should cause an exception when read.
+        //    };
 
-            // Act
-            using (Machine machine = Machine.Open("Test", "test.cpvc", _mockFileSystem.Object, true))
-            {
-                // Verify
-                Assert.IsTrue(machine.RequiresOpen);
-                Assert.AreEqual(machine.Filepath, "test.cpvc");
-                Assert.AreEqual(machine.Name, "Test");
-            }
-        }
+        //    // Act and Verify
+        //    Assert.Throws<Exception>(() =>
+        //    {
+        //        using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false)) { }
+        //    });
+        //}
 
-        [Test]
-        public void OpenInvalidBlockType()
-        {
-            // Setup
-            _mockBinaryWriter.Content = new List<byte>
-            {
-                0x7f  // Unknown block type - should cause an exception when read.
-            };
+        //[Test]
+        //public void CanClose([Values(false, true)] bool requiresOpen)
+        //{
+        //    // Setup
+        //    if (requiresOpen)
+        //    {
+        //        _machine.Close();
+        //    }
 
-            // Act and Verify
-            Assert.Throws<Exception>(() =>
-            {
-                using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false)) { }
-            });
-        }
+        //    // Act
+        //    bool canClose = _machine.CanClose();
 
-        [Test]
-        public void CanClose([Values(false, true)] bool requiresOpen)
-        {
-            // Setup
-            if (requiresOpen)
-            {
-                _machine.Close();
-            }
-
-            // Act
-            bool canClose = _machine.CanClose();
-
-            // Verify
-            Assert.AreEqual(!requiresOpen, canClose);
-        }
+        //    // Verify
+        //    Assert.AreEqual(!requiresOpen, canClose);
+        //}
 
         /// <summary>
         /// Ensures an existing machine is opened with the expected state.
@@ -400,7 +400,7 @@ namespace CPvC.Test
         //    _machine.LoadTape(null);
         //    RunForAWhile(_machine);
         //    _machine.TrimTimeline(eventToDelete.Children[0]);
-        //    _machine.SetBookmark(bookmarkEvent, null);
+        //    _machine.AddBookmark(false);
         //    _machine.Close();
 
         //    using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
@@ -466,27 +466,27 @@ namespace CPvC.Test
             Assert.Greater(actualSpeedFactor, 2);
         }
 
-        [Test]
-        public void CorruptCheckpointBookmark()
-        {
-            // Setup
-            _mockBinaryWriter.Content = new List<byte>
-            {
-                0x00,
-                      0x04, 0x00, 0x00, 0x00,
-                      (byte)'T', (byte)'e', (byte)'s', (byte)'t',
-                0x05,
-                      0x00, 0x00, 0x00, 0x00,
-                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      0x01,
-                      0x00,
-                      0x01, 0x01, 0x00, 0x00, 0x00  // State blob length is 1, but no actual blob bytes exist... should cause an exception!
-            };
+        //[Test]
+        //public void CorruptCheckpointBookmark()
+        //{
+        //    // Setup
+        //    _mockBinaryWriter.Content = new List<byte>
+        //    {
+        //        0x00,
+        //              0x04, 0x00, 0x00, 0x00,
+        //              (byte)'T', (byte)'e', (byte)'s', (byte)'t',
+        //        0x05,
+        //              0x00, 0x00, 0x00, 0x00,
+        //              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        //              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        //              0x01,
+        //              0x00,
+        //              0x01, 0x01, 0x00, 0x00, 0x00  // State blob length is 1, but no actual blob bytes exist... should cause an exception!
+        //    };
 
-            // Act and Verify
-            Assert.That(() => Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false), Throws.Exception);
-        }
+        //    // Act and Verify
+        //    Assert.That(() => Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false), Throws.Exception);
+        //}
 
         //[Test]
         //public void SetBookmarkOnNonCheckpoint()
@@ -787,7 +787,7 @@ namespace CPvC.Test
         public void NewMachineHasIdleRequestHandler()
         {
             // Setup
-            using (Machine machine = Machine.New("test", "test.cpvc", _mockFileSystem.Object))
+            using (Machine machine = Machine.Create("test", null))
             {
                 // Act
                 RunForAWhile(machine);
@@ -796,5 +796,41 @@ namespace CPvC.Test
                 Assert.Greater(machine.Ticks, 0);
             }
         }
+
+        //// This test should be improved to make sure Compact is actually writing out what we
+        //// expect, instead of just checking the size is less than before.
+        //[Test]
+        //public void Compact()
+        //{
+        //    // Setup
+        //    MemoryFileByteStream memStream = new MemoryFileByteStream();
+        //    MachineFile file = new MachineFile(memStream);
+        //    MachineHistory writeHistory = new MachineHistory();
+        //    file.SetMachineHistory(writeHistory);
+
+        //    Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>();
+        //    mockFileSystem.Setup(x => x.OpenFileByteStream(It.IsAny<string>())).Returns(() => memStream);
+
+        //    Machine machine = Machine.Create("test", null);
+        //    Run(machine, 100);
+        //    HistoryEvent event1 = machine.History.CurrentEvent;
+        //    machine.AddBookmark(false);
+        //    HistoryEvent event2 = machine.History.CurrentEvent;
+        //    machine.AddBookmark(false);
+        //    machine.SetCurrentEvent(event1);
+        //    machine.Reset();
+        //    machine.DeleteEventAndChildren(event2);
+
+        //    Machine newMachine = Machine.Open("Test", "test.cpvc", mockFileSystem.Object, false);
+        //    Int64 oldSize = memStream.Length;
+        //    memStream.Clear();
+
+        //    // Act
+        //    machine.Compact(false);
+        //    Int64 newSize = memStream.Length;
+
+        //    // Verify
+        //    Assert.Less(newSize, oldSize);
+        //}
     }
 }

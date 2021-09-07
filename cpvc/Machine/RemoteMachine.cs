@@ -75,11 +75,6 @@ namespace CPvC
             Close();
         }
 
-        public bool CanClose()
-        {
-            return true;
-        }
-
         public void Close()
         {
             _remote.Dispose();

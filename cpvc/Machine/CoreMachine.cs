@@ -14,7 +14,6 @@ namespace CPvC
     public abstract class CoreMachine
     {
         protected Core _core;
-        protected string _filepath;
         private string _status;
 
         protected RunningState _runningState;
@@ -80,19 +79,6 @@ namespace CPvC
                 OnPropertyChanged("Ticks");
                 OnPropertyChanged("RunningState");
                 OnPropertyChanged("Volume");
-            }
-        }
-
-        public string Filepath
-        {
-            get
-            {
-                return _filepath;
-            }
-
-            protected set
-            {
-                _filepath = value;
             }
         }
 

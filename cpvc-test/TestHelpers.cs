@@ -358,7 +358,7 @@ namespace CPvC.Test
 
             mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream("test.cpvc")).Returns(mockBinaryWriter.Object);
 
-            Machine machine = Machine.New("test", "test.cpvc", mockFileSystem.Object);
+            Machine machine = Machine.Create("test", null);
 
             // For consistency with automated builds, use all zero ROMs.
             byte[] zeroROM = new byte[0x4000];

@@ -17,7 +17,6 @@ namespace CPvC
     /// </remarks>
     public sealed class Machine : CoreMachine,
         ICoreMachine,
-        IOpenableMachine,
         IInteractiveMachine,
         IBookmarkableMachine,
         IJumpableMachine,
@@ -25,6 +24,7 @@ namespace CPvC
         IReversibleMachine,
         ITurboableMachine,
         ICompactableMachine,
+        IPersistableMachine,
         INotifyPropertyChanged,
         IDisposable
     {
@@ -40,13 +40,14 @@ namespace CPvC
 
         private RunningState _previousRunningState;
 
-        private readonly IFileSystem _fileSystem;
-        private MachineFile _file;
         private MachineHistory _history;
 
         private int _snapshotLimit = 500;
         private int _lastTakenSnapshotId = -1;
         private List<SnapshotInfo> _snapshots;
+
+        private MachineFile _file;
+        private string _filepath;
 
         public int SnapshotLimit
         {
@@ -66,13 +67,10 @@ namespace CPvC
         public Machine(string name, string machineFilepath, IFileSystem fileSystem)
         {
             _name = name;
-            Filepath = machineFilepath;
 
             Display = new Display();
 
             _previousRunningState = RunningState.Paused;
-
-            _fileSystem = fileSystem;
 
             _snapshots = new List<SnapshotInfo>();
 
@@ -86,142 +84,37 @@ namespace CPvC
 
         private class SnapshotInfo
         {
-            public SnapshotInfo(int id)
+            public SnapshotInfo(int id, HistoryEvent historyEvent)
             {
                 Id = id;
                 AudioBuffer = new AudioBuffer(-1);
+                HistoryEvent = historyEvent;
             }
 
             public int Id { get; }
 
             public AudioBuffer AudioBuffer { get; }
+
+            public HistoryEvent HistoryEvent { get; }
         }
 
-        /// <summary>
-        /// Opens an existing machine.
-        /// </summary>
-        /// <param name="name">The name of the machine. Not required if <c>lazy</c> is false.</param>
-        /// <param name="machineFilepath">Filepath to the machine file.</param>
-        /// <param name="fileSystem">File system interface.</param>
-        /// <param name="lazy">If true, executes a minimal "lazy" load of the machine - only the <c>Name</c>, <c>Filepath</c>, and <c>Display.Bitmap</c> properties will be populated. A subsequent call to <c>Open</c> will be required to fully load the machine.</param>
-        /// <returns>A Machine object in the same state it was in when it was previously closed, unless <c>lazy</c> is true..</returns>
-        static public Machine Open(string name, string machineFilepath, IFileSystem fileSystem, bool lazy)
+        static public Machine Create(string name, MachineHistory history)
         {
-            Machine machine = null;
-
-            try
+            Machine machine = new Machine(name, null, null);
+            if (history != null)
             {
-                machine = new Machine(name, machineFilepath, fileSystem);
-
-                machine.Open();
-                if (lazy)
-                {
-                    machine.Close();
-                }
-
-                return machine;
+                machine._history = history;
             }
-            catch (Exception)
-            {
-                machine.Dispose();
 
-                throw;
-            }
-        }
+            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            machine.SetCore(core);
 
-        /// <summary>
-        /// Fully opens a machine that was previously lazy-loaded.
-        /// </summary>
-        public void Open()
-        {
-            Core core = null;
-            try
-            {
-                _file = new MachineFile(_fileSystem, Filepath);
-                _file.SetMachine(this);
-                _file.SetMachineHistory(_history);
-
-                _file.ReadFile();
-
-                // Rewind from the current event to the most recent one with a bookmark...
-                HistoryEvent e = _history.CurrentEvent;
-
-                HistoryEvent bookmarkEvent = _history.CurrentEvent;
-                while (bookmarkEvent != null && bookmarkEvent.Bookmark == null)
-                {
-                    bookmarkEvent = bookmarkEvent.Parent;
-                }
-
-                core = GetCore(bookmarkEvent?.Bookmark);
-
-                _history.SetCurrent(bookmarkEvent ?? _history.RootEvent);
-
-                Display.EnableGreyscale(false);
-                Display.GetFromBookmark(bookmarkEvent?.Bookmark);
-                SetCore(core);
-
-                if (bookmarkEvent?.Bookmark != null)
-                {
-                    Auditors?.Invoke(CoreAction.LoadCore(bookmarkEvent.Ticks, bookmarkEvent.Bookmark.State));
-                }
-
-                CoreAction action = CoreAction.CoreVersion(Core.Ticks, Core.LatestVersion);
-                _history.AddCoreAction(action);
-            }
-            catch (Exception)
-            {
-                core?.Dispose();
-                Dispose();
-
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Creates a new instance of a CPvC machine.
-        /// </summary>
-        /// <param name="name">Name of the new machine.</param>
-        /// <param name="machineFilepath">Filepath of the new machine file.</param>
-        /// <param name="fileSystem">File system interface.</param>
-        /// <returns>A new instance of a CPvC machine.</returns>
-        static public Machine New(string name, string machineFilepath, IFileSystem fileSystem)
-        {
-            Machine machine = null;
-            try
-            {
-                machine = new Machine(null, machineFilepath, fileSystem);
-                fileSystem.DeleteFile(machineFilepath);
-
-                machine._file = new MachineFile(fileSystem, machine.Filepath);
-                machine._file.SetMachineHistory(machine._history);
-                machine.Name = name;
-
-                Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-                core.IdleRequest = machine.IdleRequest;
-                machine.SetCore(core);
-
-                CoreAction action = CoreAction.CoreVersion(machine.Core.Ticks, Core.LatestVersion);
-                machine._history.AddCoreAction(action);
-
-                return machine;
-            }
-            catch (Exception)
-            {
-                machine.Dispose();
-
-                throw;
-            }
-        }
-
-        public bool CanClose()
-        {
-            return !RequiresOpen;
+            return machine;
         }
 
         public void Close()
         {
-            // No need to do this if we're in a "lazy-loaded" state.
-            if (!RequiresOpen)
+            if (_core != null)
             {
                 Stop();
 
@@ -238,13 +131,18 @@ namespace CPvC
                 }
                 finally
                 {
-                    _file.SetMachine(null);
-                    _file.SetMachineHistory(null);
-                    _file.Close();
                 }
             }
 
             SetCore(null);
+
+            if (_file != null)
+            {
+                _file.Close();
+                _file = null;
+
+                OnPropertyChanged("IsOpen");
+            }
 
             _history = new MachineHistory();
 
@@ -291,7 +189,7 @@ namespace CPvC
                     int samplesWritten = currentSnapshot.AudioBuffer.Render16BitStereo(Volume, buffer, offset, currentSamplesRequested, true);
                     if (samplesWritten == 0)
                     {
-                        _core.PushRequest(CoreRequest.RevertToSnapshot(currentSnapshot.Id));
+                        _core.PushRequest(CoreRequest.RevertToSnapshot(currentSnapshot.Id, currentSnapshot));
                         _core.PushRequest(CoreRequest.DeleteSnapshot(currentSnapshot.Id));
                         _snapshots.RemoveAt(_snapshots.Count - 1);
                         currentSnapshot = _snapshots.LastOrDefault();
@@ -310,7 +208,8 @@ namespace CPvC
         {
             if (SnapshotLimit > 0)
             {
-                _core.PushRequest(CoreRequest.CreateSnapshot(_lastTakenSnapshotId));
+                int snapshotId = ++_lastTakenSnapshotId;
+                _core.PushRequest(CoreRequest.CreateSnapshot(snapshotId));
             }
         }
 
@@ -347,7 +246,8 @@ namespace CPvC
                                 break;
                         }
                     }
-                    else if (action.Type == CoreAction.Types.RunUntil)
+                    
+                    if (action.Type == CoreAction.Types.RunUntil)
                     {
                         lock (_snapshots)
                         {
@@ -360,11 +260,10 @@ namespace CPvC
                     }
                     else if (action.Type == CoreAction.Types.RevertToSnapshot)
                     {
-                        // Figure out what should be the current event by walking up the event history...
-                        HistoryEvent historyEvent = _history.CurrentEvent;
-                        while (historyEvent != null && historyEvent.Ticks > action.Ticks)
+                        HistoryEvent historyEvent = ((SnapshotInfo)request.UserData).HistoryEvent;
+                        if (_history.CurrentEvent != historyEvent)
                         {
-                            historyEvent = historyEvent.Parent;
+                            _history.SetCurrent(historyEvent);
                         }
 
                         Display.CopyScreenAsync();
@@ -373,8 +272,16 @@ namespace CPvC
                     {
                         lock (_snapshots)
                         {
-                            _lastTakenSnapshotId = action.SnapshotId;
-                            SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId);
+                            // Figure out what history event should be set as current if we revert to this snapshot.
+                            // If the current event is a RunUntil, it may not be "finalized" yet (i.e. it may still
+                            // be updated), so go with its parent.
+                            HistoryEvent historyEvent = _history.CurrentEvent;
+                            if (historyEvent.Type == HistoryEventType.AddCoreAction && historyEvent.CoreAction.Type == CoreRequest.Types.RunUntil)
+                            {
+                                historyEvent = historyEvent.Parent;
+                            }
+
+                            SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId, historyEvent);
                             _snapshots.Add(newSnapshot);
 
                             while (_snapshots.Count > _snapshotLimit)
@@ -389,33 +296,26 @@ namespace CPvC
             }
         }
 
-        public bool RequiresOpen
-        {
-            get
-            {
-                return _core == null;
-            }
-        }
-
-        private void SetCore(Core core)
+        public void SetCore(Core core)
         {
             if (Core == core)
             {
                 return;
             }
 
-            if (core == null)
+            if (Core != null)
             {
                 Core.Auditors -= RequestProcessed;
-                Core = null;
-            }
-            else
-            {
-                Core = core;
-                Core.Auditors += RequestProcessed;
+                Core.IdleRequest = null;
             }
 
-            OnPropertyChanged("RequiresOpen");
+            Core = core;
+            
+            if (Core != null)
+            {
+                Core.Auditors += RequestProcessed;
+                Core.IdleRequest = IdleRequest;
+            }
         }
 
         /// <summary>
@@ -502,23 +402,10 @@ namespace CPvC
         /// <param name="bookmarkEvent">The event to become the current event in the timeline. This event must have a bookmark.</param>
         public void JumpToBookmark(HistoryEvent bookmarkEvent)
         {
-            Core.Stop();
-
-            Display.GetFromBookmark(bookmarkEvent.Bookmark);
-            SetCore(GetCore(bookmarkEvent.Bookmark));
-
-            if (bookmarkEvent.Bookmark != null)
+            using (AutoPause())
             {
-                Auditors?.Invoke(CoreAction.LoadCore(bookmarkEvent.Ticks, bookmarkEvent.Bookmark.State));
+                SetCurrentEvent(bookmarkEvent);
             }
-            else
-            {
-                Auditors?.Invoke(CoreAction.Reset(bookmarkEvent.Ticks));
-            }
-
-            _history.SetCurrent(bookmarkEvent);
-
-            SetCoreRunning();
         }
 
         /// <summary>
@@ -574,45 +461,46 @@ namespace CPvC
         /// 
         public void Compact(bool diffsEnabled)
         {
-            using (AutoPause())
-            {
-                Machine machine = new Machine(String.Empty, String.Empty, null);
-                MachineHistory newHistory = new MachineHistory();
+            throw new Exception("Need to re-implement!");
+            //using (AutoPause())
+            //{
+            //    Machine machine = new Machine(String.Empty, String.Empty, null);
+            //    MachineHistory newHistory = new MachineHistory();
 
-                string tempname = Filepath + ".new";
+            //    string tempname = Filepath + ".new";
 
-                MachineFile tempfile = null;
-                try
-                {
-                    tempfile = new MachineFile(_fileSystem, tempname);
-                    tempfile.DiffsEnabled = diffsEnabled;
-                    tempfile.SetMachine(machine);
-                    tempfile.SetMachineHistory(newHistory);
+            //    MachineFile tempfile = null;
+            //    try
+            //    {
+            //        tempfile = new MachineFile(_fileSystem, tempname);
+            //        tempfile.DiffsEnabled = diffsEnabled;
+            //        tempfile.SetMachine(machine);
+            //        tempfile.SetMachineHistory(newHistory);
 
-                    machine.Name = _name;
-                    _history.Copy(newHistory);
-                }
-                finally
-                {
-                    tempfile?.Close();
-                }
+            //        machine.Name = _name;
+            //        _history.Copy(newHistory);
+            //    }
+            //    finally
+            //    {
+            //        tempfile?.Close();
+            //    }
 
-                _file.Close();
+            //    _file.Close();
 
-                Int64 newLength = _fileSystem.FileLength(tempname);
-                Int64 oldLength = _fileSystem.FileLength(Filepath);
+            //    Int64 newLength = _fileSystem.FileLength(tempname);
+            //    Int64 oldLength = _fileSystem.FileLength(Filepath);
 
-                _fileSystem.ReplaceFile(Filepath, tempname);
+            //    _fileSystem.ReplaceFile(Filepath, tempname);
 
-                _history = new MachineHistory();
+            //    _history = new MachineHistory();
 
-                _file = new MachineFile(_fileSystem, Filepath);
-                _file.SetMachine(this);
-                _file.SetMachineHistory(_history);
-                _file.ReadFile();
+            //    _file = new MachineFile(_fileSystem, Filepath);
+            //    _file.SetMachine(this);
+            //    _file.SetMachineHistory(_history);
+            //    _file.ReadFile(out _name, out _history);
 
-                Status = String.Format("Compacted machine file by {0}%", (Int64)(100 * ((double)(oldLength - newLength)) / ((double)oldLength)));
-            }
+            //    Status = String.Format("Compacted machine file by {0}%", (Int64)(100 * ((double)(oldLength - newLength)) / ((double)oldLength)));
+            //}
         }
 
         private HistoryEvent AddCheckpointWithBookmarkEvent(bool system)
@@ -639,46 +527,6 @@ namespace CPvC
             }
         }
 
-        // Needs to be moved to history/file class!
-        /// <summary>
-        /// Writes a history event, and its children, to a machine file. Used only by <c>RewriteMachineFile</c>.
-        /// </summary>
-        /// <param name="file">Machine file to write to.</param>
-        /// <param name="historyEvent">History event to write.</param>
-        //private void WriteEvent(MachineHistory newHistory, HistoryEvent historyEvent)
-        //{
-        //    // As the history tree could be very deep, keep a "stack" of history events in order to avoid recursive calls.
-        //    List<HistoryEvent> historyEvents = new List<HistoryEvent>
-        //    {
-        //        historyEvent
-        //    };
-
-        //    HistoryEvent previousEvent = null;
-        //    while (historyEvents.Count > 0)
-        //    {
-        //        HistoryEvent currentEvent = historyEvents[0];
-
-        //        if (previousEvent != currentEvent.Parent && previousEvent != null)
-        //        {
-        //            file.WriteCurrent(currentEvent.Parent);
-        //        }
-
-        //        // Don't write out non-root checkpoint nodes which have only one child and no bookmark.
-        //        bool isRedundantChild = (currentEvent.Children.Count == 0 && currentEvent.Type == HistoryEvent.Types.Checkpoint && currentEvent.Bookmark == null && currentEvent.Parent != null && currentEvent.Parent.Ticks == currentEvent.Ticks);
-        //        if (!isRedundantChild &&
-        //            (currentEvent == _history.RootEvent || currentEvent.Children.Count != 1 || currentEvent.Type != HistoryEvent.Types.Checkpoint || currentEvent.Bookmark != null))
-        //        {
-        //            file.WriteHistoryEvent(currentEvent);
-        //        }
-
-        //        historyEvents.RemoveAt(0);
-        //        previousEvent = currentEvent;
-
-        //        // Place the current event's children at the top of the "stack". This effectively means we're doing a depth-first traversion of the history tree.
-        //        historyEvents.InsertRange(0, currentEvent.Children);
-        //    }
-        //}
-
         /// <summary>
         /// Returns a new core based on a HistoryEvent.
         /// </summary>
@@ -686,37 +534,23 @@ namespace CPvC
         /// <returns>If <c>bookmark</c> is not null, returns a core based on that bookmark. If the HistoryEvent is null, a newly-instantiated core is returned.</returns>
         private Core GetCore(Bookmark bookmark)
         {
-            Core core = null;
+            Core core;
             if (bookmark != null)
             {
                 core = Core.Create(Core.LatestVersion, bookmark.State.GetBytes());
-                core.IdleRequest = IdleRequest;
-
                 core.AllKeysUp();
 
                 return core;
             }
 
             core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-            core.IdleRequest = IdleRequest;
 
             return core;
         }
 
-        private CoreRequest IdleRequest()
+        public CoreRequest IdleRequest()
         {
             return (RunningState == RunningState.Running) ? CoreRequest.RunUntil(Ticks + 1000) : null;
-        }
-
-        // IMachineFileReader implementation.
-        public void SetName(string name)
-        {
-            _name = name;
-        }
-
-        public bool DeleteEventAndChildren(HistoryEvent e)
-        {
-            return _history.DeleteEventAndChildren(e);
         }
 
         public bool DeleteEvent(HistoryEvent e)
@@ -724,9 +558,34 @@ namespace CPvC
             return _history.DeleteEvent(e);
         }
 
-        public void SetCurrentEvent(HistoryEvent e)
+        public void SetCurrentEvent(HistoryEvent historyEvent)
         {
-            _history.SetCurrent(e);
+            if (historyEvent.Type == HistoryEventType.AddBookmark)
+            {
+                Core core = Core.Create(Core.LatestVersion, historyEvent.Bookmark.State.GetBytes());
+                SetCore(core);
+
+                Display.GetFromBookmark(historyEvent.Bookmark);
+
+                Auditors?.Invoke(CoreAction.LoadCore(historyEvent.Ticks, historyEvent.Bookmark.State));
+            }
+            else if (historyEvent == History.RootEvent)
+            {
+                Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+                SetCore(core);
+
+                CoreAction action = CoreAction.CoreVersion(historyEvent.Ticks, Core.LatestVersion);
+                History.AddCoreAction(action);
+
+                Auditors?.Invoke(action);
+                Auditors?.Invoke(CoreAction.Reset(historyEvent.Ticks));
+            }
+            else
+            {
+                throw new Exception("Can't set current event to an event that isn't the root or doesn't have a bookmark.");
+            }
+
+            _history.SetCurrent(historyEvent);
         }
 
         public void Reverse()
@@ -766,6 +625,130 @@ namespace CPvC
             else
             {
                 SnapshotLimit = 0;
+            }
+        }
+
+        public bool Persist(IFileSystem fileSystem, string filepath)
+        {
+            using (AutoPause())
+            {
+                if (_file != null)
+                {
+                    // We already are persisted!
+                    throw new InvalidOperationException("This machine is already persisted!");
+                }
+
+                if (String.IsNullOrEmpty(filepath))
+                {
+                    throw new ArgumentException("Invalid filepath.");
+                }
+
+                IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(filepath);
+                _file = new MachineFile(fileByteStream);
+
+                _file.History = new MachineHistory();
+                History.CopyTo(_file.History);
+                _file.History = History;
+
+                _file.Machine = this;
+                PersistantFilepath = filepath;
+
+                _file.WriteName(Name);
+
+                return true;
+            }
+        }
+
+        public void OpenFromFile(IFileSystem fileSystem)
+        {
+            if (IsOpen)
+            {
+                return;
+            }
+
+            IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(PersistantFilepath);
+            MachineFile file = new MachineFile(fileByteStream);
+
+            MachineHistory history;
+            string name;
+            file.ReadFile(out name, out history);
+
+            _history = history;
+            _name = name;
+
+            file.Machine = this;
+            file.History = _history;
+            _file = file;
+            OnPropertyChanged("IsOpen");
+
+
+            HistoryEvent historyEvent = MostRecentBookmark(_history);
+            SetCurrentEvent(historyEvent);
+
+            // Should probably be monitoring the IsOpen property, I think...
+            Display.EnableGreyscale(false);
+        }
+
+        static public Machine OpenPreview(IFileSystem fileSystem, string filepath)
+        {
+            Machine machine = Machine.Create(null, null);
+            machine.PersistantFilepath = filepath;
+
+            using (IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(machine.PersistantFilepath))
+            {
+                MachineFile file = new MachineFile(fileByteStream);
+
+                MachineHistory history;
+                string name;
+                file.ReadFile(out name, out history);
+
+                machine._name = name;
+
+                if (history != null)
+                {
+                    HistoryEvent historyEvent = MostRecentBookmark(history);
+
+                    machine.Display.GetFromBookmark(historyEvent.Bookmark);
+                    machine.Display.EnableGreyscale(true);
+                }
+            }
+
+            return machine;
+        }
+
+        static private HistoryEvent MostRecentBookmark(MachineHistory history)
+        {
+            HistoryEvent historyEvent = history.CurrentEvent;
+            while (historyEvent.Type != HistoryEventType.AddBookmark && historyEvent != history.RootEvent)
+            {
+                historyEvent = historyEvent.Parent;
+            }
+
+            return historyEvent;
+        }
+
+        public bool IsOpen
+        {
+            get
+            {
+                return PersistantFilepath == null || _file != null;
+            }
+        }
+
+        public string PersistantFilepath
+        {
+            get
+            {
+                return _filepath;
+            }
+
+            private set
+            {
+                if (_filepath != value)
+                {
+                    _filepath = value;
+                    OnPropertyChanged();
+                }
             }
         }
     }

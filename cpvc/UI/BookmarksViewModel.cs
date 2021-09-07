@@ -301,17 +301,7 @@ namespace CPvC.UI
 
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
-            PropertyChangedEventArgs args = new PropertyChangedEventArgs(name);
-
-            if (name == "SelectedItem")
-            {
-                _deleteBookmarksCommand.InvokeCanExecuteChanged(this, args);
-                _deleteBranchesCommand.InvokeCanExecuteChanged(this, args);
-                _jumpToBookmarkCommand.InvokeCanExecuteChanged(this, args);
-                _replayTimelineCommand.InvokeCanExecuteChanged(this, args);
-            }
-
-            PropertyChanged?.Invoke(this, args);
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
     }
 }
