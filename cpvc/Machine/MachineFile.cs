@@ -99,12 +99,6 @@ namespace CPvC
             base.Close();
         }
 
-        static public bool Save(IFileSystem fileSystem, Machine machine, string filepath)
-        {
-            return false;
-        }
-
-
         public MachineFile(IFileByteStream byteStream) : base(byteStream)
         {
             _historyEventToId = new Dictionary<HistoryEvent, int>();

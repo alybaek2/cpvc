@@ -114,7 +114,7 @@ namespace CPvC
 
         public void Close()
         {
-            if (_core != null)
+            if (IsOpen)
             {
                 Stop();
 
@@ -689,20 +689,16 @@ namespace CPvC
             Display.EnableGreyscale(false);
         }
 
-        static public Machine OpenPreview(IFileSystem fileSystem, string filepath)
+        static public Machine Create(IFileSystem fileSystem, string filepath)
         {
-            Machine machine = Machine.Create(null, null);
-            machine.PersistantFilepath = filepath;
-
-            using (IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(machine.PersistantFilepath))
+            using (IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(filepath))
             {
                 MachineFile file = new MachineFile(fileByteStream);
 
-                MachineHistory history;
-                string name;
-                file.ReadFile(out name, out history);
+                file.ReadFile(out string name, out MachineHistory history);
 
-                machine._name = name;
+                Machine machine = Machine.Create(name, history);
+                machine.PersistantFilepath = filepath;
 
                 if (history != null)
                 {
@@ -711,9 +707,9 @@ namespace CPvC
                     machine.Display.GetFromBookmark(historyEvent.Bookmark);
                     machine.Display.EnableGreyscale(true);
                 }
-            }
 
-            return machine;
+                return machine;
+            }
         }
 
         static private HistoryEvent MostRecentBookmark(MachineHistory history)

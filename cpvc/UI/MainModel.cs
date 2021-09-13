@@ -90,7 +90,7 @@ namespace CPvC
                     return existingMachine;
                 }
 
-                Machine machine = Machine.OpenPreview(fileSystem, filepath);
+                Machine machine = Machine.Create(fileSystem, filepath);
 
                 _machines.Add(machine);
 
@@ -123,8 +123,8 @@ namespace CPvC
                     return existingMachine;
                 }
 
-                // Ugly!!!
-                Machine machine = Machine.OpenPreview(fileSystem, filepath);
+                // Ugly!!! Create needs a parameter to open the machine.
+                Machine machine = Machine.Create(fileSystem, filepath);
                 machine.OpenFromFile(fileSystem);
                 machine.Start();
 
@@ -180,6 +180,7 @@ namespace CPvC
         /// <param name="fileSystem">File system required by MachineInfo to load a thumbnail for each machine.</param>
         private void LoadFromSettings(IFileSystem fileSystem)
         {
+            MessageBox.Show("break");
             string recent = _settings?.RecentlyOpened;
             if (recent == null)
             {

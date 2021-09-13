@@ -150,7 +150,8 @@ namespace CPvC
                 },
                 p =>
                 {
-                    IPersistableMachine pm = (IPersistableMachine)p;
+                    MachineViewModel machineViewModel = (MachineViewModel)p;
+                    IPersistableMachine pm = (IPersistableMachine)machineViewModel?.Machine;
                     return (pm?.PersistantFilepath != null);
                 }
             );
@@ -227,7 +228,7 @@ namespace CPvC
 
         private void AddMachine(ICoreMachine machine)
         {
-            MachineViewModel machineViewModel = CreateMachineViewModel(machine, null);
+            MachineViewModel machineViewModel = CreateMachineViewModel(machine);
             AddMachineViewModel(machineViewModel);
         }
 
@@ -453,7 +454,7 @@ namespace CPvC
             }
         }
 
-        private MachineViewModel CreateMachineViewModel(ICoreMachine machine, MachinePreview machinePreview)
+        private MachineViewModel CreateMachineViewModel(ICoreMachine machine)
         {
             MachineViewModel machineViewModel = new MachineViewModel(machine, _fileSystem, _promptForFile, _promptForBookmark, _promptForName, _selectItem, _confirmClose, _reportError);
 
