@@ -180,7 +180,6 @@ namespace CPvC
         /// <param name="fileSystem">File system required by MachineInfo to load a thumbnail for each machine.</param>
         private void LoadFromSettings(IFileSystem fileSystem)
         {
-            MessageBox.Show("break");
             string recent = _settings?.RecentlyOpened;
             if (recent == null)
             {
