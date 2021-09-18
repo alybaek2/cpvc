@@ -181,7 +181,7 @@ namespace CPvC
             );
 
             _renameCommand = new Command(
-                p => RenameMachine(Machine as Machine, promptForName),
+                p => RenameMachine(Machine, promptForName),
                 p => Machine != null
             );
 
@@ -474,7 +474,7 @@ namespace CPvC
             }
         }
 
-        private void RenameMachine(Machine machine, PromptForNameDelegate promptForName)
+        private void RenameMachine(ICoreMachine machine, PromptForNameDelegate promptForName)
         {
             if (machine == null)
             {

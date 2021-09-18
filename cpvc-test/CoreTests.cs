@@ -263,7 +263,7 @@ namespace CPvC.Test
                 core.Stop();
 
                 // Verify
-                mockPropChanged.Verify(p => p(core, It.Is<PropertyChangedEventArgs>(a => a != null && a.PropertyName == "Ticks")), Times.Exactly((int)(core.Ticks / 4000000)));
+                mockPropChanged.Verify(p => p(core, It.Is<PropertyChangedEventArgs>(a => a != null && a.PropertyName == "Ticks")), Times.Exactly((int)(50 * core.Ticks / 4000000)));
             }
         }
 

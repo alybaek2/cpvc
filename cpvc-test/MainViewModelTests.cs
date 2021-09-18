@@ -70,7 +70,7 @@ namespace CPvC.Test
 
         private MainViewModel SetupViewModel(int machineCount, Mock<MainViewModel.PromptForFileDelegate> mockPromptForFile, Mock<MainViewModel.PromptForBookmarkDelegate> mockPromptForBookmark, Mock<MainViewModel.PromptForNameDelegate> mockPromptForName)
         {
-            _settingGet = String.Join(",", Enumerable.Range(0, machineCount).Select(x => String.Format("Test{0};test{0}.cpvc", x)));
+            _settingGet = String.Join(",", Enumerable.Range(0, machineCount).Select(x => String.Format("test{0}.cpvc", x)));
             _mockBinaryWriter.Content = new List<byte>
             {
                 0x01,
@@ -117,46 +117,6 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void ThrowsWhenNewMachineFails()
-        {
-            // Setup
-            string filepath = "test.cpvc";
-            Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
-            mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream(filepath)).Throws(new Exception("File not found"));
-            mockFileSystem.Setup(ReadBytes()).Throws(new Exception("File missing"));
-            mockFileSystem.Setup(DeleteFile(filepath));
-            mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(false);
-
-            Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, filepath);
-
-            Mock<ReportErrorDelegate> mockReportError = new Mock<ReportErrorDelegate>();
-
-            Mock<ISettings> mockSettings = new Mock<ISettings>(MockBehavior.Loose);
-
-            // Act
-            MainViewModel viewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object, null, prompt.Object, null, null, mockReportError.Object, null, null, () => new Socket(), null);
-            viewModel.NewMachineCommand.Execute(null);
-
-            // Verify
-            mockReportError.Verify(r => r("File not found"));
-            Assert.Zero(viewModel.MachineViewModels.Count);
-        }
-
-        //[Test]
-        //public void NewNull()
-        //{
-        //    // Setup
-        //    Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, null);
-        //    MainViewModel viewModel = SetupViewModel(0, prompt, null, null);
-
-        //    // Act
-        //    viewModel.NewMachine(prompt.Object, _mockFileSystem.Object);
-
-        //    // Verify
-        //    Assert.AreEqual(0, viewModel.MachinePreviews.Count);
-        //}
-
-        [Test]
         public void OpenNull()
         {
             // Setup
@@ -169,54 +129,6 @@ namespace CPvC.Test
 
             // Verify
             Assert.AreEqual(machineViewModelCount, viewModel.MachineViewModels.Count);
-        }
-
-        [TestCase(null, null, "")]
-        [TestCase(null, "test.cpvc", "test")]
-        [TestCase("test.cpvc", null, "test")]
-        public void OpenMachine(string filepath, string promptedFilepath, string expectedMachineName)
-        {
-            // Setup
-            Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, true, promptedFilepath);
-            MainViewModel viewModel = SetupViewModel(0, prompt, null, null);
-            _mockBinaryWriter.Content = new List<byte>
-            {
-                0x00,
-                      (byte)expectedMachineName.Length, 0x00, 0x00, 0x00
-            };
-
-            foreach (char c in expectedMachineName)
-            {
-                _mockBinaryWriter.Content.Add((byte)c);
-            }
-
-            _mockBinaryWriter.Content.AddRange(new byte[] {
-                0x0b,
-                      0x00, 0x00, 0x00, 0x00,
-                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-            });
-
-            // Act
-            MachineViewModel machineViewModel = viewModel.OpenMachine(prompt.Object, filepath, _mockFileSystem.Object);
-
-            // Verify
-            prompt.Verify(x => x(FileTypes.Machine, true), (filepath != null) ? Times.Never() : Times.Once());
-            prompt.VerifyNoOtherCalls();
-
-            if (expectedMachineName != String.Empty)
-            {
-                Assert.AreEqual(1, viewModel.Machines.Count);
-                Assert.AreEqual(expectedMachineName, viewModel.Machines[0].Name);
-                Assert.IsNotNull(machineViewModel);
-                Assert.IsNotNull(machineViewModel.Machine);
-                Assert.Contains(machineViewModel.Machine, viewModel.Machines);
-                _mockSettings.VerifySet(x => x.RecentlyOpened = "test;test.cpvc", Times.Once);
-            }
-            else
-            {
-                Assert.IsEmpty(viewModel.Machines);
-                _mockBinaryWriter.Verify(bw => bw.ReadByte(), Times.Never);
-            }
         }
 
         [Test]
@@ -237,7 +149,7 @@ namespace CPvC.Test
         {
             // Setup
             Mock<ISocket> mockSocket = new Mock<ISocket>();
-            _settingGet = "Test;test.cpvc";
+            _settingGet = "test.cpvc";
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream(AnyString())).Throws(new Exception());
 
             // Act
@@ -246,39 +158,6 @@ namespace CPvC.Test
             // Verify
             Assert.AreEqual(0, viewModel.Machines.Count);
         }
-
-        [TestCase(null, null)]
-        [TestCase("test.cpvc", "test")]
-        //public void NewMachine(string filepath, string expectedMachineName)
-        //{
-        //    // Setup
-        //    Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, filepath);
-        //    MainViewModel viewModel = SetupViewModel(0, prompt, null, null);
-        //    _mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(false);
-
-        //    // Act
-        //    viewModel.NewMachine(prompt.Object, _mockFileSystem.Object);
-
-        //    // Verify
-        //    prompt.Verify(x => x(FileTypes.Machine, false), Times.Once());
-        //    prompt.VerifyNoOtherCalls();
-
-        //    if (expectedMachineName != null)
-        //    {
-        //        // Stop the machine as a newly created machine will be in a running state.
-        //        viewModel.Machines[0].Stop();
-
-        //        Assert.AreEqual(1, viewModel.Machines.Count);
-        //        Assert.AreEqual(expectedMachineName, viewModel.Machines[0].Name);
-        //        _mockFileSystem.Verify(fileSystem => fileSystem.DeleteFile(filepath), Times.Once());
-        //        _mockFileSystem.Verify(fileSystem => fileSystem.OpenFileByteStream(filepath), Times.Once());
-        //    }
-        //    else
-        //    {
-        //        Assert.IsEmpty(viewModel.Machines);
-        //        _mockFileSystem.VerifyNoOtherCalls();
-        //    }
-        //}
 
         /// <summary>
         /// Ensures that if we call MainViewModel.OpenMachine twice with the same filepath, the second call should return the same machine.

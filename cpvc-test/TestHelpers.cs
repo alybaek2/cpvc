@@ -304,7 +304,12 @@ namespace CPvC.Test
             receive(action);
             machine.Start();
 
-            bool result = e.WaitOne(1000);
+            bool result = false;
+            while (!result)
+            {
+                result = e.WaitOne(100);
+                machine.AdvancePlayback(100000);
+            }
 
             machine.Core.Auditors -= processed;
 

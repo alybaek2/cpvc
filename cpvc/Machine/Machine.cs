@@ -47,6 +47,24 @@ namespace CPvC
         private List<SnapshotInfo> _snapshots;
 
         private MachineFile _file;
+
+        private MachineFile File
+        {
+            get
+            {
+                return _file;
+            }
+
+            set
+            {
+                if (_file != value)
+                {
+                    _file = value;
+                    OnPropertyChanged(nameof(IsOpen));
+                }
+            }
+        }
+
         private string _filepath;
 
         public int SnapshotLimit
@@ -58,13 +76,15 @@ namespace CPvC
 
             set
             {
-                _snapshotLimit = value;
-
-                OnPropertyChanged();
+                if (_snapshotLimit != value)
+                {
+                    _snapshotLimit = value;
+                    OnPropertyChanged();
+                }
             }
         }
 
-        public Machine(string name, string machineFilepath, IFileSystem fileSystem)
+        public Machine(string name)
         {
             _name = name;
 
@@ -100,7 +120,7 @@ namespace CPvC
 
         static public Machine Create(string name, MachineHistory history)
         {
-            Machine machine = new Machine(name, null, null);
+            Machine machine = new Machine(name);
             if (history != null)
             {
                 machine._history = history;
@@ -136,12 +156,10 @@ namespace CPvC
 
             SetCore(null);
 
-            if (_file != null)
+            if (File != null)
             {
-                _file.Close();
-                _file = null;
-
-                OnPropertyChanged("IsOpen");
+                File.Close();
+                File = null;
             }
 
             _history = new MachineHistory();
@@ -632,7 +650,7 @@ namespace CPvC
         {
             using (AutoPause())
             {
-                if (_file != null)
+                if (File != null)
                 {
                     // We already are persisted!
                     throw new InvalidOperationException("This machine is already persisted!");
@@ -644,16 +662,16 @@ namespace CPvC
                 }
 
                 IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(filepath);
-                _file = new MachineFile(fileByteStream);
+                File = new MachineFile(fileByteStream);
 
-                _file.History = new MachineHistory();
-                History.CopyTo(_file.History);
-                _file.History = History;
+                File.History = new MachineHistory();
+                History.CopyTo(File.History);
+                File.History = History;
 
-                _file.Machine = this;
+                File.Machine = this;
                 PersistantFilepath = filepath;
 
-                _file.WriteName(Name);
+                File.WriteName(Name);
 
                 return true;
             }
@@ -678,9 +696,7 @@ namespace CPvC
 
             file.Machine = this;
             file.History = _history;
-            _file = file;
-            OnPropertyChanged("IsOpen");
-
+            File = file;
 
             HistoryEvent historyEvent = MostRecentBookmark(_history);
             SetCurrentEvent(historyEvent);
@@ -727,7 +743,7 @@ namespace CPvC
         {
             get
             {
-                return PersistantFilepath == null || _file != null;
+                return PersistantFilepath == null || File != null;
             }
         }
 
@@ -744,6 +760,7 @@ namespace CPvC
                 {
                     _filepath = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(IsOpen));
                 }
             }
         }

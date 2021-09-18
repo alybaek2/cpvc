@@ -106,7 +106,7 @@ namespace CPvC.Test
         public void WriteAndReadName()
         {
             // Setup
-            Machine machine = new Machine(String.Empty, String.Empty, null);
+            Machine machine = new Machine(String.Empty);
             _file.Machine = machine;
 
             // Act

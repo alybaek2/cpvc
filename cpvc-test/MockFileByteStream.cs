@@ -69,6 +69,7 @@ namespace CPvC.Test
             SetupGet(s => s.Position).Returns(() => _readPos);
             SetupSet(s => s.Position = It.IsAny<long>()).Callback<long>(offset => _readPos = offset);
             Setup(s => s.Close());
+            Setup(s => s.Dispose());
         }
     }
 }
