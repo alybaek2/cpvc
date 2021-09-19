@@ -84,10 +84,6 @@ namespace CPvC
             _nextPersistentId = 0;
         }
 
-        public MachineFile(IFileSystem fileSystem, string filepath) : this(fileSystem.OpenFileByteStream(filepath))
-        {
-        }
-
         private void HistoryEventHappened(HistoryEvent historyEvent, UInt64 ticks, HistoryEventType type, CoreAction coreAction, Bookmark bookmark)
         {
             switch (type)
@@ -99,7 +95,6 @@ namespace CPvC
 
                         _historyEventToId[historyEvent] = id;
                         _idToHistoryEvent[id] = historyEvent;
-
                     }
                     break;
                 case HistoryEventType.AddCoreAction:
@@ -113,28 +108,16 @@ namespace CPvC
                     break;
                 case HistoryEventType.DeleteEventAndChildren:
                     {
-                        if (_historyEventToId.TryGetValue(historyEvent, out int persistentId))
-                        {
-                            WriteByte(_idDeleteEventAndChildren);
-                            WriteInt32(persistentId);
-                        }
-                        else
-                        {
-                            throw new Exception("Can't find id!");
-                        }
+                        int persistentId = _historyEventToId[historyEvent];
+                        WriteByte(_idDeleteEventAndChildren);
+                        WriteInt32(persistentId);
                     }
                     break;
                 case HistoryEventType.DeleteEvent:
                     {
-                        if (_historyEventToId.TryGetValue(historyEvent, out int persistentId))
-                        {
-                            WriteByte(_idDeleteEvent);
-                            WriteInt32(persistentId);
-                        }
-                        else
-                        {
-                            throw new Exception("Can't find id!");
-                        }
+                        int persistentId = _historyEventToId[historyEvent];
+                        WriteByte(_idDeleteEvent);
+                        WriteInt32(persistentId);
                     }
                     break;
                 case HistoryEventType.SetCurrent:
@@ -143,14 +126,11 @@ namespace CPvC
                         {
                             WriteByte(_idSetCurrentToRoot);
                         }
-                        else if (_historyEventToId.TryGetValue(historyEvent, out int persistentId))
-                        {
-                            WriteByte(_idCurrent);
-                            WriteInt32(persistentId);
-                        }
                         else
                         {
-                            throw new Exception("Can't find id!");
+                            int persistentId = _historyEventToId[historyEvent];
+                            WriteByte(_idCurrent);
+                            WriteInt32(persistentId);
                         }
                     }
                     break;

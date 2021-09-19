@@ -131,10 +131,15 @@ namespace CPvC.Test
             long len1 = _memStream.Length;
             machine2.Name = "Test2";
             long len2 = _memStream.Length;
+            _file.Machine = null;
+            machine1.Name = "Test3";
+            machine2.Name = "Test4";
+            long len3 = _memStream.Length;
 
             // Verify
             Assert.Zero(len1);
             Assert.NotZero(len2);
+            Assert.AreEqual(len2, len3);
         }
 
         [Test]
@@ -151,10 +156,37 @@ namespace CPvC.Test
             long len1 = _memStream.Length;
             history2.AddCoreAction(CoreAction.Reset(100));
             long len2 = _memStream.Length;
+            _file.History = null;
+            history1.AddCoreAction(CoreAction.Reset(100));
+            history2.AddCoreAction(CoreAction.Reset(100));
+            long len3 = _memStream.Length;
 
             // Verify
             Assert.Zero(len1);
             Assert.NotZero(len2);
+            Assert.AreEqual(len2, len3);
+        }
+
+        [Test]
+        public void Close()
+        {
+            // Setup
+            Machine machine1 = Machine.New(null, null);
+            MachineHistory history1 = new MachineHistory();
+            _file.History = history1;
+            machine1.Name = "Test";
+            history1.AddCoreAction(CoreAction.Reset(100));
+            long len1 = _memStream.Length;
+
+            // Act
+            _file.Close();
+            machine1.Name = "Test";
+            history1.AddCoreAction(CoreAction.Reset(100));
+            long len2 = _memStream.Length;
+
+            // Verify
+            Assert.NotZero(len1);
+            Assert.AreEqual(len1, len2);
         }
     }
 }
