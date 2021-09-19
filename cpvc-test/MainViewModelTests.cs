@@ -53,7 +53,7 @@ namespace CPvC.Test
             _mockSelectServerPort = new Mock<SelectServerPortDelegate>();
             _mockSelectRemoveMachine = new Mock<SelectRemoteMachineDelegate>();
 
-            _machine = Machine.Create("test", null);
+            _machine = Machine.New("test", null);
             _machineViewModel = new MachineViewModel(_machine, null, null, null, null, null, null, null);
             _mainViewModel = new MainViewModel(null, null, null, null, null, null, null, null, null, null, null);
             _mainViewModel.MachineViewModels.Add(_machineViewModel);

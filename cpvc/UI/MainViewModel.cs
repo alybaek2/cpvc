@@ -369,7 +369,7 @@ namespace CPvC
 
         public void NewMachine(PromptForFileDelegate promptForFile, IFileSystem fileSystem)
         {
-            Machine machine = Machine.Create("Untitled", null);
+            Machine machine = Machine.New("Untitled", null);
             _model.AddMachine(machine);
 
             SetActive(machine);
@@ -399,7 +399,7 @@ namespace CPvC
                 });
             if (machineViewModel == null)
             {
-                _model.AddMachine(filepath, fileSystem);
+                _model.AddMachine(filepath, fileSystem, true);
             }
 
             return machineViewModel;

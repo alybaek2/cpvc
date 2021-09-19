@@ -66,71 +66,30 @@ namespace CPvC
             }
         }
 
-        public ICoreMachine AddPreview(string filepath, IFileSystem fileSystem)
+        public void AddMachine(string filepath, IFileSystem fileSystem, bool open)
         {
             if (String.IsNullOrEmpty(filepath))
             {
-                return null;
+                return;
             }
 
             lock (_machines)
             {
-                ICoreMachine existingMachine = _machines.FirstOrDefault(
-                    m => {
-                        if (m is IPersistableMachine pm)
-                        {
-                            return String.Compare(pm.PersistantFilepath, filepath, true) == 0;
-                        }
-
-                        return false;
-                });
-
-                if (existingMachine != null)
+                if (GetPersistedMachine(filepath) == null)
                 {
-                    return existingMachine;
+                    Machine machine;
+                    if (open)
+                    {
+                        machine = Machine.OpenFromFile(fileSystem, filepath);
+                        machine.Start();
+                    }
+                    else
+                    {
+                        machine = Machine.Create(fileSystem, filepath);
+                    }
+
+                    _machines.Add(machine);
                 }
-
-                Machine machine = Machine.Create(fileSystem, filepath);
-
-                _machines.Add(machine);
-
-                return machine;
-            }
-        }
-
-        public ICoreMachine AddMachine(string filepath, IFileSystem fileSystem)
-        {
-            if (String.IsNullOrEmpty(filepath))
-            {
-                return null;
-            }
-
-            lock (_machines)
-            {
-                ICoreMachine existingMachine = _machines.FirstOrDefault(
-                    m => {
-                        if (m is IPersistableMachine pm)
-                        {
-                            return String.Compare(pm.PersistantFilepath, filepath, true) == 0;
-                        }
-
-                        return false;
-
-                    });
-
-                if (existingMachine != null)
-                {
-                    return existingMachine;
-                }
-
-                // Ugly!!! Create needs a parameter to open the machine.
-                Machine machine = Machine.Create(fileSystem, filepath);
-                machine.OpenFromFile(fileSystem);
-                machine.Start();
-
-                _machines.Add(machine);
-
-                return machine;
             }
         }
 
@@ -192,7 +151,7 @@ namespace CPvC
                 {
                     try
                     {
-                        AddPreview(machineStr, fileSystem);
+                        AddMachine(machineStr, fileSystem, false);
                     }
                     catch
                     {
@@ -200,6 +159,19 @@ namespace CPvC
                     }
                 }
             }
+        }
+
+        private ICoreMachine GetPersistedMachine(string filepath)
+        {
+            return _machines.FirstOrDefault(
+                m => {
+                    if (m is IPersistableMachine pm)
+                    {
+                        return String.Compare(pm.PersistantFilepath, filepath, true) == 0;
+                    }
+
+                    return false;
+                });
         }
     }
 }

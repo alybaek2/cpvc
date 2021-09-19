@@ -118,7 +118,7 @@ namespace CPvC
             public HistoryEvent HistoryEvent { get; }
         }
 
-        static public Machine Create(string name, MachineHistory history)
+        static public Machine New(string name, MachineHistory history)
         {
             Machine machine = new Machine(name);
             if (history != null)
@@ -677,6 +677,16 @@ namespace CPvC
             }
         }
 
+        static public Machine OpenFromFile(IFileSystem fileSystem, string filepath)
+        {
+            Machine machine = new Machine(null);
+            machine.PersistantFilepath = filepath;
+
+            machine.OpenFromFile(fileSystem);
+
+            return machine;
+        }
+
         public void OpenFromFile(IFileSystem fileSystem)
         {
             if (IsOpen)
@@ -713,7 +723,7 @@ namespace CPvC
 
                 file.ReadFile(out string name, out MachineHistory history);
 
-                Machine machine = Machine.Create(name, history);
+                Machine machine = Machine.New(name, history);
                 machine.PersistantFilepath = filepath;
 
                 if (history != null)

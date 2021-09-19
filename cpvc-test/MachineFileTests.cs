@@ -116,5 +116,45 @@ namespace CPvC.Test
             // Verify
             Assert.AreEqual(machine.Name, name);
         }
+
+        [Test]
+        public void MachineUnsubscribe()
+        {
+            // Setup
+            Machine machine1 = Machine.New(null, null);
+            Machine machine2 = Machine.New(null, null);
+            _file.Machine = machine1;
+            _file.Machine = machine2;
+
+            // Act
+            machine1.Name = "Test1";
+            long len1 = _memStream.Length;
+            machine2.Name = "Test2";
+            long len2 = _memStream.Length;
+
+            // Verify
+            Assert.Zero(len1);
+            Assert.NotZero(len2);
+        }
+
+        [Test]
+        public void MachineHistoryUnsubscribe()
+        {
+            // Setup
+            MachineHistory history1 = new MachineHistory();
+            MachineHistory history2 = new MachineHistory();
+            _file.History = history1;
+            _file.History = history2;
+
+            // Act
+            history1.AddCoreAction(CoreAction.Reset(100));
+            long len1 = _memStream.Length;
+            history2.AddCoreAction(CoreAction.Reset(100));
+            long len2 = _memStream.Length;
+
+            // Verify
+            Assert.Zero(len1);
+            Assert.NotZero(len2);
+        }
     }
 }

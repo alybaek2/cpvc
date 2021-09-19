@@ -43,18 +43,6 @@ namespace CPvC
                 {
                     _machine.PropertyChanged += Machine_PropertyChanged;
                 }
-
-                //if (_machineHistory != null)
-                //{
-                //    _machineHistory.Auditors -= HistoryEventHappened;
-                //}
-
-                //_machineHistory = _machine?.History;
-
-                //if (_machineHistory != null)
-                //{
-                //    _machineHistory.Auditors += HistoryEventHappened;
-                //}
             }
         }
 
@@ -79,16 +67,6 @@ namespace CPvC
                     _machineHistory.Auditors += HistoryEventHappened;
                 }
             }
-        }
-
-        static public Machine Open(IFileSystem fileSystem, string filepath)
-        {
-            if (_machines.TryGetValue(filepath, out Machine machine))
-            {
-                return machine;
-            }
-
-            return null;
         }
 
         public override void Close()
