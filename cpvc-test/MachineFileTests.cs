@@ -54,6 +54,18 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void WriteAndReadRunUntil()
+        {
+            // Act
+            _writeHistory.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+            _writeHistory.SetCurrent(_writeHistory.RootEvent);
+            _file.ReadFile(out _, out MachineHistory readHistory);
+
+            // Verify
+            Assert.True(HistoriesEqual(readHistory, _writeHistory));
+        }
+
+        [Test]
         public void WriteAndReadBookmark()
         {
             // Setup
@@ -115,6 +127,36 @@ namespace CPvC.Test
 
             // Verify
             Assert.AreEqual(machine.Name, name);
+        }
+
+        [Test]
+        public void WriteSetCurrentRoot()
+        {
+            // Setup
+            _writeHistory.AddCoreAction(CoreAction.KeyPress(100, 42, true));
+
+            // Act
+            _writeHistory.SetCurrent(_writeHistory.RootEvent);
+            _file.ReadFile(out _, out MachineHistory readHistory);
+
+            // Verify
+            Assert.AreEqual(readHistory.RootEvent, readHistory.CurrentEvent);
+        }
+
+        [Test]
+        public void WriteSetCurrentNonRoot()
+        {
+            // Setup
+            _writeHistory.AddCoreAction(CoreAction.KeyPress(100, 42, true));
+            HistoryEvent historyEvent = _writeHistory.AddCoreAction(CoreAction.KeyPress(100, 42, true));
+
+            // Act
+            _writeHistory.SetCurrent(historyEvent);
+            _file.ReadFile(out _, out MachineHistory readHistory);
+
+            // Verify
+            Assert.True(TestHelpers.HistoriesEqual(_writeHistory, readHistory));
+            Assert.AreEqual(readHistory.CurrentEvent, readHistory.RootEvent.Children[0].Children[0]);
         }
 
         [Test]

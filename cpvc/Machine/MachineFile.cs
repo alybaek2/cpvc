@@ -337,7 +337,7 @@ namespace CPvC
                     WriteVersion(id, ticks, action.Version);
                     break;
                 case CoreRequest.Types.RunUntil:
-                    WriteRunUntil(id, ticks);
+                    WriteRunUntil(id, ticks, action.StopTicks);
                     break;
                 default:
                     throw new Exception(String.Format("Unrecognized core action type {0}.", action.Type));
@@ -377,13 +377,14 @@ namespace CPvC
             }
         }
 
-        private void WriteRunUntil(int id, UInt64 ticks)
+        private void WriteRunUntil(int id, UInt64 ticks, UInt64 stopTicks)
         {
             lock (_byteStream)
             {
                 WriteByte(_idRunUntil);
                 WriteInt32(id);
                 WriteUInt64(ticks);
+                WriteUInt64(stopTicks);
             }
         }
 
@@ -460,10 +461,11 @@ namespace CPvC
             {
                 int id = ReadInt32();
                 UInt64 ticks = ReadUInt64();
+                UInt64 stopTicks = ReadUInt64();
 
-                CPvC.Diagnostics.Trace("[RunUntil] Id: {0} Ticks: {1}", id, ticks);
+                CPvC.Diagnostics.Trace("[RunUntil] Id: {0} Ticks: {1} StopTicks: {2}", id, ticks, stopTicks);
 
-                CoreAction action = CoreAction.RunUntil(ticks, ticks, null);
+                CoreAction action = CoreAction.RunUntil(ticks, stopTicks, null);
 
                 AddCoreAction(id, action);
             }
