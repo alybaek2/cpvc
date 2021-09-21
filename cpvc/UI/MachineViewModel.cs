@@ -85,37 +85,14 @@ namespace CPvC
 
             _pauseCommand = new Command(
                 p => (_machine as IPausableMachine)?.Stop(),
-                p =>
-                {
-                    if (_machine == null)
-                    {
-                        return false;
-                    }
-
-                    return (_machine.RunningState == RunningState.Running);
-                },
+                p => (Machine as IPausableMachine)?.CanStop ?? false,
                 _machine,
                 new List<string> { nameof(IPausableMachine.RunningState) }
             );
 
             _resumeCommand = new Command(
                 p => (Machine as IPausableMachine)?.Start(),
-                p =>
-                {
-                    if (_machine == null)
-                    {
-                        return false;
-                    }
-
-                    // Should really add "CanResume" and "CanPause" to IPausableMachine?
-                    IPersistableMachine pm = Machine as IPersistableMachine;
-                    if (pm != null && !pm.IsOpen)
-                    {
-                        return false;
-                    }
-
-                    return (_machine.RunningState != RunningState.Running);
-                },
+                p => (Machine as IPausableMachine)?.CanStart ?? false,
                 _machine,
                 new List<string> { nameof(IPausableMachine.RunningState) }
             );

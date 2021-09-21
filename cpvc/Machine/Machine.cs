@@ -102,6 +102,22 @@ namespace CPvC
             Close();
         }
 
+        public bool CanStart
+        {
+            get
+            {
+                return IsOpen && RunningState == RunningState.Paused;
+            }
+        }
+
+        public bool CanStop
+        {
+            get
+            {
+                return IsOpen && RunningState == RunningState.Running;
+            }
+        }
+
         private class SnapshotInfo
         {
             public SnapshotInfo(int id, HistoryEvent historyEvent)

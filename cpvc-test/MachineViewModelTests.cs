@@ -204,57 +204,53 @@ namespace CPvC.Test
             Assert.AreEqual(!nullMachine, model.TurboCommand.CanExecute(null));
         }
 
-        //[Test]
-        //public void Pause(
-        //    [Values(false, true)] bool nullMachine,
-        //    [Values(false, true)] bool requiresOpen,
-        //    [Values(RunningState.Paused, RunningState.Running)] RunningState runningState,
-        //    [Values(false, true)] bool isOpenable)
-        //{
-        //    // Setup
-        //    Mock<ICoreMachine> mockMachine = new Mock<ICoreMachine>();
-        //    if (isOpenable)
-        //    {
-        //        Mock<IOpenableMachine> mockOpenableMachine = mockMachine.As<IOpenableMachine>();
-        //        mockOpenableMachine.SetupGet(x => x.RequiresOpen).Returns(requiresOpen);
-        //    }
-        //    Mock<IPausableMachine> mockPausableMachine = mockMachine.As<IPausableMachine>();
-        //    mockMachine.SetupGet(x => x.RunningState).Returns(runningState);
-        //    MachineViewModel model = new MachineViewModel(null, null, nullMachine ? null : mockMachine.Object, null, null, null, null, null);
+        [Test]
+        public void Pause(
+            [Values(false, true)] bool nullMachine,
+            [Values(false, true)] bool canStop,
+            [Values(false, true)] bool isPausable)
+        {
+            // Setup
+            Mock<ICoreMachine> mockMachine = new Mock<ICoreMachine>();
+            Mock<IPausableMachine> mockPausableMachine = null;
+            if (isPausable)
+            {
+                mockPausableMachine = mockMachine.As<IPausableMachine>();
+                mockPausableMachine.SetupGet(x => x.CanStop).Returns(canStop);
+            }
+            MachineViewModel model = new MachineViewModel(nullMachine ? null : mockMachine.Object, null, null, null, null, null, null, null);
 
-        //    // Act
-        //    model.PauseCommand.Execute(null);
+            // Act
+            model.PauseCommand.Execute(null);
 
-        //    // Verify
-        //    mockPausableMachine.Verify(m => m.Stop(), nullMachine ? Times.Never() : Times.Once());
-        //    Assert.AreEqual(!nullMachine && (!isOpenable || !requiresOpen) && (runningState == RunningState.Running), model.PauseCommand.CanExecute(null));
-        //}
+            // Verify
+            mockPausableMachine?.Verify(m => m.Stop(), nullMachine ? Times.Never() : Times.Once());
+            Assert.AreEqual(!nullMachine && canStop && isPausable, model.PauseCommand.CanExecute(null));
+        }
 
-        //[Test]
-        //public void Resume(
-        //    [Values(false, true)] bool nullMachine,
-        //    [Values(false, true)] bool requiresOpen,
-        //    [Values(RunningState.Paused, RunningState.Running)] RunningState runningState,
-        //    [Values(false, true)] bool isOpenable)
-        //{
-        //    // Setup
-        //    Mock<ICoreMachine> mockMachine = new Mock<ICoreMachine>();
-        //    if (isOpenable)
-        //    {
-        //        Mock<IOpenableMachine> mockOpenableMachine = mockMachine.As<IOpenableMachine>();
-        //        mockOpenableMachine.SetupGet(x => x.RequiresOpen).Returns(requiresOpen);
-        //    }
-        //    Mock<IPausableMachine> mockPausableMachine = mockMachine.As<IPausableMachine>();
-        //    mockMachine.SetupGet(x => x.RunningState).Returns(runningState);
-        //    MachineViewModel model = new MachineViewModel(null, null, nullMachine ? null : mockMachine.Object, null, null, null, null, null);
+        [Test]
+        public void Resume(
+            [Values(false, true)] bool nullMachine,
+            [Values(false, true)] bool canStart,
+            [Values(false, true)] bool isPausable)
+        {
+            // Setup
+            Mock<ICoreMachine> mockMachine = new Mock<ICoreMachine>();
+            Mock<IPausableMachine> mockPausableMachine = null;
+            if (isPausable)
+            {
+                mockPausableMachine = mockMachine.As<IPausableMachine>();
+                mockPausableMachine.SetupGet(x => x.CanStart).Returns(canStart);
+            }
+            MachineViewModel model = new MachineViewModel(nullMachine ? null : mockMachine.Object, null, null, null, null, null, null, null);
 
-        //    // Act
-        //    model.ResumeCommand.Execute(null);
+            // Act
+            model.ResumeCommand.Execute(null);
 
-        //    // Verify
-        //    mockPausableMachine.Verify(m => m.Start(), nullMachine ? Times.Never() : Times.Once());
-        //    Assert.AreEqual(!nullMachine && (!isOpenable || !requiresOpen) && (runningState == RunningState.Paused), model.ResumeCommand.CanExecute(null));
-        //}
+            // Verify
+            mockPausableMachine?.Verify(m => m.Start(), (nullMachine || !isPausable) ? Times.Never() : Times.Once());
+            Assert.AreEqual(!nullMachine && canStart && isPausable, model.ResumeCommand.CanExecute(null));
+        }
 
         [TestCase(false, true, false, 0, false)]
         [TestCase(true, false, false, 0, false)]

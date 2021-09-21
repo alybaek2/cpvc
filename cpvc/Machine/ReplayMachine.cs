@@ -65,6 +65,22 @@ namespace CPvC
             get; set;
         }
 
+        public bool CanStart
+        {
+            get
+            {
+                return RunningState == RunningState.Paused;
+            }
+        }
+
+        public bool CanStop
+        {
+            get
+            {
+                return RunningState == RunningState.Running;
+            }
+        }
+
         public void Close()
         {
             Core = null;
