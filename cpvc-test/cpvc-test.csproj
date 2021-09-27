@@ -125,6 +125,7 @@
     <Compile Include="MachineServerListenerTests.cs" />
     <Compile Include="MachineTests.cs" />
     <Compile Include="MachineViewModelTests.cs" />
+    <Compile Include="MainModelTests.cs" />
     <Compile Include="MainViewModelTests.cs" />
     <Compile Include="MemoryByteStreamTests.cs" />
     <Compile Include="MockFileByteStream.cs" />
