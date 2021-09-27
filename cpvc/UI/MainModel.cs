@@ -81,7 +81,6 @@ namespace CPvC
                     if (open)
                     {
                         machine = Machine.OpenFromFile(fileSystem, filepath);
-                        machine.Start();
                     }
                     else
                     {

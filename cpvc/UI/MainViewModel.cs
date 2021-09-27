@@ -188,7 +188,7 @@ namespace CPvC
                     MachineViewModel machineViewModel = (MachineViewModel)p;
                     try
                     {
-                        machineViewModel.Persist(fileSystem, promptForFile);
+                        machineViewModel.Persist(fileSystem);
                     }
                     catch (Exception ex)
                     {

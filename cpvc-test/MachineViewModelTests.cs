@@ -111,25 +111,20 @@ namespace CPvC.Test
             Assert.AreEqual(!nullMachine, getCommand(model).CanExecute(null));
         }
 
-        //[TestCase(false, false)]
-        //[TestCase(true, false)]
-        //[TestCase(false, true)]
-        //[TestCase(true, true)]
-        //public void Open(bool nullMachine, bool requiresOpen)
-        //{
-        //    // Setup
-        //    Mock<ICoreMachine> mockMachine = new Mock<ICoreMachine>();
-        //    Mock<IOpenableMachine> mockOpenableMachine = mockMachine.As<IOpenableMachine>();
-        //    mockOpenableMachine.SetupGet(x => x.RequiresOpen).Returns(requiresOpen);
-        //    MachineViewModel model = new MachineViewModel(null, null, nullMachine ? null : mockMachine.Object, null, null, null, null, null);
+        [Test]
+        public void Open([Values(false, true)] bool nullMachine)
+        {
+            // Setup
+            Mock<IPersistableMachine> mockPersistableMachine = new Mock<IPersistableMachine>();
+            mockPersistableMachine.Setup(x => x.OpenFromFile(It.IsAny<IFileSystem>()));
+            MachineViewModel model = new MachineViewModel(nullMachine ? null : mockPersistableMachine.As<ICoreMachine>().Object, null, null, null, null, null, null, null);
 
-        //    // Act
-        //    model.OpenCommand.Execute(null);
+            // Act
+            model.OpenCommand.Execute(null);
 
-        //    // Verify
-        //    mockOpenableMachine.Verify(m => m.Open(), nullMachine ? Times.Never() : Times.Once());
-        //    Assert.AreEqual(!nullMachine && requiresOpen, model.OpenCommand.CanExecute(null));
-        //}
+            // Verify
+            mockPersistableMachine.Verify(m => m.OpenFromFile(It.IsAny<IFileSystem>()), nullMachine ? Times.Never() : Times.Once());
+        }
 
         //[TestCase(false, false)]
         //[TestCase(true, false)]

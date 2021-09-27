@@ -52,10 +52,8 @@ namespace CPvC
             _machine = machine;
 
             _openCommand = new Command(
-                p => Open(fileSystem),
-                p => !(_machine as IPersistableMachine)?.IsOpen ?? false,
-                _machine,
-                new List<string> { nameof(IPersistableMachine.IsOpen) }
+                p => (_machine as IPersistableMachine)?.OpenFromFile(fileSystem),
+                p => !(_machine as IPersistableMachine)?.IsOpen ?? false
             );
 
             _persistCommand = new Command(
@@ -63,7 +61,7 @@ namespace CPvC
                 {
                     try
                     {
-                        Persist(fileSystem, promptForFile);
+                        Persist(fileSystem);
                     }
                     catch (Exception ex)
                     {
@@ -79,22 +77,16 @@ namespace CPvC
                     }
 
                     return false;
-                },
-                _machine,
-                new List<string> { nameof(IPersistableMachine.PersistantFilepath) });
+                });
 
             _pauseCommand = new Command(
                 p => (_machine as IPausableMachine)?.Stop(),
-                p => (Machine as IPausableMachine)?.CanStop ?? false,
-                _machine,
-                new List<string> { nameof(IPausableMachine.RunningState) }
+                p => (Machine as IPausableMachine)?.CanStop ?? false
             );
 
             _resumeCommand = new Command(
                 p => (Machine as IPausableMachine)?.Start(),
-                p => (Machine as IPausableMachine)?.CanStart ?? false,
-                _machine,
-                new List<string> { nameof(IPausableMachine.RunningState) }
+                p => (Machine as IPausableMachine)?.CanStart ?? false
             );
 
             _resetCommand = new Command(
@@ -470,17 +462,10 @@ namespace CPvC
 
         public void Open(IFileSystem fileSystem)
         {
-            Machine machine = Machine as Machine;
-            if (machine == null)
-            {
-                return;
-            }
-
-            machine.OpenFromFile(fileSystem);
-            machine.Start();
+            (Machine as IPersistableMachine)?.OpenFromFile(fileSystem);
         }
 
-        public void Persist(IFileSystem fileSystem, PromptForFileDelegate promptForFile)
+        public void Persist(IFileSystem fileSystem)
         {
             if (!(_machine is IPersistableMachine machine))
             {

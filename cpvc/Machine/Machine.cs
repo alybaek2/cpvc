@@ -713,9 +713,7 @@ namespace CPvC
             IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(PersistantFilepath);
             MachineFile file = new MachineFile(fileByteStream);
 
-            MachineHistory history;
-            string name;
-            file.ReadFile(out name, out history);
+            file.ReadFile(out string name, out MachineHistory history);
 
             _history = history;
             _name = name;
@@ -729,6 +727,8 @@ namespace CPvC
 
             // Should probably be monitoring the IsOpen property, I think...
             Display.EnableGreyscale(false);
+
+            Start();
         }
 
         static public Machine Create(IFileSystem fileSystem, string filepath)
