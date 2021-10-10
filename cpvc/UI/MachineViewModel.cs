@@ -145,7 +145,7 @@ namespace CPvC
             );
 
             _compactCommand = new Command(
-                p => (Machine as ICompactableMachine)?.Compact(false),
+                p => (Machine as ICompactableMachine)?.Compact(fileSystem, false),
                 p => (Machine as ICompactableMachine) != null
             );
 

@@ -174,5 +174,15 @@ namespace CPvC
 
             return null;
         }
+
+        static public string StrFromBytes(byte[] bytes)
+        {
+            return Convert.ToBase64String(bytes);
+        }
+
+        static public byte[] BytesFromStr(string str)
+        {
+            return Convert.FromBase64String(str);
+        }
     }
 }

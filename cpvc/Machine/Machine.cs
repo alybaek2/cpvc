@@ -493,9 +493,36 @@ namespace CPvC
         /// remove anything from the machine file, but simply log the fact they happened.
         /// </remarks>
         /// 
-        public void Compact(bool diffsEnabled)
+        public void Compact(IFileSystem fileSystem, bool diffsEnabled)
         {
             throw new Exception("Need to re-implement!");
+
+            // 2nd attempt at compacting... Need to rethink how compacting is done...
+            //using (AutoPause())
+            //{
+            //    // Do we need a stronger lock here?
+            //    string oldFilepath = PersistantFilepath;
+            //    MachineFile oldFile = File;
+
+            //    string newFilepath = oldFilepath + ".tmp";
+            //    File = null;
+            //    PersistantFilepath = newFilepath;
+            //    Persist(fileSystem, newFilepath);
+
+            //    oldFile.Close();
+            //    File.Close();
+
+            //    fileSystem.ReplaceFile(oldFilepath, newFilepath);
+
+            //    IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(oldFilepath);
+            //    File = new MachineFile(fileByteStream);
+            //    PersistantFilepath = oldFilepath;
+
+            //    // Probably should just seek to the end of the file...
+            //    File.ReadFile(out _, out _);                
+            //}
+
+            // Original compacting...
             //using (AutoPause())
             //{
             //    Machine machine = new Machine(String.Empty, String.Empty, null);
@@ -520,21 +547,6 @@ namespace CPvC
             //    }
 
             //    _file.Close();
-
-            //    Int64 newLength = _fileSystem.FileLength(tempname);
-            //    Int64 oldLength = _fileSystem.FileLength(Filepath);
-
-            //    _fileSystem.ReplaceFile(Filepath, tempname);
-
-            //    _history = new MachineHistory();
-
-            //    _file = new MachineFile(_fileSystem, Filepath);
-            //    _file.SetMachine(this);
-            //    _file.SetMachineHistory(_history);
-            //    _file.ReadFile(out _name, out _history);
-
-            //    Status = String.Format("Compacted machine file by {0}%", (Int64)(100 * ((double)(oldLength - newLength)) / ((double)oldLength)));
-            //}
         }
 
         private HistoryEvent AddCheckpointWithBookmarkEvent(bool system)
@@ -608,10 +620,8 @@ namespace CPvC
                 Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
                 SetCore(core);
 
-                CoreAction action = CoreAction.CoreVersion(historyEvent.Ticks, Core.LatestVersion);
-                History.AddCoreAction(action);
+                Display.GetFromBookmark(null);
 
-                Auditors?.Invoke(action);
                 Auditors?.Invoke(CoreAction.Reset(historyEvent.Ticks));
             }
             else

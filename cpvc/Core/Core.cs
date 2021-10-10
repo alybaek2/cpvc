@@ -400,14 +400,11 @@ namespace CPvC
         {
             lock (_requests)
             {
+                _requests.Dequeue();
+
                 if (_requests.Count > 0)
                 {
-                    _requests.Dequeue(); // RemoveAt(0);
-
-                    if (_requests.Count > 0)
-                    {
-                        _requestQueueNonEmpty.Set();
-                    }
+                    _requestQueueNonEmpty.Set();
                 }
             }
         }
@@ -438,11 +435,14 @@ namespace CPvC
             bool success = true;
 
             CoreRequest firstRequest = FirstRequest();
+            bool removeFirst = true;
             CoreRequest request = firstRequest;
             CoreAction action = null;
 
             if (request == null)
             {
+                removeFirst = false;
+
                 if (IdleRequest != null)
                 {
                     request = IdleRequest();
@@ -545,7 +545,7 @@ namespace CPvC
                     break;
             }
 
-            if (request == firstRequest && success)
+            if (removeFirst && success)
             {
                 RemoveFirstRequest();
             }

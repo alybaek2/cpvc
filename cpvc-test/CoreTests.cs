@@ -59,6 +59,25 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void ProcessesReset()
+        {
+            // Setup
+            Mock<RequestProcessedDelegate> mockRequestProcessed = new Mock<RequestProcessedDelegate>();
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                core.Auditors += mockRequestProcessed.Object;
+                core.Start();
+
+                // Act
+                core.Reset();
+                WaitForQueueToProcess(core);
+
+                // Verify
+                mockRequestProcessed.Verify(x => x(core, ResetRequest(), ResetAction()), Times.Once);
+            }
+        }
+
+        [Test]
         public void VSyncDelegateCalled()
         {
             // Setup
@@ -85,7 +104,7 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void ProcessesActionsInCorrectOrder()
+        public void ProcessesRequestsInCorrectOrder()
         {
             // Setup
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
@@ -103,7 +122,7 @@ namespace CPvC.Test
                 core.KeyPress(Keys.Space, true);
                 core.LoadTape(null);
                 core.LoadDisc(0, null);
-                ProcessRequest(core, CoreRequest.Reset());
+                core.Reset();
 
                 // Verify
                 _mockRequestProcessed.Verify();

@@ -1,23 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace CPvC
 {
-    public class MachineFile : BinaryFile
+    public class MachineFile : TextFile
     {
-        // Using bytes here limits us to 256 possible block types.... could reserve most significant bit and do some kind of variable length encoding if we really need to.
-        private const byte _idName = 0;
-        private const byte _idKey = 1;
-        private const byte _idReset = 2;
-        private const byte _idLoadDisc = 3;
-        private const byte _idLoadTape = 4;
-        private const byte _idDeleteEventAndChildren = 7;
-        private const byte _idCurrent = 8;
-        private const byte _idAddBookmark = 9;
-        private const byte _idVersion = 10;
-        private const byte _idRunUntil = 11;
-        private const byte _idSetCurrentToRoot = 12;
-        private const byte _idDeleteEvent = 13;
+        private const string _idName = "name";
+        private const string _idKey = "key";
+        private const string _idReset = "reset";
+        private const string _idLoadDisc = "disc";
+        private const string _idLoadTape = "tape";
+        private const string _idDeleteEventAndChildren = "deletewithchildren";
+        private const string _idCurrent = "current";
+        private const string _idAddBookmark = "bookmark";
+        private const string _idVersion = "version";
+        private const string _idRunUntil = "run";
+        private const string _idSetCurrentToRoot = "currentroot";
+        private const string _idDeleteEvent = "delete";
 
         private Dictionary<HistoryEvent, int> _historyEventToId;
         private Dictionary<int, HistoryEvent> _idToHistoryEvent;
@@ -109,28 +109,36 @@ namespace CPvC
                 case HistoryEventType.DeleteEventAndChildren:
                     {
                         int persistentId = _historyEventToId[historyEvent];
-                        WriteByte(_idDeleteEventAndChildren);
-                        WriteInt32(persistentId);
+
+                        string str = String.Format("{0}:{1}", _idDeleteEventAndChildren, persistentId);
+
+                        WriteLine(str);
                     }
                     break;
                 case HistoryEventType.DeleteEvent:
                     {
                         int persistentId = _historyEventToId[historyEvent];
-                        WriteByte(_idDeleteEvent);
-                        WriteInt32(persistentId);
+
+                        string str = String.Format("{0}:{1}", _idDeleteEvent, persistentId);
+
+                        WriteLine(str);
                     }
                     break;
                 case HistoryEventType.SetCurrent:
                     {
                         if (historyEvent == _machineHistory.RootEvent)
                         {
-                            WriteByte(_idSetCurrentToRoot);
+                            string str = String.Format("{0}:", _idSetCurrentToRoot);
+
+                            WriteLine(str);
                         }
                         else
                         {
                             int persistentId = _historyEventToId[historyEvent];
-                            WriteByte(_idCurrent);
-                            WriteInt32(persistentId);
+
+                            string str = String.Format("{0}:{1}", _idCurrent, persistentId);
+
+                            WriteLine(str);
                         }
                     }
                     break;
@@ -145,83 +153,90 @@ namespace CPvC
             history = new MachineHistory();
             _machineHistory = history;
 
-            lock (_byteStream)
+            // Should probably clear history first...
+            if (_machine != null)
             {
-                // Should probably clear history first...
-                if (_machine != null)
+                _machine.PropertyChanged -= Machine_PropertyChanged;
+            }
+
+            if (_machineHistory != null)
+            {
+                _machineHistory.Auditors -= HistoryEventHappened;
+            }
+
+            CPvC.Diagnostics.Trace("Read File STARTING!!!");
+
+            _byteStream.Position = 0;
+
+            while (true)
+            {
+                string line = ReadLine();
+
+                if (line == null)
                 {
-                    _machine.PropertyChanged -= Machine_PropertyChanged;
+                    break;
                 }
 
-                if (_machineHistory != null)
+                int colon = line.IndexOf(':');
+                if (colon == -1)
                 {
-                    _machineHistory.Auditors -= HistoryEventHappened;
+                    throw new Exception(String.Format("No colon found in line {0}", line));
                 }
 
-                CPvC.Diagnostics.Trace("Read File STARTING!!!");
+                string s = line.Substring(0, colon);
+                string p = line.Substring(colon + 1);
 
-                _byteStream.Position = 0;
-
-                while (_byteStream.Position < _byteStream.Length)
+                switch (line.Substring(0, colon))
                 {
-                    byte blockType = ReadByte();
-
-                    switch (blockType)
-                    {
-                        case _idName:
-                            name = ReadName();
-                            break;
-                        case _idCurrent:
-                            ReadCurrent();
-                            break;
-                        case _idAddBookmark:
-                            ReadAddBookmark();
-                            break;
-                        case _idDeleteEvent:
-                            ReadDeleteEvent();
-                            break;
-                        case _idDeleteEventAndChildren:
-                            ReadDeleteEventAndChildren();
-                            break;
-                        case _idKey:
-                            ReadKey();
-                            break;
-                        case _idReset:
-                            ReadReset();
-                            break;
-                        case _idLoadDisc:
-                            ReadLoadDisc();
-                            break;
-                        case _idLoadTape:
-                            ReadLoadTape();
-                            break;
-                        case _idVersion:
-                            ReadVersion();
-                            break;
-                        case _idRunUntil:
-                            ReadRunUntil();
-                            break;
-                        case _idSetCurrentToRoot:
-                            CPvC.Diagnostics.Trace("[SetCurrentToRoot]");
-
-                            _machineHistory.SetCurrent(_machineHistory.RootEvent);
-                            break;
-                        default:
-                            throw new Exception("Unknown block type!");
-                    }
+                    case _idName:
+                        name = ReadName(p);
+                        break;
+                    case _idCurrent:
+                        ReadCurrent(p);
+                        break;
+                    case _idAddBookmark:
+                        ReadAddBookmark(p);
+                        break;
+                    case _idDeleteEvent:
+                        ReadDeleteEvent(p);
+                        break;
+                    case _idDeleteEventAndChildren:
+                        ReadDeleteEventAndChildren(p);
+                        break;
+                    case _idKey:
+                        ReadKey(p);
+                        break;
+                    case _idReset:
+                        ReadReset(p);
+                        break;
+                    case _idLoadDisc:
+                        ReadLoadDisc(p);
+                        break;
+                    case _idLoadTape:
+                        ReadLoadTape(p);
+                        break;
+                    case _idVersion:
+                        ReadVersion(p);
+                        break;
+                    case _idRunUntil:
+                        ReadRunUntil(p);
+                        break;
+                    case _idSetCurrentToRoot:
+                        _machineHistory.SetCurrent(_machineHistory.RootEvent);
+                        break;
+                    default:
+                        throw new Exception("Unknown block type!");
                 }
+            }
 
-                CPvC.Diagnostics.Trace("Read File DONE!!!");
+            if (_machineHistory != null)
+            {
+                _machineHistory.Auditors += HistoryEventHappened;
+            }
 
-                if (_machineHistory != null)
-                {
-                    _machineHistory.Auditors += HistoryEventHappened;
-                }
-
-                if (_machine != null)
-                {
-                    _machine.PropertyChanged += Machine_PropertyChanged;
-                }
+            if (_machine != null)
+            {
+                _machine.PropertyChanged += Machine_PropertyChanged;
             }
         }
 
@@ -233,22 +248,22 @@ namespace CPvC
             }
         }
 
-        private string ReadName()
+        private string ReadName(string line)
         {
-            string name = ReadString();
+            string[] tokens = line.Split(',');
 
-            CPvC.Diagnostics.Trace("[Name] {0}", name);
+            string name = tokens[0];
 
             return name;
         }
 
         public void WriteName(string name)
         {
-            lock (_byteStream)
-            {
-                WriteByte(_idName);
-                WriteString(name);
-            }
+            string str = String.Format(
+                "name:{0}",
+                name);
+
+            WriteLine(str);
         }
 
         private void WriteAddBookmark(int id, UInt64 ticks, Bookmark bookmark)
@@ -259,61 +274,54 @@ namespace CPvC
             }
             else
             {
-                lock (_byteStream)
-                {
-                    WriteByte(_idAddBookmark);
-                    WriteInt32(id);
-                    WriteUInt64(ticks);
-                    WriteBool(bookmark.System);
-                    WriteInt32(bookmark.Version);
-                    WriteBytesBlob(bookmark.State.GetBytes());
-                    WriteCompressedBlob(bookmark.Screen.GetBytes());
-                }
+                string str = String.Format(
+                    "bookmark:{0},{1},{2},{3},{4},{5}",
+                    id,
+                    ticks,
+                    bookmark.System,
+                    bookmark.Version,
+                    Helpers.StrFromBytes(bookmark.State.GetBytes()),
+                    Helpers.StrFromBytes(bookmark.Screen.GetBytes()));
+
+                WriteLine(str);
             }
         }
 
-        private void ReadAddBookmark()
+        private void ReadAddBookmark(string line)
         {
-            lock (_byteStream)
-            {
-                int id = ReadInt32();
+            string[] tokens = line.Split(',');
 
-                Bookmark bookmark = null;
-                UInt64 ticks = ReadUInt64();
-                bool system = ReadBool();
-                int version = ReadInt32();
-                IBlob stateBlob = ReadBlob();
-                IBlob screenBlob = ReadBlob();
+            int id = Convert.ToInt32(tokens[0]);
 
-                CPvC.Diagnostics.Trace("[AddBookmark] Id: {0} Ticks: {1}", id, ticks);
+            UInt64 ticks = Convert.ToUInt64(tokens[1]);
+            bool system = Convert.ToBoolean(tokens[2]);
+            int version = Convert.ToInt32(tokens[3]);
+            IBlob stateBlob = new MemoryBlob(Helpers.BytesFromStr(tokens[4]));
+            IBlob screenBlob = new MemoryBlob(Helpers.BytesFromStr(tokens[5]));
 
-                bookmark = new Bookmark(system, version, stateBlob, screenBlob);
+            Bookmark bookmark = new Bookmark(system, version, stateBlob, screenBlob);
 
-                HistoryEvent historyEvent = _machineHistory.AddBookmark(ticks, bookmark);
+            HistoryEvent historyEvent = _machineHistory.AddBookmark(ticks, bookmark);
 
-                _historyEventToId[historyEvent] = id;
-                _idToHistoryEvent[id] = historyEvent;
+            _historyEventToId[historyEvent] = id;
+            _idToHistoryEvent[id] = historyEvent;
 
-                _nextPersistentId = Math.Max(_nextPersistentId, id + 1);
-            }
+            _nextPersistentId = Math.Max(_nextPersistentId, id + 1);
         }
 
-        private void ReadCurrent()
+        private void ReadCurrent(string line)
         {
-            lock (_byteStream)
+            string[] tokens = line.Split(',');
+
+            int id = Convert.ToInt32(tokens[0]);
+
+            if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
             {
-                int id = ReadInt32();
-
-                //CPvC.Diagnostics.Trace("[SetCurrent] {0}", id);
-
-                if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
-                {
-                    _machineHistory.SetCurrent(newId);
-                }
-                else
-                {
-                    throw new InvalidOperationException();
-                }
+                _machineHistory.SetCurrent(newId);
+            }
+            else
+            {
+                throw new InvalidOperationException();
             }
         }
 
@@ -344,167 +352,151 @@ namespace CPvC
             }
         }
 
-        private void ReadKey()
+        private void ReadKey(string line)
         {
-            lock (_byteStream)
-            {
-                int id = ReadInt32();
-                UInt64 ticks = ReadUInt64();
-                byte keyCodeAndDown = ReadByte();
-                byte keyCode = (byte)(keyCodeAndDown & 0x7F);
-                bool keyDown = ((keyCodeAndDown & 0x80) != 0);
+            string[] tokens = line.Split(',');
 
-                //CPvC.Diagnostics.Trace("[Key] Id: {0} Ticks: {1} Code: {2}, Down: {3}", id, ticks, keyCode, keyDown);
+            int id = Convert.ToInt32(tokens[0]);
+            UInt64 ticks = Convert.ToUInt64(tokens[1]);
+            byte keyCode = Convert.ToByte(tokens[2]);
+            bool keyDown = Convert.ToBoolean(tokens[3]);
 
-                CoreAction action = CoreAction.KeyPress(ticks, keyCode, keyDown);
+            CoreAction action = CoreAction.KeyPress(ticks, keyCode, keyDown);
 
-                AddCoreAction(id, action);
-            }
+            AddCoreAction(id, action);
         }
 
         private void WriteKey(int id, UInt64 ticks, byte keyCode, bool keyDown)
         {
-            lock (_byteStream)
-            {
-                // Since keyCode can only be a value from 0 to 79 (0x00 to 0x4F), we can use the most significant
-                // bit to hold the "down" state of the key, instead of wasting a byte for that.
-                byte keyCodeAndDown = (byte)((keyDown ? 0x80 : 0x00) | keyCode);
+            string str = String.Format("key:{0},{1},{2},{3}",
+                id,
+                ticks,
+                keyCode,
+                keyDown
+                );
 
-                WriteByte(_idKey);
-                WriteInt32(id);
-                WriteUInt64(ticks);
-                WriteByte(keyCodeAndDown);
-            }
+            WriteLine(str);
         }
 
         private void WriteRunUntil(int id, UInt64 ticks, UInt64 stopTicks)
         {
-            lock (_byteStream)
-            {
-                WriteByte(_idRunUntil);
-                WriteInt32(id);
-                WriteUInt64(ticks);
-                WriteUInt64(stopTicks);
-            }
+            string str = String.Format("run:{0},{1},{2}",
+                id,
+                ticks,
+                stopTicks
+                );
+
+            WriteLine(str);
         }
 
-        private void ReadReset()
+        private void ReadReset(string line)
         {
-            lock (_byteStream)
-            {
-                int id = ReadInt32();
-                UInt64 ticks = ReadUInt64();
-                CoreAction action = CoreAction.Reset(ticks);
+            string[] tokens = line.Split(',');
 
-                CPvC.Diagnostics.Trace("[Reset] {0} {1}", id, ticks);
+            int id = Convert.ToInt32(tokens[0]);
+            UInt64 ticks = Convert.ToUInt64(tokens[1]);
+            CoreAction action = CoreAction.Reset(ticks);
 
-                AddCoreAction(id, action);
-            }
+            CPvC.Diagnostics.Trace("[Reset] {0} {1}", id, ticks);
+
+            AddCoreAction(id, action);
         }
 
         private void WriteReset(int id, UInt64 ticks)
         {
-            lock (_byteStream)
-            {
-                WriteByte(_idReset);
-                WriteInt32(id);
-                WriteUInt64(ticks);
-            }
+            string str = String.Format("reset:{0},{1}",
+                id,
+                ticks
+                );
+
+            WriteLine(str);
         }
 
-        private void ReadLoadDisc()
+        private void ReadLoadDisc(string line)
         {
-            lock (_byteStream)
-            {
-                int id = ReadInt32();
-                UInt64 ticks = ReadUInt64();
-                byte drive = ReadByte();
-                IBlob mediaBlob = ReadBlob();
+            string[] tokens = line.Split(',');
 
-                CoreAction action = CoreAction.LoadDisc(ticks, drive, mediaBlob);
+            int id = Convert.ToInt32(tokens[0]);
+            UInt64 ticks = Convert.ToUInt64(tokens[1]);
+            byte drive = Convert.ToByte(tokens[2]);
+            IBlob mediaBlob = new MemoryBlob(Helpers.BytesFromStr(tokens[3]));
 
-                AddCoreAction(id, action);
-            }
+            CoreAction action = CoreAction.LoadDisc(ticks, drive, mediaBlob);
+
+            HistoryEvent historyEvent = AddCoreAction(id, action);
         }
 
         private void WriteLoadDisc(int id, UInt64 ticks, byte drive, byte[] media)
         {
-            lock (_byteStream)
-            {
-                WriteByte(_idLoadDisc);
-                WriteInt32(id);
-                WriteUInt64(ticks);
-                WriteByte(drive);
-                WriteCompressedBlob(media);
-            }
+            string str = String.Format("disc:{0},{1},{2},{3}",
+                id,
+                ticks,
+                drive,
+                Helpers.StrFromBytes(media)
+                );
+
+            WriteLine(str);
         }
 
-        private void ReadVersion()
+        private void ReadVersion(string line)
         {
-            lock (_byteStream)
-            {
-                int id = ReadInt32();
-                UInt64 ticks = ReadUInt64();
-                int version = ReadInt32();
+            string[] tokens = line.Split(',');
 
-                CPvC.Diagnostics.Trace("[Version] Id: {0} Ticks: {1} Version: {2}", id, ticks, version);
+            int id = Convert.ToInt32(tokens[0]);
+            UInt64 ticks = Convert.ToUInt64(tokens[1]);
+            int version = Convert.ToInt32(tokens[2]);
 
-                CoreAction action = CoreAction.CoreVersion(ticks, version);
+            CoreAction action = CoreAction.CoreVersion(ticks, version);
 
-                AddCoreAction(id, action);
-            }
+            AddCoreAction(id, action);
         }
 
-        private void ReadRunUntil()
+        private void ReadRunUntil(string line)
         {
-            lock (_byteStream)
-            {
-                int id = ReadInt32();
-                UInt64 ticks = ReadUInt64();
-                UInt64 stopTicks = ReadUInt64();
+            string[] tokens = line.Split(',');
 
-                CPvC.Diagnostics.Trace("[RunUntil] Id: {0} Ticks: {1} StopTicks: {2}", id, ticks, stopTicks);
+            int id = Convert.ToInt32(tokens[0]);
+            UInt64 ticks = Convert.ToUInt64(tokens[1]);
+            UInt64 stopTicks = Convert.ToUInt64(tokens[2]);
 
-                CoreAction action = CoreAction.RunUntil(ticks, stopTicks, null);
+            CoreAction action = CoreAction.RunUntil(ticks, stopTicks, null);
 
-                AddCoreAction(id, action);
-            }
+            AddCoreAction(id, action);
         }
 
         private void WriteVersion(int id, UInt64 ticks, int version)
         {
-            lock (_byteStream)
-            {
-                WriteByte(_idVersion);
-                WriteInt32(id);
-                WriteUInt64(ticks);
-                WriteInt32(version);
-            }
+            string str = String.Format("version:{0},{1},{2}",
+                id,
+                ticks,
+                version
+                );
+
+            WriteLine(str);
         }
 
-        private void ReadLoadTape()
+        private void ReadLoadTape(string line)
         {
-            lock (_byteStream)
-            {
-                int id = ReadInt32();
-                UInt64 ticks = ReadUInt64();
-                IBlob mediaBlob = ReadBlob();
+            string[] tokens = line.Split(',');
 
-                CoreAction action = CoreAction.LoadTape(ticks, mediaBlob);
+            int id = Convert.ToInt32(tokens[0]);
+            UInt64 ticks = Convert.ToUInt64(tokens[1]);
+            IBlob mediaBlob = new MemoryBlob(Helpers.BytesFromStr(tokens[2]));
 
-                HistoryEvent historyEvent = AddCoreAction(id, action);
-            }
+            CoreAction action = CoreAction.LoadTape(ticks, mediaBlob);
+
+            HistoryEvent historyEvent = AddCoreAction(id, action);
         }
 
         private void WriteLoadTape(int id, UInt64 ticks, byte[] media)
         {
-            lock (_byteStream)
-            {
-                WriteByte(_idLoadTape);
-                WriteInt32(id);
-                WriteUInt64(ticks);
-                WriteCompressedBlob(media);
-            }
+            string str = String.Format("tape:{0},{1},{2}",
+                id,
+                ticks,
+                Helpers.StrFromBytes(media)
+                );
+
+            WriteLine(str);
         }
 
         private HistoryEvent AddCoreAction(int id, CoreAction coreAction)
@@ -518,12 +510,11 @@ namespace CPvC
             return historyEvent;
         }
 
-        private void ReadDeleteEvent()
+        private void ReadDeleteEvent(string line)
         {
-            int id = ReadInt32();
+            string[] tokens = line.Split(',');
 
-            CPvC.Diagnostics.Trace("[Delete] {0}", id);
-
+            int id = Convert.ToInt32(tokens[0]);
 
             if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
             {
@@ -535,11 +526,11 @@ namespace CPvC
             }
         }
 
-        private void ReadDeleteEventAndChildren()
+        private void ReadDeleteEventAndChildren(string line)
         {
-            int id = ReadInt32();
+            string[] tokens = line.Split(',');
 
-            CPvC.Diagnostics.Trace("[Delete with Children] {0}", id);
+            int id = Convert.ToInt32(tokens[0]);
 
             if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
             {

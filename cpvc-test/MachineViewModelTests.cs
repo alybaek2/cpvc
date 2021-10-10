@@ -322,7 +322,7 @@ namespace CPvC.Test
         [Test]
         public void Compact([Values(false, true)] bool nullMachine)
         {
-            TestCommand<ICompactableMachine>(nullMachine, m => m.CompactCommand, null, m => m.Compact(false));
+            TestCommand<ICompactableMachine>(nullMachine, m => m.CompactCommand, null, m => m.Compact(null, false));
         }
 
         [Test]
