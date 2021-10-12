@@ -71,26 +71,6 @@ namespace CPvC
             }
         }
 
-        static public byte[] BinaryUndiff(byte[] reference, byte[] diff)
-        {
-            using (MemoryStream outStream = new MemoryStream())
-            {
-                deltaq.BsDiff.BsPatch.Apply(reference, diff, outStream);
-
-                return outStream.ToArray();
-            }
-        }
-
-        static public byte[] BinaryDiff(byte[] reference, byte[] blob)
-        {
-            using (MemoryStream outStream = new MemoryStream())
-            {
-                deltaq.BsDiff.BsDiff.Create(reference, blob, outStream);
-
-                return outStream.ToArray();
-            }
-        }
-
         /// <summary>
         /// Splits a string based on a delimiter, while ignoring delimiters escaped with a backspace.
         /// </summary>

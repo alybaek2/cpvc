@@ -107,7 +107,6 @@
   <ItemGroup>
     <Compile Include="AudioBufferTests.cs" />
     <Compile Include="AudioTests.cs" />
-    <Compile Include="BinaryFileTests.cs" />
     <Compile Include="BookmarksViewModelTests.cs" />
     <Compile Include="ConvertersTests.cs" />
     <Compile Include="CoreActionTests.cs" />
