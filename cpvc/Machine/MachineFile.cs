@@ -143,7 +143,7 @@ namespace CPvC
                     }
                     break;
                 default:
-                    throw new Exception("Unknown history type!");
+                    throw new ArgumentException("Unknown history type!", "type");
             }
         }
 
@@ -164,8 +164,6 @@ namespace CPvC
                 _machineHistory.Auditors -= HistoryEventHappened;
             }
 
-            CPvC.Diagnostics.Trace("Read File STARTING!!!");
-
             _byteStream.Position = 0;
 
             while (true)
@@ -183,49 +181,49 @@ namespace CPvC
                     throw new Exception(String.Format("No colon found in line {0}", line));
                 }
 
-                string s = line.Substring(0, colon);
-                string p = line.Substring(colon + 1);
+                string type = line.Substring(0, colon);
+                string args = line.Substring(colon + 1);
 
-                switch (line.Substring(0, colon))
+                switch (type)
                 {
                     case _idName:
-                        name = ReadName(p);
+                        name = ReadName(args);
                         break;
                     case _idCurrent:
-                        ReadCurrent(p);
+                        ReadCurrent(args);
                         break;
                     case _idAddBookmark:
-                        ReadAddBookmark(p);
+                        ReadAddBookmark(args);
                         break;
                     case _idDeleteEvent:
-                        ReadDeleteEvent(p);
+                        ReadDeleteEvent(args);
                         break;
                     case _idDeleteEventAndChildren:
-                        ReadDeleteEventAndChildren(p);
+                        ReadDeleteEventAndChildren(args);
                         break;
                     case _idKey:
-                        ReadKey(p);
+                        ReadKey(args);
                         break;
                     case _idReset:
-                        ReadReset(p);
+                        ReadReset(args);
                         break;
                     case _idLoadDisc:
-                        ReadLoadDisc(p);
+                        ReadLoadDisc(args);
                         break;
                     case _idLoadTape:
-                        ReadLoadTape(p);
+                        ReadLoadTape(args);
                         break;
                     case _idVersion:
-                        ReadVersion(p);
+                        ReadVersion(args);
                         break;
                     case _idRunUntil:
-                        ReadRunUntil(p);
+                        ReadRunUntil(args);
                         break;
                     case _idSetCurrentToRoot:
                         _machineHistory.SetCurrent(_machineHistory.RootEvent);
                         break;
                     default:
-                        throw new Exception("Unknown block type!");
+                        throw new ArgumentException(String.Format("Unknown type {0}.", type), "type");
                 }
             }
 
@@ -268,23 +266,16 @@ namespace CPvC
 
         private void WriteAddBookmark(int id, UInt64 ticks, Bookmark bookmark)
         {
-            if (bookmark == null)
-            {
-                throw new Exception("Why are we adding a bookmark that's null??!?");
-            }
-            else
-            {
-                string str = String.Format(
-                    "bookmark:{0},{1},{2},{3},{4},{5}",
-                    id,
-                    ticks,
-                    bookmark.System,
-                    bookmark.Version,
-                    Helpers.StrFromBytes(bookmark.State.GetBytes()),
-                    Helpers.StrFromBytes(bookmark.Screen.GetBytes()));
+            string str = String.Format(
+                "bookmark:{0},{1},{2},{3},{4},{5}",
+                id,
+                ticks,
+                bookmark.System,
+                bookmark.Version,
+                Helpers.StrFromBytes(bookmark.State.GetBytes()),
+                Helpers.StrFromBytes(bookmark.Screen.GetBytes()));
 
-                WriteLine(str);
-            }
+            WriteLine(str);
         }
 
         private void ReadAddBookmark(string line)
@@ -321,7 +312,7 @@ namespace CPvC
             }
             else
             {
-                throw new InvalidOperationException();
+                throw new ArgumentException(String.Format("Unknown history node id {0}.", id), "id");
             }
         }
 
@@ -348,7 +339,7 @@ namespace CPvC
                     WriteRunUntil(id, ticks, action.StopTicks);
                     break;
                 default:
-                    throw new Exception(String.Format("Unrecognized core action type {0}.", action.Type));
+                    throw new ArgumentException(String.Format("Unrecognized core action type {0}.", action.Type), "type");
             }
         }
 
@@ -396,8 +387,6 @@ namespace CPvC
             int id = Convert.ToInt32(tokens[0]);
             UInt64 ticks = Convert.ToUInt64(tokens[1]);
             CoreAction action = CoreAction.Reset(ticks);
-
-            CPvC.Diagnostics.Trace("[Reset] {0} {1}", id, ticks);
 
             AddCoreAction(id, action);
         }
@@ -522,7 +511,7 @@ namespace CPvC
             }
             else
             {
-                throw new InvalidOperationException("Can't find id to delete!");
+                throw new ArgumentException(String.Format("Unknown history node id {0}.", id), "id");
             }
         }
 
@@ -542,7 +531,7 @@ namespace CPvC
             }
             else
             {
-                throw new InvalidOperationException("Can't find id to delete!");
+                throw new ArgumentException(String.Format("Unknown history node id {0}.", id), "id");
             }
         }
     }

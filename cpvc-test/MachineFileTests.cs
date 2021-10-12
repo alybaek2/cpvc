@@ -3,12 +3,21 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
 {
     internal class MemoryFileByteStream : MemoryByteStream, IFileByteStream
     {
+        public MemoryFileByteStream() : base()
+        {
+        }
+
+        public MemoryFileByteStream(byte[] bytes) : base(bytes)
+        {
+        }
+
         public void Close()
         {
         }
@@ -229,6 +238,82 @@ namespace CPvC.Test
             // Verify
             Assert.NotZero(len1);
             Assert.AreEqual(len1, len2);
+        }
+
+        [Test]
+        public void SetCurrentInvalid()
+        {
+            // Setup
+            string line = "current:42\r\n";
+            MemoryFileByteStream fileByteStream = new MemoryFileByteStream(Encoding.UTF8.GetBytes(line));
+            MachineFile file = new MachineFile(fileByteStream);
+
+            // Act and Verify
+            ArgumentException ex = Assert.Throws<ArgumentException>(() => file.ReadFile(out _, out MachineHistory history));
+            Assert.AreEqual("id", ex.ParamName);
+        }
+
+        [Test]
+        public void ReadSetCurrentInvalid()
+        {
+            // Setup
+            string line = "current:42\r\n";
+            MemoryFileByteStream fileByteStream = new MemoryFileByteStream(Encoding.UTF8.GetBytes(line));
+            MachineFile file = new MachineFile(fileByteStream);
+
+            // Act and Verify
+            ArgumentException ex = Assert.Throws<ArgumentException>(() => file.ReadFile(out _, out MachineHistory history));
+            Assert.AreEqual("id", ex.ParamName);
+        }
+
+        [Test]
+        public void ReadDeleteInvalid()
+        {
+            // Setup
+            string line = "delete:42\r\n";
+            MemoryFileByteStream fileByteStream = new MemoryFileByteStream(Encoding.UTF8.GetBytes(line));
+            MachineFile file = new MachineFile(fileByteStream);
+
+            // Act and Verify
+            ArgumentException ex = Assert.Throws<ArgumentException>(() => file.ReadFile(out _, out MachineHistory history));
+            Assert.AreEqual("id", ex.ParamName);
+        }
+
+        [Test]
+        public void ReadDeleteWithChildrenInvalid()
+        {
+            // Setup
+            string line = "deletewithchildren:42\r\n";
+            MemoryFileByteStream fileByteStream = new MemoryFileByteStream(Encoding.UTF8.GetBytes(line));
+            MachineFile file = new MachineFile(fileByteStream);
+
+            // Act and Verify
+            ArgumentException ex = Assert.Throws<ArgumentException>(() => file.ReadFile(out _, out MachineHistory history));
+            Assert.AreEqual("id", ex.ParamName);
+        }
+
+        [Test]
+        public void ReadUnknown()
+        {
+            // Setup
+            string line = "unknown:\r\n";
+            MemoryFileByteStream fileByteStream = new MemoryFileByteStream(Encoding.UTF8.GetBytes(line));
+            MachineFile file = new MachineFile(fileByteStream);
+
+            // Act and Verify
+            ArgumentException ex = Assert.Throws<ArgumentException>(() => file.ReadFile(out _, out MachineHistory history));
+            Assert.AreEqual("type", ex.ParamName);
+        }
+
+        [Test]
+        public void WriteUnknown()
+        {
+            // Setup
+            CoreAction coreAction = new CoreAction((CoreRequest.Types)42, 0);
+
+            // Act and Verify
+            ArgumentException ex = Assert.Throws<ArgumentException>(() => _writeHistory.AddCoreAction(coreAction));
+            Assert.AreEqual("type", ex.ParamName);
         }
     }
 }
