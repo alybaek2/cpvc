@@ -151,7 +151,7 @@ namespace CPvC
                 p =>
                 {
                     MachineViewModel machineViewModel = (MachineViewModel)p;
-                    IPersistableMachine pm = (IPersistableMachine)machineViewModel?.Machine;
+                    IPersistableMachine pm = (machineViewModel?.Machine as IPersistableMachine);
                     return (pm?.PersistantFilepath != null);
                 }
             );
