@@ -192,7 +192,6 @@
       <DependentUpon>StartServerWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="UI\HistoryViewItem.cs" />
-    <Compile Include="UI\MachineViewModel.cs" />
     <Compile Include="UI\MainModel.cs" />
     <Compile Include="UI\MainViewModel.cs" />
     <Compile Include="UI\RemoteViewModel.cs" />

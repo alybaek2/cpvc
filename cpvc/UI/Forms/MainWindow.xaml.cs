@@ -143,13 +143,19 @@ namespace CPvC.UI.Forms
 
             DataContext = _mainViewModel;
 
+            
+            //_machines.Items[0]
             StartAudio();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            // Todo: give the user a chance to cancel closing, if there are machines which have yet to be persisted.
+
             // Stop audio prior to closing machines to ensure no audio callbacks are triggered
             // during Dispose calls.
+            // Need to revisit this...proper locking of the relevant objects should make it so that audio can be stopped
+            // either before or after the machines are closed.
             StopAudio();
 
             _mainViewModel.CloseAll();
@@ -164,17 +170,19 @@ namespace CPvC.UI.Forms
         {
             if (e.Key == Key.F1)
             {
-                _mainViewModel.ActiveMachineViewModel.ReverseStartCommand.Execute(null);
+                _mainViewModel.ReverseStartCommand.Execute(_mainViewModel.ActiveMachine);
             }
             else if (e.Key == Key.F2)
             {
-                _mainViewModel.ActiveMachineViewModel.TurboCommand.Execute(true);
+                Tuple<ICoreMachine, bool> info = new Tuple<ICoreMachine, bool>(_mainViewModel.ActiveMachine, true);
+                _mainViewModel.TurboCommand.Execute(info);
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);
             if (cpcKey.HasValue)
             {
-                _mainViewModel.ActiveMachineViewModel.KeyDownCommand.Execute(cpcKey.Value);
+                Tuple<IInteractiveMachine, byte> info = new Tuple<IInteractiveMachine, byte>(_mainViewModel.ActiveMachine as IInteractiveMachine, cpcKey.Value);
+                _mainViewModel.KeyDownCommand.Execute(info);
             }
         }
 
@@ -182,17 +190,19 @@ namespace CPvC.UI.Forms
         {
             if (e.Key == Key.F1)
             {
-                _mainViewModel.ActiveMachineViewModel.ReverseStopCommand.Execute(null);
+                _mainViewModel.ReverseStopCommand.Execute(_mainViewModel.ActiveMachine);
             }
             else if (e.Key == Key.F2)
             {
-                _mainViewModel.ActiveMachineViewModel.TurboCommand.Execute(false);
+                Tuple<ICoreMachine, bool> info = new Tuple<ICoreMachine, bool>(_mainViewModel.ActiveMachine, false);
+                _mainViewModel.TurboCommand.Execute(info);
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);
             if (cpcKey.HasValue)
             {
-                _mainViewModel.ActiveMachineViewModel.KeyUpCommand.Execute(cpcKey.Value);
+                Tuple<IInteractiveMachine, byte> info = new Tuple<IInteractiveMachine, byte>(_mainViewModel.ActiveMachine as IInteractiveMachine, cpcKey.Value);
+                _mainViewModel.KeyUpCommand.Execute(info);
             }
         }
 
@@ -260,7 +270,7 @@ namespace CPvC.UI.Forms
 
         private HistoryEvent PromptForBookmark()
         {
-            Machine machine = _mainViewModel?.ActiveMachineViewModel?.Machine as Machine;
+            Machine machine = _mainViewModel?.ActiveMachine as Machine;
 
             using (machine.AutoPause())
             {
@@ -359,35 +369,35 @@ namespace CPvC.UI.Forms
 
         private void MachinePreviewGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is MachineViewModel machineViewModel)
+            if (sender is FrameworkElement element && element.DataContext is ICoreMachine machine)
             {
                 try
                 {
-                    machineViewModel.OpenCommand.Execute(null);
-                    _mainViewModel.ActiveMachineViewModel = machineViewModel;
+                    _mainViewModel.OpenCommand.Execute(machine);
+                    _mainViewModel.ActiveMachine = machine;
                 }
                 catch (Exception ex)
                 {
-                    ReportError(String.Format("Unable to open {0}.\n\n{1}", machineViewModel.Machine.Name, ex.Message));
+                    ReportError(String.Format("Unable to open {0}.\n\n{1}", machine.Name, ex.Message));
                 }
             }
         }
 
         private void ScreenGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is MachineViewModel machineViewModel)
+            if (sender is FrameworkElement element && element.DataContext is ICoreMachine machine)
             {
-                machineViewModel.ToggleRunningCommand.Execute(null);
+                _mainViewModel.ToggleRunningCommand.Execute(machine);
             }
         }
 
-        private void OpenMachineViewModels_Filter(object sender, System.Windows.Data.FilterEventArgs e)
+        private void CollectionViewSource_Filter(object sender, System.Windows.Data.FilterEventArgs e)
         {
-            if (e.Item is MachineViewModel machineViewModel)
+            if (e.Item is IPersistableMachine machine)
             {
-                ICoreMachine cm = machineViewModel.Machine;
-                IPersistableMachine pm = cm as IPersistableMachine;
-                e.Accepted = (pm == null || pm.IsOpen);
+                ////ICoreMachine cm = machine;
+                //IPersistableMachine pm = cm as IPersistableMachine;
+                e.Accepted = (machine == null || machine.IsOpen);
             }
             else
             {

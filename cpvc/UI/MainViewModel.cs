@@ -31,12 +31,11 @@ namespace CPvC
         private MainModel _model;
 
         private ObservableCollection<ServerInfo> _recentServers;
-        private ObservableCollection<MachineViewModel> _machineViewModels;
 
         /// <summary>
-        /// The currently active item. Will be either this instance (the Home tab) or a Machine.
+        /// The currently active item. Will be either null (the Home tab) or a Machine.
         /// </summary>
-        private object _active;
+        private object _activeItem;
 
         private IFileSystem _fileSystem;
         private SelectItemDelegate _selectItem;
@@ -55,9 +54,34 @@ namespace CPvC
         private Command _connectCommand;
         private Command _removeCommand;
         private Command _closeCommand;
-        private Command _persistCommand;
 
-        private MachineViewModel _nullMachineViewModel;
+        private Command _driveACommand;
+        private Command _driveAEjectCommand;
+        private Command _driveBCommand;
+        private Command _driveBEjectCommand;
+        private Command _tapeCommand;
+        private Command _tapeEjectCommand;
+        private Command _resetCommand;
+        private Command _persistCommand;
+        private Command _openCommand;
+        private Command _pauseCommand;
+        private Command _resumeCommand;
+        private Command _toggleRunningCommand;
+        private Command _addBookmarkCommand;
+        private Command _jumpToMostRecentBookmarkCommand;
+        private Command _browseBookmarksCommand;
+        private Command _compactCommand;
+        private Command _renameCommand;
+        private Command _seekToNextBookmarkCommand;
+        private Command _seekToPrevBookmarkCommand;
+        private Command _seekToStartCommand;
+        private Command _keyDownCommand;
+        private Command _keyUpCommand;
+        private Command _turboCommand;
+        private Command _reverseStartCommand;
+        private Command _reverseStopCommand;
+        private Command _toggleSnapshotCommand;
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         private MachineServerListener _machineServer;
@@ -77,22 +101,13 @@ namespace CPvC
             _confirmClose = confirmClose;
             _reportError = reportError;
 
-            _nullMachineViewModel = new MachineViewModel(null, null, null, null, null, null, null, null);
-
             InitModel(new MainModel(settings, fileSystem));
 
-            _machineViewModels = new ObservableCollection<MachineViewModel>();
-
-            foreach (ICoreMachine machine in _model.Machines)
-            {
-                AddMachine(machine);
-            }
-
-            _machineServer = new MachineServerListener(MachineViewModels.Select(vm => vm.Machine).Where(m => m.Core != null));
+            _machineServer = new MachineServerListener(Machines.Where(m => m.Core != null));
 
             LoadRecentServersSetting();
 
-            ActiveItem = this;
+            ActiveMachine = null;
 
             _openMachineCommand = new Command(
                 p =>
@@ -142,16 +157,15 @@ namespace CPvC
             _removeCommand = new Command(
                 p =>
                 {
-                    MachineViewModel machineViewModel = (MachineViewModel)p;
-                    if (machineViewModel.Close(confirmClose))
+                    ICoreMachine coreMachine = (ICoreMachine)p;
+                    if (Close(coreMachine, confirmClose))
                     {
-                        Remove(machineViewModel, _confirmClose);
+                        _model.RemoveMachine(coreMachine);
                     }
                 },
                 p =>
                 {
-                    MachineViewModel machineViewModel = (MachineViewModel)p;
-                    IPersistableMachine pm = (machineViewModel?.Machine as IPersistableMachine);
+                    IPersistableMachine pm = p as IPersistableMachine;
                     return (pm?.PersistantFilepath != null);
                 }
             );
@@ -159,36 +173,27 @@ namespace CPvC
             _closeCommand = new Command(
                 p =>
                 {
-                    MachineViewModel machineViewModel = (MachineViewModel)p;
-                    if (machineViewModel.Close(confirmClose))
-                    {
-                        IPersistableMachine pm = machineViewModel.Machine as IPersistableMachine;
-                        if (pm?.PersistantFilepath == null)
-                        {
-                            Remove(machineViewModel, confirmClose);
-                        }
-                    }
+                    Close((ICoreMachine)p, confirmClose);
                 },
                 p =>
                 {
-                    MachineViewModel machineViewModel = (MachineViewModel)p;
-                    if (machineViewModel == null)
-                    {
-                        return false;
-                    }
-
-                    IPersistableMachine pm = machineViewModel?.Machine as IPersistableMachine;
+                    IPersistableMachine pm = p as IPersistableMachine;
                     return (pm?.IsOpen ?? true);
                 }
+            );
+
+
+            _openCommand = new Command(
+                p => (p as IPersistableMachine)?.OpenFromFile(fileSystem),
+                p => !(p as IPersistableMachine)?.IsOpen ?? false
             );
 
             _persistCommand = new Command(
                 p =>
                 {
-                    MachineViewModel machineViewModel = (MachineViewModel)p;
                     try
                     {
-                        machineViewModel.Persist(fileSystem);
+                        Persist(p, fileSystem);
                     }
                     catch (Exception ex)
                     {
@@ -197,8 +202,7 @@ namespace CPvC
                 },
                 p =>
                 {
-                    MachineViewModel machineViewModel = (MachineViewModel)p;
-                    IPersistableMachine pm = machineViewModel.Machine as IPersistableMachine;
+                    IPersistableMachine pm = p as IPersistableMachine;
                     if (pm != null)
                     {
                         return pm.PersistantFilepath == null;
@@ -207,63 +211,141 @@ namespace CPvC
                     return false;
                 });
 
+            _pauseCommand = new Command(
+                p => (p as IPausableMachine)?.Stop(),
+                p => (p as IPausableMachine)?.CanStop ?? false
+            );
+
+            _resumeCommand = new Command(
+                p => (p as IPausableMachine)?.Start(),
+                p => (p as IPausableMachine)?.CanStart ?? false
+            );
+
+            _resetCommand = new Command(
+                p => (p as IInteractiveMachine)?.Reset(),
+                p => (p as IInteractiveMachine) != null
+            );
+
+            _driveACommand = new Command(
+                p => LoadDisc(p as IInteractiveMachine, 0, fileSystem, promptForFile, selectItem),
+                p => (p as IInteractiveMachine) != null
+            );
+
+            _driveAEjectCommand = new Command(
+                p => (p as IInteractiveMachine)?.LoadDisc(0, null),
+                p => (p as IInteractiveMachine) != null
+            );
+
+            _driveBCommand = new Command(
+                p => LoadDisc(p as IInteractiveMachine, 1, fileSystem, promptForFile, selectItem),
+                p => (p as IInteractiveMachine) != null
+            );
+
+            _driveBEjectCommand = new Command(
+                p => (p as IInteractiveMachine)?.LoadDisc(1, null),
+                p => (p as IInteractiveMachine) != null
+            );
+
+            _tapeCommand = new Command(
+                p => LoadTape(p as IInteractiveMachine, fileSystem, promptForFile, selectItem),
+                p => (p as IInteractiveMachine) != null
+            );
+
+            _tapeEjectCommand = new Command(
+                p => (p as IInteractiveMachine)?.LoadTape(null),
+                p => (p as IInteractiveMachine) != null
+            );
+
+            _toggleRunningCommand = new Command(
+                p => (p as IPausableMachine)?.ToggleRunning(),
+                p => (p as IPausableMachine) != null
+            );
+
+            _addBookmarkCommand = new Command(
+                p => (p as IBookmarkableMachine)?.AddBookmark(false),
+                p => (p as IBookmarkableMachine) != null
+            );
+
+            _jumpToMostRecentBookmarkCommand = new Command(
+                p => (p as IJumpableMachine)?.JumpToMostRecentBookmark(),
+                p => (p as IJumpableMachine) != null
+            );
+
+            _browseBookmarksCommand = new Command(
+                p => SelectBookmark(p as IJumpableMachine, promptForBookmark),
+                p => (p as IJumpableMachine) != null
+            );
+
+            _compactCommand = new Command(
+                p => (p as ICompactableMachine)?.Compact(fileSystem, false),
+                p => (p as ICompactableMachine) != null
+            );
+
+            _renameCommand = new Command(
+                p => RenameMachine(p as ICoreMachine, promptForName),
+                p => p != null
+            );
+
+            _seekToNextBookmarkCommand = new Command(
+                p => (p as IPrerecordedMachine)?.SeekToNextBookmark(),
+                p => (p as IPrerecordedMachine) != null
+            );
+
+            _seekToPrevBookmarkCommand = new Command(
+                p => (p as IPrerecordedMachine)?.SeekToPreviousBookmark(),
+                p => (p as IPrerecordedMachine) != null
+            );
+
+            _seekToStartCommand = new Command(
+                p => (p as IPrerecordedMachine)?.SeekToStart(),
+                p => (p as IPrerecordedMachine) != null
+            );
+
+            _keyDownCommand = new Command(
+                p => KeyPress(p, true),
+                p => CanKeyPress(p)
+            );
+
+            _keyUpCommand = new Command(
+                p => KeyPress(p, false),
+                p => CanKeyPress(p)
+            );
+
+            _turboCommand = new Command(
+                p =>
+                {
+                    Tuple<ICoreMachine, bool> info = (Tuple<ICoreMachine, bool>)p;
+
+                    (info.Item1 as ITurboableMachine)?.EnableTurbo(info.Item2);
+                },
+                p =>
+                {
+                    Tuple<ICoreMachine, bool> info = (Tuple<ICoreMachine, bool>)p;
+
+                    return (info.Item1 as ITurboableMachine) != null;
+                }
+            );
+
+            _reverseStartCommand = new Command(
+                p => (p as IReversibleMachine)?.Reverse(),
+                p => (p as IReversibleMachine) != null
+            );
+
+            _reverseStopCommand = new Command(
+                p => (p as IReversibleMachine)?.ReverseStop(),
+                p => (p as IReversibleMachine) != null
+            );
+
+            _toggleSnapshotCommand = new Command(
+                p => (p as IReversibleMachine)?.ToggleReversibilityEnabled(),
+                p => (p as IReversibleMachine) != null
+            );
+
         }
 
         private void InitModel(MainModel mainModel)
         {
-            if (_model != null)
-            {
-                INotifyCollectionChanged machines = _model.Machines;
-                machines.CollectionChanged -= Machines_CollectionChanged;
-            }
-
             _model = mainModel;
-
-            if (_model != null)
-            {
-                INotifyCollectionChanged machines = _model.Machines;
-                machines.CollectionChanged += Machines_CollectionChanged;
-            }
-        }
-
-        private void AddMachine(ICoreMachine machine)
-        {
-            MachineViewModel machineViewModel = CreateMachineViewModel(machine);
-            AddMachineViewModel(machineViewModel);
-        }
-
-        private void RemoveMachine(ICoreMachine machine)
-        {
-            lock (_machineViewModels)
-            {
-                MachineViewModel machineViewModel = _machineViewModels.Where(m => m.Machine == machine).First();
-                MachineViewModels.Remove(machineViewModel);
-            }
-        }
-
-        private void Machines_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            switch (e.Action)
-            {
-                case NotifyCollectionChangedAction.Add:
-                    {
-                        foreach (object item in e.NewItems)
-                        {
-                            AddMachine((ICoreMachine)item);
-                        }
-                    }
-                    break;
-                case NotifyCollectionChangedAction.Remove:
-                    {
-                        foreach (object item in e.OldItems)
-                        {
-                            RemoveMachine((ICoreMachine)item);
-                        }
-                    }
-                    break;
-                default:
-                    break;
-            }
         }
 
         public ObservableCollection<ServerInfo> RecentServers
@@ -281,12 +363,6 @@ namespace CPvC
                 return _model.Machines;
             }
         }
-
-        public ObservableCollection<MachineViewModel> MachineViewModels
-        {
-            get { return _machineViewModels; }
-        }
-
         public Command OpenMachineCommand
         {
             get { return _openMachineCommand; }
@@ -322,38 +398,168 @@ namespace CPvC
             get { return _closeCommand; }
         }
 
-        /// <summary>
-        /// Represents the currently active item in the main window. Corresponds to the DataContext associated with the currently
-        /// selected tab in the main window.
-        /// </summary>
+        public ICommand ResetCommand
+        {
+            get { return _resetCommand; }
+        }
+
+        public ICommand DriveACommand
+        {
+            get { return _driveACommand; }
+        }
+
+        public ICommand DriveBCommand
+        {
+            get { return _driveBCommand; }
+        }
+
+        public ICommand DriveAEjectCommand
+        {
+            get { return _driveAEjectCommand; }
+        }
+
+        public ICommand DriveBEjectCommand
+        {
+            get { return _driveBEjectCommand; }
+        }
+
+        public ICommand TapeCommand
+        {
+            get { return _tapeCommand; }
+        }
+
+        public ICommand TapeEjectCommand
+        {
+            get { return _tapeEjectCommand; }
+        }
+
+        public Command PersistCommand
+        {
+            get { return _persistCommand; }
+        }
+
+        public ICommand OpenCommand
+        {
+            get { return _openCommand; }
+        }
+
+        public ICommand PauseCommand
+        {
+            get { return _pauseCommand; }
+        }
+
+        public ICommand ResumeCommand
+        {
+            get { return _resumeCommand; }
+        }
+
+        public ICommand ToggleRunningCommand
+        {
+            get { return _toggleRunningCommand; }
+        }
+
+        public ICommand AddBookmarkCommand
+        {
+            get { return _addBookmarkCommand; }
+        }
+
+        public ICommand JumpToMostRecentBookmarkCommand
+        {
+            get { return _jumpToMostRecentBookmarkCommand; }
+        }
+
+        public ICommand BrowseBookmarksCommand
+        {
+            get { return _browseBookmarksCommand; }
+        }
+
+        public ICommand CompactCommand
+        {
+            get { return _compactCommand; }
+        }
+
+        public ICommand RenameCommand
+        {
+            get { return _renameCommand; }
+        }
+
+        public ICommand SeekToNextBookmarkCommand
+        {
+            get { return _seekToNextBookmarkCommand; }
+        }
+
+        public ICommand SeekToPrevBookmarkCommand
+        {
+            get { return _seekToPrevBookmarkCommand; }
+        }
+
+        public ICommand SeekToStartCommand
+        {
+            get { return _seekToStartCommand; }
+        }
+
+        public ICommand KeyDownCommand
+        {
+            get { return _keyDownCommand; }
+        }
+
+        public ICommand KeyUpCommand
+        {
+            get { return _keyUpCommand; }
+        }
+
+        public ICommand TurboCommand
+        {
+            get { return _turboCommand; }
+        }
+
+        public ICommand ReverseStartCommand
+        {
+            get { return _reverseStartCommand; }
+        }
+
+        public ICommand ReverseStopCommand
+        {
+            get { return _reverseStopCommand; }
+        }
+
+        public ICommand ToggleReversibility
+        {
+            get { return _toggleSnapshotCommand; }
+        }
+
+        ///// <summary>
+        ///// Represents the currently active item in the main window. Corresponds to the DataContext associated with the currently
+        ///// selected tab in the main window.
+        ///// </summary>
         public object ActiveItem
         {
             get
             {
-                return _active;
+                return _activeItem;
             }
 
             set
             {
-                _active = value;
+                _activeItem = value;
                 OnPropertyChanged();
-                OnPropertyChanged("ActiveMachineViewModel");
+                OnPropertyChanged("ActiveMachine");
             }
         }
 
-        public MachineViewModel ActiveMachineViewModel
+        public ICoreMachine ActiveMachine
         {
             get
             {
-                return _active as MachineViewModel ?? _nullMachineViewModel;
+                return _activeItem as ICoreMachine;
             }
 
             set
             {
-                _active = value;
+                _activeItem = value;
 
-                OnPropertyChanged("ActiveItem");
                 OnPropertyChanged();
+                OnPropertyChanged("ActiveItem");
             }
         }
 
@@ -363,7 +569,7 @@ namespace CPvC
             replayMachine.Name = name;
             _model.AddMachine(replayMachine);
 
-            SetActive(replayMachine);
+            ActiveMachine = replayMachine;
             replayMachine.Start();
         }
 
@@ -372,11 +578,11 @@ namespace CPvC
             Machine machine = Machine.New("Untitled", null);
             _model.AddMachine(machine);
 
-            SetActive(machine);
+            ActiveMachine = machine;
             machine.Start();
         }
 
-        public MachineViewModel OpenMachine(PromptForFileDelegate promptForFile, string filepath, IFileSystem fileSystem)
+        public ICoreMachine OpenMachine(PromptForFileDelegate promptForFile, string filepath, IFileSystem fileSystem)
         {
             if (filepath == null)
             {
@@ -388,8 +594,9 @@ namespace CPvC
             }
 
             string fullFilepath = System.IO.Path.GetFullPath(filepath);
-            MachineViewModel machineViewModel = _machineViewModels.FirstOrDefault(
-                m => {
+            ICoreMachine machine = Machines.FirstOrDefault(
+                m =>
+                {
                     if (m is IPersistableMachine pm)
                     {
                         return String.Compare(pm.PersistantFilepath, fullFilepath, true) == 0;
@@ -397,42 +604,52 @@ namespace CPvC
 
                     return false;
                 });
-            if (machineViewModel == null)
+            if (machine == null)
             {
                 _model.AddMachine(filepath, fileSystem, true);
             }
 
-            return machineViewModel;
-        }
-
-        public void Remove(MachineViewModel viewModel, ConfirmCloseDelegate confirmClose)
-        {
-            if (viewModel.Close(confirmClose))
-            {
-                _model.RemoveMachine(viewModel.Machine);
-            }
+            return machine;
         }
 
         public void CloseAll()
         {
-            lock (MachineViewModels)
+            lock (Machines)
             {
-                foreach (MachineViewModel model in MachineViewModels)
+                foreach (ICoreMachine machine in Machines)
                 {
-                    model.Close(_confirmClose);
+                    Close(machine, _confirmClose);
                 }
             }
         }
 
+        public bool Close(ICoreMachine coreMachine, ConfirmCloseDelegate confirmClose)
+        {
+            if (coreMachine != null)
+            {
+                IPersistableMachine pm = coreMachine as IPersistableMachine;
+                if (pm != null && pm.PersistantFilepath == null)
+                {
+                    if (!confirmClose(String.Format("Are you sure you want to close the \"{0}\" machine without persisting it?", coreMachine.Name)))
+                    {
+                        return false;
+                    }
+                }
+
+                coreMachine.Close();
+            }
+
+            return true;
+        }
+
         public int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
-            lock (MachineViewModels)
+            lock (Machines)
             {
                 int samplesWritten = 0;
 
-                foreach (MachineViewModel machineViewModel in MachineViewModels)
+                foreach (ICoreMachine machine in Machines)
                 {
-                    ICoreMachine machine = machineViewModel.Machine;
                     if (machine == null)
                     {
                         continue;
@@ -440,7 +657,7 @@ namespace CPvC
 
                     // Play audio only from the currently active machine; for the rest, just
                     // advance the audio playback position.
-                    if (machine == ActiveMachineViewModel.Machine)
+                    if (machine == ActiveMachine)
                     {
                         samplesWritten = machine.ReadAudio(buffer, offset, samplesRequested);
                     }
@@ -454,11 +671,157 @@ namespace CPvC
             }
         }
 
-        private MachineViewModel CreateMachineViewModel(ICoreMachine machine)
+        private void KeyPress(object p, bool down)
         {
-            MachineViewModel machineViewModel = new MachineViewModel(machine, _fileSystem, _promptForFile, _promptForBookmark, _promptForName, _selectItem, _confirmClose, _reportError);
+            Tuple<IInteractiveMachine, byte> info = (Tuple<IInteractiveMachine, byte>)p;
 
-            return machineViewModel;
+            info.Item1.Key(info.Item2, down);
+        }
+
+        private bool CanKeyPress(object p)
+        {
+            Tuple<IInteractiveMachine, byte> info = (Tuple<IInteractiveMachine, byte>)p;
+
+            return info.Item1 is IInteractiveMachine;
+        }
+
+        private void LoadDisc(IInteractiveMachine machine, byte drive, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
+        {
+            if (machine == null)
+            {
+                return;
+            }
+
+            using (machine.AutoPause())
+            {
+                byte[] image = PromptForMedia(true, fileSystem, promptForFile, selectItem);
+                if (image != null)
+                {
+                    machine.LoadDisc(drive, image);
+                }
+            }
+        }
+
+        private void LoadTape(IInteractiveMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
+        {
+            if (machine == null)
+            {
+                return;
+            }
+
+            using (machine.AutoPause())
+            {
+                byte[] image = PromptForMedia(false, fileSystem, promptForFile, selectItem);
+                if (image != null)
+                {
+                    machine.LoadTape(image);
+                }
+            }
+        }
+
+        private byte[] PromptForMedia(bool disc, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
+        {
+            string expectedExt = disc ? ".dsk" : ".cdt";
+            FileTypes type = disc ? FileTypes.Disc : FileTypes.Tape;
+
+            string filename = promptForFile(type, true);
+            if (filename == null)
+            {
+                // Action was cancelled by the user.
+                return null;
+            }
+
+            byte[] buffer = null;
+            string ext = System.IO.Path.GetExtension(filename);
+            if (ext.ToLower() == ".zip")
+            {
+                string entry = null;
+                List<string> entries = fileSystem.GetZipFileEntryNames(filename);
+                List<string> extEntries = entries.Where(x => System.IO.Path.GetExtension(x).ToLower() == expectedExt).ToList();
+                if (extEntries.Count == 0)
+                {
+                    // No images available.
+                    Diagnostics.Trace("No files with the extension \"{0}\" found in zip archive \"{1}\".", expectedExt, filename);
+
+                    return null;
+                }
+                else if (extEntries.Count == 1)
+                {
+                    // Don't bother prompting the user, since there's only one!
+                    entry = extEntries[0];
+                }
+                else
+                {
+                    entry = selectItem(extEntries);
+                    if (entry == null)
+                    {
+                        // Action was cancelled by the user.
+                        return null;
+                    }
+                }
+
+                Diagnostics.Trace("Loading \"{0}\" from zip archive \"{1}\"", entry, filename);
+                buffer = fileSystem.GetZipFileEntry(filename, entry);
+            }
+            else
+            {
+                Diagnostics.Trace("Loading \"{0}\"", filename);
+                buffer = fileSystem.ReadBytes(filename);
+            }
+
+            return buffer;
+        }
+
+        public void Persist(object p, IFileSystem fileSystem)
+        {
+            if (!(p is IPersistableMachine machine))
+            {
+                throw new InvalidOperationException("Cannot persist this machine!");
+            }
+
+            if (!String.IsNullOrEmpty(machine.PersistantFilepath))
+            {
+                // Should throw exception here?
+                return;
+            }
+
+            string filepath = _promptForFile(FileTypes.Machine, false);
+            machine.Persist(fileSystem, filepath);
+        }
+
+        private void SelectBookmark(IJumpableMachine machine, PromptForBookmarkDelegate promptForBookmark)
+        {
+            if (machine == null)
+            {
+                return;
+            }
+
+            using (machine.AutoPause())
+            {
+                HistoryEvent historyEvent = promptForBookmark();
+                if (historyEvent != null)
+                {
+                    machine.JumpToBookmark(historyEvent);
+                    machine.Status = String.Format("Jumped to {0}", Helpers.GetTimeSpanFromTicks(historyEvent.Ticks).ToString(@"hh\:mm\:ss"));
+                }
+            }
+        }
+
+        private void RenameMachine(ICoreMachine machine, PromptForNameDelegate promptForName)
+        {
+            if (machine == null)
+            {
+                return;
+            }
+
+            using (machine.AutoPause())
+            {
+                string newName = promptForName(machine.Name);
+                if (newName != null)
+                {
+                    machine.Name = newName;
+                }
+            }
         }
 
         protected void OnPropertyChanged([CallerMemberName] string name = null)
@@ -491,15 +854,7 @@ namespace CPvC
             _model.AddMachine(remoteMachine);
             UpdateRecentServersSettings();
 
-            SetActive(remoteMachine);
-        }
-
-        private void AddMachineViewModel(MachineViewModel machineViewModel)
-        {
-            lock (MachineViewModels)
-            {
-                MachineViewModels.Add(machineViewModel);
-            }
+            ActiveMachine = remoteMachine;
         }
 
         private void UpdateRecentServersSettings()
@@ -535,16 +890,6 @@ namespace CPvC
 
                     RecentServers.Add(info);
                 }
-            }
-        }
-
-        private void SetActive(ICoreMachine machine)
-        {
-            lock (_machineViewModels)
-            {
-                MachineViewModel vm = _machineViewModels.FirstOrDefault(x => x.Machine == machine);
-
-                ActiveMachineViewModel = vm;
             }
         }
     }
