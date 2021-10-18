@@ -24,38 +24,6 @@ namespace CPvC
             Machines = new ReadOnlyObservableCollection<ICoreMachine>(_machines);
 
             LoadFromSettings(fileSystem);
-
-            // Start observing the machines collection only after we've finished loading it.
-            _machines.CollectionChanged += Machines_CollectionChanged;
-        }
-
-        private void Machines_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            switch (e.Action)
-            {
-                case NotifyCollectionChangedAction.Add:
-                    {
-                        foreach (object item in e.NewItems)
-                        {
-                            ICoreMachine machine = (ICoreMachine)item;
-                            machine.PropertyChanged += Machine_PropertyChanged;
-                        }
-                    }
-                    break;
-                case NotifyCollectionChangedAction.Remove:
-                    {
-                        foreach (object item in e.OldItems)
-                        {
-                            ICoreMachine machine = (ICoreMachine)item;
-                            machine.PropertyChanged -= Machine_PropertyChanged;
-                        }
-                    }
-                    break;
-                default:
-                    throw new Exception("Needs implementation!");
-            }
-
-            UpdateSettings();
         }
 
         private void Machine_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -87,7 +55,7 @@ namespace CPvC
                         machine = Machine.Create(fileSystem, filepath);
                     }
 
-                    _machines.Add(machine);
+                    AddMachine(machine);
 
                     return machine;
                 }
@@ -101,6 +69,7 @@ namespace CPvC
             lock (_machines)
             {
                 _machines.Add(machine);
+                machine.PropertyChanged += Machine_PropertyChanged;
             }
         }
 
@@ -108,6 +77,7 @@ namespace CPvC
         {
             lock (_machines)
             {
+                machine.PropertyChanged -= Machine_PropertyChanged;
                 _machines.Remove(machine);
             }
         }
