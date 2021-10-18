@@ -563,7 +563,7 @@ namespace CPvC
                 });
             if (machine == null)
             {
-                _model.AddMachine(filepath, fileSystem, true);
+                machine = _model.AddMachine(filepath, fileSystem, true);
             }
 
             return machine;

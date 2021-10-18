@@ -737,8 +737,6 @@ namespace CPvC
 
             // Should probably be monitoring the IsOpen property, I think...
             Display.EnableGreyscale(false);
-
-            Start();
         }
 
         static public Machine Create(IFileSystem fileSystem, string filepath)

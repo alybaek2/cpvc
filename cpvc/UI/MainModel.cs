@@ -66,11 +66,11 @@ namespace CPvC
             }
         }
 
-        public void AddMachine(string filepath, IFileSystem fileSystem, bool open)
+        public Machine AddMachine(string filepath, IFileSystem fileSystem, bool open)
         {
             if (String.IsNullOrEmpty(filepath))
             {
-                return;
+                return null;
             }
 
             lock (_machines)
@@ -88,8 +88,12 @@ namespace CPvC
                     }
 
                     _machines.Add(machine);
+
+                    return machine;
                 }
             }
+
+            return null;
         }
 
         public void AddMachine(ICoreMachine machine)
