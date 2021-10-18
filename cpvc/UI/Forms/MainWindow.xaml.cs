@@ -174,15 +174,19 @@ namespace CPvC.UI.Forms
             }
             else if (e.Key == Key.F2)
             {
-                Tuple<ICoreMachine, bool> info = new Tuple<ICoreMachine, bool>(_mainViewModel.ActiveMachine, true);
-                _mainViewModel.TurboCommand.Execute(info);
+                if (_mainViewModel.ActiveMachine is ITurboableMachine machine)
+                {
+                    _mainViewModel.EnableTurbo(machine, true);
+                }
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);
             if (cpcKey.HasValue)
             {
-                Tuple<IInteractiveMachine, byte> info = new Tuple<IInteractiveMachine, byte>(_mainViewModel.ActiveMachine as IInteractiveMachine, cpcKey.Value);
-                _mainViewModel.KeyDownCommand.Execute(info);
+                if (_mainViewModel.ActiveMachine is IInteractiveMachine machine)
+                {
+                    _mainViewModel.KeyPress(machine, cpcKey.Value, true);
+                }
             }
         }
 
@@ -194,15 +198,19 @@ namespace CPvC.UI.Forms
             }
             else if (e.Key == Key.F2)
             {
-                Tuple<ICoreMachine, bool> info = new Tuple<ICoreMachine, bool>(_mainViewModel.ActiveMachine, false);
-                _mainViewModel.TurboCommand.Execute(info);
+                if (_mainViewModel.ActiveMachine is ITurboableMachine machine)
+                {
+                    _mainViewModel.EnableTurbo(machine, false);
+                }
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);
             if (cpcKey.HasValue)
             {
-                Tuple<IInteractiveMachine, byte> info = new Tuple<IInteractiveMachine, byte>(_mainViewModel.ActiveMachine as IInteractiveMachine, cpcKey.Value);
-                _mainViewModel.KeyUpCommand.Execute(info);
+                if (_mainViewModel.ActiveMachine is IInteractiveMachine machine)
+                {
+                    _mainViewModel.KeyPress(machine, cpcKey.Value, false);
+                }
             }
         }
 

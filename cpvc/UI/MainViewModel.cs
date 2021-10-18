@@ -75,9 +75,6 @@ namespace CPvC
         private Command _seekToNextBookmarkCommand;
         private Command _seekToPrevBookmarkCommand;
         private Command _seekToStartCommand;
-        private Command _keyDownCommand;
-        private Command _keyUpCommand;
-        private Command _turboCommand;
         private Command _reverseStartCommand;
         private Command _reverseStopCommand;
         private Command _toggleSnapshotCommand;
@@ -301,31 +298,6 @@ namespace CPvC
                 p => (p as IPrerecordedMachine) != null
             );
 
-            _keyDownCommand = new Command(
-                p => KeyPress(p, true),
-                p => CanKeyPress(p)
-            );
-
-            _keyUpCommand = new Command(
-                p => KeyPress(p, false),
-                p => CanKeyPress(p)
-            );
-
-            _turboCommand = new Command(
-                p =>
-                {
-                    Tuple<ICoreMachine, bool> info = (Tuple<ICoreMachine, bool>)p;
-
-                    (info.Item1 as ITurboableMachine)?.EnableTurbo(info.Item2);
-                },
-                p =>
-                {
-                    Tuple<ICoreMachine, bool> info = (Tuple<ICoreMachine, bool>)p;
-
-                    return (info.Item1 as ITurboableMachine) != null;
-                }
-            );
-
             _reverseStartCommand = new Command(
                 p => (p as IReversibleMachine)?.Reverse(),
                 p => (p as IReversibleMachine) != null
@@ -498,21 +470,6 @@ namespace CPvC
             get { return _seekToStartCommand; }
         }
 
-        public ICommand KeyDownCommand
-        {
-            get { return _keyDownCommand; }
-        }
-
-        public ICommand KeyUpCommand
-        {
-            get { return _keyUpCommand; }
-        }
-
-        public ICommand TurboCommand
-        {
-            get { return _turboCommand; }
-        }
-
         public ICommand ReverseStartCommand
         {
             get { return _reverseStartCommand; }
@@ -671,18 +628,14 @@ namespace CPvC
             }
         }
 
-        private void KeyPress(object p, bool down)
+        public void KeyPress(IInteractiveMachine machine, byte keyCode, bool down)
         {
-            Tuple<IInteractiveMachine, byte> info = (Tuple<IInteractiveMachine, byte>)p;
-
-            info.Item1.Key(info.Item2, down);
+            machine.Key(keyCode, down);
         }
 
-        private bool CanKeyPress(object p)
+        public void EnableTurbo(ITurboableMachine machine, bool enable)
         {
-            Tuple<IInteractiveMachine, byte> info = (Tuple<IInteractiveMachine, byte>)p;
-
-            return info.Item1 is IInteractiveMachine;
+            machine.EnableTurbo(enable);
         }
 
         private void LoadDisc(IInteractiveMachine machine, byte drive, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)

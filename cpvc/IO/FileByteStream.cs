@@ -40,11 +40,13 @@ namespace CPvC
         public void Write(byte b)
         {
             _fileStream.WriteByte(b);
+            _fileStream.Flush();
         }
 
         public void Write(byte[] b)
         {
             _fileStream.Write(b, 0, b.Length);
+            _fileStream.Flush();
         }
 
         public byte ReadByte()
