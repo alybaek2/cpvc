@@ -69,6 +69,7 @@ namespace CPvC
             lock (_machines)
             {
                 _machines.Add(machine);
+                UpdateSettings();
                 machine.PropertyChanged += Machine_PropertyChanged;
             }
         }
@@ -79,6 +80,7 @@ namespace CPvC
             {
                 machine.PropertyChanged -= Machine_PropertyChanged;
                 _machines.Remove(machine);
+                UpdateSettings();
             }
         }
 

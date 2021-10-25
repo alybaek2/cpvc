@@ -23,10 +23,21 @@ namespace CPvC.UI.Forms
         {
             _settings = new Settings();
             _fileSystem = new FileSystem();
-            _mainViewModel = new MainViewModel(_settings, _fileSystem, SelectItem, PromptForFile, PromptForBookmark, PromptForName, ReportError, SelectRemoteMachine, SelectServerPort, () => new Socket(), ConfirmClose);
-            _audio = new Audio(_mainViewModel.ReadAudio);
+            _mainViewModel = new MainViewModel(_settings, _fileSystem);
+
+            _mainViewModel.PromptForFile += MainViewModel_PromptForFile;
+            _mainViewModel.SelectItem += MainViewModel_SelectItem;
+            _mainViewModel.PromptForBookmark += MainViewModel_PromptForBookmark;
+            _mainViewModel.PromptForName += MainViewModel_PromptForName;
+            _mainViewModel.SelectRemoteMachine += MainViewModel_SelectRemoteMachine;
+            _mainViewModel.SelectServerPort += MainViewModel_SelectServerPort;
+            _mainViewModel.ConfirmClose += MainViewModel_ConfirmClose;
+            _mainViewModel.ReportError += MainViewModel_ReportError;
+            _mainViewModel.CreateSocket += MainViewModel_CreateSocket;
 
             InitializeComponent();
+
+            _audio = new Audio(_mainViewModel.ReadAudio);
         }
 
         public void Dispose()
@@ -411,6 +422,53 @@ namespace CPvC.UI.Forms
             {
                 e.Accepted = false;
             }
+        }
+
+        private void MainViewModel_ConfirmClose(object sender, ConfirmCloseEventArgs e)
+        {
+            MessageBoxResult result = MessageBox.Show(this, e.Message, "CPvC", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            e.Result = result == MessageBoxResult.Yes;
+        }
+
+        private void MainViewModel_CreateSocket(object sender, CreateSocketEventArgs e)
+        {
+            e.CreatedSocket = new Socket();
+        }
+
+        private void MainViewModel_PromptForBookmark(object sender, PromptForBookmarkEventArgs e)
+        {
+            e.SelectedBookmark = PromptForBookmark();
+        }
+
+        private void MainViewModel_PromptForFile(object sender, PromptForFileEventArgs e)
+        {
+            e.Filepath = PromptForFile(e.FileTypes, e.Existing);
+        }
+
+        private void MainViewModel_PromptForName(object sender, PromptForNameEventArgs e)
+        {
+            e.SelectedName = PromptForName(e.ExistingName);
+        }
+
+        private void MainViewModel_ReportError(object sender, ReportErrorEventArgs e)
+        {
+            ReportError(e.Message);
+        }
+
+        private void MainViewModel_SelectItem(object sender, SelectItemEventArgs e)
+        {
+            e.SelectedItem = SelectItem(e.Items);
+        }
+
+        private void MainViewModel_SelectRemoteMachine(object sender, SelectRemoteMachineEventArgs e)
+        {
+            e.SelectedMachine = SelectRemoteMachine(e.ServerInfo);
+        }
+
+        private void MainViewModel_SelectServerPort(object sender, SelectServerPortEventArgs e)
+        {
+            e.SelectedPort = SelectServerPort(e.DefaultPort);
         }
     }
 }

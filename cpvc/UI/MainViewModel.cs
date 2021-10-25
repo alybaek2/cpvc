@@ -9,22 +9,124 @@ using System.Windows.Input;
 
 namespace CPvC
 {
+    public class PromptForFileEventArgs : EventArgs
+    {
+        public PromptForFileEventArgs()
+        {
+        }
+
+        public FileTypes FileTypes { get; set; }
+        public bool Existing { get; set; }
+
+        public string Filepath { get; set; }
+    }
+
+    public delegate void PromptForFileEventHandler(object sender, PromptForFileEventArgs e);
+
+    public class SelectItemEventArgs : EventArgs
+    {
+        public SelectItemEventArgs()
+        {
+        }
+
+        public List<string> Items { get; set; }
+
+        public string SelectedItem { get; set; }
+    }
+
+    public delegate void SelectItemEventHandler(object sender, SelectItemEventArgs e);
+
+    public class PromptForBookmarkEventArgs : EventArgs
+    {
+        public PromptForBookmarkEventArgs()
+        {
+        }
+
+        public HistoryEvent SelectedBookmark { get; set; }
+    }
+
+    public delegate void PromptForBookmarkEventHandler(object sender, PromptForBookmarkEventArgs e);
+
+    public class PromptForNameEventArgs : EventArgs
+    {
+        public PromptForNameEventArgs()
+        {
+        }
+
+        public string ExistingName { get; set; }
+
+        public string SelectedName { get; set; }
+    }
+
+    public delegate void PromptForNameEventHandler(object sender, PromptForNameEventArgs e);
+
+    public class ReportErrorEventArgs : EventArgs
+    {
+        public ReportErrorEventArgs()
+        {
+        }
+
+        public string Message { get; set; }
+    }
+
+    public delegate void ReportErrorEventHandler(object sender, ReportErrorEventArgs e);
+
+    public class ConfirmCloseEventArgs : EventArgs
+    {
+        public ConfirmCloseEventArgs()
+        {
+        }
+
+        public string Message { get; set; }
+
+        public bool Result { get; set; }
+    }
+
+    public delegate void ConfirmCloseEventHandler(object sender, ConfirmCloseEventArgs e);
+
+    public class SelectRemoteMachineEventArgs : EventArgs
+    {
+        public SelectRemoteMachineEventArgs()
+        {
+        }
+
+        public ServerInfo ServerInfo { get; set; }
+
+        public RemoteMachine SelectedMachine { get; set; }
+    }
+
+    public delegate void SelectRemoteMachineEventHandler(object sender, SelectRemoteMachineEventArgs e);
+
+    public class SelectServerPortEventArgs : EventArgs
+    {
+        public SelectServerPortEventArgs()
+        {
+        }
+
+        public UInt16 DefaultPort { get; set; }
+
+        public UInt16? SelectedPort { get; set; }
+    }
+
+    public delegate void SelectServerPortEventHandler(object sender, SelectServerPortEventArgs e);
+
+    public class CreateSocketEventArgs : EventArgs
+    {
+        public CreateSocketEventArgs()
+        {
+        }
+
+        public ISocket CreatedSocket { get; set; }
+    }
+
+    public delegate void CreateSocketEventHandler(object sender, CreateSocketEventArgs e);
+
+
     /// <summary>
     /// View Model for the main window.
     /// </summary>
     public class MainViewModel : INotifyPropertyChanged
     {
-        // Delegates for calling back into MainWindow.
-        public delegate string SelectItemDelegate(List<string> items);
-        public delegate string PromptForFileDelegate(FileTypes type, bool existing);
-        public delegate HistoryEvent PromptForBookmarkDelegate();
-        public delegate string PromptForNameDelegate(string existingName);
-        public delegate void ReportErrorDelegate(string message);
-        public delegate bool ConfirmCloseDelegate(string message);
-        public delegate RemoteMachine SelectRemoteMachineDelegate(ServerInfo serverInfo);
-        public delegate UInt16? SelectServerPortDelegate(UInt16 defaultPort);
-        public delegate ISocket CreateSocketDelegate();
-
         /// <summary>
         /// The data model associated with this view model.
         /// </summary>
@@ -38,14 +140,16 @@ namespace CPvC
         private object _activeItem;
 
         private IFileSystem _fileSystem;
-        private SelectItemDelegate _selectItem;
-        private PromptForFileDelegate _promptForFile;
-        private PromptForBookmarkDelegate _promptForBookmark;
-        private PromptForNameDelegate _promptForName;
-        private SelectRemoteMachineDelegate _selectRemoteMachine;
-        private SelectServerPortDelegate _selectServerPort;
-        private ConfirmCloseDelegate _confirmClose;
-        private ReportErrorDelegate _reportError;
+
+        public event PromptForFileEventHandler PromptForFile;
+        public event SelectItemEventHandler SelectItem;
+        public event PromptForBookmarkEventHandler PromptForBookmark;
+        public event PromptForNameEventHandler PromptForName;
+        public event SelectRemoteMachineEventHandler SelectRemoteMachine;
+        public event SelectServerPortEventHandler SelectServerPort;
+        public event ConfirmCloseEventHandler ConfirmClose;
+        public event ReportErrorEventHandler ReportError;
+        public event CreateSocketEventHandler CreateSocket;
 
         private Command _openMachineCommand;
         private Command _newMachineCommand;
@@ -85,18 +189,10 @@ namespace CPvC
 
         private ISettings _settings;
 
-        public MainViewModel(ISettings settings, IFileSystem fileSystem, SelectItemDelegate selectItem, PromptForFileDelegate promptForFile, PromptForBookmarkDelegate promptForBookmark, PromptForNameDelegate promptForName, ReportErrorDelegate reportError, SelectRemoteMachineDelegate selectRemoteMachine, SelectServerPortDelegate selectServerPort, CreateSocketDelegate createSocket, ConfirmCloseDelegate confirmClose)
+        public MainViewModel(ISettings settings, IFileSystem fileSystem)
         {
             _settings = settings;
             _fileSystem = fileSystem;
-            _selectItem = selectItem;
-            _promptForFile = promptForFile;
-            _promptForBookmark = promptForBookmark;
-            _promptForName = promptForName;
-            _selectRemoteMachine = selectRemoteMachine;
-            _selectServerPort = selectServerPort;
-            _confirmClose = confirmClose;
-            _reportError = reportError;
 
             InitModel(new MainModel(settings, fileSystem));
 
@@ -111,11 +207,13 @@ namespace CPvC
                 {
                     try
                     {
-                        OpenMachine(promptForFile, null, _fileSystem);
+                        OpenMachine(null, _fileSystem);
                     }
                     catch (Exception ex)
                     {
-                        reportError(ex.Message);
+                        ReportErrorEventArgs args = new ReportErrorEventArgs();
+                        args.Message = ex.Message;
+                        ReportError?.Invoke(this, args);
                     }
                 },
                 p => true
@@ -126,18 +224,20 @@ namespace CPvC
                 {
                     try
                     {
-                        NewMachine(promptForFile, _fileSystem);
+                        NewMachine(_fileSystem);
                     }
                     catch (Exception ex)
                     {
-                        reportError(ex.Message);
+                        ReportErrorEventArgs args = new ReportErrorEventArgs();
+                        args.Message = ex.Message;
+                        ReportError?.Invoke(this, args);
                     }
                 },
                 p => true
             );
 
             _startServerCommand = new Command(
-                p => StartServer(6128, createSocket()),
+                p => StartServer(6128),
                 p => true
             );
 
@@ -155,7 +255,7 @@ namespace CPvC
                 p =>
                 {
                     ICoreMachine coreMachine = (ICoreMachine)p;
-                    if (Close(coreMachine, confirmClose))
+                    if (Close(coreMachine))
                     {
                         _model.RemoveMachine(coreMachine);
                     }
@@ -170,7 +270,7 @@ namespace CPvC
             _closeCommand = new Command(
                 p =>
                 {
-                    Close((ICoreMachine)p, confirmClose);
+                    Close((ICoreMachine)p);
                 },
                 p =>
                 {
@@ -194,7 +294,9 @@ namespace CPvC
                     }
                     catch (Exception ex)
                     {
-                        reportError(ex.Message);
+                        ReportErrorEventArgs args = new ReportErrorEventArgs();
+                        args.Message = ex.Message;
+                        ReportError?.Invoke(this, args);
                     }
                 },
                 p =>
@@ -224,7 +326,7 @@ namespace CPvC
             );
 
             _driveACommand = new Command(
-                p => LoadDisc(p as IInteractiveMachine, 0, fileSystem, promptForFile, selectItem),
+                p => LoadDisc(p as IInteractiveMachine, 0, fileSystem),
                 p => (p as IInteractiveMachine) != null
             );
 
@@ -234,7 +336,7 @@ namespace CPvC
             );
 
             _driveBCommand = new Command(
-                p => LoadDisc(p as IInteractiveMachine, 1, fileSystem, promptForFile, selectItem),
+                p => LoadDisc(p as IInteractiveMachine, 1, fileSystem),
                 p => (p as IInteractiveMachine) != null
             );
 
@@ -244,7 +346,7 @@ namespace CPvC
             );
 
             _tapeCommand = new Command(
-                p => LoadTape(p as IInteractiveMachine, fileSystem, promptForFile, selectItem),
+                p => LoadTape(p as IInteractiveMachine, fileSystem),
                 p => (p as IInteractiveMachine) != null
             );
 
@@ -269,7 +371,7 @@ namespace CPvC
             );
 
             _browseBookmarksCommand = new Command(
-                p => SelectBookmark(p as IJumpableMachine, promptForBookmark),
+                p => SelectBookmark(p as IJumpableMachine),
                 p => (p as IJumpableMachine) != null
             );
 
@@ -279,7 +381,7 @@ namespace CPvC
             );
 
             _renameCommand = new Command(
-                p => RenameMachine(p as ICoreMachine, promptForName),
+                p => RenameMachine(p as ICoreMachine),
                 p => p != null
             );
 
@@ -530,7 +632,7 @@ namespace CPvC
             replayMachine.Start();
         }
 
-        public void NewMachine(PromptForFileDelegate promptForFile, IFileSystem fileSystem)
+        public void NewMachine(IFileSystem fileSystem)
         {
             Machine machine = Machine.New("Untitled", null);
             _model.AddMachine(machine);
@@ -539,11 +641,17 @@ namespace CPvC
             machine.Start();
         }
 
-        public ICoreMachine OpenMachine(PromptForFileDelegate promptForFile, string filepath, IFileSystem fileSystem)
+        public ICoreMachine OpenMachine(string filepath, IFileSystem fileSystem)
         {
             if (filepath == null)
             {
-                filepath = promptForFile(FileTypes.Machine, true);
+
+                PromptForFileEventArgs args = new PromptForFileEventArgs();
+                args.FileTypes = FileTypes.Machine;
+                args.Existing = true;
+                PromptForFile?.Invoke(this, args);
+
+                filepath = args.Filepath;
                 if (filepath == null)
                 {
                     return null;
@@ -575,19 +683,23 @@ namespace CPvC
             {
                 foreach (ICoreMachine machine in Machines)
                 {
-                    Close(machine, _confirmClose);
+                    Close(machine);
                 }
             }
         }
 
-        public bool Close(ICoreMachine coreMachine, ConfirmCloseDelegate confirmClose)
+        public bool Close(ICoreMachine coreMachine)
         {
             if (coreMachine != null)
             {
                 IPersistableMachine pm = coreMachine as IPersistableMachine;
                 if (pm != null && pm.PersistantFilepath == null)
                 {
-                    if (!confirmClose(String.Format("Are you sure you want to close the \"{0}\" machine without persisting it?", coreMachine.Name)))
+                    ConfirmCloseEventArgs args = new ConfirmCloseEventArgs();
+                    args.Message = String.Format("Are you sure you want to close the \"{0}\" machine without persisting it?", coreMachine.Name);
+                    ConfirmClose?.Invoke(this, args);
+
+                    if (!args.Result)
                     {
                         return false;
                     }
@@ -638,7 +750,7 @@ namespace CPvC
             machine.EnableTurbo(enable);
         }
 
-        private void LoadDisc(IInteractiveMachine machine, byte drive, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
+        private void LoadDisc(IInteractiveMachine machine, byte drive, IFileSystem fileSystem)
         {
             if (machine == null)
             {
@@ -647,7 +759,7 @@ namespace CPvC
 
             using (machine.AutoPause())
             {
-                byte[] image = PromptForMedia(true, fileSystem, promptForFile, selectItem);
+                byte[] image = PromptForMedia(true, fileSystem);
                 if (image != null)
                 {
                     machine.LoadDisc(drive, image);
@@ -655,7 +767,7 @@ namespace CPvC
             }
         }
 
-        private void LoadTape(IInteractiveMachine machine, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
+        private void LoadTape(IInteractiveMachine machine, IFileSystem fileSystem)
         {
             if (machine == null)
             {
@@ -664,7 +776,7 @@ namespace CPvC
 
             using (machine.AutoPause())
             {
-                byte[] image = PromptForMedia(false, fileSystem, promptForFile, selectItem);
+                byte[] image = PromptForMedia(false, fileSystem);
                 if (image != null)
                 {
                     machine.LoadTape(image);
@@ -672,12 +784,17 @@ namespace CPvC
             }
         }
 
-        private byte[] PromptForMedia(bool disc, IFileSystem fileSystem, PromptForFileDelegate promptForFile, SelectItemDelegate selectItem)
+        private byte[] PromptForMedia(bool disc, IFileSystem fileSystem)
         {
             string expectedExt = disc ? ".dsk" : ".cdt";
             FileTypes type = disc ? FileTypes.Disc : FileTypes.Tape;
 
-            string filename = promptForFile(type, true);
+            PromptForFileEventArgs args = new PromptForFileEventArgs();
+            args.FileTypes = type;
+            args.Existing = true;
+            PromptForFile?.Invoke(this, args);
+
+            string filename = args.Filepath;
             if (filename == null)
             {
                 // Action was cancelled by the user.
@@ -705,7 +822,11 @@ namespace CPvC
                 }
                 else
                 {
-                    entry = selectItem(extEntries);
+                    SelectItemEventArgs args2 = new SelectItemEventArgs();
+                    args2.Items = extEntries;
+                    SelectItem?.Invoke(this, args2);
+
+                    entry = args2.SelectedItem;
                     if (entry == null)
                     {
                         // Action was cancelled by the user.
@@ -738,11 +859,14 @@ namespace CPvC
                 return;
             }
 
-            string filepath = _promptForFile(FileTypes.Machine, false);
+            PromptForFileEventArgs args = new PromptForFileEventArgs();
+            PromptForFile?.Invoke(this, args);
+
+            string filepath = args.Filepath;
             machine.Persist(fileSystem, filepath);
         }
 
-        private void SelectBookmark(IJumpableMachine machine, PromptForBookmarkDelegate promptForBookmark)
+        private void SelectBookmark(IJumpableMachine machine)
         {
             if (machine == null)
             {
@@ -751,7 +875,10 @@ namespace CPvC
 
             using (machine.AutoPause())
             {
-                HistoryEvent historyEvent = promptForBookmark();
+                PromptForBookmarkEventArgs args = new PromptForBookmarkEventArgs();
+                PromptForBookmark?.Invoke(this, args);
+
+                HistoryEvent historyEvent = args.SelectedBookmark;
                 if (historyEvent != null)
                 {
                     machine.JumpToBookmark(historyEvent);
@@ -760,7 +887,7 @@ namespace CPvC
             }
         }
 
-        private void RenameMachine(ICoreMachine machine, PromptForNameDelegate promptForName)
+        private void RenameMachine(ICoreMachine machine)
         {
             if (machine == null)
             {
@@ -769,7 +896,10 @@ namespace CPvC
 
             using (machine.AutoPause())
             {
-                string newName = promptForName(machine.Name);
+                PromptForNameEventArgs args = new PromptForNameEventArgs();
+                PromptForName?.Invoke(this, args);
+
+                string newName = args.SelectedName;
                 if (newName != null)
                 {
                     machine.Name = newName;
@@ -782,9 +912,17 @@ namespace CPvC
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        public void StartServer(UInt16 defaultPort, ISocket socket)
+        public void StartServer(UInt16 defaultPort)
         {
-            UInt16? port = _selectServerPort(defaultPort);
+            CreateSocketEventArgs args2 = new CreateSocketEventArgs();
+            CreateSocket?.Invoke(this, args2);
+            ISocket socket = args2.CreatedSocket;
+
+            SelectServerPortEventArgs args = new SelectServerPortEventArgs();
+            args.DefaultPort = defaultPort;
+            SelectServerPort?.Invoke(this, args);
+
+            UInt16? port = args.SelectedPort;
             if (port.HasValue)
             {
                 _machineServer.Start(socket, port.Value);
@@ -798,7 +936,11 @@ namespace CPvC
 
         public void Connect(ServerInfo serverInfo)
         {
-            RemoteMachine remoteMachine = _selectRemoteMachine(serverInfo);
+            SelectRemoteMachineEventArgs args = new SelectRemoteMachineEventArgs();
+            args.ServerInfo = serverInfo;
+            SelectRemoteMachine?.Invoke(this, args);
+
+            RemoteMachine remoteMachine = args.SelectedMachine;
             if (remoteMachine == null)
             {
                 return;

@@ -573,27 +573,6 @@ namespace CPvC
             }
         }
 
-        /// <summary>
-        /// Returns a new core based on a HistoryEvent.
-        /// </summary>
-        /// <param name="bookmark">Bookmark to create the core from. If null, then a new core is created.</param>
-        /// <returns>If <c>bookmark</c> is not null, returns a core based on that bookmark. If the HistoryEvent is null, a newly-instantiated core is returned.</returns>
-        private Core GetCore(Bookmark bookmark)
-        {
-            Core core;
-            if (bookmark != null)
-            {
-                core = Core.Create(Core.LatestVersion, bookmark.State.GetBytes());
-                core.AllKeysUp();
-
-                return core;
-            }
-
-            core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-
-            return core;
-        }
-
         public CoreRequest IdleRequest()
         {
             return (RunningState == RunningState.Running) ? CoreRequest.RunUntil(Ticks + 1000) : null;
@@ -664,7 +643,7 @@ namespace CPvC
         {
             if (SnapshotLimit == 0)
             {
-                SnapshotLimit = 500;
+                SnapshotLimit = 3000;
             }
             else
             {
