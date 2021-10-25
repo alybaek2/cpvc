@@ -9,119 +9,6 @@ using System.Windows.Input;
 
 namespace CPvC
 {
-    public class PromptForFileEventArgs : EventArgs
-    {
-        public PromptForFileEventArgs()
-        {
-        }
-
-        public FileTypes FileTypes { get; set; }
-        public bool Existing { get; set; }
-
-        public string Filepath { get; set; }
-    }
-
-    public delegate void PromptForFileEventHandler(object sender, PromptForFileEventArgs e);
-
-    public class SelectItemEventArgs : EventArgs
-    {
-        public SelectItemEventArgs()
-        {
-        }
-
-        public List<string> Items { get; set; }
-
-        public string SelectedItem { get; set; }
-    }
-
-    public delegate void SelectItemEventHandler(object sender, SelectItemEventArgs e);
-
-    public class PromptForBookmarkEventArgs : EventArgs
-    {
-        public PromptForBookmarkEventArgs()
-        {
-        }
-
-        public HistoryEvent SelectedBookmark { get; set; }
-    }
-
-    public delegate void PromptForBookmarkEventHandler(object sender, PromptForBookmarkEventArgs e);
-
-    public class PromptForNameEventArgs : EventArgs
-    {
-        public PromptForNameEventArgs()
-        {
-        }
-
-        public string ExistingName { get; set; }
-
-        public string SelectedName { get; set; }
-    }
-
-    public delegate void PromptForNameEventHandler(object sender, PromptForNameEventArgs e);
-
-    public class ReportErrorEventArgs : EventArgs
-    {
-        public ReportErrorEventArgs()
-        {
-        }
-
-        public string Message { get; set; }
-    }
-
-    public delegate void ReportErrorEventHandler(object sender, ReportErrorEventArgs e);
-
-    public class ConfirmCloseEventArgs : EventArgs
-    {
-        public ConfirmCloseEventArgs()
-        {
-        }
-
-        public string Message { get; set; }
-
-        public bool Result { get; set; }
-    }
-
-    public delegate void ConfirmCloseEventHandler(object sender, ConfirmCloseEventArgs e);
-
-    public class SelectRemoteMachineEventArgs : EventArgs
-    {
-        public SelectRemoteMachineEventArgs()
-        {
-        }
-
-        public ServerInfo ServerInfo { get; set; }
-
-        public RemoteMachine SelectedMachine { get; set; }
-    }
-
-    public delegate void SelectRemoteMachineEventHandler(object sender, SelectRemoteMachineEventArgs e);
-
-    public class SelectServerPortEventArgs : EventArgs
-    {
-        public SelectServerPortEventArgs()
-        {
-        }
-
-        public UInt16 DefaultPort { get; set; }
-
-        public UInt16? SelectedPort { get; set; }
-    }
-
-    public delegate void SelectServerPortEventHandler(object sender, SelectServerPortEventArgs e);
-
-    public class CreateSocketEventArgs : EventArgs
-    {
-        public CreateSocketEventArgs()
-        {
-        }
-
-        public ISocket CreatedSocket { get; set; }
-    }
-
-    public delegate void CreateSocketEventHandler(object sender, CreateSocketEventArgs e);
-
-
     /// <summary>
     /// View Model for the main window.
     /// </summary>
@@ -647,7 +534,7 @@ namespace CPvC
             {
 
                 PromptForFileEventArgs args = new PromptForFileEventArgs();
-                args.FileTypes = FileTypes.Machine;
+                args.FileType = FileTypes.Machine;
                 args.Existing = true;
                 PromptForFile?.Invoke(this, args);
 
@@ -790,7 +677,7 @@ namespace CPvC
             FileTypes type = disc ? FileTypes.Disc : FileTypes.Tape;
 
             PromptForFileEventArgs args = new PromptForFileEventArgs();
-            args.FileTypes = type;
+            args.FileType = type;
             args.Existing = true;
             PromptForFile?.Invoke(this, args);
 

@@ -154,8 +154,6 @@ namespace CPvC.UI.Forms
 
             DataContext = _mainViewModel;
 
-            
-            //_machines.Items[0]
             StartAudio();
         }
 
@@ -372,13 +370,6 @@ namespace CPvC.UI.Forms
             return (result.HasValue && result.Value) ? dialog.Machine : null;
         }
 
-        private bool ConfirmClose(string message)
-        {
-            MessageBoxResult result = MessageBox.Show(this, message, "CPvC", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-            return result == MessageBoxResult.Yes;
-        }
-
         private void ReportError(string message)
         {
             // Need to replace this with a messagebox that is centred over its parent. This option
@@ -443,7 +434,7 @@ namespace CPvC.UI.Forms
 
         private void MainViewModel_PromptForFile(object sender, PromptForFileEventArgs e)
         {
-            e.Filepath = PromptForFile(e.FileTypes, e.Existing);
+            e.Filepath = PromptForFile(e.FileType, e.Existing);
         }
 
         private void MainViewModel_PromptForName(object sender, PromptForNameEventArgs e)

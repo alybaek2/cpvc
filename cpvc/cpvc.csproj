@@ -112,6 +112,15 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Events\PromptForNameEvent.cs" />
+    <Compile Include="Events\ReportErrorEvent.cs" />
+    <Compile Include="Events\ConfirmCloseEvent.cs" />
+    <Compile Include="Events\SelectRemoteMachineEvent.cs" />
+    <Compile Include="Events\SelectServerPortEvent.cs" />
+    <Compile Include="Events\CreateSocketEvent.cs" />
+    <Compile Include="Events\PromptForBookmarkEvent.cs" />
+    <Compile Include="Events\SelectItemEvent.cs" />
+    <Compile Include="Events\PromptForFileEvent.cs" />
     <Compile Include="IO\ITextFile.cs" />
     <Compile Include="IO\TextFile.cs" />
     <Compile Include="Machine\CoreMachine.cs" />
