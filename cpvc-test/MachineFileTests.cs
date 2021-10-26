@@ -127,7 +127,7 @@ namespace CPvC.Test
         public void WriteAndReadName()
         {
             // Setup
-            Machine machine = new Machine(String.Empty);
+            LocalMachine machine = new LocalMachine(String.Empty);
             _file.Machine = machine;
 
             // Act
@@ -172,8 +172,8 @@ namespace CPvC.Test
         public void MachineUnsubscribe()
         {
             // Setup
-            Machine machine1 = Machine.New(null, null);
-            Machine machine2 = Machine.New(null, null);
+            LocalMachine machine1 = LocalMachine.New(null, null);
+            LocalMachine machine2 = LocalMachine.New(null, null);
             _file.Machine = machine1;
             _file.Machine = machine2;
 
@@ -222,7 +222,7 @@ namespace CPvC.Test
         public void Close()
         {
             // Setup
-            Machine machine1 = Machine.New(null, null);
+            LocalMachine machine1 = LocalMachine.New(null, null);
             MachineHistory history1 = new MachineHistory();
             _file.History = history1;
             machine1.Name = "Test";

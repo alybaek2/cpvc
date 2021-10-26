@@ -7,7 +7,7 @@ namespace CPvC.Test
     {
         Mock<IFileByteStream> _mockFileBytestream;
         Mock<IFileSystem> _mockFileSystem;
-        Machine _machine;
+        LocalMachine _machine;
         Mock<ISettings> _mockSettings;
         MainModel _mainModel;
 
@@ -18,7 +18,7 @@ namespace CPvC.Test
             _mockFileBytestream = new Mock<IFileByteStream>();
             _mockFileSystem = new Mock<IFileSystem>();
             _mockFileSystem.Setup(fs => fs.OpenFileByteStream("test.cpvc")).Returns(_mockFileBytestream.Object);
-            _machine = Machine.New("test", null);
+            _machine = LocalMachine.New("test", null);
             _mockSettings = new Mock<ISettings>();
             _mainModel = new MainModel(_mockSettings.Object, null);
         }

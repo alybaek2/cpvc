@@ -24,11 +24,11 @@ namespace CPvC
         private MachineHistory _machineHistory;
         private int _nextPersistentId;
 
-        private Machine _machine;
+        private LocalMachine _machine;
 
-        static private Dictionary<string, Machine> _machines = new Dictionary<string, Machine>();
+        static private Dictionary<string, LocalMachine> _machines = new Dictionary<string, LocalMachine>();
 
-        public Machine Machine
+        public LocalMachine Machine
         {
             set
             {

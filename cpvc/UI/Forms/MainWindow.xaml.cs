@@ -287,7 +287,7 @@ namespace CPvC.UI.Forms
 
         private HistoryEvent PromptForBookmark()
         {
-            Machine machine = _mainViewModel?.ActiveMachine as Machine;
+            LocalMachine machine = _mainViewModel?.ActiveMachine as LocalMachine;
 
             using (machine.AutoPause())
             {

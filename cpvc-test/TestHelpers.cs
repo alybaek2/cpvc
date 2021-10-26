@@ -352,7 +352,7 @@ namespace CPvC.Test
             return String.Format("{0}\\{1}", System.IO.Path.GetTempPath(), filename);
         }
 
-        static public Machine CreateTestMachine()
+        static public LocalMachine CreateTestMachine()
         {
             Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
             mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(AnyString()));
@@ -363,7 +363,7 @@ namespace CPvC.Test
 
             mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream("test.cpvc")).Returns(mockBinaryWriter.Object);
 
-            Machine machine = Machine.New("test", null);
+            LocalMachine machine = LocalMachine.New("test", null);
 
             // For consistency with automated builds, use all zero ROMs.
             byte[] zeroROM = new byte[0x4000];

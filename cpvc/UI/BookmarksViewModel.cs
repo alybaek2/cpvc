@@ -16,7 +16,7 @@ namespace CPvC.UI
     {
         public delegate void ItemSelectedDelegate();
 
-        private Machine _machine;
+        private LocalMachine _machine;
         private HistoryViewItem _selectedItem;
         private Display _display;
 
@@ -53,7 +53,7 @@ namespace CPvC.UI
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public BookmarksViewModel(Machine machine, ItemSelectedDelegate itemSelected)
+        public BookmarksViewModel(LocalMachine machine, ItemSelectedDelegate itemSelected)
         {
             _replayTimelineCommand = new Command(
                 p => ReplayTimeline(itemSelected),

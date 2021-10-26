@@ -8,7 +8,7 @@ namespace CPvC.UI.Forms
     /// </summary>
     public sealed partial class BookmarkSelectWindow : Window
     {
-        private readonly Machine _machine;
+        private readonly LocalMachine _machine;
         private BookmarksViewModel _viewModel;
 
         public HistoryEvent SelectedJumpEvent
@@ -27,7 +27,7 @@ namespace CPvC.UI.Forms
             }
         }
 
-        public BookmarkSelectWindow(Window owner, Machine machine)
+        public BookmarkSelectWindow(Window owner, LocalMachine machine)
         {
             InitializeComponent();
 

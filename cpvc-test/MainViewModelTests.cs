@@ -24,7 +24,7 @@ namespace CPvC.Test
         private MockFileByteStream _mockBinaryWriter;
 
         private MainViewModel _mainViewModel;
-        private Machine _machine;
+        private LocalMachine _machine;
 
         [SetUp]
         public void Setup()
@@ -52,7 +52,7 @@ namespace CPvC.Test
             //_mockSelectServerPort = new Mock<SelectServerPortDelegate>();
             //_mockSelectRemoveMachine = new Mock<SelectRemoteMachineDelegate>();
 
-            _machine = Machine.New("test", null);
+            _machine = LocalMachine.New("test", null);
             //_machineViewModel = new MachineViewModel(_machine, null, null, null, null, null, null, null);
             //_mainViewModel = new MainViewModel(null, null, null, null, null, null, null, null, null, null, null);
             //_mainViewModel.MachineViewModels.Add(_machineViewModel);
@@ -87,7 +87,7 @@ namespace CPvC.Test
 
             // Create a Replay machine.
             HistoryEvent historyEvent = null;
-            using (Machine machine = CreateTestMachine())
+            using (LocalMachine machine = CreateTestMachine())
             {
                 historyEvent = machine.History.CurrentEvent;
             }

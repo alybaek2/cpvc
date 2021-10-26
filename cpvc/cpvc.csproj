@@ -217,7 +217,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Miscellaneous\Helpers.cs" />
-    <Compile Include="Machine\Machine.cs" />
+    <Compile Include="Machine\LocalMachine.cs" />
     <Compile Include="Core\CoreRequest.cs" />
     <Compile Include="UI\Forms\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>

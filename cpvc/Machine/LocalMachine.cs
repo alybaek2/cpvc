@@ -12,10 +12,10 @@ namespace CPvC
     /// Represents a persistent instance of a CPvC machine.
     /// </summary>
     /// <remarks>
-    /// The Machine class, in addition to encapsulating a running Core object, also maintains a file which contains the state of the machine.
+    /// The LocalMachine class, in addition to encapsulating a running Core object, also maintains a file which contains the state of the machine.
     /// This allows a machine to be closed, and then resumed where it left off the next time it's opened.
     /// </remarks>
-    public sealed class Machine : CoreMachine,
+    public sealed class LocalMachine : CoreMachine,
         ICoreMachine,
         IInteractiveMachine,
         IBookmarkableMachine,
@@ -84,7 +84,7 @@ namespace CPvC
             }
         }
 
-        public Machine(string name)
+        public LocalMachine(string name)
         {
             _name = name;
 
@@ -134,9 +134,9 @@ namespace CPvC
             public HistoryEvent HistoryEvent { get; }
         }
 
-        static public Machine New(string name, MachineHistory history)
+        static public LocalMachine New(string name, MachineHistory history)
         {
-            Machine machine = new Machine(name);
+            LocalMachine machine = new LocalMachine(name);
             if (history != null)
             {
                 machine._history = history;
@@ -682,9 +682,9 @@ namespace CPvC
             }
         }
 
-        static public Machine OpenFromFile(IFileSystem fileSystem, string filepath)
+        static public LocalMachine OpenFromFile(IFileSystem fileSystem, string filepath)
         {
-            Machine machine = new Machine(null);
+            LocalMachine machine = new LocalMachine(null);
             machine.PersistantFilepath = filepath;
 
             machine.OpenFromFile(fileSystem);
@@ -718,7 +718,7 @@ namespace CPvC
             Display.EnableGreyscale(false);
         }
 
-        static public Machine Create(IFileSystem fileSystem, string filepath)
+        static public LocalMachine Create(IFileSystem fileSystem, string filepath)
         {
             using (IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(filepath))
             {
@@ -726,7 +726,7 @@ namespace CPvC
 
                 file.ReadFile(out string name, out MachineHistory history);
 
-                Machine machine = Machine.New(name, history);
+                LocalMachine machine = LocalMachine.New(name, history);
                 machine.PersistantFilepath = filepath;
 
                 if (history != null)

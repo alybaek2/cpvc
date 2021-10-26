@@ -28,13 +28,13 @@ namespace CPvC
 
         private void Machine_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(Machine.PersistantFilepath))
+            if (e.PropertyName == nameof(LocalMachine.PersistantFilepath))
             {
                 UpdateSettings();
             }
         }
 
-        public Machine AddMachine(string filepath, IFileSystem fileSystem, bool open)
+        public LocalMachine AddMachine(string filepath, IFileSystem fileSystem, bool open)
         {
             if (String.IsNullOrEmpty(filepath))
             {
@@ -45,14 +45,14 @@ namespace CPvC
             {
                 if (GetPersistedMachine(filepath) == null)
                 {
-                    Machine machine;
+                    LocalMachine machine;
                     if (open)
                     {
-                        machine = Machine.OpenFromFile(fileSystem, filepath);
+                        machine = LocalMachine.OpenFromFile(fileSystem, filepath);
                     }
                     else
                     {
-                        machine = Machine.Create(fileSystem, filepath);
+                        machine = LocalMachine.Create(fileSystem, filepath);
                     }
 
                     AddMachine(machine);

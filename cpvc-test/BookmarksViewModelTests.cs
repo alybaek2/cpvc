@@ -13,9 +13,9 @@ namespace CPvC.Test
     {
         private Mock<IFileSystem> _mockFileSystem;
 
-        private Machine CreateMachineWithHistory()
+        private LocalMachine CreateMachineWithHistory()
         {
-            Machine machine = Machine.New("test", null);
+            LocalMachine machine = LocalMachine.New("test", null);
             Run(machine, 100);
             machine.AddBookmark(false);
             Run(machine, 300);
@@ -62,7 +62,7 @@ namespace CPvC.Test
         public void SetSelectedItemNull()
         {
             // Setup
-            Machine machine = Machine.New("test", null);
+            LocalMachine machine = LocalMachine.New("test", null);
             RunForAWhile(machine);
             machine.AddBookmark(true);
             Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
@@ -85,7 +85,7 @@ namespace CPvC.Test
         public void SetSelectedItemCurrent()
         {
             // Setup
-            Machine machine = Machine.New("test", null);
+            LocalMachine machine = LocalMachine.New("test", null);
             RunForAWhile(machine);
             machine.AddBookmark(true);
             Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
@@ -112,7 +112,7 @@ namespace CPvC.Test
             // Setup
             Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
 
-            Machine machine = Machine.New("test", null);
+            LocalMachine machine = LocalMachine.New("test", null);
             RunForAWhile(machine);
             machine.AddBookmark(true);
             HistoryEvent bookmarkEvent = machine.History.CurrentEvent;
@@ -139,7 +139,7 @@ namespace CPvC.Test
         public void SetSelectedItemRoot()
         {
             // Setup
-            Machine machine = Machine.New("test", null);
+            LocalMachine machine = LocalMachine.New("test", null);
             RunForAWhile(machine);
             machine.AddBookmark(true);
             Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
@@ -164,7 +164,7 @@ namespace CPvC.Test
         public void SimpleHistory()
         {
             // Setup
-            Machine machine = Machine.New("test", null);
+            LocalMachine machine = LocalMachine.New("test", null);
             RunForAWhile(machine);
             machine.Key(Keys.A, true);
             RunForAWhile(machine);
@@ -188,7 +188,7 @@ namespace CPvC.Test
         public void SimpleBranchedHistory()
         {
             // Setup
-            Machine machine = Machine.New("test", null);
+            LocalMachine machine = LocalMachine.New("test", null);
             Run(machine, 100);
             machine.AddBookmark(false);
             HistoryEvent event100 = machine.History.CurrentEvent;
@@ -222,7 +222,7 @@ namespace CPvC.Test
         public void DeleteBookmark([Values(false, true)] bool nullSelectedItem)
         {
             // Setup
-            using (Machine machine = CreateMachineWithHistory())
+            using (LocalMachine machine = CreateMachineWithHistory())
             {
                 Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
                 BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
@@ -256,7 +256,7 @@ namespace CPvC.Test
         public void DeleteBranch([Values(false, true)] bool nullSelectedItem)
         {
             // Setup
-            using (Machine machine = CreateMachineWithHistory())
+            using (LocalMachine machine = CreateMachineWithHistory())
             {
                 Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
                 BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
@@ -286,7 +286,7 @@ namespace CPvC.Test
         public void JumpToBookmark([Values(false, true)] bool nullSelectedItem)
         {
             // Setup
-            using (Machine machine = CreateMachineWithHistory())
+            using (LocalMachine machine = CreateMachineWithHistory())
             {
                 Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
                 BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
@@ -306,7 +306,7 @@ namespace CPvC.Test
         public void ReplayTimeline([Values(false, true)] bool nullSelectedItem)
         {
             // Setup
-            using (Machine machine = CreateMachineWithHistory())
+            using (LocalMachine machine = CreateMachineWithHistory())
             {
                 Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
                 BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
