@@ -4,7 +4,7 @@ using System.ComponentModel;
 
 namespace CPvC
 {
-    public sealed class ReplayMachine : CoreMachine,
+    public sealed class ReplayMachine : Machine,
         IMachine,
         IPausableMachine,
         ITurboableMachine,

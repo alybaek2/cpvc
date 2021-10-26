@@ -11,7 +11,7 @@ namespace CPvC
         Reverse
     }
 
-    public abstract class CoreMachine
+    public abstract class Machine
     {
         protected Core _core;
         private string _status;
@@ -28,7 +28,7 @@ namespace CPvC
         /// </summary>
         private byte _volume;
 
-        public CoreMachine()
+        public Machine()
         {
             _autoPauseCount = 0;
             _runningState = RunningState.Paused;
@@ -239,9 +239,9 @@ namespace CPvC
         /// </summary>
         private class AutoPauser : IDisposable
         {
-            private readonly CoreMachine _machine;
+            private readonly Machine _machine;
 
-            public AutoPauser(CoreMachine machine)
+            public AutoPauser(Machine machine)
             {
                 _machine = machine;
                 _machine.IncrementAutoPause();

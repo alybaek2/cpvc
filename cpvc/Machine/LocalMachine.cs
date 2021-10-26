@@ -15,7 +15,7 @@ namespace CPvC
     /// The LocalMachine class, in addition to encapsulating a running Core object, also maintains a file which contains the state of the machine.
     /// This allows a machine to be closed, and then resumed where it left off the next time it's opened.
     /// </remarks>
-    public sealed class LocalMachine : CoreMachine,
+    public sealed class LocalMachine : Machine,
         IMachine,
         IInteractiveMachine,
         IBookmarkableMachine,
@@ -42,7 +42,7 @@ namespace CPvC
 
         private MachineHistory _history;
 
-        private int _snapshotLimit = 500;
+        private int _snapshotLimit = 3000;
         private int _lastTakenSnapshotId = -1;
         private List<SnapshotInfo> _snapshots;
 
