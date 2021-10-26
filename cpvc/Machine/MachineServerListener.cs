@@ -5,11 +5,11 @@ namespace CPvC
 {
     public class MachineServerListener
     {
-        private IEnumerable<ICoreMachine> _machines;
+        private IEnumerable<IMachine> _machines;
         private SocketServer _server;
         private List<MachineServerConnection> _connections;
 
-        public MachineServerListener(IEnumerable<ICoreMachine> machines)
+        public MachineServerListener(IEnumerable<IMachine> machines)
         {
             _machines = machines;
             _connections = new List<MachineServerConnection>();

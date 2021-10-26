@@ -34,10 +34,10 @@ namespace CPvC.Test
             mockResult.SetupGet(r => r.AsyncWaitHandle).Returns(e);
 
             Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-            Mock<ICoreMachine> mockMachine = new Mock<ICoreMachine>();
+            Mock<IMachine> mockMachine = new Mock<IMachine>();
             mockMachine.SetupGet(m => m.Core).Returns(core);
 
-            List<ICoreMachine> machines = new List<ICoreMachine> { mockMachine.Object };
+            List<IMachine> machines = new List<IMachine> { mockMachine.Object };
 
             MachineServerListener listener = new MachineServerListener(machines);
             Mock<ISocket> mockSocketListener = new Mock<ISocket>();

@@ -141,7 +141,7 @@ namespace CPvC
             _removeCommand = new Command(
                 p =>
                 {
-                    ICoreMachine coreMachine = (ICoreMachine)p;
+                    IMachine coreMachine = (IMachine)p;
                     if (Close(coreMachine))
                     {
                         _model.RemoveMachine(coreMachine);
@@ -157,7 +157,7 @@ namespace CPvC
             _closeCommand = new Command(
                 p =>
                 {
-                    Close((ICoreMachine)p);
+                    Close((IMachine)p);
                 },
                 p =>
                 {
@@ -268,8 +268,8 @@ namespace CPvC
             );
 
             _renameCommand = new Command(
-                p => RenameMachine(p as ICoreMachine),
-                p => p is ICoreMachine
+                p => RenameMachine(p as IMachine),
+                p => p is IMachine
             );
 
             _seekToNextBookmarkCommand = new Command(
@@ -317,7 +317,7 @@ namespace CPvC
             }
         }
 
-        public ReadOnlyObservableCollection<ICoreMachine> Machines
+        public ReadOnlyObservableCollection<IMachine> Machines
         {
             get
             {
@@ -493,11 +493,11 @@ namespace CPvC
             }
         }
 
-        public ICoreMachine ActiveMachine
+        public IMachine ActiveMachine
         {
             get
             {
-                return _activeItem as ICoreMachine;
+                return _activeItem as IMachine;
             }
 
             set
@@ -528,7 +528,7 @@ namespace CPvC
             machine.Start();
         }
 
-        public ICoreMachine OpenMachine(string filepath, IFileSystem fileSystem)
+        public IMachine OpenMachine(string filepath, IFileSystem fileSystem)
         {
             if (filepath == null)
             {
@@ -546,7 +546,7 @@ namespace CPvC
             }
 
             string fullFilepath = System.IO.Path.GetFullPath(filepath);
-            ICoreMachine machine = Machines.FirstOrDefault(
+            IMachine machine = Machines.FirstOrDefault(
                 m =>
                 {
                     if (m is IPersistableMachine pm)
@@ -568,14 +568,14 @@ namespace CPvC
         {
             lock (Machines)
             {
-                foreach (ICoreMachine machine in Machines)
+                foreach (IMachine machine in Machines)
                 {
                     Close(machine);
                 }
             }
         }
 
-        public bool Close(ICoreMachine coreMachine)
+        public bool Close(IMachine coreMachine)
         {
             if (coreMachine != null)
             {
@@ -604,7 +604,7 @@ namespace CPvC
             {
                 int samplesWritten = 0;
 
-                foreach (ICoreMachine machine in Machines)
+                foreach (IMachine machine in Machines)
                 {
                     if (machine == null)
                     {
@@ -774,7 +774,7 @@ namespace CPvC
             }
         }
 
-        private void RenameMachine(ICoreMachine machine)
+        private void RenameMachine(IMachine machine)
         {
             if (machine == null)
             {

@@ -4,7 +4,7 @@ using System.ComponentModel;
 namespace CPvC
 {
     public sealed class RemoteMachine : CoreMachine,
-        ICoreMachine,
+        IMachine,
         IInteractiveMachine,
         INotifyPropertyChanged,
         IDisposable

@@ -16,7 +16,7 @@ namespace CPvC
     /// This allows a machine to be closed, and then resumed where it left off the next time it's opened.
     /// </remarks>
     public sealed class LocalMachine : CoreMachine,
-        ICoreMachine,
+        IMachine,
         IInteractiveMachine,
         IBookmarkableMachine,
         IJumpableMachine,

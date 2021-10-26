@@ -703,7 +703,7 @@ namespace CPvC.Test
         public void OpenNonPersistableMachine()
         {
             // Setup
-            Mock<ICoreMachine> mockCoreMachine = new Mock<ICoreMachine>();
+            Mock<IMachine> mockCoreMachine = new Mock<IMachine>();
 
             // Act
             _mainViewModel.OpenCommand.Execute(mockCoreMachine.Object);

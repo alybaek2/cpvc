@@ -149,7 +149,7 @@
     <Compile Include="Miscellaneous\IBlob.cs" />
     <Compile Include="Machine\Interfaces\IBookmarkableMachine.cs" />
     <Compile Include="Machine\Interfaces\IInteractiveMachine.cs" />
-    <Compile Include="Machine\Interfaces\ICoreMachine.cs" />
+    <Compile Include="Machine\Interfaces\IMachine.cs" />
     <Compile Include="Machine\Interfaces\IPausableMachine.cs" />
     <Compile Include="Machine\Interfaces\ICompactableMachine.cs" />
     <Compile Include="Machine\Interfaces\IPrerecordedMachine.cs" />

@@ -1,6 +1,6 @@
 ﻿namespace CPvC
 {
-    public interface IPausableMachine : ICoreMachine
+    public interface IPausableMachine : IMachine
     {
         void Start();
         void Stop();

@@ -1,6 +1,6 @@
 ﻿namespace CPvC
 {
-    public interface IJumpableMachine : ICoreMachine
+    public interface IJumpableMachine : IMachine
     {
         void JumpToMostRecentBookmark();
         void JumpToBookmark(HistoryEvent bookmarkEvent);

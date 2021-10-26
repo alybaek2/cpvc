@@ -379,7 +379,7 @@ namespace CPvC.UI.Forms
 
         private void MachinePreviewGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is ICoreMachine machine)
+            if (sender is FrameworkElement element && element.DataContext is IMachine machine)
             {
                 try
                 {
@@ -395,7 +395,7 @@ namespace CPvC.UI.Forms
 
         private void ScreenGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is ICoreMachine machine)
+            if (sender is FrameworkElement element && element.DataContext is IMachine machine)
             {
                 _mainViewModel.ToggleRunningCommand.Execute(machine);
             }

@@ -13,15 +13,15 @@ namespace CPvC
     {
         private readonly ISettings _settings;
 
-        private ObservableCollection<ICoreMachine> _machines = new ObservableCollection<ICoreMachine>();
+        private ObservableCollection<IMachine> _machines = new ObservableCollection<IMachine>();
 
-        public ReadOnlyObservableCollection<ICoreMachine> Machines { get; }
+        public ReadOnlyObservableCollection<IMachine> Machines { get; }
 
         public MainModel(ISettings settings, IFileSystem fileSystem)
         {
             _settings = settings;
 
-            Machines = new ReadOnlyObservableCollection<ICoreMachine>(_machines);
+            Machines = new ReadOnlyObservableCollection<IMachine>(_machines);
 
             LoadFromSettings(fileSystem);
         }
@@ -64,7 +64,7 @@ namespace CPvC
             return null;
         }
 
-        public void AddMachine(ICoreMachine machine)
+        public void AddMachine(IMachine machine)
         {
             lock (_machines)
             {
@@ -74,7 +74,7 @@ namespace CPvC
             }
         }
 
-        public void RemoveMachine(ICoreMachine machine)
+        public void RemoveMachine(IMachine machine)
         {
             lock (_machines)
             {
@@ -93,7 +93,7 @@ namespace CPvC
 
             lock (Machines)
             {
-                foreach (ICoreMachine machine in _machines)
+                foreach (IMachine machine in _machines)
                 {
                     IPersistableMachine pm = machine as IPersistableMachine;
                     if (pm == null || pm.PersistantFilepath == null)
@@ -136,7 +136,7 @@ namespace CPvC
             }
         }
 
-        private ICoreMachine GetPersistedMachine(string filepath)
+        private IMachine GetPersistedMachine(string filepath)
         {
             return _machines.FirstOrDefault(
                 m => {

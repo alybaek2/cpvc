@@ -3,7 +3,7 @@ using System.ComponentModel;
 
 namespace CPvC
 {
-    public interface ICoreMachine : INotifyPropertyChanged
+    public interface IMachine : INotifyPropertyChanged
     {
         Core Core { get; set; }
 
