@@ -209,97 +209,97 @@ namespace CPvC
 
             _resetCommand = new Command(
                 p => (p as IInteractiveMachine)?.Reset(),
-                p => (p as IInteractiveMachine) != null
+                p => p is IInteractiveMachine
             );
 
             _driveACommand = new Command(
                 p => LoadDisc(p as IInteractiveMachine, 0, fileSystem),
-                p => (p as IInteractiveMachine) != null
+                p => p is IInteractiveMachine
             );
 
             _driveAEjectCommand = new Command(
                 p => (p as IInteractiveMachine)?.LoadDisc(0, null),
-                p => (p as IInteractiveMachine) != null
+                p => p is IInteractiveMachine
             );
 
             _driveBCommand = new Command(
                 p => LoadDisc(p as IInteractiveMachine, 1, fileSystem),
-                p => (p as IInteractiveMachine) != null
+                p => p is IInteractiveMachine
             );
 
             _driveBEjectCommand = new Command(
                 p => (p as IInteractiveMachine)?.LoadDisc(1, null),
-                p => (p as IInteractiveMachine) != null
+                p => p is IInteractiveMachine
             );
 
             _tapeCommand = new Command(
                 p => LoadTape(p as IInteractiveMachine, fileSystem),
-                p => (p as IInteractiveMachine) != null
+                p => p is IInteractiveMachine
             );
 
             _tapeEjectCommand = new Command(
                 p => (p as IInteractiveMachine)?.LoadTape(null),
-                p => (p as IInteractiveMachine) != null
+                p => p is IInteractiveMachine
             );
 
             _toggleRunningCommand = new Command(
                 p => (p as IPausableMachine)?.ToggleRunning(),
-                p => (p as IPausableMachine) != null
+                p => p is IPausableMachine
             );
 
             _addBookmarkCommand = new Command(
                 p => (p as IBookmarkableMachine)?.AddBookmark(false),
-                p => (p as IBookmarkableMachine) != null
+                p => p is IBookmarkableMachine
             );
 
             _jumpToMostRecentBookmarkCommand = new Command(
                 p => (p as IJumpableMachine)?.JumpToMostRecentBookmark(),
-                p => (p as IJumpableMachine) != null
+                p => p is IJumpableMachine
             );
 
             _browseBookmarksCommand = new Command(
                 p => SelectBookmark(p as IJumpableMachine),
-                p => (p as IJumpableMachine) != null
+                p => p is IJumpableMachine
             );
 
             _compactCommand = new Command(
                 p => (p as ICompactableMachine)?.Compact(fileSystem, false),
-                p => (p as ICompactableMachine) != null
+                p => p is ICompactableMachine
             );
 
             _renameCommand = new Command(
                 p => RenameMachine(p as ICoreMachine),
-                p => p != null
+                p => p is ICoreMachine
             );
 
             _seekToNextBookmarkCommand = new Command(
                 p => (p as IPrerecordedMachine)?.SeekToNextBookmark(),
-                p => (p as IPrerecordedMachine) != null
+                p => p is IPrerecordedMachine
             );
 
             _seekToPrevBookmarkCommand = new Command(
                 p => (p as IPrerecordedMachine)?.SeekToPreviousBookmark(),
-                p => (p as IPrerecordedMachine) != null
+                p => p is IPrerecordedMachine
             );
 
             _seekToStartCommand = new Command(
                 p => (p as IPrerecordedMachine)?.SeekToStart(),
-                p => (p as IPrerecordedMachine) != null
+                p => p is IPrerecordedMachine
             );
 
             _reverseStartCommand = new Command(
                 p => (p as IReversibleMachine)?.Reverse(),
-                p => (p as IReversibleMachine) != null
+                p => p is IReversibleMachine
             );
 
             _reverseStopCommand = new Command(
                 p => (p as IReversibleMachine)?.ReverseStop(),
-                p => (p as IReversibleMachine) != null
+                p => p is IReversibleMachine
             );
 
             _toggleSnapshotCommand = new Command(
                 p => (p as IReversibleMachine)?.ToggleReversibilityEnabled(),
-                p => (p as IReversibleMachine) != null
+                p => p is IReversibleMachine
             );
 
         }
