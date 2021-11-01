@@ -644,7 +644,7 @@ namespace CPvC
                 return;
             }
 
-            using (machine.AutoPause())
+            using ((machine as IPausableMachine)?.AutoPause())
             {
                 byte[] image = PromptForMedia(true, fileSystem);
                 if (image != null)
@@ -661,7 +661,7 @@ namespace CPvC
                 return;
             }
 
-            using (machine.AutoPause())
+            using ((machine as IPausableMachine)?.AutoPause())
             {
                 byte[] image = PromptForMedia(false, fileSystem);
                 if (image != null)
@@ -753,14 +753,14 @@ namespace CPvC
             machine.Persist(fileSystem, filepath);
         }
 
-        private void SelectBookmark(IJumpableMachine machine)
+        private void SelectBookmark(IJumpableMachine jumpableMachine)
         {
-            if (machine == null)
+            if (jumpableMachine == null)
             {
                 return;
             }
 
-            using (machine.AutoPause())
+            using ((jumpableMachine as IPausableMachine)?.AutoPause())
             {
                 PromptForBookmarkEventArgs args = new PromptForBookmarkEventArgs();
                 PromptForBookmark?.Invoke(this, args);
@@ -768,8 +768,11 @@ namespace CPvC
                 HistoryEvent historyEvent = args.SelectedBookmark;
                 if (historyEvent != null)
                 {
-                    machine.JumpToBookmark(historyEvent);
-                    machine.Status = String.Format("Jumped to {0}", Helpers.GetTimeSpanFromTicks(historyEvent.Ticks).ToString(@"hh\:mm\:ss"));
+                    jumpableMachine.JumpToBookmark(historyEvent);
+                    if (jumpableMachine is IMachine machine)
+                    {
+                        machine.Status = String.Format("Jumped to {0}", Helpers.GetTimeSpanFromTicks(historyEvent.Ticks).ToString(@"hh\:mm\:ss"));
+                    }
                 }
             }
         }
@@ -781,7 +784,7 @@ namespace CPvC
                 return;
             }
 
-            using (machine.AutoPause())
+            using ((machine as IPausableMachine)?.AutoPause())
             {
                 PromptForNameEventArgs args = new PromptForNameEventArgs();
                 PromptForName?.Invoke(this, args);

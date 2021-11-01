@@ -17,7 +17,6 @@ namespace CPvC
         string Status { get; set; }
 
         string Name { get; set; }
-        IDisposable AutoPause();
 
         void Close();
 

@@ -60,6 +60,7 @@ namespace CPvC
                 if (_file != value)
                 {
                     _file = value;
+                    OnPropertyChanged();
                     OnPropertyChanged(nameof(IsOpen));
                 }
             }

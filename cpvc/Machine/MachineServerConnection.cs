@@ -45,7 +45,7 @@ namespace CPvC
             _machine = machine;
             if (_machine != null)
             {
-                using (machine.AutoPause())
+                using ((machine as IPausableMachine)?.AutoPause())
                 {
                     byte[] state = _machine.Core.GetState();
 

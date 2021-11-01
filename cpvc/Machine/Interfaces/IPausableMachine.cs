@@ -1,4 +1,6 @@
-﻿namespace CPvC
+﻿using System;
+
+namespace CPvC
 {
     public interface IPausableMachine : IMachine
     {
@@ -7,5 +9,6 @@
         bool CanStart { get; }
         bool CanStop { get; }
         void ToggleRunning();
+        IDisposable AutoPause();
     }
 }
