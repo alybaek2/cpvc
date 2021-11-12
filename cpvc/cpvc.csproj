@@ -123,6 +123,7 @@
     <Compile Include="Events\PromptForFileEvent.cs" />
     <Compile Include="IO\ITextFile.cs" />
     <Compile Include="IO\TextFile.cs" />
+    <Compile Include="Machine\CompactedMachineFile.cs" />
     <Compile Include="Machine\Machine.cs" />
     <Compile Include="Core\ICore.cs" />
     <Compile Include="IO\FileByteStream.cs" />

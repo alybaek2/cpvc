@@ -24,6 +24,7 @@ namespace CPvC
             Children = new List<HistoryNode>();
         }
 
+        // Do we need a HistoryNodeType, perhaps? Type can only be AddCoreAction or AddBookmark.
         public HistoryEventType Type;
         public UInt64 Ticks;
         public CoreAction CoreAction;
@@ -357,44 +358,47 @@ namespace CPvC
             SetCurrentNode(historyEvent._historyNode);
         }
 
-        public void CopyTo(MachineHistory newHistory)
+
+        public void Write(CompactedMachineFile machineFile)
         {
             // As the history tree could be very deep, keep a "stack" of history events in order to avoid recursive calls.
             List<HistoryNode> historyNodes = new List<HistoryNode>();
             historyNodes.AddRange(_rootNode.Children);
 
-            HistoryNode newCurrentNode = null;
+            int? newCurrentNodeId = null;
 
-            Dictionary<HistoryNode, HistoryNode> nodeMap = new Dictionary<HistoryNode, HistoryNode>();
+            int persistentId = 0;
+
+            Dictionary<HistoryNode, int> nodeIds = new Dictionary<HistoryNode, int>();
 
             HistoryNode previousNode = null;
             while (historyNodes.Count > 0)
             {
+                int currentPersistentId = persistentId;
                 HistoryNode currentNode = historyNodes[0];
+                nodeIds[currentNode] = currentPersistentId;
+                persistentId++;
 
                 if (previousNode != currentNode.Parent && previousNode != null)
                 {
-                    newHistory.SetCurrentNode(nodeMap[currentNode.Parent]);
+                    machineFile.WriteCurrent(nodeIds[currentNode.Parent]);
                 }
 
-                HistoryEvent newEvent;
                 switch (currentNode.Type)
                 {
                     case HistoryEventType.AddCoreAction:
-                        newEvent = newHistory.AddCoreAction(currentNode.CoreAction);
+                        machineFile.WriteCoreAction(currentPersistentId, currentNode.Ticks, currentNode.CoreAction);
                         break;
                     case HistoryEventType.AddBookmark:
-                        newEvent = newHistory.AddBookmark(currentNode.Ticks, currentNode.Bookmark);
+                        machineFile.WriteAddBookmark(currentPersistentId, currentNode.Ticks, currentNode.Bookmark);
                         break;
                     default:
                         throw new Exception("Unexpected node type!");
                 }
 
-                nodeMap[currentNode] = newEvent._historyNode;
-
                 if (currentNode == _currentNode)
                 {
-                    newCurrentNode = newEvent._historyNode;
+                    newCurrentNodeId = currentPersistentId;
                 }
 
                 historyNodes.RemoveAt(0);
@@ -404,9 +408,9 @@ namespace CPvC
                 historyNodes.InsertRange(0, currentNode.Children);
             }
 
-            if (newCurrentNode != null)
+            if (newCurrentNodeId != null)
             {
-                newHistory.SetCurrentNode(newCurrentNode);
+                machineFile.WriteCurrent(newCurrentNodeId.Value);
             }
         }
 

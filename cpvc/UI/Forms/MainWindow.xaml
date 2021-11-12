@@ -300,6 +300,7 @@
                                                                     <MenuItem Header="Close" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.CloseCommand}" CommandParameter="{Binding}"/>
                                                                     <MenuItem Header="Persist" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.PersistCommand}" CommandParameter="{Binding}"/>
                                                                     <MenuItem Header="Remove" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.RemoveCommand}" CommandParameter="{Binding}"/>
+                                                                    <MenuItem Header="Compact" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.CompactCommand}" CommandParameter="{Binding}"/>
                                                                 </ContextMenu>
                                                             </Grid.ContextMenu>
                                                             <StackPanel Margin="5">

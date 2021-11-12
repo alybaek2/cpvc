@@ -70,5 +70,10 @@ namespace CPvC
             _fileStream?.Close();
             _fileStream = null;
         }
+
+        public void SeekToEnd()
+        {
+            _fileStream.Seek(0, System.IO.SeekOrigin.End);
+        }
     }
 }

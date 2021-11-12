@@ -157,12 +157,27 @@ namespace CPvC
 
         static public string StrFromBytes(byte[] bytes)
         {
-            return Convert.ToBase64String(bytes);
+            StringWriter strw = new StringWriter();
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                strw.Write(String.Format("{0:X2}", bytes[i]));
+            }
+
+            return strw.ToString();
         }
 
         static public byte[] BytesFromStr(string str)
         {
-            return Convert.FromBase64String(str);
+            byte[] bytes = new byte[str.Length / 2];
+
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                string h = str.Substring(i * 2, 2);
+                byte b = System.Convert.ToByte(h, 16);
+                bytes[i] = b;
+            }
+
+            return bytes;
         }
     }
 }

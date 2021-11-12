@@ -25,6 +25,11 @@ namespace CPvC.Test
         public void Dispose()
         {
         }
+
+        public void SeekToEnd()
+        {
+            Position = Length;
+        }
     }
 
     public class MachineFileTests

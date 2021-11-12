@@ -264,7 +264,7 @@ namespace CPvC
 
             _compactCommand = new Command(
                 p => (p as ICompactableMachine)?.Compact(fileSystem, false),
-                p => p is ICompactableMachine
+                p => (p as ICompactableMachine)?.CanCompact() ?? false
             );
 
             _renameCommand = new Command(
@@ -747,6 +747,8 @@ namespace CPvC
             }
 
             PromptForFileEventArgs args = new PromptForFileEventArgs();
+            args.FileType = FileTypes.Machine;
+            args.Existing = false;
             PromptForFile?.Invoke(this, args);
 
             string filepath = args.Filepath;

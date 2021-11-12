@@ -496,58 +496,35 @@ namespace CPvC
         /// 
         public void Compact(IFileSystem fileSystem, bool diffsEnabled)
         {
-            throw new Exception("Need to re-implement!");
+            // Only allow closed machines to compact!
+            if (!CanCompact())
+            {
+                throw new Exception("Can't compact an open machine!");
+            }
 
-            // 2nd attempt at compacting... Need to rethink how compacting is done...
-            //using (AutoPause())
-            //{
-            //    // Do we need a stronger lock here?
-            //    string oldFilepath = PersistantFilepath;
-            //    MachineFile oldFile = File;
+            string oldFilepath = PersistantFilepath;
+            string newFilepath = oldFilepath + ".tmp";
 
-            //    string newFilepath = oldFilepath + ".tmp";
-            //    File = null;
-            //    PersistantFilepath = newFilepath;
-            //    Persist(fileSystem, newFilepath);
+            string name;
+            MachineHistory history;
 
-            //    oldFile.Close();
-            //    File.Close();
+            using (IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(oldFilepath))
+            using (MachineFile m = new MachineFile(fileByteStream))
+            {
+                m.ReadFile(out name, out history);
+            }
 
-            //    fileSystem.ReplaceFile(oldFilepath, newFilepath);
+            CompactedMachineFile machineFile = new CompactedMachineFile();
+            history.Write(machineFile);
+            machineFile.WriteName(name);
+            machineFile.Save(newFilepath);
 
-            //    IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(oldFilepath);
-            //    File = new MachineFile(fileByteStream);
-            //    PersistantFilepath = oldFilepath;
+            fileSystem.ReplaceFile(oldFilepath, newFilepath);
+        }
 
-            //    // Probably should just seek to the end of the file...
-            //    File.ReadFile(out _, out _);                
-            //}
-
-            // Original compacting...
-            //using (AutoPause())
-            //{
-            //    Machine machine = new Machine(String.Empty, String.Empty, null);
-            //    MachineHistory newHistory = new MachineHistory();
-
-            //    string tempname = Filepath + ".new";
-
-            //    MachineFile tempfile = null;
-            //    try
-            //    {
-            //        tempfile = new MachineFile(_fileSystem, tempname);
-            //        tempfile.DiffsEnabled = diffsEnabled;
-            //        tempfile.SetMachine(machine);
-            //        tempfile.SetMachineHistory(newHistory);
-
-            //        machine.Name = _name;
-            //        _history.Copy(newHistory);
-            //    }
-            //    finally
-            //    {
-            //        tempfile?.Close();
-            //    }
-
-            //    _file.Close();
+        public bool CanCompact()
+        {
+            return !IsOpen && PersistantFilepath != null;
         }
 
         private HistoryEvent AddCheckpointWithBookmarkEvent(bool system)
@@ -667,17 +644,18 @@ namespace CPvC
                     throw new ArgumentException("Invalid filepath.");
                 }
 
+                CompactedMachineFile machineFile = new CompactedMachineFile();
+                History.Write(machineFile);
+                machineFile.WriteName(Name);
+                machineFile.Save(filepath);
+
                 IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(filepath);
+                fileByteStream.SeekToEnd();
                 File = new MachineFile(fileByteStream);
 
-                File.History = new MachineHistory();
-                History.CopyTo(File.History);
                 File.History = History;
-
                 File.Machine = this;
                 PersistantFilepath = filepath;
-
-                File.WriteName(Name);
 
                 return true;
             }
