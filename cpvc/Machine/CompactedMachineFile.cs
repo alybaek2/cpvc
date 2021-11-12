@@ -21,6 +21,14 @@ namespace CPvC
             _nextBlobId = 0;
         }
 
+        static public void Write(string filepath, string name, MachineHistory history)
+        {
+            CompactedMachineFile machineFile = new CompactedMachineFile();
+            history.Write(machineFile);
+            machineFile.WriteName(name);
+            machineFile.Save(filepath);
+        }
+
         public void Save(string filepath)
         {
             if (_blobCommands.Count == 0)
