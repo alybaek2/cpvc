@@ -358,62 +358,6 @@ namespace CPvC
             SetCurrentNode(historyEvent._historyNode);
         }
 
-
-        public void Write(CompactedMachineFile machineFile)
-        {
-            // As the history tree could be very deep, keep a "stack" of history events in order to avoid recursive calls.
-            List<HistoryNode> historyNodes = new List<HistoryNode>();
-            historyNodes.AddRange(_rootNode.Children);
-
-            int? newCurrentNodeId = null;
-
-            int persistentId = 0;
-
-            Dictionary<HistoryNode, int> nodeIds = new Dictionary<HistoryNode, int>();
-
-            HistoryNode previousNode = null;
-            while (historyNodes.Count > 0)
-            {
-                int currentPersistentId = persistentId;
-                HistoryNode currentNode = historyNodes[0];
-                nodeIds[currentNode] = currentPersistentId;
-                persistentId++;
-
-                if (previousNode != currentNode.Parent && previousNode != null)
-                {
-                    machineFile.WriteCurrent(nodeIds[currentNode.Parent]);
-                }
-
-                switch (currentNode.Type)
-                {
-                    case HistoryEventType.AddCoreAction:
-                        machineFile.WriteCoreAction(currentPersistentId, currentNode.Ticks, currentNode.CoreAction);
-                        break;
-                    case HistoryEventType.AddBookmark:
-                        machineFile.WriteAddBookmark(currentPersistentId, currentNode.Ticks, currentNode.Bookmark);
-                        break;
-                    default:
-                        throw new Exception("Unexpected node type!");
-                }
-
-                if (currentNode == _currentNode)
-                {
-                    newCurrentNodeId = currentPersistentId;
-                }
-
-                historyNodes.RemoveAt(0);
-                previousNode = currentNode;
-
-                // Place the current event's children at the top of the "stack". This effectively means we're doing a depth-first traversion of the history tree.
-                historyNodes.InsertRange(0, currentNode.Children);
-            }
-
-            if (newCurrentNodeId != null)
-            {
-                machineFile.WriteCurrent(newCurrentNodeId.Value);
-            }
-        }
-
         // Browsing methods
         public HistoryEvent RootEvent
         {

@@ -709,10 +709,7 @@ namespace CPvC
 
         private void WriteReset(int id, UInt64 ticks)
         {
-            string str = String.Format("reset:{0},{1}",
-                id,
-                ticks
-                );
+            string str = ResetCommand(id, ticks);
 
             WriteLine(str);
         }
