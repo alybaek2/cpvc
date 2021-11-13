@@ -514,7 +514,7 @@ namespace CPvC
                 m.ReadFile(out name, out history);
             }
 
-            CompactedMachineFile.Write(newFilepath, name, history);
+            MachineFile.Write(newFilepath, name, history);
 
             fileSystem.ReplaceFile(oldFilepath, newFilepath);
         }
@@ -641,7 +641,7 @@ namespace CPvC
                     throw new ArgumentException("Invalid filepath.");
                 }
 
-                CompactedMachineFile.Write(filepath, Name, History);
+                MachineFile.Write(filepath, Name, History);
 
                 IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(filepath);
                 fileByteStream.SeekToEnd();
