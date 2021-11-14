@@ -120,7 +120,7 @@ namespace CPvC.UI
                     {
                         bitmap = _machine.Display.Bitmap;
                     }
-                    else if (historyEvent.Type == HistoryEventType.AddBookmark && historyEvent.Bookmark != null)
+                    else if (historyEvent.Type == HistoryEventType.Bookmark && historyEvent.Bookmark != null)
                     {
                         _display.GetFromBookmark(historyEvent.Bookmark);
 
@@ -145,7 +145,7 @@ namespace CPvC.UI
                 return true;
             }
 
-            if (historyEvent.Type == HistoryEventType.AddBookmark && historyEvent.Bookmark != null)
+            if (historyEvent.Type == HistoryEventType.Bookmark && historyEvent.Bookmark != null)
             {
                 return true;
             }

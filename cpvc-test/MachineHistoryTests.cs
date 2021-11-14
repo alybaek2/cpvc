@@ -40,7 +40,7 @@ namespace CPvC.Test
             MachineHistory history = new MachineHistory();
 
             // Verify
-            Assert.AreEqual(HistoryEventType.None, history.RootEvent.Type);
+            Assert.AreEqual(HistoryEventType.Root, history.RootEvent.Type);
         }
 
         [Test]
@@ -114,7 +114,7 @@ namespace CPvC.Test
 
             // Verify
             Assert.AreEqual(event3, history.CurrentEvent);
-            Assert.AreEqual(HistoryEventType.AddBookmark, event3.Type);
+            Assert.AreEqual(HistoryEventType.Bookmark, event3.Type);
         }
 
         //[Test]

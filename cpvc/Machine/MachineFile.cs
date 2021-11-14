@@ -22,7 +22,6 @@ namespace CPvC
         private const string _idCompound = "compound";
 
         private Dictionary<HistoryEvent, int> _historyEventToId;
-        private Dictionary<int, HistoryEvent> _idToHistoryEvent;
         private MachineHistory _machineHistory;
         private int _nextPersistentId;
         private int _nextBlob;
@@ -83,15 +82,14 @@ namespace CPvC
         public MachineFile(IFileByteStream byteStream) : base(byteStream)
         {
             _historyEventToId = new Dictionary<HistoryEvent, int>();
-            _idToHistoryEvent = new Dictionary<int, HistoryEvent>();
             _nextPersistentId = 0;
             _nextBlob = 0;
         }
 
-        private void HistoryEventHappened(HistoryEvent historyEvent, UInt64 ticks, HistoryEventType type, CoreAction coreAction, Bookmark bookmark)
+        private void HistoryEventHappened(HistoryEvent historyEvent, UInt64 ticks, HistoryChangedAction changeAction, CoreAction coreAction, Bookmark bookmark)
         {
             List<string> lines = new List<string>();
-            GetLines(historyEvent, type, ref _nextPersistentId, ref _nextBlob, lines, _historyEventToId, _idToHistoryEvent);
+            GetLines(historyEvent, changeAction, ref _nextPersistentId, ref _nextBlob, lines, _historyEventToId);
 
             foreach (string line in lines)
             {
@@ -271,43 +269,49 @@ namespace CPvC
             return lineId;
         }
 
-        static public void GetLines(HistoryEvent historyEvent, HistoryEventType type, ref int nextLineId, ref int nextBlobId, List<string> lines, Dictionary<HistoryEvent, int> historyEventIds, Dictionary<int, HistoryEvent> idHistoryEvents)
+        static public void GetLines(HistoryEvent historyEvent, HistoryChangedAction changeType, ref int nextLineId, ref int nextBlobId, List<string> lines, Dictionary<HistoryEvent, int> historyEventIds)
         {
-            switch (type)
+            switch (changeType)
             {
-                case HistoryEventType.AddBookmark:
+                case HistoryChangedAction.Add:
                     {
-                        int lineId = GetLines(historyEvent.Bookmark, historyEvent.Ticks, ref nextLineId, ref nextBlobId, lines);
+                        int lineId;
+                        switch (historyEvent.Type)
+                        {
+                            case HistoryEventType.Bookmark:
+                                lineId = GetLines(historyEvent.Bookmark, historyEvent.Ticks, ref nextLineId, ref nextBlobId, lines);
+                                break;
+                            case HistoryEventType.CoreAction:
+                                lineId = GetLines(historyEvent.CoreAction, ref nextLineId, ref nextBlobId, lines);
+                                break;
+                            default:
+                                throw new ArgumentException("Unknown history event type!", "historyEvent.Type");
+                        }
 
                         historyEventIds[historyEvent] = lineId;
-                        idHistoryEvents[lineId] = historyEvent;
                     }
                     break;
-                case HistoryEventType.AddCoreAction:
+                case HistoryChangedAction.Delete:
                     {
-                        int lineId = GetLines(historyEvent.CoreAction, ref nextLineId, ref nextBlobId, lines);
+                        int lineId = historyEventIds[historyEvent];
 
-                        historyEventIds[historyEvent] = lineId;
-                        idHistoryEvents[lineId] = historyEvent;
-                    }
-                    break;
-                case HistoryEventType.DeleteEventAndChildren:
-                    {
-                        int persistentId = historyEventIds[historyEvent];
+                        lines.Add(DeleteEventCommand(lineId));
 
-                        lines.Add(DeleteEventAndChildrenCommand(persistentId));
+                        // Should we remove the id from the maps?
                     }
                     break;
-                case HistoryEventType.DeleteEvent:
+                case HistoryChangedAction.DeleteRecursive:
                     {
-                        int persistentId = historyEventIds[historyEvent];
+                        int LineId = historyEventIds[historyEvent];
 
-                        lines.Add(DeleteEventCommand(persistentId));
+                        lines.Add(DeleteEventAndChildrenCommand(LineId));
+
+                        // Should we remove the id from the maps?
                     }
                     break;
-                case HistoryEventType.SetCurrent:
+                case HistoryChangedAction.SetCurrent:
                     {
-                        if (historyEvent.Parent == null)
+                        if (historyEvent.Type == HistoryEventType.Root)
                         {
                             lines.Add(CurrentRootCommand());
                         }
@@ -320,7 +324,7 @@ namespace CPvC
                     }
                     break;
                 default:
-                    throw new ArgumentException("Unknown history type!", nameof(historyEvent.Type));
+                    throw new ArgumentException("Unknown history action type!", nameof(changeType));
             }
         }
 
@@ -356,10 +360,10 @@ namespace CPvC
 
                 switch (currentEvent.Type)
                 {
-                    case HistoryEventType.AddCoreAction:
+                    case HistoryEventType.CoreAction:
                         GetLines(currentEvent.CoreAction, ref nextLineId, ref nextBlodId, lines);
                         break;
-                    case HistoryEventType.AddBookmark:
+                    case HistoryEventType.Bookmark:
                         GetLines(currentEvent.Bookmark, currentEvent.Ticks, ref nextLineId, ref nextBlodId, lines);
                         break;
                     default:
@@ -412,28 +416,10 @@ namespace CPvC
             System.IO.File.WriteAllLines(filepath, lines);
         }
 
-        private void WriteDeleteEvent(int persistentId)
-        {
-            WriteLine(DeleteEventCommand(persistentId));
-        }
-
-        private void WriteDeleteEventAndChildren(int persistentId)
-        {
-            WriteLine(DeleteEventAndChildrenCommand(persistentId));
-        }
-
-        private void WriteCurrent(int persistentId)
-        {
-            WriteLine(CurrentCommand(persistentId));
-        }
-
-        private void WriteCurrentRoot()
-        {
-            WriteLine(CurrentRootCommand());
-        }
-
         public void ReadFile(out string name, out MachineHistory history)
         {
+            Dictionary<int, HistoryEvent> idToHistoryEvent = new Dictionary<int, HistoryEvent>();
+
             name = null;
             history = new MachineHistory();
             _machineHistory = history;
@@ -462,7 +448,7 @@ namespace CPvC
                     break;
                 }
 
-                ReadLine(line, blobs, ref name);
+                ReadLine(line, blobs, idToHistoryEvent, ref name);
             }
 
             if (_machineHistory != null)
@@ -484,7 +470,7 @@ namespace CPvC
             }
         }
 
-        private void ReadLine(string line, Dictionary<int, IBlob> blobs, ref string name)
+        private void ReadLine(string line, Dictionary<int, IBlob> blobs, Dictionary<int, HistoryEvent> idToHistoryEvent, ref string name)
         {
             int colon = line.IndexOf(':');
             if (colon == -1)
@@ -501,40 +487,40 @@ namespace CPvC
                     name = ReadName(args);
                     break;
                 case _idCurrent:
-                    ReadCurrent(args);
+                    ReadCurrent(args, idToHistoryEvent);
                     break;
                 case _idAddBookmark:
-                    ReadAddBookmark(args, blobs);
+                    ReadAddBookmark(args, blobs, idToHistoryEvent);
                     break;
                 case _idDeleteEvent:
-                    ReadDeleteEvent(args);
+                    ReadDeleteEvent(args, idToHistoryEvent);
                     break;
                 case _idDeleteEventAndChildren:
-                    ReadDeleteEventAndChildren(args);
+                    ReadDeleteEventAndChildren(args, idToHistoryEvent);
                     break;
                 case _idKey:
-                    ReadKey(args);
+                    ReadKey(args, idToHistoryEvent);
                     break;
                 case _idReset:
-                    ReadReset(args);
+                    ReadReset(args, idToHistoryEvent);
                     break;
                 case _idLoadDisc:
-                    ReadLoadDisc(args, blobs);
+                    ReadLoadDisc(args, blobs, idToHistoryEvent);
                     break;
                 case _idLoadTape:
-                    ReadLoadTape(args, blobs);
+                    ReadLoadTape(args, blobs, idToHistoryEvent);
                     break;
                 case _idVersion:
-                    ReadVersion(args);
+                    ReadVersion(args, idToHistoryEvent);
                     break;
                 case _idRunUntil:
-                    ReadRunUntil(args);
+                    ReadRunUntil(args, idToHistoryEvent);
                     break;
                 case _idBlob:
                     ReadBlob(args, blobs);
                     break;
                 case _idCompound:
-                    ReadCompoundCommand(args, blobs, ref name);
+                    ReadCompoundCommand(args, blobs, ref name, idToHistoryEvent);
                     break;
                 default:
                     throw new ArgumentException(String.Format("Unknown type {0}.", type), "type");
@@ -574,23 +560,7 @@ namespace CPvC
             WriteLine(NameCommand(name));
         }
 
-        private void WriteAddBookmark(int id, UInt64 ticks, Bookmark bookmark)
-        {
-            int stateBlobId = WriteBlob(bookmark.State.GetBytes());
-            int screenBlobId = WriteBlob(bookmark.Screen.GetBytes());
-
-            string str = AddBookmarkCommand(
-                id,
-                ticks,
-                bookmark.System,
-                bookmark.Version,
-                stateBlobId,
-                screenBlobId);
-
-            WriteLine(str);
-        }
-
-        private void ReadCompoundCommand(string line, Dictionary<int, IBlob> blobs, ref string name)
+        private void ReadCompoundCommand(string line, Dictionary<int, IBlob> blobs, ref string name, Dictionary<int, HistoryEvent> idToHistoryEvent)
         {
             string[] tokens = line.Split(',');
 
@@ -606,11 +576,11 @@ namespace CPvC
 
             foreach(string command in commands.Split('@'))
             {
-                ReadLine(command, blobs, ref name);
+                ReadLine(command, blobs, idToHistoryEvent, ref name);
             }
         }
 
-        private void ReadAddBookmark(string line, Dictionary<int, IBlob> blobs)
+        private void ReadAddBookmark(string line, Dictionary<int, IBlob> blobs, Dictionary<int, HistoryEvent> idToHistoryEvent)
         {
             string[] tokens = line.Split(',');
 
@@ -621,20 +591,20 @@ namespace CPvC
             int version = Convert.ToInt32(tokens[3]);
             int stateBlobId = Convert.ToInt32(tokens[4]);
             int screenBlobId = Convert.ToInt32(tokens[5]);
-            IBlob stateBlob = blobs[stateBlobId]; //  new MemoryBlob(Helpers.BytesFromStr(tokens[4]));
-            IBlob screenBlob = blobs[screenBlobId]; //  new MemoryBlob(Helpers.BytesFromStr(tokens[5]));
+            IBlob stateBlob = blobs[stateBlobId];
+            IBlob screenBlob = blobs[screenBlobId];
 
             Bookmark bookmark = new Bookmark(system, version, stateBlob, screenBlob);
 
             HistoryEvent historyEvent = _machineHistory.AddBookmark(ticks, bookmark);
 
             _historyEventToId[historyEvent] = id;
-            _idToHistoryEvent[id] = historyEvent;
+            idToHistoryEvent[id] = historyEvent;
 
             _nextPersistentId = Math.Max(_nextPersistentId, id + 1);
         }
 
-        private void ReadCurrent(string line)
+        private void ReadCurrent(string line, Dictionary<int, HistoryEvent> idToHistoryEvent)
         {
             string[] tokens = line.Split(',');
 
@@ -646,7 +616,7 @@ namespace CPvC
             {
                 int id = Convert.ToInt32(tokens[0]);
 
-                if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
+                if (idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
                 {
                     _machineHistory.SetCurrent(newId);
                 }
@@ -657,34 +627,7 @@ namespace CPvC
             }
         }
 
-        private void WriteCoreAction(int id, UInt64 ticks, CoreAction action)
-        {
-            switch (action.Type)
-            {
-                case CoreRequest.Types.KeyPress:
-                    WriteKey(id, ticks, action.KeyCode, action.KeyDown);
-                    break;
-                case CoreRequest.Types.Reset:
-                    WriteReset(id, ticks);
-                    break;
-                case CoreRequest.Types.LoadDisc:
-                    WriteLoadDisc(id, ticks, action.Drive, action.MediaBuffer.GetBytes());
-                    break;
-                case CoreRequest.Types.LoadTape:
-                    WriteLoadTape(id, ticks, action.MediaBuffer.GetBytes());
-                    break;
-                case CoreRequest.Types.CoreVersion:
-                    WriteVersion(id, ticks, action.Version);
-                    break;
-                case CoreRequest.Types.RunUntil:
-                    WriteRunUntil(id, ticks, action.StopTicks);
-                    break;
-                default:
-                    throw new ArgumentException(String.Format("Unrecognized core action type {0}.", action.Type), "type");
-            }
-        }
-
-        private void ReadKey(string line)
+        private void ReadKey(string line, Dictionary<int, HistoryEvent> idToHistoryEvent)
         {
             string[] tokens = line.Split(',');
 
@@ -695,33 +638,10 @@ namespace CPvC
 
             CoreAction action = CoreAction.KeyPress(ticks, keyCode, keyDown);
 
-            AddCoreAction(id, action);
+            AddCoreAction(id, action, idToHistoryEvent);
         }
 
-        private void WriteKey(int id, UInt64 ticks, byte keyCode, bool keyDown)
-        {
-            string str = String.Format("key:{0},{1},{2},{3}",
-                id,
-                ticks,
-                keyCode,
-                keyDown
-                );
-
-            WriteLine(str);
-        }
-
-        private void WriteRunUntil(int id, UInt64 ticks, UInt64 stopTicks)
-        {
-            string str = String.Format("run:{0},{1},{2}",
-                id,
-                ticks,
-                stopTicks
-                );
-
-            WriteLine(str);
-        }
-
-        private void ReadReset(string line)
+        private void ReadReset(string line, Dictionary<int, HistoryEvent> idToHistoryEvent)
         {
             string[] tokens = line.Split(',');
 
@@ -729,17 +649,10 @@ namespace CPvC
             UInt64 ticks = Convert.ToUInt64(tokens[1]);
             CoreAction action = CoreAction.Reset(ticks);
 
-            AddCoreAction(id, action);
+            AddCoreAction(id, action, idToHistoryEvent);
         }
 
-        private void WriteReset(int id, UInt64 ticks)
-        {
-            string str = ResetCommand(id, ticks);
-
-            WriteLine(str);
-        }
-
-        private void ReadLoadDisc(string line, Dictionary<int, IBlob> blobs)
+        private void ReadLoadDisc(string line, Dictionary<int, IBlob> blobs, Dictionary<int, HistoryEvent> idToHistoryEvent)
         {
             string[] tokens = line.Split(',');
 
@@ -751,19 +664,10 @@ namespace CPvC
 
             CoreAction action = CoreAction.LoadDisc(ticks, drive, mediaBlob);
 
-            HistoryEvent historyEvent = AddCoreAction(id, action);
+            HistoryEvent historyEvent = AddCoreAction(id, action, idToHistoryEvent);
         }
 
-        private void WriteLoadDisc(int id, UInt64 ticks, byte drive, byte[] media)
-        {
-            int mediaBlobId = WriteBlob(media);
-
-            string str = LoadDiscCommand(id, ticks, drive, mediaBlobId);
-
-            WriteLine(str);
-        }
-
-        private void ReadVersion(string line)
+        private void ReadVersion(string line, Dictionary<int, HistoryEvent> idToHistoryEvent)
         {
             string[] tokens = line.Split(',');
 
@@ -773,10 +677,10 @@ namespace CPvC
 
             CoreAction action = CoreAction.CoreVersion(ticks, version);
 
-            AddCoreAction(id, action);
+            AddCoreAction(id, action, idToHistoryEvent);
         }
 
-        private void ReadRunUntil(string line)
+        private void ReadRunUntil(string line, Dictionary<int, HistoryEvent> idToHistoryEvent)
         {
             string[] tokens = line.Split(',');
 
@@ -786,21 +690,10 @@ namespace CPvC
 
             CoreAction action = CoreAction.RunUntil(ticks, stopTicks, null);
 
-            AddCoreAction(id, action);
+            AddCoreAction(id, action, idToHistoryEvent);
         }
 
-        private void WriteVersion(int id, UInt64 ticks, int version)
-        {
-            string str = String.Format("version:{0},{1},{2}",
-                id,
-                ticks,
-                version
-                );
-
-            WriteLine(str);
-        }
-
-        private void ReadLoadTape(string line, Dictionary<int, IBlob> blobs)
+        private void ReadLoadTape(string line, Dictionary<int, IBlob> blobs, Dictionary<int, HistoryEvent> idToHistoryEvent)
         {
             string[] tokens = line.Split(',');
 
@@ -808,40 +701,30 @@ namespace CPvC
             UInt64 ticks = Convert.ToUInt64(tokens[1]);
             int mediaBlobId = Convert.ToInt32(tokens[2]);
             IBlob mediaBlob = blobs[mediaBlobId];
-            //IBlob mediaBlob = new MemoryBlob(Helpers.BytesFromStr(tokens[2]));
 
             CoreAction action = CoreAction.LoadTape(ticks, mediaBlob);
 
-            HistoryEvent historyEvent = AddCoreAction(id, action);
+            HistoryEvent historyEvent = AddCoreAction(id, action, idToHistoryEvent);
         }
 
-        private void WriteLoadTape(int id, UInt64 ticks, byte[] media)
-        {
-            int mediaBlobId = WriteBlob(media);
-
-            string str = LoadTapeCommand(id, ticks, mediaBlobId);
-
-            WriteLine(str);
-        }
-
-        private HistoryEvent AddCoreAction(int id, CoreAction coreAction)
+        private HistoryEvent AddCoreAction(int id, CoreAction coreAction, Dictionary<int, HistoryEvent> idToHistoryEvent)
         {
             HistoryEvent historyEvent = _machineHistory.AddCoreAction(coreAction);
             _historyEventToId[historyEvent] = id;
-            _idToHistoryEvent[id] = historyEvent;
+            idToHistoryEvent[id] = historyEvent;
 
             _nextPersistentId = Math.Max(_nextPersistentId, id + 1);
 
             return historyEvent;
         }
 
-        private void ReadDeleteEvent(string line)
+        private void ReadDeleteEvent(string line, Dictionary<int, HistoryEvent> idToHistoryEvent)
         {
             string[] tokens = line.Split(',');
 
             int id = Convert.ToInt32(tokens[0]);
 
-            if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
+            if (idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
             {
                 _machineHistory.DeleteEvent(newId);
             }
@@ -851,13 +734,13 @@ namespace CPvC
             }
         }
 
-        private void ReadDeleteEventAndChildren(string line)
+        private void ReadDeleteEventAndChildren(string line, Dictionary<int, HistoryEvent> idToHistoryEvent)
         {
             string[] tokens = line.Split(',');
 
             int id = Convert.ToInt32(tokens[0]);
 
-            if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
+            if (idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
             {
                 bool b = _machineHistory.DeleteEventAndChildren(newId);
                 if (!b)

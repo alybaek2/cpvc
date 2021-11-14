@@ -8,11 +8,16 @@ namespace CPvC
 {
     public enum HistoryEventType
     {
-        None,
-        AddCoreAction,
-        AddBookmark,
-        DeleteEvent,
-        DeleteEventAndChildren,
+        Root,
+        CoreAction,
+        Bookmark
+    }
+
+    public enum HistoryChangedAction
+    {
+        Add,
+        Delete,
+        DeleteRecursive,
         SetCurrent
     }
 
@@ -125,7 +130,7 @@ namespace CPvC
         {
             get
             {
-                if (_historyNode.Type == HistoryEventType.AddCoreAction && _historyNode.CoreAction.Type == CoreRequest.Types.RunUntil)
+                if (_historyNode.Type == HistoryEventType.CoreAction && _historyNode.CoreAction.Type == CoreRequest.Types.RunUntil)
                 {
                     return _historyNode.CoreAction.StopTicks;
                 }
@@ -188,7 +193,7 @@ namespace CPvC
 
         private HashSet<HistoryNode> _nodes;
 
-        public delegate void HistoryEventDelegate(HistoryEvent historyEvent, UInt64 ticks, HistoryEventType type, CoreAction coreAction, Bookmark bookmark);
+        public delegate void HistoryEventDelegate(HistoryEvent historyEvent, UInt64 ticks, HistoryChangedAction changeAction, CoreAction coreAction, Bookmark bookmark);
 
         public HistoryEventDelegate Auditors;
 
@@ -198,7 +203,7 @@ namespace CPvC
 
             _rootNode = new HistoryNode
             {
-                Type = HistoryEventType.None,
+                Type = HistoryEventType.Root,
                 Parent = null,
                 Ticks = 0
             };
@@ -219,7 +224,7 @@ namespace CPvC
             if (!notify)
             {
                 if (_currentNode.Children.Count == 0 &&
-                    _currentNode.Type == HistoryEventType.AddCoreAction &&
+                    _currentNode.Type == HistoryEventType.CoreAction &&
                     _currentNode.CoreAction.Type == CoreRequest.Types.RunUntil)
                 {
                     _currentNode.CoreAction.StopTicks = coreAction.StopTicks;
@@ -230,7 +235,7 @@ namespace CPvC
 
             HistoryNode historyNode = new HistoryNode
             {
-                Type = HistoryEventType.AddCoreAction,
+                Type = HistoryEventType.CoreAction,
                 Ticks = coreAction.Ticks,
                 CoreAction = coreAction,
                 Parent = _currentNode,
@@ -245,16 +250,16 @@ namespace CPvC
         public HistoryEvent AddBookmark(UInt64 ticks, Bookmark bookmark)
         {
             if (_currentNode.Children.Count == 0 &&
-                _currentNode.Type == HistoryEventType.AddCoreAction &&
+                _currentNode.Type == HistoryEventType.CoreAction &&
                 _currentNode.CoreAction.Type == CoreRequest.Types.RunUntil)
             {
                 // This should probably be added to AddChildNode!
-                Auditors?.Invoke(_currentNode.HistoryEvent, _currentNode.Ticks, _currentNode.Type, _currentNode.CoreAction, _currentNode.Bookmark);
+                Auditors?.Invoke(_currentNode.HistoryEvent, _currentNode.Ticks, HistoryChangedAction.Add, _currentNode.CoreAction, _currentNode.Bookmark);
             }
 
             HistoryNode historyNode = new HistoryNode
             {
-                Type = HistoryEventType.AddBookmark,
+                Type = HistoryEventType.Bookmark,
                 Ticks = ticks,
                 Bookmark = bookmark,
                 Parent = _currentNode,
@@ -308,7 +313,7 @@ namespace CPvC
                     eventsToRemove.RemoveAt(0);
                 }
 
-                Auditors?.Invoke(historyEvent, 0, HistoryEventType.DeleteEventAndChildren, null, null);
+                Auditors?.Invoke(historyEvent, 0, HistoryChangedAction.DeleteRecursive, null, null);
 
                 return true;
             }
@@ -343,7 +348,7 @@ namespace CPvC
                 historyNode.Parent.Children.Remove(historyNode);
                 historyNode.Parent = null;
 
-                Auditors?.Invoke(historyEvent, 0, HistoryEventType.DeleteEvent, null, null);
+                Auditors?.Invoke(historyEvent, 0, HistoryChangedAction.Delete, null, null);
 
                 return true;
             }
@@ -380,14 +385,14 @@ namespace CPvC
             if (_nodes.Contains(historyNode))
             {
                 // If the current node is a RunUntil, finish it off by sending a notification...
-                if (_currentNode.Type == HistoryEventType.AddCoreAction && _currentNode.CoreAction.Type == CoreRequest.Types.RunUntil)
+                if (_currentNode.Type == HistoryEventType.CoreAction && _currentNode.CoreAction.Type == CoreRequest.Types.RunUntil)
                 {
-                    Auditors?.Invoke(_currentNode.HistoryEvent, _currentNode.Ticks, _currentNode.Type, _currentNode.CoreAction, _currentNode.Bookmark);
+                    Auditors?.Invoke(_currentNode.HistoryEvent, _currentNode.Ticks, HistoryChangedAction.Add, _currentNode.CoreAction, _currentNode.Bookmark);
                 }
 
                 _currentNode = historyNode;
 
-                Auditors?.Invoke(historyNode.HistoryEvent, 0, HistoryEventType.SetCurrent, null, null);
+                Auditors?.Invoke(historyNode.HistoryEvent, 0, HistoryChangedAction.SetCurrent, null, null);
             }
             else
             {
@@ -403,7 +408,7 @@ namespace CPvC
 
             if (notify)
             {
-                Auditors?.Invoke(historyNode.HistoryEvent, historyNode.Ticks, historyNode.Type, historyNode.CoreAction, historyNode.Bookmark);
+                Auditors?.Invoke(historyNode.HistoryEvent, historyNode.Ticks, HistoryChangedAction.Add, historyNode.CoreAction, historyNode.Bookmark);
             }
         }
     }

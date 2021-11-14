@@ -539,19 +539,19 @@ namespace CPvC.Test
 
             switch (event1.Type)
             {
-                case HistoryEventType.AddBookmark:
+                case HistoryEventType.Bookmark:
                     if (!BookmarksEqual(event1.Bookmark, event2.Bookmark))
                     {
                         return false;
                     }
                     break;
-                case HistoryEventType.AddCoreAction:
+                case HistoryEventType.CoreAction:
                     if (!CoreActionsEqual(event1.CoreAction, event2.CoreAction))
                     {
                         return false;
                     }
                     break;
-                case HistoryEventType.None:
+                case HistoryEventType.Root:
                     break;
                 default:
                     throw new Exception(String.Format("Unknown history event type {0}", event1.Type));

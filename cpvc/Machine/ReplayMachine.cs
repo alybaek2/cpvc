@@ -48,10 +48,10 @@ namespace CPvC
             {
                 switch (e.Type)
                 {
-                    case HistoryEventType.AddCoreAction:
+                    case HistoryEventType.CoreAction:
                         _historyEvents.Add(_history.AddCoreAction(e.CoreAction.Clone()));
                         break;
-                    case HistoryEventType.AddBookmark:
+                    case HistoryEventType.Bookmark:
                         _historyEvents.Add(_history.AddBookmark(e.Ticks, e.Bookmark.Clone()));
                         break;
                 }
@@ -118,7 +118,7 @@ namespace CPvC
             for (int i = startIndex; i < _historyEvents.Count; i++)
             {
                 HistoryEvent historyEvent = _historyEvents[i];
-                if (historyEvent.Type == HistoryEventType.AddCoreAction)
+                if (historyEvent.Type == HistoryEventType.CoreAction)
                 {
                     core.PushRequest(CoreRequest.RunUntil(historyEvent.Ticks));
                     core.PushRequest(historyEvent.CoreAction);

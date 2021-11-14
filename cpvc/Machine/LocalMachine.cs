@@ -311,7 +311,7 @@ namespace CPvC
                             // If the current event is a RunUntil, it may not be "finalized" yet (i.e. it may still
                             // be updated), so go with its parent.
                             HistoryEvent historyEvent = _history.CurrentEvent;
-                            if (historyEvent.Type == HistoryEventType.AddCoreAction && historyEvent.CoreAction.Type == CoreRequest.Types.RunUntil)
+                            if (historyEvent.Type == HistoryEventType.CoreAction && historyEvent.CoreAction.Type == CoreRequest.Types.RunUntil)
                             {
                                 historyEvent = historyEvent.Parent;
                             }
@@ -404,7 +404,7 @@ namespace CPvC
             HistoryEvent lastBookmarkEvent = _history.CurrentEvent;
             while (lastBookmarkEvent != null)
             {
-                if (lastBookmarkEvent.Type == HistoryEventType.AddBookmark && !lastBookmarkEvent.Bookmark.System && lastBookmarkEvent.Ticks != Core.Ticks)
+                if (lastBookmarkEvent.Type == HistoryEventType.Bookmark && !lastBookmarkEvent.Bookmark.System && lastBookmarkEvent.Ticks != Core.Ticks)
                 {
                     TimeSpan before = Helpers.GetTimeSpanFromTicks(Core.Ticks);
                     JumpToBookmark(lastBookmarkEvent);
@@ -560,7 +560,7 @@ namespace CPvC
 
         public void SetCurrentEvent(HistoryEvent historyEvent)
         {
-            if (historyEvent.Type == HistoryEventType.AddBookmark)
+            if (historyEvent.Type == HistoryEventType.Bookmark)
             {
                 Core core = Core.Create(Core.LatestVersion, historyEvent.Bookmark.State.GetBytes());
                 SetCore(core);
@@ -717,7 +717,7 @@ namespace CPvC
         static private HistoryEvent MostRecentBookmark(MachineHistory history)
         {
             HistoryEvent historyEvent = history.CurrentEvent;
-            while (historyEvent.Type != HistoryEventType.AddBookmark && historyEvent != history.RootEvent)
+            while (historyEvent.Type != HistoryEventType.Bookmark && historyEvent != history.RootEvent)
             {
                 historyEvent = historyEvent.Parent;
             }
