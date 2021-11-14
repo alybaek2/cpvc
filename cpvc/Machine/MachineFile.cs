@@ -90,67 +90,23 @@ namespace CPvC
 
         private void HistoryEventHappened(HistoryEvent historyEvent, UInt64 ticks, HistoryEventType type, CoreAction coreAction, Bookmark bookmark)
         {
-            switch (type)
+            List<string> lines = new List<string>();
+            GetLines(historyEvent, type, ref _nextPersistentId, ref _nextBlob, lines, _historyEventToId, _idToHistoryEvent);
+
+            foreach (string line in lines)
             {
-                case HistoryEventType.AddBookmark:
-                    {
-                        int id = _nextPersistentId++;
-                        WriteAddBookmark(id, ticks, historyEvent.Bookmark);
-
-                        _historyEventToId[historyEvent] = id;
-                        _idToHistoryEvent[id] = historyEvent;
-                    }
-                    break;
-                case HistoryEventType.AddCoreAction:
-                    {
-                        int id = _nextPersistentId++;
-                        WriteCoreAction(id, ticks, historyEvent.CoreAction);
-
-                        _historyEventToId[historyEvent] = id;
-                        _idToHistoryEvent[id] = historyEvent;
-                    }
-                    break;
-                case HistoryEventType.DeleteEventAndChildren:
-                    {
-                        int persistentId = _historyEventToId[historyEvent];
-
-                        WriteDeleteEventAndChildren(persistentId);
-                    }
-                    break;
-                case HistoryEventType.DeleteEvent:
-                    {
-                        int persistentId = _historyEventToId[historyEvent];
-
-                        WriteDeleteEvent(persistentId);
-                    }
-                    break;
-                case HistoryEventType.SetCurrent:
-                    {
-                        if (historyEvent == _machineHistory.RootEvent)
-                        {
-                            WriteCurrentRoot();
-                        }
-                        else
-                        {
-                            int persistentId = _historyEventToId[historyEvent];
-
-                            WriteCurrent(persistentId);
-                        }
-                    }
-                    break;
-                default:
-                    throw new ArgumentException("Unknown history type!", "type");
+                WriteLine(line);
             }
         }
 
         static public string DeleteEventCommand(int persistentId)
         {
-            return String.Format("{0}:{1}", _idDeleteEventAndChildren, persistentId);
+            return String.Format("{0}:{1}", _idDeleteEvent, persistentId);
         }
 
         static public string DeleteEventAndChildrenCommand(int persistentId)
         {
-            return String.Format("{0}:{1}", _idDeleteEvent, persistentId);
+            return String.Format("{0}:{1}", _idDeleteEventAndChildren, persistentId);
         }
 
         static public string CurrentCommand(int persistentId)
@@ -203,7 +159,7 @@ namespace CPvC
 
         static public string LoadTapeCommand(int id, UInt64 ticks, int mediaBlobId)
         {
-            return String.Format("{0}:{1},{2},{3},{4}",
+            return String.Format("{0}:{1},{2},{3}",
                 _idLoadTape,
                 id,
                 ticks,
@@ -262,117 +218,186 @@ namespace CPvC
                 str);
         }
 
+        static public int GetLines(Bookmark bookmark, UInt64 ticks, ref int nextLineId, ref int nextBlobId, List<string> lines)
+        {
+            int stateBlobId = nextBlobId++;
+            lines.Add(MachineFile.BlobCommand(stateBlobId, bookmark.State.GetBytes()));
+
+            int screenBlobId = nextBlobId++;
+            lines.Add(MachineFile.BlobCommand(screenBlobId, bookmark.Screen.GetBytes()));
+
+            int lineId = nextLineId++;
+            lines.Add(MachineFile.AddBookmarkCommand(lineId, ticks, bookmark.System, bookmark.Version, stateBlobId, screenBlobId));
+
+            return lineId;
+        }
+
+        static public int GetLines(CoreAction action, ref int nextLineId, ref int nextBlobId, List<string> lines)
+        {
+            int lineId = nextLineId++;
+
+            switch (action.Type)
+            {
+                case CoreRequest.Types.KeyPress:
+                    lines.Add(MachineFile.KeyCommand(lineId, action.Ticks, action.KeyCode, action.KeyDown));
+                    break;
+                case CoreRequest.Types.Reset:
+                    lines.Add(MachineFile.ResetCommand(lineId, action.Ticks));
+                    break;
+                case CoreRequest.Types.LoadDisc:
+                    {
+                        int mediaBlobId = nextBlobId++;
+                        lines.Add(MachineFile.BlobCommand(mediaBlobId, action.MediaBuffer.GetBytes()));
+                        lines.Add(MachineFile.LoadDiscCommand(lineId, action.Ticks, action.Drive, mediaBlobId));
+                    }
+                    break;
+                case CoreRequest.Types.LoadTape:
+                    {
+                        int mediaBlobId = nextBlobId++;
+                        lines.Add(MachineFile.BlobCommand(mediaBlobId, action.MediaBuffer.GetBytes()));
+                        lines.Add(MachineFile.LoadTapeCommand(lineId, action.Ticks, mediaBlobId));
+                    }
+                    break;
+                case CoreRequest.Types.CoreVersion:
+                    lines.Add(MachineFile.VersionCommand(lineId, action.Ticks, action.Version));
+                    break;
+                case CoreRequest.Types.RunUntil:
+                    lines.Add(MachineFile.RunCommand(lineId, action.Ticks, action.StopTicks));
+                    break;
+                default:
+                    throw new ArgumentException(String.Format("Unrecognized core action type {0}.", action.Type), "type");
+            }
+
+            return lineId;
+        }
+
+        static public void GetLines(HistoryEvent historyEvent, HistoryEventType type, ref int nextLineId, ref int nextBlobId, List<string> lines, Dictionary<HistoryEvent, int> historyEventIds, Dictionary<int, HistoryEvent> idHistoryEvents)
+        {
+            switch (type)
+            {
+                case HistoryEventType.AddBookmark:
+                    {
+                        int lineId = GetLines(historyEvent.Bookmark, historyEvent.Ticks, ref nextLineId, ref nextBlobId, lines);
+
+                        historyEventIds[historyEvent] = lineId;
+                        idHistoryEvents[lineId] = historyEvent;
+                    }
+                    break;
+                case HistoryEventType.AddCoreAction:
+                    {
+                        int lineId = GetLines(historyEvent.CoreAction, ref nextLineId, ref nextBlobId, lines);
+
+                        historyEventIds[historyEvent] = lineId;
+                        idHistoryEvents[lineId] = historyEvent;
+                    }
+                    break;
+                case HistoryEventType.DeleteEventAndChildren:
+                    {
+                        int persistentId = historyEventIds[historyEvent];
+
+                        lines.Add(DeleteEventAndChildrenCommand(persistentId));
+                    }
+                    break;
+                case HistoryEventType.DeleteEvent:
+                    {
+                        int persistentId = historyEventIds[historyEvent];
+
+                        lines.Add(DeleteEventCommand(persistentId));
+                    }
+                    break;
+                case HistoryEventType.SetCurrent:
+                    {
+                        if (historyEvent.Parent == null)
+                        {
+                            lines.Add(CurrentRootCommand());
+                        }
+                        else
+                        {
+                            int lineId = historyEventIds[historyEvent];
+
+                            lines.Add(CurrentCommand(lineId));
+                        }
+                    }
+                    break;
+                default:
+                    throw new ArgumentException("Unknown history type!", nameof(historyEvent.Type));
+            }
+        }
+
         static public void Write(string filepath, string name, MachineHistory history)
         {
-            List<string> nonBlobCommands = new List<string>();
-            List<string> blobCommands = new List<string>();
+            List<string> lines = new List<string>();
 
-            nonBlobCommands.Add(NameCommand(name));
+            lines.Add(NameCommand(name));
 
             // As the history tree could be very deep, keep a "stack" of history events in order to avoid recursive calls.
-            List<HistoryEvent> historyNodes = new List<HistoryEvent>();
-            historyNodes.AddRange(history.RootEvent.Children);
+            List<HistoryEvent> historyEvents = new List<HistoryEvent>();
+            historyEvents.AddRange(history.RootEvent.Children);
 
-            int? newCurrentNodeId = null;
+            int? newCurrenEventId = null;
 
-            int persistentId = 0;
+            int nextLineId = 0;
+            int nextBlodId = 0;
 
-            int nextBlobId = 0;
+            Dictionary<HistoryEvent, int> eventIds = new Dictionary<HistoryEvent, int>();
 
-            Dictionary<HistoryEvent, int> nodeIds = new Dictionary<HistoryEvent, int>();
-
-            HistoryEvent previousNode = null;
-            while (historyNodes.Count > 0)
+            HistoryEvent previousEvent = null;
+            while (historyEvents.Count > 0)
             {
-                int currentPersistentId = persistentId;
-                HistoryEvent currentNode = historyNodes[0];
-                nodeIds[currentNode] = currentPersistentId;
-                persistentId++;
+                int currentLineId = nextLineId;
+                HistoryEvent currentEvent = historyEvents[0];
+                eventIds[currentEvent] = currentLineId;
+                nextLineId++;
 
-                if (previousNode != currentNode.Parent && previousNode != null)
+                if (previousEvent != currentEvent.Parent && previousEvent != null)
                 {
-                    nonBlobCommands.Add(MachineFile.CurrentCommand(persistentId));
+                    lines.Add(MachineFile.CurrentCommand(nextLineId));
                 }
 
-                switch (currentNode.Type)
+                switch (currentEvent.Type)
                 {
                     case HistoryEventType.AddCoreAction:
-                        {
-                            CoreAction action = currentNode.CoreAction;
-                            int id = currentPersistentId;
-                            UInt64 ticks = currentNode.Ticks;
-
-                            switch (action.Type)
-                            {
-                                case CoreRequest.Types.KeyPress:
-                                    nonBlobCommands.Add(MachineFile.KeyCommand(id, ticks, action.KeyCode, action.KeyDown));
-                                    break;
-                                case CoreRequest.Types.Reset:
-                                    nonBlobCommands.Add(MachineFile.ResetCommand(id, ticks));
-                                    break;
-                                case CoreRequest.Types.LoadDisc:
-                                    {
-                                        int mediaBlobId = nextBlobId++;
-                                        blobCommands.Add(MachineFile.BlobCommand(mediaBlobId, action.MediaBuffer.GetBytes()));
-
-                                        nonBlobCommands.Add(MachineFile.LoadDiscCommand(id, ticks, action.Drive, mediaBlobId));
-                                    }
-                                    break;
-                                case CoreRequest.Types.LoadTape:
-                                    {
-                                        int mediaBlobId = nextBlobId++;
-                                        blobCommands.Add(MachineFile.BlobCommand(mediaBlobId, action.MediaBuffer.GetBytes()));
-
-                                        nonBlobCommands.Add(MachineFile.LoadTapeCommand(id, ticks, mediaBlobId));
-                                    }
-                                    break;
-                                case CoreRequest.Types.CoreVersion:
-                                    nonBlobCommands.Add(MachineFile.VersionCommand(id, ticks, action.Version));
-                                    break;
-                                case CoreRequest.Types.RunUntil:
-                                    nonBlobCommands.Add(MachineFile.RunCommand(id, ticks, action.StopTicks));
-                                    break;
-                                default:
-                                    throw new ArgumentException(String.Format("Unrecognized core action type {0}.", action.Type), "type");
-                            }
-                        }
-
+                        GetLines(currentEvent.CoreAction, ref nextLineId, ref nextBlodId, lines);
                         break;
                     case HistoryEventType.AddBookmark:
-                        {
-                            Bookmark bookmark = currentNode.Bookmark;
-                            int id = currentPersistentId;
-                            UInt64 ticks = currentNode.Ticks;
-
-                            int stateBlobId = nextBlobId++;
-                            blobCommands.Add(MachineFile.BlobCommand(stateBlobId, bookmark.State.GetBytes()));
-
-                            int screenBlobId = nextBlobId++;
-                            blobCommands.Add(MachineFile.BlobCommand(screenBlobId, bookmark.Screen.GetBytes()));
-
-                            nonBlobCommands.Add(MachineFile.AddBookmarkCommand(id, ticks, bookmark.System, bookmark.Version, stateBlobId, screenBlobId));
-                        }
-
+                        GetLines(currentEvent.Bookmark, currentEvent.Ticks, ref nextLineId, ref nextBlodId, lines);
                         break;
                     default:
                         throw new Exception("Unexpected node type!");
                 }
 
-                if (currentNode == history.CurrentEvent)
+                if (currentEvent == history.CurrentEvent)
                 {
-                    newCurrentNodeId = currentPersistentId;
+                    newCurrenEventId = currentLineId;
                 }
 
-                historyNodes.RemoveAt(0);
-                previousNode = currentNode;
+                historyEvents.RemoveAt(0);
+                previousEvent = currentEvent;
 
                 // Place the current event's children at the top of the "stack". This effectively means we're doing a depth-first traversion of the history tree.
-                historyNodes.InsertRange(0, currentNode.Children);
+                historyEvents.InsertRange(0, currentEvent.Children);
             }
 
-            if (newCurrentNodeId != null)
+            if (newCurrenEventId != null)
             {
-                nonBlobCommands.Add(MachineFile.CurrentCommand(newCurrentNodeId.Value));
+                lines.Add(MachineFile.CurrentCommand(newCurrenEventId.Value));
+            }
+
+            // If we have any blob commands, stick them in a compound command and put them at the start of the file.
+            // Putting them in a single command should allow them to be better compressed than individually.
+            List<string> blobCommands = new List<string>();
+            int i = 0;
+            while (i < lines.Count)
+            {
+                if (lines[i].StartsWith(_idBlob))
+                {
+                    blobCommands.Add(lines[i]);
+                    lines.RemoveAt(i);
+                }
+                else
+                {
+                    i++;
+                }
             }
 
             // Write the file.
@@ -381,10 +406,10 @@ namespace CPvC
                 // Create a "compound" command for all the blobs.
                 string compoundCommand = MachineFile.CompoundCommand(blobCommands, true);
 
-                nonBlobCommands.Insert(0, compoundCommand);
+                lines.Insert(0, compoundCommand);
             }
 
-            System.IO.File.WriteAllLines(filepath, nonBlobCommands);
+            System.IO.File.WriteAllLines(filepath, lines);
         }
 
         private void WriteDeleteEvent(int persistentId)
@@ -733,12 +758,7 @@ namespace CPvC
         {
             int mediaBlobId = WriteBlob(media);
 
-            string str = String.Format("disc:{0},{1},{2},{3}",
-                id,
-                ticks,
-                drive,
-                mediaBlobId
-                );
+            string str = LoadDiscCommand(id, ticks, drive, mediaBlobId);
 
             WriteLine(str);
         }
@@ -799,11 +819,7 @@ namespace CPvC
         {
             int mediaBlobId = WriteBlob(media);
 
-            string str = String.Format("tape:{0},{1},{2}",
-                id,
-                ticks,
-                mediaBlobId
-                );
+            string str = LoadTapeCommand(id, ticks, mediaBlobId);
 
             WriteLine(str);
         }
