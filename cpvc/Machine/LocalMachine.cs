@@ -175,7 +175,7 @@ namespace CPvC
 
             if (File != null)
             {
-                File.Close();
+                File.Dispose();
                 File = null;
             }
 
@@ -508,20 +508,20 @@ namespace CPvC
             string name;
             MachineHistory history;
 
-            using (IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(oldFilepath))
+            using (ITextFile textFile = fileSystem.OpenTextFile(oldFilepath))
             {
                 MachineFileReader reader = new MachineFileReader();
 
                 Dictionary<HistoryEvent, int> historyEventToId = new Dictionary<HistoryEvent, int>();
-                reader.ReadFile(fileByteStream, historyEventToId, out name, out history, out _, out _);
+                reader.ReadFile(textFile, historyEventToId, out name, out history, out _, out _);
             }
 
-            using (IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(newFilepath))
+            using (ITextFile textFile = fileSystem.OpenTextFile(newFilepath))
             {
-                MachineFileWriter writer = new MachineFileWriter(fileByteStream, history);
+                MachineFileWriter writer = new MachineFileWriter(textFile, history);
 
                 writer.WriteHistory(name);
-                writer.Close();
+                writer.Dispose();
             }
 
             fileSystem.ReplaceFile(oldFilepath, newFilepath);
@@ -649,8 +649,8 @@ namespace CPvC
                     throw new ArgumentException("Invalid filepath.");
                 }
 
-                IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(filepath);
-                MachineFileWriter machineFileWriter = new MachineFileWriter(fileByteStream, _history);
+                ITextFile textFile = fileSystem.OpenTextFile(filepath);
+                MachineFileWriter machineFileWriter = new MachineFileWriter(textFile, _history);
 
                 machineFileWriter.WriteHistory(_name);
 
@@ -680,14 +680,14 @@ namespace CPvC
                 return;
             }
 
-            IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(PersistantFilepath);
+            ITextFile textFile = fileSystem.OpenTextFile(PersistantFilepath);
 
             Dictionary<HistoryEvent, int> historyEventToId = new Dictionary<HistoryEvent, int>();
 
             MachineFileReader reader = new MachineFileReader();
-            reader.ReadFile(fileByteStream, historyEventToId, out string name, out MachineHistory history, out int nextPersistentId, out int nextBlobId);
+            reader.ReadFile(textFile, historyEventToId, out string name, out MachineHistory history, out int nextPersistentId, out int nextBlobId);
 
-            MachineFileWriter file = new MachineFileWriter(fileByteStream, history, historyEventToId, nextPersistentId, nextBlobId);
+            MachineFileWriter file = new MachineFileWriter(textFile, history, historyEventToId, nextPersistentId, nextBlobId);
 
             _history = history;
             _name = name;
@@ -704,7 +704,7 @@ namespace CPvC
 
         static public LocalMachine Create(IFileSystem fileSystem, string filepath)
         {
-            using (IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(filepath))
+            using (ITextFile fileByteStream = fileSystem.OpenTextFile(filepath))
             {
                 Dictionary<HistoryEvent, int> historyEventToId = new Dictionary<HistoryEvent, int>();
 

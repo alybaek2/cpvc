@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public interface ITextFile
+    public interface ITextFile : IDisposable
     {
         void WriteLine(string line);
         string ReadLine();

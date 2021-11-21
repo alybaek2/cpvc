@@ -16,12 +16,8 @@ namespace CPvC.Test
         private Mock<ISettings> _mockSettings;
         private Mock<IFileSystem> _mockFileSystem;
         private Mock<ISocket> _mockSocket;
-        //private Mock<SelectRemoteMachineDelegate> _mockSelectRemoveMachine;
-        //private Mock<SelectServerPortDelegate> _mockSelectServerPort;
         private string _settingGet;
         private string _remoteServersSetting;
-
-        private MockFileByteStream _mockBinaryWriter;
 
         private MainViewModel _mainViewModel;
         private LocalMachine _machine;
@@ -44,18 +40,12 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(true);
             _mockFileSystem.Setup(ReadBytes()).Returns(new byte[1]);
 
-            _mockBinaryWriter = new MockFileByteStream();
-
-            _mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream(AnyString())).Returns(_mockBinaryWriter.Object);
+            MockTextFile mockTextFile = new MockTextFile();
+            _mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(AnyString())).Returns(mockTextFile);
 
             _mockSocket = new Mock<ISocket>();
-            //_mockSelectServerPort = new Mock<SelectServerPortDelegate>();
-            //_mockSelectRemoveMachine = new Mock<SelectRemoteMachineDelegate>();
 
             _machine = LocalMachine.New("test", null);
-            //_machineViewModel = new MachineViewModel(_machine, null, null, null, null, null, null, null);
-            //_mainViewModel = new MainViewModel(null, null, null, null, null, null, null, null, null, null, null);
-            //_mainViewModel.MachineViewModels.Add(_machineViewModel);
             _mainViewModel = new MainViewModel(null, _mockFileSystem.Object);
 
         }
@@ -72,15 +62,8 @@ namespace CPvC.Test
         private MainViewModel SetupViewModel(int machineCount, PromptForFileEventHandler mockPromptForFile, PromptForBookmarkEventHandler mockPromptForBookmark, PromptForNameEventHandler mockPromptForName)
         {
             _settingGet = String.Join(",", Enumerable.Range(0, machineCount).Select(x => String.Format("test{0}.cpvc", x)));
-            _mockBinaryWriter.Content = new List<byte>
-            {
-                0x01,
-                      0x00, 0x00, 0x00, 0x00,
-                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      0x00
-            };
 
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object); //, null, mockPromptForFile, mockPromptForBookmark, mockPromptForName, null, _mockSelectRemoveMachine, _mockSelectServerPort, () => _mockSocket.Object, null);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object);
             viewModel.PromptForFile += mockPromptForFile;
             viewModel.PromptForBookmark += mockPromptForBookmark;
             viewModel.PromptForName += mockPromptForName;
@@ -142,10 +125,10 @@ namespace CPvC.Test
             PromptForFileEventHandler mockPrompt = (object sender, PromptForFileEventArgs args) => args.Filepath = "test.cpvc";
 
             Mock<ISocket> mockSocket = new Mock<ISocket>();
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object); //, null, null, null, null, null, null, null, () => mockSocket.Object, null);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
             viewModel.PromptForFile += mockPrompt;
-            //Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, "test.cpvc");
-            _mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream(AnyString())).Throws(new Exception());
+            MockTextFile mockTextFile = new MockTextFile();
+            _mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile("test.cpvc")).Throws(new Exception());
 
             // Act and Verify
             Assert.Throws<Exception>(() => viewModel.OpenMachine("test.cpvc", _mockFileSystem.Object));
@@ -157,11 +140,11 @@ namespace CPvC.Test
             // Setup
             Mock<ISocket> mockSocket = new Mock<ISocket>();
             _settingGet = "test.cpvc";
-            _mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream(AnyString())).Throws(new Exception());
+            MockTextFile mockTextFile = new MockTextFile();
+            _mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(AnyString())).Throws(new Exception());
 
             // Act
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object); //, null, null, null, null, null, null, null, () => mockSocket.Object, null);
-            //viewModel.SelectServerPort += (object o, SelectServerPortEventArgs args) => args.SelectedPort = (ushort)port;
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
 
             // Verify
             Assert.AreEqual(0, viewModel.Machines.Count);
@@ -644,7 +627,7 @@ namespace CPvC.Test
             _remoteServersSetting = "localhost:6128";
 
             // Act
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object); //, null, null, null, null, null, null, null, () => mockSocket.Object, null);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
 
             // Verify
             Assert.AreEqual(1, viewModel.RecentServers.Count);
@@ -660,7 +643,7 @@ namespace CPvC.Test
             _remoteServersSetting = "localhost:6128;host2:3333";
 
             // Act
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object); //, null, null, null, null, null, null, null, () => mockSocket.Object, null);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
 
             // Verify
             Assert.AreEqual(2, viewModel.RecentServers.Count);
@@ -678,7 +661,7 @@ namespace CPvC.Test
             _remoteServersSetting = null;
 
             // Act
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object); //, null, null, null, null, null, null, null, () => mockSocket.Object, null);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
 
             // Verify
             Assert.IsNull(viewModel.RecentServers);

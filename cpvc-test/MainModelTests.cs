@@ -5,7 +5,6 @@ namespace CPvC.Test
 {
     public class MainModelTests
     {
-        Mock<IFileByteStream> _mockFileBytestream;
         Mock<IFileSystem> _mockFileSystem;
         LocalMachine _machine;
         Mock<ISettings> _mockSettings;
@@ -15,9 +14,9 @@ namespace CPvC.Test
         [SetUp]
         public void Setup()
         {
-            _mockFileBytestream = new Mock<IFileByteStream>();
             _mockFileSystem = new Mock<IFileSystem>();
-            _mockFileSystem.Setup(fs => fs.OpenFileByteStream("test.cpvc")).Returns(_mockFileBytestream.Object);
+            MockTextFile mockTextFile = new MockTextFile();
+            _mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(TestHelpers.AnyString())).Returns(mockTextFile);
             _machine = LocalMachine.New("test", null);
             _mockSettings = new Mock<ISettings>();
             _mainModel = new MainModel(_mockSettings.Object, null);

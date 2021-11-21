@@ -359,9 +359,8 @@ namespace CPvC.Test
             mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
             mockFileSystem.Setup(fileSystem => fileSystem.FileLength(AnyString())).Returns(100);
 
-            MockFileByteStream mockBinaryWriter = new MockFileByteStream();
-
-            mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream("test.cpvc")).Returns(mockBinaryWriter.Object);
+            MockTextFile mockTextFile = new MockTextFile();
+            mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(AnyString())).Returns(mockTextFile);
 
             LocalMachine machine = LocalMachine.New("test", null);
 

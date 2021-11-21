@@ -125,7 +125,6 @@
     <Compile Include="IO\TextFile.cs" />
     <Compile Include="Machine\Machine.cs" />
     <Compile Include="Core\ICore.cs" />
-    <Compile Include="IO\FileByteStream.cs" />
     <Compile Include="IO\IByteStream.cs" />
     <Compile Include="IO\IConnection.cs" />
     <Compile Include="IO\IFileByteStream.cs" />

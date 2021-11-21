@@ -5,7 +5,7 @@ using System.Text;
 
 namespace CPvC
 {
-    public class MachineFileWriter : TextFile
+    public class MachineFileWriter : IDisposable
     {
         public const string _idName = "name";
         public const string _idKey = "key";
@@ -28,6 +28,8 @@ namespace CPvC
 
         private LocalMachine _machine;
 
+        private ITextFile _textFile;
+
         static private Dictionary<string, LocalMachine> _machines = new Dictionary<string, LocalMachine>();
 
         public LocalMachine Machine
@@ -48,7 +50,7 @@ namespace CPvC
             }
         }
 
-        public override void Close()
+        public void Dispose()
         {
             Machine = null;
 
@@ -58,18 +60,24 @@ namespace CPvC
             }
             _machineHistory = null;
 
-            base.Close();
+            if (_textFile != null)
+            {
+                _textFile.Dispose();
+                _textFile = null;
+            }
         }
 
-        public MachineFileWriter(IFileByteStream byteStream) : base(byteStream)
+        public MachineFileWriter(ITextFile textFile)
         {
+            _textFile = textFile;
             _historyEventToId = new Dictionary<HistoryEvent, int>();
             _nextPersistentId = 0;
             _nextBlob = 0;
         }
 
-        public MachineFileWriter(IFileByteStream byteStream, MachineHistory machineHistory) : base(byteStream)
+        public MachineFileWriter(ITextFile textFile, MachineHistory machineHistory)
         {
+            _textFile = textFile;
             _historyEventToId = new Dictionary<HistoryEvent, int>();
             _nextPersistentId = 0;
             _nextBlob = 0;
@@ -81,8 +89,9 @@ namespace CPvC
             }
         }
 
-        public MachineFileWriter(IFileByteStream byteStream, MachineHistory machineHistory, Dictionary<HistoryEvent, int> historyEventToId, int nextPersistentId, int nextBlobId) : base(byteStream)
+        public MachineFileWriter(ITextFile textFile, MachineHistory machineHistory, Dictionary<HistoryEvent, int> historyEventToId, int nextPersistentId, int nextBlobId)
         {
+            _textFile = textFile;
             _historyEventToId = historyEventToId ?? throw new ArgumentException("HistoryEvent to id map cannot be null!", nameof(historyEventToId));
             _nextBlob = nextBlobId;
             _nextPersistentId = nextPersistentId;
@@ -100,36 +109,36 @@ namespace CPvC
 
             foreach (string line in lines)
             {
-                WriteLine(line);
+                _textFile.WriteLine(line);
             }
         }
 
-        static public string DeleteEventCommand(int persistentId)
+        static private string DeleteEventCommand(int persistentId)
         {
             return String.Format("{0}:{1}", _idDeleteEvent, persistentId);
         }
 
-        static public string DeleteEventAndChildrenCommand(int persistentId)
+        static private string DeleteEventAndChildrenCommand(int persistentId)
         {
             return String.Format("{0}:{1}", _idDeleteEventAndChildren, persistentId);
         }
 
-        static public string CurrentCommand(int persistentId)
+        static private string CurrentCommand(int persistentId)
         {
             return String.Format("{0}:{1}", _idCurrent, persistentId);
         }
 
-        static public string CurrentRootCommand()
+        static private string CurrentRootCommand()
         {
             return String.Format("{0}:root", _idCurrent);
         }
 
-        static public string NameCommand(string name)
+        static private string NameCommand(string name)
         {
             return String.Format("{0}:{1}", _idName, name);
         }
 
-        static public string AddBookmarkCommand(int id, UInt64 ticks, bool system, int version, int stateBlobId, int screenBlobId)
+        static private string AddBookmarkCommand(int id, UInt64 ticks, bool system, int version, int stateBlobId, int screenBlobId)
         {
             return String.Format(
                 "{0}:{1},{2},{3},{4},{5},{6}",
@@ -142,7 +151,7 @@ namespace CPvC
                 screenBlobId);
         }
 
-        static public string KeyCommand(int id, UInt64 ticks, byte keyCode, bool keyDown)
+        static private string KeyCommand(int id, UInt64 ticks, byte keyCode, bool keyDown)
         {
             return String.Format("{0}:{1},{2},{3},{4}",
                 _idKey,
@@ -152,7 +161,7 @@ namespace CPvC
                 keyDown);
         }
 
-        static public string LoadDiscCommand(int id, UInt64 ticks, byte drive, int mediaBlobId)
+        static private string LoadDiscCommand(int id, UInt64 ticks, byte drive, int mediaBlobId)
         {
             return String.Format("{0}:{1},{2},{3},{4}",
                 _idLoadDisc,
@@ -162,7 +171,7 @@ namespace CPvC
                 mediaBlobId);
         }
 
-        static public string LoadTapeCommand(int id, UInt64 ticks, int mediaBlobId)
+        static private string LoadTapeCommand(int id, UInt64 ticks, int mediaBlobId)
         {
             return String.Format("{0}:{1},{2},{3}",
                 _idLoadTape,
@@ -171,7 +180,7 @@ namespace CPvC
                 mediaBlobId);
         }
 
-        static public string RunCommand(int id, UInt64 ticks, UInt64 stopTicks)
+        static private string RunCommand(int id, UInt64 ticks, UInt64 stopTicks)
         {
             return String.Format("{0}:{1},{2},{3}",
                 _idRunUntil,
@@ -180,7 +189,7 @@ namespace CPvC
                 stopTicks);
         }
 
-        static public string ResetCommand(int id, UInt64 ticks)
+        static private string ResetCommand(int id, UInt64 ticks)
         {
             return String.Format("{0}:{1},{2}",
                 _idReset,
@@ -188,7 +197,7 @@ namespace CPvC
                 ticks);
         }
 
-        static public string VersionCommand(int id, UInt64 ticks, int version)
+        static private string VersionCommand(int id, UInt64 ticks, int version)
         {
             return String.Format("{0}:{1},{2},{3}",
                 _idVersion,
@@ -197,7 +206,7 @@ namespace CPvC
                 version);
         }
 
-        static public string BlobCommand(int blobId, byte[] blob)
+        static private string BlobCommand(int blobId, byte[] blob)
         {
             return String.Format(
                 "{0}:{1},{2}",
@@ -206,7 +215,7 @@ namespace CPvC
                 Helpers.StrFromBytes(blob));
         }
 
-        static public string CompoundCommand(IEnumerable<string> commands, bool compress)
+        static private string CompoundCommand(IEnumerable<string> commands, bool compress)
         {
             string str = String.Join("@", commands);
 
@@ -436,7 +445,7 @@ namespace CPvC
 
             foreach (string line in lines)
             {
-                WriteLine(line);
+                _textFile.WriteLine(line);
             }
         }
 
@@ -451,14 +460,14 @@ namespace CPvC
         public int WriteBlob(byte[] blob)
         {
             int blobId = _nextBlob++;
-            WriteLine(BlobCommand(blobId, blob));
+            _textFile.WriteLine(BlobCommand(blobId, blob));
 
             return blobId;
         }
 
         public void WriteName(string name)
         {
-            WriteLine(NameCommand(name));
+            _textFile.WriteLine(NameCommand(name));
         }
     }
 }

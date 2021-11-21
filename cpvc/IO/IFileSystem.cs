@@ -8,7 +8,7 @@ namespace CPvC
     /// </summary>
     public interface IFileSystem
     {
-        IFileByteStream OpenFileByteStream(string filepath);
+        ITextFile OpenTextFile(string filepath);
         void RenameFile(string oldFilepath, string newFilepath);
         void ReplaceFile(string filepath, string newFilepath);
         void DeleteFile(string filepath);

@@ -11,7 +11,6 @@ namespace CPvC.Test
     public class MachineTests
     {
         private Mock<IFileSystem> _mockFileSystem;
-        private MockFileByteStream _mockBinaryWriter;
         private Mock<MachineAuditorDelegate> _mockAuditor;
 
         private LocalMachine _machine;
@@ -40,9 +39,8 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
             _mockFileSystem.Setup(fileSystem => fileSystem.FileLength(AnyString())).Returns(100);
 
-            _mockBinaryWriter = new MockFileByteStream();
-
-            _mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream("test.cpvc")).Returns(_mockBinaryWriter.Object);
+            MockTextFile mockTextFile = new MockTextFile();
+            _mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile("test.cpvc")).Returns(mockTextFile);
 
             _mockAuditor = new Mock<MachineAuditorDelegate>();
 

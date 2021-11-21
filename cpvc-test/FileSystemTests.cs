@@ -7,23 +7,23 @@ namespace CPvC.Test
 {
     public class FileSystemTests
     {
-        [Test]
-        public void OpenBinaryFile()
-        {
-            // Setup
-            string filepath = TestHelpers.GetTempFilepath("opentest.txt");
-            System.IO.File.Delete(filepath);
-            FileSystem fs = new FileSystem();
-            IFileByteStream file = fs.OpenFileByteStream(filepath);
+        //[Test]
+        //public void OpenBinaryFile()
+        //{
+        //    // Setup
+        //    string filepath = TestHelpers.GetTempFilepath("opentest.txt");
+        //    System.IO.File.Delete(filepath);
+        //    FileSystem fs = new FileSystem();
+        //    IFileByteStream file = fs.OpenFileByteStream(filepath);
 
-            // Act
-            file.Write(0xfe);
-            file.Close();
+        //    // Act
+        //    file.Write(0xfe);
+        //    file.Close();
 
-            // Verify
-            byte[] contents = System.IO.File.ReadAllBytes(filepath);
-            Assert.AreEqual(new byte[] { 0xfe }, contents);
-        }
+        //    // Verify
+        //    byte[] contents = System.IO.File.ReadAllBytes(filepath);
+        //    Assert.AreEqual(new byte[] { 0xfe }, contents);
+        //}
 
         [Test]
         public void RenameFile()

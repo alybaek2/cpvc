@@ -126,7 +126,7 @@
     <Compile Include="MainModelTests.cs" />
     <Compile Include="MainViewModelTests.cs" />
     <Compile Include="MemoryByteStreamTests.cs" />
-    <Compile Include="MockFileByteStream.cs" />
+    <Compile Include="MockTextFile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RemoteMachineTests.cs" />
     <Compile Include="RemoteTests.cs" />

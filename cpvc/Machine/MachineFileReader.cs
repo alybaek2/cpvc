@@ -15,7 +15,7 @@ namespace CPvC
         private Dictionary<int, HistoryEvent> _idToHistoryEvent;
         private int _nextBlobId = 0;
 
-        public void ReadFile(IFileByteStream byteStream, Dictionary<HistoryEvent, int> historyEventToId, out string name, out MachineHistory history, out int nextPersistentId, out int nextBlobId)
+        public void ReadFile(ITextFile byteStream, Dictionary<HistoryEvent, int> historyEventToId, out string name, out MachineHistory history, out int nextPersistentId, out int nextBlobId)
         {
             _historyEventToId = historyEventToId;
             _idToHistoryEvent = new Dictionary<int, HistoryEvent>();
@@ -24,8 +24,6 @@ namespace CPvC
             _machineHistory = new MachineHistory();
 
             Dictionary<int, IBlob> blobs = new Dictionary<int, IBlob>();
-
-            byteStream.Position = 0;
 
             while (true)
             {
