@@ -8,25 +8,6 @@ using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
 {
-    internal class MemoryFileByteStream : MemoryByteStream, IFileByteStream
-    {
-        public MemoryFileByteStream() : base()
-        {
-        }
-
-        public MemoryFileByteStream(byte[] bytes) : base(bytes)
-        {
-        }
-
-        public void Close()
-        {
-        }
-
-        public void Dispose()
-        {
-        }
-    }
-
     // Move these tests to a new file: MachineFileReaderTests.cs.
     //public class MachineFileTests
     //{
