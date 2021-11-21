@@ -65,6 +65,46 @@ namespace CPvC
             return _fileStream.Read(array, 0, count);
         }
 
+        public string ReadLine()
+        {
+            long startPosition = Position;
+            long endPosition = startPosition;
+            long streamLength = Length;
+
+            while (endPosition < streamLength)
+            {
+                byte b = ReadByte();
+                endPosition++;
+                if (b == 0x0a)
+                {
+                    break;
+                }
+            }
+
+            long length = endPosition - startPosition;
+            if (length == 0)
+            {
+                return null;
+            }
+
+            byte[] bytes = new byte[length];
+
+            Position = startPosition;
+            ReadBytes(bytes, (int)length);
+
+            if (bytes[length - 1] == 0x0a)
+            {
+                length--;
+
+                if (bytes[length - 1] == 0x0d)
+                {
+                    length--;
+                }
+            }
+
+            return System.Text.Encoding.UTF8.GetString(bytes, 0, (int)length);
+        }
+
         public void Close()
         {
             _fileStream?.Close();

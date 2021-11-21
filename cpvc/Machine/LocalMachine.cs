@@ -46,9 +46,9 @@ namespace CPvC
         private int _lastTakenSnapshotId = -1;
         private List<SnapshotInfo> _snapshots;
 
-        private MachineFile _file;
+        private MachineFileWriter _file;
 
-        private MachineFile File
+        private MachineFileWriter File
         {
             get
             {
@@ -509,12 +509,20 @@ namespace CPvC
             MachineHistory history;
 
             using (IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(oldFilepath))
-            using (MachineFile m = new MachineFile(fileByteStream))
             {
-                m.ReadFile(out name, out history);
+                MachineFileReader reader = new MachineFileReader();
+
+                Dictionary<HistoryEvent, int> historyEventToId = new Dictionary<HistoryEvent, int>();
+                reader.ReadFile(fileByteStream, historyEventToId, out name, out history, out _, out _);
             }
 
-            MachineFile.Write(newFilepath, name, history);
+            using (IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(newFilepath))
+            {
+                MachineFileWriter writer = new MachineFileWriter(fileByteStream, history);
+
+                writer.WriteHistory(name);
+                writer.Close();
+            }
 
             fileSystem.ReplaceFile(oldFilepath, newFilepath);
         }
@@ -641,13 +649,13 @@ namespace CPvC
                     throw new ArgumentException("Invalid filepath.");
                 }
 
-                MachineFile.Write(filepath, Name, History);
-
                 IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(filepath);
-                fileByteStream.SeekToEnd();
-                File = new MachineFile(fileByteStream);
+                MachineFileWriter machineFileWriter = new MachineFileWriter(fileByteStream, _history);
 
-                File.History = History;
+                machineFileWriter.WriteHistory(_name);
+
+                File = machineFileWriter;
+
                 File.Machine = this;
                 PersistantFilepath = filepath;
 
@@ -673,15 +681,18 @@ namespace CPvC
             }
 
             IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(PersistantFilepath);
-            MachineFile file = new MachineFile(fileByteStream);
 
-            file.ReadFile(out string name, out MachineHistory history);
+            Dictionary<HistoryEvent, int> historyEventToId = new Dictionary<HistoryEvent, int>();
+
+            MachineFileReader reader = new MachineFileReader();
+            reader.ReadFile(fileByteStream, historyEventToId, out string name, out MachineHistory history, out int nextPersistentId, out int nextBlobId);
+
+            MachineFileWriter file = new MachineFileWriter(fileByteStream, history, historyEventToId, nextPersistentId, nextBlobId);
 
             _history = history;
             _name = name;
 
             file.Machine = this;
-            file.History = _history;
             File = file;
 
             HistoryEvent historyEvent = MostRecentBookmark(_history);
@@ -695,9 +706,12 @@ namespace CPvC
         {
             using (IFileByteStream fileByteStream = fileSystem.OpenFileByteStream(filepath))
             {
-                MachineFile file = new MachineFile(fileByteStream);
+                Dictionary<HistoryEvent, int> historyEventToId = new Dictionary<HistoryEvent, int>();
 
-                file.ReadFile(out string name, out MachineHistory history);
+                MachineFileReader reader = new MachineFileReader();
+                reader.ReadFile(fileByteStream, historyEventToId, out string name, out MachineHistory history, out int nextPersistentId, out int nextBlobId);
+
+                MachineFileWriter file = new MachineFileWriter(fileByteStream, history, historyEventToId, nextPersistentId, nextBlobId);
 
                 LocalMachine machine = LocalMachine.New(name, history);
                 machine.PersistantFilepath = filepath;
