@@ -513,7 +513,7 @@ namespace CPvC
                 MachineFileReader reader = new MachineFileReader();
 
                 Dictionary<HistoryEvent, int> historyEventToId = new Dictionary<HistoryEvent, int>();
-                reader.ReadFile(textFile, historyEventToId, out name, out history, out _, out _);
+                reader.ReadFile(textFile, out name, out history, out _, out _);
             }
 
             using (ITextFile textFile = fileSystem.OpenTextFile(newFilepath))
@@ -685,9 +685,9 @@ namespace CPvC
             Dictionary<HistoryEvent, int> historyEventToId = new Dictionary<HistoryEvent, int>();
 
             MachineFileReader reader = new MachineFileReader();
-            reader.ReadFile(textFile, historyEventToId, out string name, out MachineHistory history, out int nextPersistentId, out int nextBlobId);
+            reader.ReadFile(textFile, out string name, out MachineHistory history, out int nextPersistentId, out int nextBlobId);
 
-            MachineFileWriter file = new MachineFileWriter(textFile, history, historyEventToId, nextPersistentId, nextBlobId);
+            MachineFileWriter file = new MachineFileWriter(textFile, history, nextPersistentId, nextBlobId);
 
             _history = history;
             _name = name;
@@ -709,9 +709,9 @@ namespace CPvC
                 Dictionary<HistoryEvent, int> historyEventToId = new Dictionary<HistoryEvent, int>();
 
                 MachineFileReader reader = new MachineFileReader();
-                reader.ReadFile(fileByteStream, historyEventToId, out string name, out MachineHistory history, out int nextPersistentId, out int nextBlobId);
+                reader.ReadFile(fileByteStream, out string name, out MachineHistory history, out int nextPersistentId, out int nextBlobId);
 
-                MachineFileWriter file = new MachineFileWriter(fileByteStream, history, historyEventToId, nextPersistentId, nextBlobId);
+                MachineFileWriter file = new MachineFileWriter(fileByteStream, history, nextPersistentId, nextBlobId);
 
                 LocalMachine machine = LocalMachine.New(name, history);
                 machine.PersistantFilepath = filepath;

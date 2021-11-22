@@ -23,14 +23,16 @@ namespace CPvC
 
     internal class HistoryNode
     {
-        public HistoryNode()
+        public HistoryNode(HistoryEventType type, int id)
         {
             _historyEvent = new HistoryEvent(this);
             Children = new List<HistoryNode>();
+            Type = type;
+            Id = id;
         }
 
         // Do we need a HistoryNodeType, perhaps? Type can only be AddCoreAction or AddBookmark.
-        public HistoryEventType Type;
+        public HistoryEventType Type { get; private set; }
         public UInt64 Ticks;
         public CoreAction CoreAction;
         public Bookmark Bookmark;
@@ -39,6 +41,11 @@ namespace CPvC
 
         public HistoryNode Parent;
         public List<HistoryNode> Children
+        {
+            get;
+        }
+
+        public int Id
         {
             get;
         }
@@ -99,6 +106,14 @@ namespace CPvC
             get
             {
                 return _historyNode.Type;
+            }
+        }
+
+        public int Id
+        {
+            get
+            {
+                return _historyNode.Id;
             }
         }
 
@@ -197,13 +212,16 @@ namespace CPvC
 
         public HistoryEventDelegate Auditors;
 
+        private int _nextId;
+
         public MachineHistory()
         {
             _nodes = new HashSet<HistoryNode>();
+            _nextId = 0;
 
-            _rootNode = new HistoryNode
+            // Use a special id (-1) for the root.
+            _rootNode = new HistoryNode(HistoryEventType.Root, - 1)
             {
-                Type = HistoryEventType.Root,
                 Parent = null,
                 Ticks = 0
             };
@@ -214,6 +232,11 @@ namespace CPvC
         }
 
         public HistoryEvent AddCoreAction(CoreAction coreAction)
+        {
+            return AddCoreAction(coreAction, _nextId++);
+        }
+
+        public HistoryEvent AddCoreAction(CoreAction coreAction, int id)
         {
             // Instead of continually adding "RunUntil" actions, just keep updating the
             // current one if it's a RunUntil, and only notify once we've finished. That
@@ -233,14 +256,15 @@ namespace CPvC
                 }
             }
 
-            HistoryNode historyNode = new HistoryNode
+            HistoryNode historyNode = new HistoryNode(HistoryEventType.CoreAction, id)
             {
-                Type = HistoryEventType.CoreAction,
                 Ticks = coreAction.Ticks,
                 CoreAction = coreAction,
                 Parent = _currentNode,
                 CreateDate = DateTime.Now
             };
+
+            _nextId = Math.Max(_nextId, id + 1);
 
             AddChildNode(historyNode, notify);
 
@@ -248,6 +272,11 @@ namespace CPvC
         }
 
         public HistoryEvent AddBookmark(UInt64 ticks, Bookmark bookmark)
+        {
+            return AddBookmark(ticks, bookmark, _nextId++);
+        }
+
+        public HistoryEvent AddBookmark(UInt64 ticks, Bookmark bookmark, int id)
         {
             if (_currentNode.Children.Count == 0 &&
                 _currentNode.Type == HistoryEventType.CoreAction &&
@@ -257,14 +286,15 @@ namespace CPvC
                 Auditors?.Invoke(_currentNode.HistoryEvent, _currentNode.Ticks, HistoryChangedAction.Add, _currentNode.CoreAction, _currentNode.Bookmark);
             }
 
-            HistoryNode historyNode = new HistoryNode
+            HistoryNode historyNode = new HistoryNode(HistoryEventType.Bookmark, id)
             {
-                Type = HistoryEventType.Bookmark,
                 Ticks = ticks,
                 Bookmark = bookmark,
                 Parent = _currentNode,
                 CreateDate = DateTime.Now
             };
+
+            _nextId = Math.Max(_nextId, id + 1);
 
             if (ticks < _currentNode.Ticks)
             {

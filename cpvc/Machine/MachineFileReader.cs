@@ -11,13 +11,11 @@ namespace CPvC
         private string _name;
         private MachineHistory _machineHistory;
         private int _nextPersistentId;
-        private Dictionary<HistoryEvent, int> _historyEventToId;
         private Dictionary<int, HistoryEvent> _idToHistoryEvent;
         private int _nextBlobId = 0;
 
-        public void ReadFile(ITextFile byteStream, Dictionary<HistoryEvent, int> historyEventToId, out string name, out MachineHistory history, out int nextPersistentId, out int nextBlobId)
+        public void ReadFile(ITextFile byteStream, out string name, out MachineHistory history, out int nextPersistentId, out int nextBlobId)
         {
-            _historyEventToId = historyEventToId;
             _idToHistoryEvent = new Dictionary<int, HistoryEvent>();
 
             _name = null;
@@ -100,9 +98,8 @@ namespace CPvC
 
             Bookmark bookmark = new Bookmark(system, version, stateBlob, screenBlob);
 
-            HistoryEvent historyEvent = _machineHistory.AddBookmark(ticks, bookmark);
+            HistoryEvent historyEvent = _machineHistory.AddBookmark(ticks, bookmark, id);
 
-            _historyEventToId[historyEvent] = id;
             _idToHistoryEvent[id] = historyEvent;
 
             _nextPersistentId = Math.Max(_nextPersistentId, id + 1);
@@ -112,22 +109,15 @@ namespace CPvC
         {
             string[] tokens = line.Split(',');
 
-            if (tokens[0] == "root")
+            int id = Convert.ToInt32(tokens[0]);
+
+            if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
             {
-                _machineHistory.SetCurrent(_machineHistory.RootEvent);
+                _machineHistory.SetCurrent(newId);
             }
             else
             {
-                int id = Convert.ToInt32(tokens[0]);
-
-                if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
-                {
-                    _machineHistory.SetCurrent(newId);
-                }
-                else
-                {
-                    throw new ArgumentException(String.Format("Unknown history node id {0}.", id), "id");
-                }
+                throw new ArgumentException(String.Format("Unknown history node id {0}.", id), "id");
             }
         }
 
@@ -213,8 +203,7 @@ namespace CPvC
 
         private HistoryEvent AddCoreAction(int id, CoreAction coreAction)
         {
-            HistoryEvent historyEvent = _machineHistory.AddCoreAction(coreAction);
-            _historyEventToId[historyEvent] = id;
+            HistoryEvent historyEvent = _machineHistory.AddCoreAction(coreAction, id);
             _idToHistoryEvent[id] = historyEvent;
 
             _nextPersistentId = Math.Max(_nextPersistentId, id + 1);

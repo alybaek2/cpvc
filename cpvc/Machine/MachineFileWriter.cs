@@ -21,7 +21,6 @@ namespace CPvC
         public const string _idBlob = "blob";
         public const string _idCompound = "compound";
 
-        private Dictionary<HistoryEvent, int> _historyEventToId;
         private MachineHistory _machineHistory;
         private int _nextPersistentId;
         private int _nextBlob;
@@ -70,7 +69,6 @@ namespace CPvC
         public MachineFileWriter(ITextFile textFile)
         {
             _textFile = textFile;
-            _historyEventToId = new Dictionary<HistoryEvent, int>();
             _nextPersistentId = 0;
             _nextBlob = 0;
         }
@@ -78,7 +76,6 @@ namespace CPvC
         public MachineFileWriter(ITextFile textFile, MachineHistory machineHistory)
         {
             _textFile = textFile;
-            _historyEventToId = new Dictionary<HistoryEvent, int>();
             _nextPersistentId = 0;
             _nextBlob = 0;
 
@@ -89,10 +86,9 @@ namespace CPvC
             }
         }
 
-        public MachineFileWriter(ITextFile textFile, MachineHistory machineHistory, Dictionary<HistoryEvent, int> historyEventToId, int nextPersistentId, int nextBlobId)
+        public MachineFileWriter(ITextFile textFile, MachineHistory machineHistory, int nextPersistentId, int nextBlobId)
         {
             _textFile = textFile;
-            _historyEventToId = historyEventToId ?? throw new ArgumentException("HistoryEvent to id map cannot be null!", nameof(historyEventToId));
             _nextBlob = nextBlobId;
             _nextPersistentId = nextPersistentId;
 
@@ -126,11 +122,6 @@ namespace CPvC
         static private string CurrentCommand(int persistentId)
         {
             return String.Format("{0}:{1}", _idCurrent, persistentId);
-        }
-
-        static private string CurrentRootCommand()
-        {
-            return String.Format("{0}:root", _idCurrent);
         }
 
         static private string NameCommand(string name)
@@ -310,41 +301,16 @@ namespace CPvC
                         int lineId = _nextPersistentId++;
 
                         GetLines(historyEvent, lineId, lines);
-
-                        _historyEventToId[historyEvent] = lineId;
                     }
                     break;
                 case HistoryChangedAction.Delete:
-                    {
-                        int lineId = _historyEventToId[historyEvent];
-
-                        lines.Add(DeleteEventCommand(lineId));
-
-                        // Should we remove the id from the maps? Or should history events and blobs have Id's built into them?
-                    }
+                    lines.Add(DeleteEventCommand(historyEvent.Id));
                     break;
                 case HistoryChangedAction.DeleteRecursive:
-                    {
-                        int lineId = _historyEventToId[historyEvent];
-
-                        lines.Add(DeleteEventAndChildrenCommand(lineId));
-
-                        // Should we remove the id from the maps? Or should history events and blobs have Id's built into them?
-                    }
+                    lines.Add(DeleteEventAndChildrenCommand(historyEvent.Id));
                     break;
                 case HistoryChangedAction.SetCurrent:
-                    {
-                        if (historyEvent.Type == HistoryEventType.Root)
-                        {
-                            lines.Add(CurrentRootCommand());
-                        }
-                        else
-                        {
-                            int lineId = _historyEventToId[historyEvent];
-
-                            lines.Add(CurrentCommand(lineId));
-                        }
-                    }
+                    lines.Add(CurrentCommand(historyEvent.Id));
                     break;
                 default:
                     throw new ArgumentException("Unknown history action type!", nameof(changeType));
@@ -370,35 +336,14 @@ namespace CPvC
             {
                 int currentLineId = _nextPersistentId;
                 HistoryEvent currentEvent = historyEvents[0];
-                _historyEventToId[currentEvent] = currentLineId;
                 _nextPersistentId++;
 
                 if (previousEvent != currentEvent.Parent && previousEvent != null)
                 {
-                    // Todo: should use current:root for when currentEvent.Parent is the root!
-                    if (currentEvent.Parent == _machineHistory.RootEvent)
-                    {
-                        lines.Add(MachineFileWriter.CurrentRootCommand());
-                    }
-                    else
-                    {
-                        lines.Add(MachineFileWriter.CurrentCommand(_historyEventToId[currentEvent.Parent]));
-                    }
+                    lines.Add(MachineFileWriter.CurrentCommand(currentEvent.Parent.Id));
                 }
 
                 GetLines(currentEvent, currentLineId, lines);
-
-                //switch (currentEvent.Type)
-                //{
-                //    case HistoryEventType.CoreAction:
-                //        GetLines(currentEvent.CoreAction, currentLineId, ref _nextBlob, lines);
-                //        break;
-                //    case HistoryEventType.Bookmark:
-                //        GetLines(currentEvent.Bookmark, currentEvent.Ticks, currentLineId, ref _nextBlob, lines);
-                //        break;
-                //    default:
-                //        throw new Exception("Unexpected node type!");
-                //}
 
                 if (currentEvent == _machineHistory.CurrentEvent)
                 {
