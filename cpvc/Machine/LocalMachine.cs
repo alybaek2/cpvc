@@ -517,11 +517,9 @@ namespace CPvC
             }
 
             using (ITextFile textFile = fileSystem.OpenTextFile(newFilepath))
+            using (MachineFileWriter writer = new MachineFileWriter(textFile, history))
             {
-                MachineFileWriter writer = new MachineFileWriter(textFile, history);
-
                 writer.WriteHistory(name);
-                writer.Dispose();
             }
 
             fileSystem.ReplaceFile(oldFilepath, newFilepath);

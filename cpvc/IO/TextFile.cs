@@ -37,10 +37,13 @@ namespace CPvC
 
         public virtual void Close()
         {
-            _streamWriter.Close();
-            _streamReader.Close();
+            _streamWriter?.Close();
+            _streamWriter = null;
 
-            _fileStream.Close();
+            _streamReader?.Close();
+            _streamReader = null;
+
+            _fileStream?.Close();
             _fileStream = null;
         }
     }

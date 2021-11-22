@@ -20,6 +20,7 @@ namespace CPvC
 
             _name = null;
             _machineHistory = new MachineHistory();
+            _idToHistoryEvent[MachineHistory.RootId] = _machineHistory.RootEvent;
 
             Dictionary<int, IBlob> blobs = new Dictionary<int, IBlob>();
 

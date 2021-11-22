@@ -23,23 +23,57 @@ namespace CPvC
 
     internal class HistoryNode
     {
-        public HistoryNode(HistoryEventType type, int id)
+        internal HistoryNode()
         {
+            Id = MachineHistory.RootId;
+            Type = HistoryEventType.Root;
+            Ticks = 0;
+            Bookmark = null;
+            CoreAction = null;
+            Parent = null;
+            CreateDate = DateTime.Now;
+
             _historyEvent = new HistoryEvent(this);
             Children = new List<HistoryNode>();
-            Type = type;
+        }
+
+        internal HistoryNode(int id, UInt64 ticks, Bookmark bookmark, HistoryNode parent, DateTime createDate)
+        {
             Id = id;
+            Type = HistoryEventType.Bookmark;
+            Ticks = ticks;
+            Bookmark = bookmark;
+            CoreAction = null;
+            Parent = parent;
+            CreateDate = createDate;
+
+            _historyEvent = new HistoryEvent(this);
+            Children = new List<HistoryNode>();
+        }
+
+        internal HistoryNode(int id, UInt64 ticks, CoreAction action, HistoryNode parent, DateTime createDate)
+        {
+            Id = id;
+            Type = HistoryEventType.CoreAction;
+            Ticks = ticks;
+            Bookmark = null;
+            CoreAction = action;
+            Parent = parent;
+            CreateDate = createDate;
+
+            _historyEvent = new HistoryEvent(this);
+            Children = new List<HistoryNode>();
         }
 
         // Do we need a HistoryNodeType, perhaps? Type can only be AddCoreAction or AddBookmark.
         public HistoryEventType Type { get; private set; }
-        public UInt64 Ticks;
-        public CoreAction CoreAction;
-        public Bookmark Bookmark;
+        public UInt64 Ticks { get; private set; }
+        public CoreAction CoreAction { get; private set; }
+        public Bookmark Bookmark { get; private set; }
 
-        public DateTime CreateDate;
+        public DateTime CreateDate { get; private set; }
 
-        public HistoryNode Parent;
+        public HistoryNode Parent { get; set; }
         public List<HistoryNode> Children
         {
             get;
@@ -212,6 +246,7 @@ namespace CPvC
 
         public HistoryEventDelegate Auditors;
 
+        internal const int RootId = -1;
         private int _nextId;
 
         public MachineHistory()
@@ -219,12 +254,7 @@ namespace CPvC
             _nodes = new HashSet<HistoryNode>();
             _nextId = 0;
 
-            // Use a special id (-1) for the root.
-            _rootNode = new HistoryNode(HistoryEventType.Root, - 1)
-            {
-                Parent = null,
-                Ticks = 0
-            };
+            _rootNode = new HistoryNode();
 
             _nodes.Add(_rootNode);
 
@@ -256,13 +286,7 @@ namespace CPvC
                 }
             }
 
-            HistoryNode historyNode = new HistoryNode(HistoryEventType.CoreAction, id)
-            {
-                Ticks = coreAction.Ticks,
-                CoreAction = coreAction,
-                Parent = _currentNode,
-                CreateDate = DateTime.Now
-            };
+            HistoryNode historyNode = new HistoryNode(id, coreAction.Ticks, coreAction, _currentNode, DateTime.Now);
 
             _nextId = Math.Max(_nextId, id + 1);
 
@@ -286,13 +310,7 @@ namespace CPvC
                 Auditors?.Invoke(_currentNode.HistoryEvent, _currentNode.Ticks, HistoryChangedAction.Add, _currentNode.CoreAction, _currentNode.Bookmark);
             }
 
-            HistoryNode historyNode = new HistoryNode(HistoryEventType.Bookmark, id)
-            {
-                Ticks = ticks,
-                Bookmark = bookmark,
-                Parent = _currentNode,
-                CreateDate = DateTime.Now
-            };
+            HistoryNode historyNode = new HistoryNode(id, ticks, bookmark, _currentNode, DateTime.Now);
 
             _nextId = Math.Max(_nextId, id + 1);
 
