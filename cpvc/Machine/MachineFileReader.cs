@@ -10,11 +10,11 @@ namespace CPvC
     {
         private string _name;
         private MachineHistory _machineHistory;
-        private int _nextPersistentId;
+        private int _nextHistoryEventId;
         private Dictionary<int, HistoryEvent> _idToHistoryEvent;
         private int _nextBlobId = 0;
 
-        public void ReadFile(ITextFile byteStream, out string name, out MachineHistory history, out int nextPersistentId, out int nextBlobId)
+        public void ReadFile(ITextFile byteStream, out string name, out MachineHistory history, out int nextHistoryEventId, out int nextBlobId)
         {
             _idToHistoryEvent = new Dictionary<int, HistoryEvent>();
 
@@ -37,7 +37,7 @@ namespace CPvC
             name = _name;
             history = _machineHistory;
             nextBlobId = _nextBlobId;
-            nextPersistentId = _nextPersistentId;
+            nextHistoryEventId = _nextHistoryEventId;
         }
 
         private string ReadName(string line)
@@ -102,7 +102,7 @@ namespace CPvC
 
             _idToHistoryEvent[id] = historyEvent;
 
-            _nextPersistentId = Math.Max(_nextPersistentId, id + 1);
+            _nextHistoryEventId = Math.Max(_nextHistoryEventId, id + 1);
         }
 
         private void ReadCurrent(string line)
@@ -206,7 +206,7 @@ namespace CPvC
             HistoryEvent historyEvent = _machineHistory.AddCoreAction(coreAction, id);
             _idToHistoryEvent[id] = historyEvent;
 
-            _nextPersistentId = Math.Max(_nextPersistentId, id + 1);
+            _nextHistoryEventId = Math.Max(_nextHistoryEventId, id + 1);
 
             return historyEvent;
         }

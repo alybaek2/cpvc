@@ -685,9 +685,9 @@ namespace CPvC
             Dictionary<HistoryEvent, int> historyEventToId = new Dictionary<HistoryEvent, int>();
 
             MachineFileReader reader = new MachineFileReader();
-            reader.ReadFile(textFile, out string name, out MachineHistory history, out int nextPersistentId, out int nextBlobId);
+            reader.ReadFile(textFile, out string name, out MachineHistory history, out int nextHistoryEventId, out int nextBlobId);
 
-            MachineFileWriter file = new MachineFileWriter(textFile, history, nextPersistentId, nextBlobId);
+            MachineFileWriter file = new MachineFileWriter(textFile, history, nextHistoryEventId, nextBlobId);
 
             _history = history;
             _name = name;
@@ -709,9 +709,9 @@ namespace CPvC
                 Dictionary<HistoryEvent, int> historyEventToId = new Dictionary<HistoryEvent, int>();
 
                 MachineFileReader reader = new MachineFileReader();
-                reader.ReadFile(fileByteStream, out string name, out MachineHistory history, out int nextPersistentId, out int nextBlobId);
+                reader.ReadFile(fileByteStream, out string name, out MachineHistory history, out int nextHistoryEventId, out int nextBlobId);
 
-                MachineFileWriter file = new MachineFileWriter(fileByteStream, history, nextPersistentId, nextBlobId);
+                MachineFileWriter file = new MachineFileWriter(fileByteStream, history, nextHistoryEventId, nextBlobId);
 
                 LocalMachine machine = LocalMachine.New(name, history);
                 machine.PersistantFilepath = filepath;

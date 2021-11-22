@@ -22,7 +22,7 @@ namespace CPvC
         public const string _idCompound = "compound";
 
         private MachineHistory _machineHistory;
-        private int _nextPersistentId;
+        private int _nextHistoryEventId;
         private int _nextBlob;
 
         private LocalMachine _machine;
@@ -69,14 +69,14 @@ namespace CPvC
         public MachineFileWriter(ITextFile textFile)
         {
             _textFile = textFile;
-            _nextPersistentId = 0;
+            _nextHistoryEventId = 0;
             _nextBlob = 0;
         }
 
         public MachineFileWriter(ITextFile textFile, MachineHistory machineHistory)
         {
             _textFile = textFile;
-            _nextPersistentId = 0;
+            _nextHistoryEventId = 0;
             _nextBlob = 0;
 
             _machineHistory = machineHistory;
@@ -86,11 +86,11 @@ namespace CPvC
             }
         }
 
-        public MachineFileWriter(ITextFile textFile, MachineHistory machineHistory, int nextPersistentId, int nextBlobId)
+        public MachineFileWriter(ITextFile textFile, MachineHistory machineHistory, int nextHistoryEventId, int nextBlobId)
         {
             _textFile = textFile;
             _nextBlob = nextBlobId;
-            _nextPersistentId = nextPersistentId;
+            _nextHistoryEventId = nextHistoryEventId;
 
             _machineHistory = machineHistory;
             if (_machineHistory != null)
@@ -109,19 +109,19 @@ namespace CPvC
             }
         }
 
-        static private string DeleteEventCommand(int persistentId)
+        static private string DeleteEventCommand(int historyEventId)
         {
-            return String.Format("{0}:{1}", _idDeleteEvent, persistentId);
+            return String.Format("{0}:{1}", _idDeleteEvent, historyEventId);
         }
 
-        static private string DeleteEventAndChildrenCommand(int persistentId)
+        static private string DeleteEventAndChildrenCommand(int historyEventId)
         {
-            return String.Format("{0}:{1}", _idDeleteEventAndChildren, persistentId);
+            return String.Format("{0}:{1}", _idDeleteEventAndChildren, historyEventId);
         }
 
-        static private string CurrentCommand(int persistentId)
+        static private string CurrentCommand(int historyEventId)
         {
-            return String.Format("{0}:{1}", _idCurrent, persistentId);
+            return String.Format("{0}:{1}", _idCurrent, historyEventId);
         }
 
         static private string NameCommand(string name)
@@ -298,7 +298,7 @@ namespace CPvC
             {
                 case HistoryChangedAction.Add:
                     {
-                        int lineId = _nextPersistentId++;
+                        int lineId = _nextHistoryEventId++;
 
                         GetLines(historyEvent, lineId, lines);
                     }
@@ -334,9 +334,9 @@ namespace CPvC
             HistoryEvent previousEvent = null;
             while (historyEvents.Count > 0)
             {
-                int currentLineId = _nextPersistentId;
+                int currentLineId = _nextHistoryEventId;
                 HistoryEvent currentEvent = historyEvents[0];
-                _nextPersistentId++;
+                _nextHistoryEventId++;
 
                 if (previousEvent != currentEvent.Parent && previousEvent != null)
                 {
