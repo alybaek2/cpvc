@@ -521,7 +521,7 @@ namespace CPvC
 
         public void NewMachine(IFileSystem fileSystem)
         {
-            LocalMachine machine = LocalMachine.New("Untitled", null);
+            LocalMachine machine = LocalMachine.New("Untitled", null, null);
             _model.AddMachine(machine);
 
             ActiveMachine = machine;

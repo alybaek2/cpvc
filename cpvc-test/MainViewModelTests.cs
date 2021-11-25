@@ -45,7 +45,7 @@ namespace CPvC.Test
 
             _mockSocket = new Mock<ISocket>();
 
-            _machine = LocalMachine.New("test", null);
+            _machine = LocalMachine.New("test", null, null);
             _mainViewModel = new MainViewModel(null, _mockFileSystem.Object);
 
         }

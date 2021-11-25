@@ -15,7 +15,7 @@ namespace CPvC.Test
 
         private LocalMachine CreateMachineWithHistory()
         {
-            LocalMachine machine = LocalMachine.New("test", null);
+            LocalMachine machine = LocalMachine.New("test", null, null);
             Run(machine, 100);
             machine.AddBookmark(false);
             Run(machine, 300);
@@ -62,7 +62,7 @@ namespace CPvC.Test
         public void SetSelectedItemNull()
         {
             // Setup
-            LocalMachine machine = LocalMachine.New("test", null);
+            LocalMachine machine = LocalMachine.New("test", null, null);
             RunForAWhile(machine);
             machine.AddBookmark(true);
             Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
@@ -85,7 +85,7 @@ namespace CPvC.Test
         public void SetSelectedItemCurrent()
         {
             // Setup
-            LocalMachine machine = LocalMachine.New("test", null);
+            LocalMachine machine = LocalMachine.New("test", null, null);
             RunForAWhile(machine);
             machine.AddBookmark(true);
             Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
@@ -112,7 +112,7 @@ namespace CPvC.Test
             // Setup
             Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
 
-            LocalMachine machine = LocalMachine.New("test", null);
+            LocalMachine machine = LocalMachine.New("test", null, null);
             RunForAWhile(machine);
             machine.AddBookmark(true);
             HistoryEvent bookmarkEvent = machine.History.CurrentEvent;
@@ -139,7 +139,7 @@ namespace CPvC.Test
         public void SetSelectedItemRoot()
         {
             // Setup
-            LocalMachine machine = LocalMachine.New("test", null);
+            LocalMachine machine = LocalMachine.New("test", null, null);
             RunForAWhile(machine);
             machine.AddBookmark(true);
             Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
@@ -164,7 +164,7 @@ namespace CPvC.Test
         public void SimpleHistory()
         {
             // Setup
-            LocalMachine machine = LocalMachine.New("test", null);
+            LocalMachine machine = LocalMachine.New("test", null, null);
             RunForAWhile(machine);
             machine.Key(Keys.A, true);
             RunForAWhile(machine);
@@ -188,7 +188,7 @@ namespace CPvC.Test
         public void SimpleBranchedHistory()
         {
             // Setup
-            LocalMachine machine = LocalMachine.New("test", null);
+            LocalMachine machine = LocalMachine.New("test", null, null);
             Run(machine, 100);
             machine.AddBookmark(false);
             HistoryEvent event100 = machine.History.CurrentEvent;

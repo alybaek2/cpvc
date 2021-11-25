@@ -135,7 +135,7 @@ namespace CPvC
             public HistoryEvent HistoryEvent { get; }
         }
 
-        static public LocalMachine New(string name, MachineHistory history)
+        static public LocalMachine New(string name, MachineHistory history, string persistentFilepath)
         {
             LocalMachine machine = new LocalMachine(name);
             if (history != null)
@@ -145,6 +145,8 @@ namespace CPvC
 
             Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
             machine.SetCore(core);
+
+            machine.PersistantFilepath = persistentFilepath;
 
             return machine;
         }
@@ -505,21 +507,16 @@ namespace CPvC
             string oldFilepath = PersistantFilepath;
             string newFilepath = oldFilepath + ".tmp";
 
-            string name;
-            MachineHistory history;
-
+            MachineFileReader reader = new MachineFileReader();
             using (ITextFile textFile = fileSystem.OpenTextFile(oldFilepath))
             {
-                MachineFileReader reader = new MachineFileReader();
-
-                Dictionary<HistoryEvent, int> historyEventToId = new Dictionary<HistoryEvent, int>();
-                reader.ReadFile(textFile, out name, out history, out _, out _);
+                reader.ReadFile(textFile);
             }
 
             using (ITextFile textFile = fileSystem.OpenTextFile(newFilepath))
-            using (MachineFileWriter writer = new MachineFileWriter(textFile, history))
+            using (MachineFileWriter writer = new MachineFileWriter(textFile, reader.History))
             {
-                writer.WriteHistory(name);
+                writer.WriteHistory(reader.Name);
             }
 
             fileSystem.ReplaceFile(oldFilepath, newFilepath);
@@ -678,63 +675,63 @@ namespace CPvC
                 return;
             }
 
-            ITextFile textFile = fileSystem.OpenTextFile(PersistantFilepath);
+            ITextFile textFile = null;
 
-            Dictionary<HistoryEvent, int> historyEventToId = new Dictionary<HistoryEvent, int>();
-
-            MachineFileReader reader = new MachineFileReader();
-            reader.ReadFile(textFile, out string name, out MachineHistory history, out int nextHistoryEventId, out int nextBlobId);
-
-            MachineFileWriter file = new MachineFileWriter(textFile, history, nextHistoryEventId, nextBlobId);
-
-            _history = history;
-            _name = name;
-
-            file.Machine = this;
-            File = file;
-
-            HistoryEvent historyEvent = MostRecentBookmark(_history);
-            SetCurrentEvent(historyEvent);
-
-            // Should probably be monitoring the IsOpen property, I think...
-            Display.EnableGreyscale(false);
-        }
-
-        static public LocalMachine Create(IFileSystem fileSystem, string filepath)
-        {
-            using (ITextFile fileByteStream = fileSystem.OpenTextFile(filepath))
+            try
             {
-                Dictionary<HistoryEvent, int> historyEventToId = new Dictionary<HistoryEvent, int>();
-
+                textFile = fileSystem.OpenTextFile(PersistantFilepath);
                 MachineFileReader reader = new MachineFileReader();
-                reader.ReadFile(fileByteStream, out string name, out MachineHistory history, out int nextHistoryEventId, out int nextBlobId);
+                reader.ReadFile(textFile);
 
-                MachineFileWriter file = new MachineFileWriter(fileByteStream, history, nextHistoryEventId, nextBlobId);
+                MachineFileWriter file = new MachineFileWriter(textFile, reader.History, reader.NextLineId);
 
-                LocalMachine machine = LocalMachine.New(name, history);
-                machine.PersistantFilepath = filepath;
+                _history = reader.History;
+                _name = reader.Name;
 
-                if (history != null)
+                file.Machine = this;
+                File = file;
+
+                HistoryEvent historyEvent = _history.MostRecentBookmark();
+                SetCurrentEvent(historyEvent);
+
+                // Should probably be monitoring the IsOpen property, I think...
+                Display.EnableGreyscale(false);
+            }
+            catch (Exception ex)
+            {
+                // Make sure we remove our lock on the machine file...
+                textFile?.Dispose();
+                textFile = null;
+
+                if (File != null)
                 {
-                    HistoryEvent historyEvent = MostRecentBookmark(history);
-
-                    machine.Display.GetFromBookmark(historyEvent.Bookmark);
-                    machine.Display.EnableGreyscale(true);
+                    File.Machine = null;
                 }
 
-                return machine;
+                File = null;
+
+                throw ex;
             }
         }
 
-        static private HistoryEvent MostRecentBookmark(MachineHistory history)
+        static public LocalMachine GetClosedMachine(IFileSystem fileSystem, string filepath)
         {
-            HistoryEvent historyEvent = history.CurrentEvent;
-            while (historyEvent.Type != HistoryEventType.Bookmark && historyEvent != history.RootEvent)
+            MachineFileReader reader = new MachineFileReader();
+            using (ITextFile fileByteStream = fileSystem.OpenTextFile(filepath))
             {
-                historyEvent = historyEvent.Parent;
+                reader.ReadFile(fileByteStream);
             }
 
-            return historyEvent;
+            LocalMachine machine = New(reader.Name, reader.History, filepath);
+            if (machine.History != null)
+            {
+                HistoryEvent historyEvent = machine.History.MostRecentBookmark();
+
+                machine.Display.GetFromBookmark(historyEvent.Bookmark);
+                machine.Display.EnableGreyscale(true);
+            }
+
+            return machine;
         }
 
         public bool IsOpen

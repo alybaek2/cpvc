@@ -17,7 +17,7 @@ namespace CPvC.Test
 
         public LocalMachine CreateMachine()
         {
-            LocalMachine machine = LocalMachine.New("test", null);
+            LocalMachine machine = LocalMachine.New("test", null, null);
             machine.Auditors += _mockAuditor.Object;
 
             // For consistency with automated builds, use all zero ROMs.
@@ -93,7 +93,7 @@ namespace CPvC.Test
         public void SeekToLastBookmark(bool createBookmark)
         {
             // Setup
-            using (LocalMachine machine = LocalMachine.New("test", null))
+            using (LocalMachine machine = LocalMachine.New("test", null, null))
             {
                 machine.Core.IdleRequest = () => CoreRequest.RunUntil(machine.Core.Ticks + 1000);
                 machine.Auditors += _mockAuditor.Object;
@@ -785,7 +785,7 @@ namespace CPvC.Test
         public void NewMachineHasIdleRequestHandler()
         {
             // Setup
-            using (LocalMachine machine = LocalMachine.New("test", null))
+            using (LocalMachine machine = LocalMachine.New("test", null, null))
             {
                 // Act
                 RunForAWhile(machine);

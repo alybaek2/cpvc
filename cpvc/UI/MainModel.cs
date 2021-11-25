@@ -52,7 +52,7 @@ namespace CPvC
                     }
                     else
                     {
-                        machine = LocalMachine.Create(fileSystem, filepath);
+                        machine = LocalMachine.GetClosedMachine(fileSystem, filepath);
                     }
 
                     AddMachine(machine);

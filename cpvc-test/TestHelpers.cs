@@ -362,7 +362,7 @@ namespace CPvC.Test
             MockTextFile mockTextFile = new MockTextFile();
             mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(AnyString())).Returns(mockTextFile);
 
-            LocalMachine machine = LocalMachine.New("test", null);
+            LocalMachine machine = LocalMachine.New("test", null, null);
 
             // For consistency with automated builds, use all zero ROMs.
             byte[] zeroROM = new byte[0x4000];

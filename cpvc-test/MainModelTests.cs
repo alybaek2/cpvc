@@ -17,7 +17,7 @@ namespace CPvC.Test
             _mockFileSystem = new Mock<IFileSystem>();
             MockTextFile mockTextFile = new MockTextFile();
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(TestHelpers.AnyString())).Returns(mockTextFile);
-            _machine = LocalMachine.New("test", null);
+            _machine = LocalMachine.New("test", null, null);
             _mockSettings = new Mock<ISettings>();
             _mainModel = new MainModel(_mockSettings.Object, null);
         }

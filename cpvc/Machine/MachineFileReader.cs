@@ -10,19 +10,18 @@ namespace CPvC
     {
         private string _name;
         private MachineHistory _machineHistory;
-        private int _nextHistoryEventId;
         private Dictionary<int, HistoryEvent> _idToHistoryEvent;
-        private int _nextBlobId = 0;
+        private int _nextLineId = 0;
+        private Dictionary<int, IBlob> _blobs;
 
-        public void ReadFile(ITextFile byteStream, out string name, out MachineHistory history, out int nextHistoryEventId, out int nextBlobId)
+        public void ReadFile(ITextFile byteStream)
         {
             _idToHistoryEvent = new Dictionary<int, HistoryEvent>();
+            _blobs = new Dictionary<int, IBlob>();
 
             _name = null;
             _machineHistory = new MachineHistory();
             _idToHistoryEvent[MachineHistory.RootId] = _machineHistory.RootEvent;
-
-            Dictionary<int, IBlob> blobs = new Dictionary<int, IBlob>();
 
             while (true)
             {
@@ -32,13 +31,32 @@ namespace CPvC
                     break;
                 }
 
-                ReadLine(line, blobs);
+                ReadLine(line);
             }
+        }
 
-            name = _name;
-            history = _machineHistory;
-            nextBlobId = _nextBlobId;
-            nextHistoryEventId = _nextHistoryEventId;
+        public int NextLineId
+        {
+            get
+            {
+                return _nextLineId;
+            }
+        }
+
+        public MachineHistory History
+        {
+            get
+            {
+                return _machineHistory;
+            }
+        }
+
+        public string Name
+        {
+            get
+            {
+                return _name;
+            }
         }
 
         private string ReadName(string line)
@@ -50,7 +68,7 @@ namespace CPvC
             return name;
         }
 
-        public void ReadBlob(string args, Dictionary<int, IBlob> blobs)
+        public void ReadBlob(string args)
         {
             string[] tokens = args.Split(',');
 
@@ -58,12 +76,12 @@ namespace CPvC
 
             IBlob blob = new MemoryBlob(Helpers.BytesFromStr(tokens[1]));
 
-            blobs[id] = blob;
+            _blobs[id] = blob;
 
-            _nextBlobId = Math.Max(_nextBlobId, id) + 1;
+            _nextLineId = Math.Max(_nextLineId, id) + 1;
         }
 
-        private void ReadCompoundCommand(string line, Dictionary<int, IBlob> blobs)
+        private void ReadCompoundCommand(string line)
         {
             string[] tokens = line.Split(',');
 
@@ -79,11 +97,11 @@ namespace CPvC
 
             foreach (string command in commands.Split('@'))
             {
-                ReadLine(command, blobs);
+                ReadLine(command);
             }
         }
 
-        private void ReadAddBookmark(string line, Dictionary<int, IBlob> blobs)
+        private void ReadAddBookmark(string line)
         {
             string[] tokens = line.Split(',');
 
@@ -94,8 +112,8 @@ namespace CPvC
             int version = Convert.ToInt32(tokens[3]);
             int stateBlobId = Convert.ToInt32(tokens[4]);
             int screenBlobId = Convert.ToInt32(tokens[5]);
-            IBlob stateBlob = blobs[stateBlobId];
-            IBlob screenBlob = blobs[screenBlobId];
+            IBlob stateBlob = _blobs[stateBlobId];
+            IBlob screenBlob = _blobs[screenBlobId];
 
             Bookmark bookmark = new Bookmark(system, version, stateBlob, screenBlob);
 
@@ -103,7 +121,7 @@ namespace CPvC
 
             _idToHistoryEvent[id] = historyEvent;
 
-            _nextHistoryEventId = Math.Max(_nextHistoryEventId, id + 1);
+            _nextLineId = Math.Max(_nextLineId, id + 1);
         }
 
         private void ReadCurrent(string line)
@@ -147,7 +165,7 @@ namespace CPvC
             AddCoreAction(id, action);
         }
 
-        private void ReadLoadDisc(string line, Dictionary<int, IBlob> blobs)
+        private void ReadLoadDisc(string line)
         {
             string[] tokens = line.Split(',');
 
@@ -155,11 +173,11 @@ namespace CPvC
             UInt64 ticks = Convert.ToUInt64(tokens[1]);
             byte drive = Convert.ToByte(tokens[2]);
             int mediaBlobId = Convert.ToInt32(tokens[3]);
-            IBlob mediaBlob = blobs[mediaBlobId];
+            IBlob mediaBlob = _blobs[mediaBlobId];
 
             CoreAction action = CoreAction.LoadDisc(ticks, drive, mediaBlob);
 
-            HistoryEvent historyEvent = AddCoreAction(id, action);
+            AddCoreAction(id, action);
         }
 
         private void ReadVersion(string line)
@@ -188,18 +206,18 @@ namespace CPvC
             AddCoreAction(id, action);
         }
 
-        private void ReadLoadTape(string line, Dictionary<int, IBlob> blobs)
+        private void ReadLoadTape(string line)
         {
             string[] tokens = line.Split(',');
 
             int id = Convert.ToInt32(tokens[0]);
             UInt64 ticks = Convert.ToUInt64(tokens[1]);
             int mediaBlobId = Convert.ToInt32(tokens[2]);
-            IBlob mediaBlob = blobs[mediaBlobId];
+            IBlob mediaBlob = _blobs[mediaBlobId];
 
             CoreAction action = CoreAction.LoadTape(ticks, mediaBlob);
 
-            HistoryEvent historyEvent = AddCoreAction(id, action);
+            AddCoreAction(id, action);
         }
 
         private HistoryEvent AddCoreAction(int id, CoreAction coreAction)
@@ -207,7 +225,7 @@ namespace CPvC
             HistoryEvent historyEvent = _machineHistory.AddCoreAction(coreAction, id);
             _idToHistoryEvent[id] = historyEvent;
 
-            _nextHistoryEventId = Math.Max(_nextHistoryEventId, id + 1);
+            _nextLineId = Math.Max(_nextLineId, id + 1);
 
             return historyEvent;
         }
@@ -248,7 +266,7 @@ namespace CPvC
             }
         }
 
-        private void ReadLine(string line, Dictionary<int, IBlob> blobs)
+        private void ReadLine(string line)
         {
             int colon = line.IndexOf(':');
             if (colon == -1)
@@ -268,7 +286,7 @@ namespace CPvC
                     ReadCurrent(args);
                     break;
                 case MachineFileWriter._idAddBookmark:
-                    ReadAddBookmark(args, blobs);
+                    ReadAddBookmark(args);
                     break;
                 case MachineFileWriter._idDeleteEvent:
                     ReadDeleteEvent(args);
@@ -283,10 +301,10 @@ namespace CPvC
                     ReadReset(args);
                     break;
                 case MachineFileWriter._idLoadDisc:
-                    ReadLoadDisc(args, blobs);
+                    ReadLoadDisc(args);
                     break;
                 case MachineFileWriter._idLoadTape:
-                    ReadLoadTape(args, blobs);
+                    ReadLoadTape(args);
                     break;
                 case MachineFileWriter._idVersion:
                     ReadVersion(args);
@@ -295,10 +313,10 @@ namespace CPvC
                     ReadRunUntil(args);
                     break;
                 case MachineFileWriter._idBlob:
-                    ReadBlob(args, blobs);
+                    ReadBlob(args);
                     break;
                 case MachineFileWriter._idCompound:
-                    ReadCompoundCommand(args, blobs);
+                    ReadCompoundCommand(args);
                     break;
                 default:
                     throw new ArgumentException(String.Format("Unknown type {0}.", type), "type");

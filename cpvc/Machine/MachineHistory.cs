@@ -411,6 +411,17 @@ namespace CPvC
             SetCurrentNode(historyEvent._historyNode);
         }
 
+        public HistoryEvent MostRecentBookmark()
+        {
+            HistoryEvent historyEvent = CurrentEvent;
+            while (historyEvent.Type != HistoryEventType.Bookmark && historyEvent != RootEvent)
+            {
+                historyEvent = historyEvent.Parent;
+            }
+
+            return historyEvent;
+        }
+
         // Browsing methods
         public HistoryEvent RootEvent
         {
