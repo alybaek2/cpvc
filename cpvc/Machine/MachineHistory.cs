@@ -16,8 +16,8 @@ namespace CPvC
     public enum HistoryChangedAction
     {
         Add,
-        Delete,
-        DeleteRecursive,
+        DeleteBookmark,
+        DeleteBranch,
         SetCurrent
     }
 
@@ -65,7 +65,6 @@ namespace CPvC
             Children = new List<HistoryNode>();
         }
 
-        // Do we need a HistoryNodeType, perhaps? Type can only be AddCoreAction or AddBookmark.
         public HistoryEventType Type { get; private set; }
         public UInt64 Ticks { get; private set; }
         public CoreAction CoreAction { get; private set; }
@@ -324,7 +323,7 @@ namespace CPvC
             return historyNode.HistoryEvent;
         }
 
-        public bool DeleteEventAndChildren(HistoryEvent historyEvent)
+        public bool DeleteBranch(HistoryEvent historyEvent)
         {
             HistoryNode historyNode = historyEvent._historyNode;
             if (_nodes.Contains(historyNode))
@@ -349,19 +348,19 @@ namespace CPvC
                 historyNode.Parent = null;
 
                 // Remove this node, and all its children
-                List<HistoryNode> eventsToRemove = new List<HistoryNode>();
-                eventsToRemove.Add(historyNode);
-                while (eventsToRemove.Count > 0)
+                List<HistoryNode> nodesToRemove = new List<HistoryNode>();
+                nodesToRemove.Add(historyNode);
+                while (nodesToRemove.Count > 0)
                 {
-                    HistoryNode h = eventsToRemove[0];
+                    HistoryNode childHistoryNode = nodesToRemove[0];
 
-                    _nodes.Remove(h);
+                    _nodes.Remove(childHistoryNode);
 
-                    eventsToRemove.AddRange(h.Children);
-                    eventsToRemove.RemoveAt(0);
+                    nodesToRemove.AddRange(childHistoryNode.Children);
+                    nodesToRemove.RemoveAt(0);
                 }
 
-                Auditors?.Invoke(historyEvent, 0, HistoryChangedAction.DeleteRecursive, null, null);
+                Auditors?.Invoke(historyEvent, 0, HistoryChangedAction.DeleteBranch, null, null);
 
                 return true;
             }
@@ -371,7 +370,7 @@ namespace CPvC
             }
         }
 
-        public bool DeleteEvent(HistoryEvent historyEvent)
+        public bool DeleteBookmark(HistoryEvent historyEvent)
         {
             HistoryNode historyNode = historyEvent._historyNode;
             if (_nodes.Contains(historyNode))
@@ -396,7 +395,7 @@ namespace CPvC
                 historyNode.Parent.Children.Remove(historyNode);
                 historyNode.Parent = null;
 
-                Auditors?.Invoke(historyEvent, 0, HistoryChangedAction.Delete, null, null);
+                Auditors?.Invoke(historyEvent, 0, HistoryChangedAction.DeleteBookmark, null, null);
 
                 return true;
             }
@@ -408,7 +407,22 @@ namespace CPvC
 
         public void SetCurrent(HistoryEvent historyEvent)
         {
-            SetCurrentNode(historyEvent._historyNode);
+            if (_nodes.Contains(historyEvent._historyNode))
+            {
+                // If the current node is a RunUntil, finish it off by sending a notification...
+                if (_currentNode.Type == HistoryEventType.CoreAction && _currentNode.CoreAction.Type == CoreRequest.Types.RunUntil)
+                {
+                    Auditors?.Invoke(_currentNode.HistoryEvent, _currentNode.Ticks, HistoryChangedAction.Add, _currentNode.CoreAction, _currentNode.Bookmark);
+                }
+
+                _currentNode = historyEvent._historyNode;
+
+                Auditors?.Invoke(_currentNode.HistoryEvent, 0, HistoryChangedAction.SetCurrent, null, null);
+            }
+            else
+            {
+                throw new Exception("This history event doesn't belong to us!");
+            }
         }
 
         public HistoryEvent MostRecentBookmark()
@@ -436,26 +450,6 @@ namespace CPvC
             get
             {
                 return _currentNode.HistoryEvent;
-            }
-        }
-
-        private void SetCurrentNode(HistoryNode historyNode)
-        {
-            if (_nodes.Contains(historyNode))
-            {
-                // If the current node is a RunUntil, finish it off by sending a notification...
-                if (_currentNode.Type == HistoryEventType.CoreAction && _currentNode.CoreAction.Type == CoreRequest.Types.RunUntil)
-                {
-                    Auditors?.Invoke(_currentNode.HistoryEvent, _currentNode.Ticks, HistoryChangedAction.Add, _currentNode.CoreAction, _currentNode.Bookmark);
-                }
-
-                _currentNode = historyNode;
-
-                Auditors?.Invoke(historyNode.HistoryEvent, 0, HistoryChangedAction.SetCurrent, null, null);
-            }
-            else
-            {
-                throw new Exception("This history event doesn't belong to us!");
             }
         }
 

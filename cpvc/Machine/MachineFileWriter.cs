@@ -12,12 +12,12 @@ namespace CPvC
         public const string _idReset = "reset";
         public const string _idLoadDisc = "disc";
         public const string _idLoadTape = "tape";
-        public const string _idDeleteEventAndChildren = "deletewithchildren";
+        public const string _idDeleteBranch = "deletebranch";
         public const string _idCurrent = "current";
         public const string _idAddBookmark = "bookmark";
         public const string _idVersion = "version";
         public const string _idRunUntil = "run";
-        public const string _idDeleteEvent = "delete";
+        public const string _idDeleteBookmark = "deletebookmark";
         public const string _idBlob = "blob";
         public const string _idCompound = "compound";
 
@@ -105,14 +105,14 @@ namespace CPvC
             }
         }
 
-        static private string DeleteEventCommand(int historyEventId)
+        static private string DeleteBookmarkCommand(int historyEventId)
         {
-            return String.Format("{0}:{1}", _idDeleteEvent, historyEventId);
+            return String.Format("{0}:{1}", _idDeleteBookmark, historyEventId);
         }
 
-        static private string DeleteEventAndChildrenCommand(int historyEventId)
+        static private string DeleteBranchCommand(int historyEventId)
         {
-            return String.Format("{0}:{1}", _idDeleteEventAndChildren, historyEventId);
+            return String.Format("{0}:{1}", _idDeleteBranch, historyEventId);
         }
 
         static private string CurrentCommand(int historyEventId)
@@ -292,11 +292,11 @@ namespace CPvC
                 case HistoryChangedAction.Add:
                     GetLines(historyEvent, lines);
                     break;
-                case HistoryChangedAction.Delete:
-                    lines.Add(DeleteEventCommand(historyEvent.Id));
+                case HistoryChangedAction.DeleteBookmark:
+                    lines.Add(DeleteBookmarkCommand(historyEvent.Id));
                     break;
-                case HistoryChangedAction.DeleteRecursive:
-                    lines.Add(DeleteEventAndChildrenCommand(historyEvent.Id));
+                case HistoryChangedAction.DeleteBranch:
+                    lines.Add(DeleteBranchCommand(historyEvent.Id));
                     break;
                 case HistoryChangedAction.SetCurrent:
                     lines.Add(CurrentCommand(historyEvent.Id));

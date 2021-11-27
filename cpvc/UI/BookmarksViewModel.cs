@@ -264,7 +264,7 @@ namespace CPvC.UI
         {
             if (SelectedItem?.HistoryEvent.Bookmark != null)
             {
-                if (_machine.DeleteEvent(SelectedItem.HistoryEvent))
+                if (_machine.DeleteBookmark(SelectedItem.HistoryEvent))
                 {
                     RefreshHistoryViewItems();
                 }

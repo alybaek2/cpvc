@@ -63,9 +63,7 @@ namespace CPvC
         {
             string[] tokens = line.Split(',');
 
-            string name = tokens[0];
-
-            return name;
+            return tokens[0];
         }
 
         public void ReadBlob(string args)
@@ -74,9 +72,7 @@ namespace CPvC
 
             int id = Convert.ToInt32(tokens[0]);
 
-            IBlob blob = new MemoryBlob(Helpers.BytesFromStr(tokens[1]));
-
-            _blobs[id] = blob;
+            _blobs[id] = new MemoryBlob(Helpers.BytesFromStr(tokens[1]));
 
             _nextLineId = Math.Max(_nextLineId, id) + 1;
         }
@@ -130,9 +126,9 @@ namespace CPvC
 
             int id = Convert.ToInt32(tokens[0]);
 
-            if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
+            if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent historyEvent))
             {
-                _machineHistory.SetCurrent(newId);
+                _machineHistory.SetCurrent(historyEvent);
             }
             else
             {
@@ -230,15 +226,15 @@ namespace CPvC
             return historyEvent;
         }
 
-        private void ReadDeleteEvent(string line)
+        private void ReadDeleteBookmark(string line)
         {
             string[] tokens = line.Split(',');
 
             int id = Convert.ToInt32(tokens[0]);
 
-            if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
+            if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent historyEvent))
             {
-                _machineHistory.DeleteEvent(newId);
+                _machineHistory.DeleteBookmark(historyEvent);
             }
             else
             {
@@ -246,15 +242,15 @@ namespace CPvC
             }
         }
 
-        private void ReadDeleteEventAndChildren(string line)
+        private void ReadDeleteBranch(string line)
         {
             string[] tokens = line.Split(',');
 
             int id = Convert.ToInt32(tokens[0]);
 
-            if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent newId))
+            if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent historyEvent))
             {
-                bool b = _machineHistory.DeleteEventAndChildren(newId);
+                bool b = _machineHistory.DeleteBranch(historyEvent);
                 if (!b)
                 {
                     throw new InvalidOperationException("Couldn't delete history event!");
@@ -288,11 +284,11 @@ namespace CPvC
                 case MachineFileWriter._idAddBookmark:
                     ReadAddBookmark(args);
                     break;
-                case MachineFileWriter._idDeleteEvent:
-                    ReadDeleteEvent(args);
+                case MachineFileWriter._idDeleteBookmark:
+                    ReadDeleteBookmark(args);
                     break;
-                case MachineFileWriter._idDeleteEventAndChildren:
-                    ReadDeleteEventAndChildren(args);
+                case MachineFileWriter._idDeleteBranch:
+                    ReadDeleteBranch(args);
                     break;
                 case MachineFileWriter._idKey:
                     ReadKey(args);

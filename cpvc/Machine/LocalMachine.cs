@@ -446,15 +446,15 @@ namespace CPvC
         }
 
         /// <summary>
-        /// Deletes an event (and all its children) without changing the current event.
+        /// Deletes a branch of the history.
         /// </summary>
-        /// <param name="historyEvent">Event to delete.</param>
+        /// <param name="historyEvent">History event to be deleted, along with all its descendents.</param>
         /// <param name="loading">Indicates whether the MachineFile is being loaded from a file.</param>
-        private void DeleteEvent(HistoryEvent historyEvent, bool writeToFile)
+        private void DeleteBranch(HistoryEvent historyEvent, bool writeToFile)
         {
             using (AutoPause())
             {
-                if (!_history.DeleteEventAndChildren(historyEvent))
+                if (!_history.DeleteBranch(historyEvent))
                 {
                     return;
                 }
@@ -483,7 +483,7 @@ namespace CPvC
 
             if (parent != null)
             {
-                DeleteEvent(child, true);
+                DeleteBranch(child, true);
             }
         }
 
@@ -556,9 +556,9 @@ namespace CPvC
             return (RunningState == RunningState.Running) ? CoreRequest.RunUntil(Ticks + 1000) : null;
         }
 
-        public bool DeleteEvent(HistoryEvent e)
+        public bool DeleteBookmark(HistoryEvent e)
         {
-            return _history.DeleteEvent(e);
+            return _history.DeleteBookmark(e);
         }
 
         public void SetCurrentEvent(HistoryEvent historyEvent)

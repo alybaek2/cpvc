@@ -128,7 +128,7 @@ namespace CPvC.Test
         public void DeleteCurrentAndChildren()
         {
             // Act
-            bool result = _history.DeleteEventAndChildren(_history.CurrentEvent);
+            bool result = _history.DeleteBranch(_history.CurrentEvent);
 
             // Verify
             Assert.False(result);
@@ -141,7 +141,7 @@ namespace CPvC.Test
             _history.SetCurrent(_event0);
 
             // Act
-            bool result = _history.DeleteEventAndChildren(_event01);
+            bool result = _history.DeleteBranch(_event01);
 
             // Verify
             Assert.True(result);
@@ -152,14 +152,14 @@ namespace CPvC.Test
         public void DeleteRootAndChildren()
         {
             // Act and Verify
-            Assert.Throws<Exception>(() => _history.DeleteEventAndChildren(_history.RootEvent));
+            Assert.Throws<Exception>(() => _history.DeleteBranch(_history.RootEvent));
         }
 
         [Test]
         public void DeleteEvent()
         {
             // Act
-            bool result = _history.DeleteEvent(_event01);
+            bool result = _history.DeleteBookmark(_event01);
 
             // Verify
             Assert.True(result);
@@ -172,7 +172,7 @@ namespace CPvC.Test
         public void DeleteCurrent()
         {
             // Act
-            bool result = _history.DeleteEvent(_history.CurrentEvent);
+            bool result = _history.DeleteBookmark(_history.CurrentEvent);
 
             // Verify
             Assert.False(result);
@@ -182,7 +182,7 @@ namespace CPvC.Test
         public void DeleteRoot()
         {
             // Act and Verify
-            Assert.Throws<Exception>(() => _history.DeleteEvent(_history.RootEvent));
+            Assert.Throws<Exception>(() => _history.DeleteBookmark(_history.RootEvent));
         }
 
         //[Test]
