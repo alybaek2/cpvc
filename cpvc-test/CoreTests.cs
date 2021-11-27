@@ -268,17 +268,13 @@ namespace CPvC.Test
             // Setup
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
-                core.IdleRequest = () => CoreRequest.RunUntil(core.Ticks + 1000);
                 Mock<PropertyChangedEventHandler> mockPropChanged = new Mock<PropertyChangedEventHandler>();
                 core.PropertyChanged += mockPropChanged.Object;
 
                 // Act
+                core.PushRequest(CoreRequest.RunUntil(1000000));
                 core.Start();
-                while (core.Ticks < 10000000)
-                {
-                    core.AdvancePlayback(10000);
-                }
-
+                WaitForQueueToProcess(core);
                 core.Stop();
 
                 // Verify
