@@ -22,7 +22,7 @@ namespace CPvC
         public const string _idCompound = "compound";
 
         private MachineHistory _machineHistory;
-        private int _nextLineId;
+        private int _nextBlobId;
 
         private LocalMachine _machine;
 
@@ -68,13 +68,13 @@ namespace CPvC
         public MachineFileWriter(ITextFile textFile)
         {
             _textFile = textFile;
-            _nextLineId = 0;
+            _nextBlobId = 0;
         }
 
         public MachineFileWriter(ITextFile textFile, MachineHistory machineHistory)
         {
             _textFile = textFile;
-            _nextLineId = 0;
+            _nextBlobId = 0;
 
             _machineHistory = machineHistory;
             if (_machineHistory != null)
@@ -83,10 +83,10 @@ namespace CPvC
             }
         }
 
-        public MachineFileWriter(ITextFile textFile, MachineHistory machineHistory, int nextLineId)
+        public MachineFileWriter(ITextFile textFile, MachineHistory machineHistory, int nextBlobId)
         {
             _textFile = textFile;
-            _nextLineId = nextLineId;
+            _nextBlobId = nextBlobId;
 
             _machineHistory = machineHistory;
             if (_machineHistory != null)
@@ -95,7 +95,7 @@ namespace CPvC
             }
         }
 
-        private void HistoryEventHappened(HistoryEvent historyEvent, UInt64 ticks, HistoryChangedAction changeAction, CoreAction coreAction, Bookmark bookmark)
+        private void HistoryEventHappened(HistoryEvent historyEvent, HistoryChangedAction changeAction)
         {
             List<string> lines = GetLines(historyEvent, changeAction);
 
@@ -219,49 +219,35 @@ namespace CPvC
                 str);
         }
 
-        private void GetLines(Bookmark bookmark, UInt64 ticks, List<string> lines)
-        {
-            int stateBlobId = _nextLineId++;
-            lines.Add(MachineFileWriter.BlobCommand(stateBlobId, bookmark.State.GetBytes()));
-
-            int screenBlobId = _nextLineId++;
-            lines.Add(MachineFileWriter.BlobCommand(screenBlobId, bookmark.Screen.GetBytes()));
-
-            int lineId = _nextLineId++;
-            lines.Add(MachineFileWriter.AddBookmarkCommand(lineId, ticks, bookmark.System, bookmark.Version, stateBlobId, screenBlobId));
-        }
-
-        private void GetLines(CoreAction action, List<string> lines)
+        private void GetLines(int id, CoreAction action, List<string> lines)
         {
             switch (action.Type)
             {
                 case CoreRequest.Types.KeyPress:
-                    lines.Add(KeyCommand(_nextLineId++, action.Ticks, action.KeyCode, action.KeyDown));
+                    lines.Add(KeyCommand(id, action.Ticks, action.KeyCode, action.KeyDown));
                     break;
                 case CoreRequest.Types.Reset:
-                    lines.Add(ResetCommand(_nextLineId++, action.Ticks));
+                    lines.Add(ResetCommand(id, action.Ticks));
                     break;
                 case CoreRequest.Types.LoadDisc:
                     {
-                        int mediaBlobId = _nextLineId++;
+                        int mediaBlobId = _nextBlobId++;
                         lines.Add(BlobCommand(mediaBlobId, action.MediaBuffer.GetBytes()));
-                        int lineId = _nextLineId++;
-                        lines.Add(LoadDiscCommand(lineId, action.Ticks, action.Drive, mediaBlobId));
+                        lines.Add(LoadDiscCommand(id, action.Ticks, action.Drive, mediaBlobId));
                     }
                     break;
                 case CoreRequest.Types.LoadTape:
                     {
-                        int mediaBlobId = _nextLineId++;
+                        int mediaBlobId = _nextBlobId++;
                         lines.Add(BlobCommand(mediaBlobId, action.MediaBuffer.GetBytes()));
-                        int lineId = _nextLineId++;
-                        lines.Add(LoadTapeCommand(lineId, action.Ticks, mediaBlobId));
+                        lines.Add(LoadTapeCommand(id, action.Ticks, mediaBlobId));
                     }
                     break;
                 case CoreRequest.Types.CoreVersion:
-                    lines.Add(VersionCommand(_nextLineId++, action.Ticks, action.Version));
+                    lines.Add(VersionCommand(id, action.Ticks, action.Version));
                     break;
                 case CoreRequest.Types.RunUntil:
-                    lines.Add(RunCommand(_nextLineId++, action.Ticks, action.StopTicks));
+                    lines.Add(RunCommand(id, action.Ticks, action.StopTicks));
                     break;
                 default:
                     throw new ArgumentException(String.Format("Unrecognized core action type {0}.", action.Type), "type");
@@ -273,10 +259,20 @@ namespace CPvC
             switch (historyEvent.Type)
             {
                 case HistoryEventType.Bookmark:
-                    GetLines(historyEvent.Bookmark, historyEvent.Ticks, lines);
+                    {
+                        Bookmark bookmark = historyEvent.Bookmark;
+
+                        int stateBlobId = _nextBlobId++;
+                        lines.Add(BlobCommand(stateBlobId, bookmark.State.GetBytes()));
+
+                        int screenBlobId = _nextBlobId++;
+                        lines.Add(BlobCommand(screenBlobId, bookmark.Screen.GetBytes()));
+
+                        lines.Add(AddBookmarkCommand(historyEvent.Id, historyEvent.Ticks, bookmark.System, bookmark.Version, stateBlobId, screenBlobId));
+                    }
                     break;
                 case HistoryEventType.CoreAction:
-                    GetLines(historyEvent.CoreAction, lines);
+                    GetLines(historyEvent.Id, historyEvent.CoreAction, lines);
                     break;
                 default:
                     throw new ArgumentException("Unknown history event type!", "historyEvent.Type");
@@ -310,9 +306,10 @@ namespace CPvC
 
         public void WriteHistory(string name)
         {
-            List<string> lines = new List<string>();
-
-            lines.Add(NameCommand(name));
+            List<string> lines = new List<string>
+            {
+                NameCommand(name)
+            };
 
             // As the history tree could be very deep, keep a "stack" of history events in order to avoid recursive calls.
             List<HistoryEvent> historyEvents = new List<HistoryEvent>();
@@ -321,9 +318,7 @@ namespace CPvC
             HistoryEvent previousEvent = null;
             while (historyEvents.Count > 0)
             {
-                int currentLineId = _nextLineId;
                 HistoryEvent currentEvent = historyEvents[0];
-                _nextLineId++;
 
                 if (previousEvent != currentEvent.Parent && previousEvent != null)
                 {
@@ -362,7 +357,7 @@ namespace CPvC
             if (blobCommands.Count > 0)
             {
                 // Create a "compound" command for all the blobs.
-                string compoundCommand = MachineFileWriter.CompoundCommand(blobCommands, true);
+                string compoundCommand = CompoundCommand(blobCommands, true);
 
                 lines.Insert(0, compoundCommand);
             }
@@ -377,21 +372,8 @@ namespace CPvC
         {
             if (e.PropertyName == "Name")
             {
-                WriteName(_machine.Name);
+                _textFile.WriteLine(NameCommand(_machine.Name));
             }
-        }
-
-        public int WriteBlob(byte[] blob)
-        {
-            int blobId = _nextLineId++;
-            _textFile.WriteLine(BlobCommand(blobId, blob));
-
-            return blobId;
-        }
-
-        public void WriteName(string name)
-        {
-            _textFile.WriteLine(NameCommand(name));
         }
     }
 }

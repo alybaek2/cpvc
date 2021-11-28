@@ -21,7 +21,7 @@ namespace CPvC
 
             _name = null;
             _machineHistory = new MachineHistory();
-            _idToHistoryEvent[MachineHistory.RootId] = _machineHistory.RootEvent;
+            _idToHistoryEvent[_machineHistory.RootEvent.Id] = _machineHistory.RootEvent;
 
             while (true)
             {
