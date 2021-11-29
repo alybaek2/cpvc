@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Windows.Input;
 using static CPvC.MainViewModel;
 using static CPvC.Test.TestHelpers;
 
@@ -93,6 +94,31 @@ namespace CPvC.Test
         static private Expression<Func<IFileSystem, List<string>>> GetZipFileEntryNames(string filepath)
         {
             return fileSystem => fileSystem.GetZipFileEntryNames(filepath);
+        }
+
+        private void TestInterfacePassthrough<T>(ICommand command, Expression<Action<T>> expr) where T : class
+        {
+            // Setup
+            Mock<T> mockMachine = new Mock<T>(MockBehavior.Strict);
+            mockMachine.Setup(expr);
+
+            // Act
+            command.Execute(mockMachine.Object);
+
+            // Verify
+            mockMachine.Verify(expr, Times.Once());
+        }
+
+        private void TestNoInterfacePassthrough<T>(ICommand command) where T : class
+        {
+            // Setup
+            Mock<T> mockMachine = new Mock<T>(MockBehavior.Strict);
+
+            // Act
+            command.Execute(mockMachine.Object);
+
+            // Verify
+            mockMachine.VerifyNoOtherCalls();
         }
 
         //static private Mock<MainViewModel.PromptForFileDelegate> SetupPrompt(FileTypes fileType, bool existing, string filepath)
@@ -471,47 +497,174 @@ namespace CPvC.Test
         //    }
         //}
 
-        ///// <summary>
-        ///// Ensures that a AddBookmark call is passed through from the view model to the machine.
-        ///// </summary>
-        ///// <param name="active">Indicates whether the machine should be set as the view model's active machine.</param>
-        //[TestCase(false)]
-        //[TestCase(true)]
-        //public void AddBookmark(bool active)
-        //{
-        //    // Setup
-        //    //Machine machine = Machine.Create("test", null);
-        //    //MachineViewModel machineViewModel = new MachineViewModel(null, null, machine, null, null, null, null, null);
-        //    //MainViewModel mainViewModel = new MainViewModel(null, null, null, null, null, null, null, null, null, null, null);
-        //    //mainViewModel.MachineViewModels.Add(machineViewModel);
 
-        //    _mainViewModel.ActiveMachineViewModel = active ? _machineViewModel : null;
+        [Test]
+        public void Reset()
+        {
+            TestInterfacePassthrough<IInteractiveMachine>(_mainViewModel.ResetCommand, m => m.Reset());
+        }
 
-        //    // Act
-        //    _mainViewModel.ActiveMachineViewModel.AddBookmarkCommand.Execute(null);
+        [Test]
+        public void ResetNonInteractiveMachine()
+        {
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.ResetCommand);
+        }
 
-        //    // Verify
-        //    if (active)
-        //    {
-        //        Assert.IsNotNull(_machine.History.CurrentEvent.Bookmark);
-        //    }
-        //    else
-        //    {
-        //        Assert.IsNull(_machine.History.CurrentEvent.Bookmark);
-        //    }
-        //}
+        [Test]
+        public void DriveAEject()
+        {
+            TestInterfacePassthrough<IInteractiveMachine>(_mainViewModel.DriveAEjectCommand, m => m.LoadDisc(0, null));
+        }
 
-        //[Test]
-        //public void OpenReplayMachine()
-        //{
-        //    // Setup
-        //    MainViewModel viewModel = SetupViewModel(1, null, null, null);
+        [Test]
+        public void DriveAEjectNonInteractiveMachine()
+        {
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.DriveAEjectCommand);
+        }
 
-        //    // Verify
-        //    IEnumerable<MachineViewModel> replayMachines = viewModel.MachineViewModels.Where(m => m.Machine is ReplayMachine);
-        //    Assert.AreEqual(1, replayMachines.Count());
-        //    Assert.AreEqual("Test Replay", replayMachines.ElementAt(0).Machine.Name);
-        //}
+        [Test]
+        public void DriveBEject()
+        {
+            TestInterfacePassthrough<IInteractiveMachine>(_mainViewModel.DriveBEjectCommand, m => m.LoadDisc(1, null));
+        }
+
+        [Test]
+        public void DriveBEjectNonInteractiveMachine()
+        {
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.DriveBEjectCommand);
+        }
+
+        [Test]
+        public void TapeEject()
+        {
+            TestInterfacePassthrough<IInteractiveMachine>(_mainViewModel.TapeEjectCommand, m => m.LoadTape(null));
+        }
+
+        [Test]
+        public void TapeEjectNonInteractiveMachine()
+        {
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.TapeEjectCommand);
+        }
+
+        [Test]
+        public void ToggleRunning()
+        {
+            TestInterfacePassthrough<IPausableMachine>(_mainViewModel.ToggleRunningCommand, m => m.ToggleRunning());
+        }
+
+        [Test]
+        public void ToggleRunningNonPausableMachine()
+        {
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.ToggleRunningCommand);
+        }
+
+        [Test]
+        public void AddBookmark()
+        {
+            TestInterfacePassthrough<IBookmarkableMachine>(_mainViewModel.AddBookmarkCommand, m => m.AddBookmark(false));
+        }
+
+        [Test]
+        public void AddBookmarkToNonBookmarkableMachine()
+        {
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.AddBookmarkCommand);
+        }
+
+        [Test]
+        public void JumpToMostRecentBookmark()
+        {
+            TestInterfacePassthrough<IJumpableMachine>(_mainViewModel.JumpToMostRecentBookmarkCommand, m => m.JumpToMostRecentBookmark());
+        }
+
+        [Test]
+        public void JumpToMostRecentBookmarkForNonJumpableMachine()
+        {
+            TestNoInterfacePassthrough<ITurboableMachine>(_mainViewModel.JumpToMostRecentBookmarkCommand);
+        }
+
+        [Test]
+        public void SeekToNextBookmark()
+        {
+            TestInterfacePassthrough<IPrerecordedMachine>(_mainViewModel.SeekToNextBookmarkCommand, m => m.SeekToNextBookmark());
+        }
+
+        [Test]
+        public void SeekToNextBookmarkForNonPrerecordedMachine()
+        {
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.SeekToNextBookmarkCommand);
+        }
+
+        [Test]
+        public void SeekToPrevBookmark()
+        {
+            TestInterfacePassthrough<IPrerecordedMachine>(_mainViewModel.SeekToPrevBookmarkCommand, m => m.SeekToPreviousBookmark());
+        }
+
+        [Test]
+        public void SeekToPrevBookmarkForNonPrerecordedMachine()
+        {
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.SeekToPrevBookmarkCommand);
+        }
+
+        [Test]
+        public void SeekToStart()
+        {
+            TestInterfacePassthrough<IPrerecordedMachine>(_mainViewModel.SeekToStartCommand, m => m.SeekToStart());
+        }
+
+        [Test]
+        public void SeekToStartForNonPrerecordedMachine()
+        {
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.SeekToStartCommand);
+        }
+
+        [Test]
+        public void Reverse()
+        {
+            TestInterfacePassthrough<IReversibleMachine>(_mainViewModel.ReverseStartCommand, m => m.Reverse());
+        }
+
+        [Test]
+        public void ReverseForNonReversibleMachine()
+        {
+            TestNoInterfacePassthrough<ITurboableMachine>(_mainViewModel.ReverseStartCommand);
+        }
+
+        [Test]
+        public void ReverseStop()
+        {
+            TestInterfacePassthrough<IReversibleMachine>(_mainViewModel.ReverseStopCommand, m => m.ReverseStop());
+        }
+
+        [Test]
+        public void ReverseStopForNonReversibleMachine()
+        {
+            TestNoInterfacePassthrough<ITurboableMachine>(_mainViewModel.ReverseStopCommand);
+        }
+
+        [Test]
+        public void ToggleReversibility()
+        {
+            TestInterfacePassthrough<IReversibleMachine>(_mainViewModel.ReverseStopCommand, m => m.ReverseStop());
+        }
+
+        [Test]
+        public void ToggleReversibilityForNonReversibleMachine()
+        {
+            TestNoInterfacePassthrough<ITurboableMachine>(_mainViewModel.ReverseStopCommand);
+        }
+
+        [Test]
+        public void OpenReplayMachine()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+
+            // Verify
+            IEnumerable<ReplayMachine> replayMachines = viewModel.Machines.Where(m => m is ReplayMachine).Select(m => m as ReplayMachine);
+            Assert.AreEqual(1, replayMachines.Count());
+            Assert.AreEqual("Test Replay", replayMachines.ElementAt(0).Name);
+        }
 
         [Test]
         public void StartServerSelectCancel()
@@ -589,7 +742,7 @@ namespace CPvC.Test
             MainViewModel viewModel = SetupViewModel(1, null, null, null);
             Mock<IRemote> mockRemote = new Mock<IRemote>();
             RemoteMachine machine = new RemoteMachine(mockRemote.Object);
-            viewModel.SelectRemoteMachine += (object sender, SelectRemoteMachineEventArgs e) => { e.SelectedMachine = machine; };
+            viewModel.SelectRemoteMachine += (sender, e) => { e.SelectedMachine = machine; };
 
             // Act
             viewModel.ConnectCommand.Execute(null);
@@ -605,7 +758,7 @@ namespace CPvC.Test
             // Setup
             MainViewModel viewModel = SetupViewModel(1, null, null, null);
             Mock<IRemote> mockRemote = new Mock<IRemote>();
-            viewModel.SelectRemoteMachine += (object sender, SelectRemoteMachineEventArgs e) => { e.SelectedMachine = null; };
+            viewModel.SelectRemoteMachine += (sender, e) => { e.SelectedMachine = null; };
 
             // Act
             viewModel.ConnectCommand.Execute(null);
