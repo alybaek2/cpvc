@@ -519,13 +519,11 @@ namespace CPvC.Test
             // Setup
             MainViewModel viewModel = SetupViewModel(1, null, null, null);
             viewModel.SelectServerPort += (object o, SelectServerPortEventArgs args) => args.SelectedPort = null;
-            //_mockSelectServerPort.Setup(s => s(It.IsAny<ushort>())).Returns(() => null);
 
             // Act
             viewModel.StartServerCommand.Execute(null);
 
             // Verify
-            //_mockSelectServerPort.Verify(s => s(6128), Times.Once());
             _mockSocket.VerifyNoOtherCalls();
         }
 
@@ -535,7 +533,6 @@ namespace CPvC.Test
         {
             // Setup
             MainViewModel viewModel = SetupViewModel(1, null, null, null);
-            //_mockSelectServerPort.Setup(s => s(It.IsAny<ushort>())).Returns(() => (ushort)port);
             viewModel.SelectServerPort += (sender, args) => args.SelectedPort = (ushort)port;
             viewModel.CreateSocket += (sender, args) => args.CreatedSocket = _mockSocket.Object;
 
@@ -543,7 +540,6 @@ namespace CPvC.Test
             viewModel.StartServerCommand.Execute(null);
 
             // Verify
-            //_mockSelectServerPort.Verify(s => s(6128), Times.Once());
             _mockSocket.Verify(s => s.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.Any, (ushort)port)), Times.Once());
             _mockSocket.Verify(s => s.Listen(1), Times.Once());
             _mockSocket.Verify(s => s.BeginAccept(It.IsAny<AsyncCallback>(), null), Times.Once());
@@ -554,7 +550,6 @@ namespace CPvC.Test
         {
             // Setup
             MainViewModel viewModel = SetupViewModel(1, null, null, null);
-            //_mockSelectServerPort.Setup(s => s(It.IsAny<ushort>())).Returns(() => 6128);
             viewModel.SelectServerPort += (sender, args) => args.SelectedPort = 6128;
             viewModel.CreateSocket += (sender, args) => args.CreatedSocket = _mockSocket.Object;
             viewModel.StartServerCommand.Execute(null);
@@ -566,58 +561,58 @@ namespace CPvC.Test
             _mockSocket.Verify(s => s.Close(), Times.Once());
         }
 
-        //[Test]
-        //public void Connect()
-        //{
-        //    // Setup
-        //    MainViewModel viewModel = SetupViewModel(1, null, null, null);
-        //    Mock<IRemote> mockRemote = new Mock<IRemote>();
-        //    RemoteMachine machine = new RemoteMachine(mockRemote.Object);
-        //    _mockSelectRemoveMachine.Setup(s => s(It.IsAny<ServerInfo>())).Returns(() => machine).Callback<ServerInfo>(s => viewModel.RecentServers.Add(new ServerInfo("localhost", 6128)));
+        [Test]
+        public void Connect()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+            Mock<IRemote> mockRemote = new Mock<IRemote>();
+            RemoteMachine machine = new RemoteMachine(mockRemote.Object);
+            viewModel.SelectRemoteMachine += (sender, e) =>
+            {
+                e.SelectedMachine = machine;
+                viewModel.RecentServers.Add(new ServerInfo("localhost", 6128));
+            };
 
-        //    // Act
-        //    viewModel.ConnectCommand.Execute(null);
+            // Act
+            viewModel.ConnectCommand.Execute(null);
 
-        //    // Verify
-        //    _mockSelectRemoveMachine.Verify(s => s(It.IsAny<ServerInfo>()), Times.Once());
-        //    Assert.AreEqual(machine, viewModel.ActiveMachineViewModel.Machine);
-        //    _mockSettings.VerifySet(s => s.RemoteServers = "localhost:6128");
-        //}
+            // Verify
+            Assert.AreEqual(machine, viewModel.ActiveMachine);
+            _mockSettings.VerifySet(s => s.RemoteServers = "localhost:6128");
+        }
 
-        //[Test]
-        //public void EmptyRemoteServers()
-        //{
-        //    // Setup
-        //    MainViewModel viewModel = SetupViewModel(1, null, null, null);
-        //    Mock<IRemote> mockRemote = new Mock<IRemote>();
-        //    RemoteMachine machine = new RemoteMachine(mockRemote.Object);
-        //    _mockSelectRemoveMachine.Setup(s => s(It.IsAny<ServerInfo>())).Returns(() => machine);
+        [Test]
+        public void EmptyRemoteServers()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+            Mock<IRemote> mockRemote = new Mock<IRemote>();
+            RemoteMachine machine = new RemoteMachine(mockRemote.Object);
+            viewModel.SelectRemoteMachine += (object sender, SelectRemoteMachineEventArgs e) => { e.SelectedMachine = machine; };
 
-        //    // Act
-        //    viewModel.ConnectCommand.Execute(null);
+            // Act
+            viewModel.ConnectCommand.Execute(null);
 
-        //    // Verify
-        //    _mockSelectRemoveMachine.Verify(s => s(It.IsAny<ServerInfo>()), Times.Once());
-        //    Assert.AreEqual(machine, viewModel.ActiveMachineViewModel.Machine);
-        //    _mockSettings.VerifySet(s => s.RemoteServers = "");
-        //}
+            // Verify
+            Assert.AreEqual(machine, viewModel.ActiveMachine);
+            _mockSettings.VerifySet(s => s.RemoteServers = "");
+        }
 
-        //[Test]
-        //public void ConnectCancel()
-        //{
-        //    // Setup
-        //    MainViewModel viewModel = SetupViewModel(1, null, null, null);
-        //    Mock<IRemote> mockRemote = new Mock<IRemote>();
-        //    RemoteMachine machine = new RemoteMachine(mockRemote.Object);
-        //    _mockSelectRemoveMachine.Setup(s => s(It.IsAny<ServerInfo>())).Returns(() => null);
+        [Test]
+        public void ConnectCancel()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+            Mock<IRemote> mockRemote = new Mock<IRemote>();
+            viewModel.SelectRemoteMachine += (object sender, SelectRemoteMachineEventArgs e) => { e.SelectedMachine = null; };
 
-        //    // Act
-        //    viewModel.ConnectCommand.Execute(null);
+            // Act
+            viewModel.ConnectCommand.Execute(null);
 
-        //    // Verify
-        //    _mockSelectRemoveMachine.Verify(s => s(It.IsAny<ServerInfo>()), Times.Once());
-        //    Assert.AreNotEqual(machine, viewModel.ActiveMachineViewModel.Machine);
-        //}
+            // Verify
+            Assert.Null(viewModel.ActiveMachine as RemoteMachine);
+        }
 
         [Test]
         public void LoadRemoteServer()
@@ -639,7 +634,6 @@ namespace CPvC.Test
         public void LoadRemoteServers()
         {
             // Setup
-            Mock<ISocket> mockSocket = new Mock<ISocket>();
             _remoteServersSetting = "localhost:6128;host2:3333";
 
             // Act
