@@ -29,6 +29,11 @@ namespace CPvC.Test
             return _lines[_readIndex++];
         }
 
+        public int LineCount()
+        {
+            return _lines.Count;
+        }
+
         public void Dispose()
         {
         }
