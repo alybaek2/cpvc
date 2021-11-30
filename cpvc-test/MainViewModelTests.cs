@@ -397,52 +397,40 @@ namespace CPvC.Test
         //    });
         //}
 
-        //[TestCase(false, true)]
-        //[TestCase(true, false)]
-        //[TestCase(true, true)]
-        //public void SelectBookmark(bool active, bool selectEvent)
-        //{
-        //    // Setup
-        //    MachineHistory history = new MachineHistory();
+        [TestCase(false, true)]
+        [TestCase(true, false)]
+        [TestCase(true, true)]
+        public void SelectBookmark(bool nullMachine, bool selectEvent)
+        {
+            // Setup
+            HistoryEvent historyEvent = null;
+            MainViewModel viewModel = SetupViewModel(1);
+            _machine.OpenFromFile(_mockFileSystem.Object);
 
-        //    HistoryEvent event2 = null;
-        //    Mock<MainViewModel.PromptForBookmarkDelegate> prompt = new Mock<MainViewModel.PromptForBookmarkDelegate>(MockBehavior.Strict);
-        //    MainViewModel viewModel = SetupViewModel(1, null, prompt, null);
-        //    MachineViewModel machineViewModel = viewModel.MachineViewModels[0];
-        //    Machine machine = machineViewModel.Machine as Machine;
-        //    machine.Open();
+            _machine.AddBookmark(false);
+            historyEvent = _machine.History.CurrentEvent;
+            viewModel.PromptForBookmark += (sender, args) =>
+            {
+                args.SelectedBookmark = selectEvent ? historyEvent : null;
+            };
 
-        //    machine.AddBookmark(false);
-        //    event2 = machine.History.CurrentEvent;
-        //    prompt.Setup(p => p()).Returns(selectEvent ? event2 : null);
-        //    TestHelpers.Run(machine, 1000);
+            TestHelpers.Run(_machine, 1000);
 
-        //    machine.AddBookmark(false);
+            _machine.AddBookmark(false);
 
-        //    viewModel.ActiveMachineViewModel = active ? machineViewModel : null;
+            // Act
+            viewModel.BrowseBookmarksCommand.Execute(nullMachine ? null : _machine);
 
-        //    // Act
-        //    viewModel.ActiveMachineViewModel.BrowseBookmarksCommand.Execute(null);
-
-        //    // Verify
-        //    if (active)
-        //    {
-        //        prompt.Verify(p => p(), Times.Once());
-        //        if (selectEvent)
-        //        {
-        //            Assert.AreEqual(event2, machine.History.CurrentEvent);
-        //        }
-        //        else
-        //        {
-        //            Assert.AreNotEqual(event2, machine.History.CurrentEvent);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        prompt.Verify(p => p(), Times.Never());
-        //        Assert.AreNotEqual(event2, machine.History.CurrentEvent);
-        //    }
-        //}
+            // Verify
+            if (!nullMachine && selectEvent)
+            {
+                Assert.AreEqual(historyEvent, _machine.History.CurrentEvent);
+            }
+            else
+            {
+                Assert.AreNotEqual(historyEvent, _machine.History.CurrentEvent);
+            }
+        }
 
         [TestCase(false)]
         [TestCase(true)]
