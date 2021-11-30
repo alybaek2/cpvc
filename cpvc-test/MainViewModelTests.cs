@@ -60,14 +60,11 @@ namespace CPvC.Test
             _settingGet = null;
         }
 
-        private MainViewModel SetupViewModel(int machineCount, PromptForFileEventHandler mockPromptForFile, PromptForBookmarkEventHandler mockPromptForBookmark, PromptForNameEventHandler mockPromptForName)
+        private MainViewModel SetupViewModel(int machineCount)
         {
             _settingGet = String.Join(",", Enumerable.Range(0, machineCount).Select(x => String.Format("test{0}.cpvc", x)));
 
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object);
-            viewModel.PromptForFile += mockPromptForFile;
-            viewModel.PromptForBookmark += mockPromptForBookmark;
-            viewModel.PromptForName += mockPromptForName;
 
             // Create a Replay machine.
             HistoryEvent historyEvent = null;
@@ -96,7 +93,104 @@ namespace CPvC.Test
             return fileSystem => fileSystem.GetZipFileEntryNames(filepath);
         }
 
-        private void TestInterfacePassthrough<T>(ICommand command, Expression<Action<T>> expr) where T : class
+        static private void TestLoadMedia(
+            bool nullMachine,
+            FileTypes fileType,
+            bool nullFilename,
+            bool isZipped,
+            int entryCount,
+            bool selectFile,
+            Func<MainViewModel, ICommand> getCommand,
+            Func<byte[], Expression<Action<IInteractiveMachine>>> verifyLoad)
+        {
+            // Setup
+            Mock<IMachine> mockMachine = new Mock<IMachine>();
+            Mock<IInteractiveMachine> mockInteractiveMachine = mockMachine.As<IInteractiveMachine>();
+            Mock<IPausableMachine> mockPausableMachine = mockMachine.As<IPausableMachine>();
+            Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>();
+            Mock<ISettings> mockSettings = new Mock<ISettings>();
+
+            string ext = (fileType == FileTypes.Tape) ? "cdt" : "dsk";
+            string filename = nullFilename ? null : (isZipped ? "test.zip" : String.Format("test.{0}", ext));
+
+            MainViewModel mainViewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object);
+            mainViewModel.Model.AddMachine(mockMachine.Object);
+            mainViewModel.PromptForFile += (sender, args) =>
+            {
+                if (args.Existing && args.FileType == fileType)
+                {
+                    args.Filepath = filename;
+                }
+            };
+
+            if (isZipped)
+            {
+                List<string> entries = new List<string>();
+                for (int e = 0; e < entryCount; e++)
+                {
+                    entries.Add(String.Format("test{0}.{1}", e, ext));
+                }
+
+                // Throw in a file with a different extension in order to verify it isn't shown
+                // in the Select Item window.
+                List<string> entriesWithExtraneousFile = new List<string>(entries)
+                {
+                    "test.txt"
+                };
+
+                mockFileSystem.Setup(fileSystem => fileSystem.GetZipFileEntryNames(filename)).Returns(entriesWithExtraneousFile);
+
+                if (entryCount > 0)
+                {
+                    mockFileSystem.Setup(fileSystem => fileSystem.GetZipFileEntry(filename, entries[0])).Returns(new byte[1] { 0x01 });
+
+                    if (entryCount > 1)
+                    {
+                        mainViewModel.SelectItem += (sender, args) =>
+                        {
+                            args.SelectedItem = selectFile ? args.Items[0] : null;
+                        };
+                    }
+                }
+            }
+            else
+            {
+                mockFileSystem.Setup(fileSystem => fileSystem.ReadBytes(filename)).Returns(new byte[1] { 0x02 });
+            }
+
+            ICommand command = getCommand(mainViewModel);
+
+            // Act
+            command.Execute(nullMachine ? null : mockInteractiveMachine.Object);
+
+            // Verify
+            if (!nullMachine)
+            {
+                mockPausableMachine.Verify(m => m.AutoPause());
+            }
+
+            if (selectFile && isZipped && !nullMachine && !nullFilename)
+            {
+                if (entryCount > 0)
+                {
+                    mockInteractiveMachine.Verify(verifyLoad(new byte[1] { 0x01 }), Times.Once());
+                }
+                else
+                {
+                    mockInteractiveMachine.Verify(verifyLoad(It.IsAny<byte[]>()), Times.Never());
+                }
+            }
+            else if (!isZipped && !nullMachine && !nullFilename)
+            {
+                mockInteractiveMachine.Verify(verifyLoad(new byte[1] { 0x02 }), Times.Once());
+            }
+
+            mockMachine.VerifyNoOtherCalls();
+
+            Assert.AreEqual(!nullMachine, command.CanExecute(nullMachine ? null : mockInteractiveMachine.Object));
+        }
+
+        static private void TestInterfacePassthrough<T>(ICommand command, Expression<Action<T>> expr) where T : class
         {
             // Setup
             Mock<T> mockMachine = new Mock<T>(MockBehavior.Strict);
@@ -144,6 +238,43 @@ namespace CPvC.Test
         //    Assert.AreEqual(machineViewModelCount, viewModel.MachineViewModels.Count);
         //}
 
+        [TestCase(false, true, false, 0, false)]
+        [TestCase(true, false, false, 0, false)]
+        [TestCase(false, false, false, 0, false)]
+        [TestCase(false, false, true, 2, false)]
+        [TestCase(false, false, true, 0, true)]
+        [TestCase(false, false, true, 1, true)]
+        [TestCase(false, false, true, 2, true)]
+        public void LoadDriveA(bool nullMachine, bool nullFilename, bool isZipped, int entryCount, bool selectFile)
+        {
+            TestLoadMedia(nullMachine, FileTypes.Disc, nullFilename, isZipped, entryCount, selectFile, machineViewModel => machineViewModel.DriveACommand, mediaImage => { return m => m.LoadDisc(0, mediaImage); });
+        }
+
+        [TestCase(false, true, false, 0, false)]
+        [TestCase(true, false, false, 0, false)]
+        [TestCase(false, false, false, 0, false)]
+        [TestCase(false, false, true, 2, false)]
+        [TestCase(false, false, true, 0, true)]
+        [TestCase(false, false, true, 1, true)]
+        [TestCase(false, false, true, 2, true)]
+        public void LoadDriveB(bool nullMachine, bool nullFilename, bool isZipped, int entryCount, bool selectFile)
+        {
+            TestLoadMedia(nullMachine, FileTypes.Disc, nullFilename, isZipped, entryCount, selectFile, machineViewModel => machineViewModel.DriveBCommand, mediaImage => { return m => m.LoadDisc(1, mediaImage); });
+        }
+
+        [TestCase(false, true, false, 0, false)]
+        [TestCase(true, false, false, 0, false)]
+        [TestCase(false, false, false, 0, false)]
+        [TestCase(false, false, true, 2, false)]
+        [TestCase(false, false, true, 0, true)]
+        [TestCase(false, false, true, 1, true)]
+        [TestCase(false, false, true, 2, true)]
+        public void LoadTape(bool nullMachine, bool nullFilename, bool isZipped, int entryCount, bool selectFile)
+        {
+            TestLoadMedia(nullMachine, FileTypes.Tape, nullFilename, isZipped, entryCount, selectFile, machineViewModel => machineViewModel.TapeCommand, mediaImage => { return m => m.LoadTape(mediaImage); });
+        }
+
+
         [Test]
         public void OpenInvalid()
         {
@@ -154,7 +285,7 @@ namespace CPvC.Test
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
             viewModel.PromptForFile += mockPrompt;
             MockTextFile mockTextFile = new MockTextFile();
-            _mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile("test.cpvc")).Throws(new Exception());
+            _mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(It.IsAny<string>())).Throws(new Exception());
 
             // Act and Verify
             Assert.Throws<Exception>(() => viewModel.OpenMachine("test.cpvc", _mockFileSystem.Object));
@@ -179,58 +310,59 @@ namespace CPvC.Test
         /// <summary>
         /// Ensures that if we call MainViewModel.OpenMachine twice with the same filepath, the second call should return the same machine.
         /// </summary>
-        //[Test]
-        //public void OpenMachineTwice()
-        //{
-        //    // Setup
-        //    string filepath = "test.cpvc";
-        //    Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, filepath);
-        //    MainViewModel viewModel = SetupViewModel(0, prompt, null, null);
-        //    _mockFileSystem.Setup(fileSystem => fileSystem.Exists(AnyString())).Returns(false);
-        //    viewModel.NewMachine(prompt.Object, _mockFileSystem.Object);
+        [Test]
+        public void OpenMachineTwice()
+        {
+            // Setup
+            string filepath = "test.cpvc";
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object);
+            viewModel.PromptForFile += (sender, args) =>
+            {
+                if (args.FileType == FileTypes.Machine && !args.Existing)
+                {
+                    args.Filepath = filepath;
+                }
+            };
 
-        //    // Act
-        //    viewModel.NewMachine(prompt.Object, _mockFileSystem.Object);
+            MockTextFile mockTextFile = new MockTextFile();
+            _mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(filepath)).Returns(mockTextFile);
+            viewModel.OpenMachine(filepath, _mockFileSystem.Object);
 
-        //    // Verify
-        //    Assert.AreEqual(1, viewModel.MachinePreviews.Count);
-        //}
+            // Act
+            viewModel.OpenMachine(filepath, _mockFileSystem.Object);
 
-        //[TestCase(false, null)]
-        //[TestCase(true, null)]
-        //[TestCase(true, "test2")]
-        //public void RenameMachine(bool active, string newName)
-        //{
-        //    // Setup
-        //    Mock<MainViewModel.PromptForNameDelegate> mockNamePrompt = new Mock<MainViewModel.PromptForNameDelegate>(MockBehavior.Loose);
-        //    MainViewModel viewModel = SetupViewModel(1, null, null, mockNamePrompt);
-        //    ICoreMachine machine = viewModel.Machines[0];
-        //    MachineViewModel machineViewModel = viewModel.MachineViewModels[0];
-        //    string oldName = machine.Name;
-        //    mockNamePrompt.Setup(x => x(oldName)).Returns(newName);
+            // Verify
+            Assert.AreEqual(1, viewModel.Machines.Count);
+        }
 
-        //    if (active)
-        //    {
-        //        viewModel.ActiveMachineViewModel = machineViewModel;
-        //    }
-        //    else
-        //    {
-        //        viewModel.ActiveMachineViewModel = null;
-        //    }
+        [TestCase(false, null)]
+        [TestCase(true, null)]
+        [TestCase(true, "test2")]
+        public void RenameMachine(bool active, string newName)
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1);
+            viewModel.PromptForName += (sender, args) =>
+            {
+                args.SelectedName = newName;
+            };
 
-        //    // Act
-        //    viewModel.ActiveMachineViewModel.RenameCommand.Execute(null);
+            IMachine machine = viewModel.Machines[0];
+            string oldName = machine.Name;
 
-        //    // Verify
-        //    if (active && newName != null)
-        //    {
-        //        Assert.AreEqual(newName, machine.Name);
-        //    }
-        //    else
-        //    {
-        //        Assert.AreEqual(oldName, machine.Name);
-        //    }
-        //}
+            // Act
+            viewModel.RenameCommand.Execute(active ? machine : null);
+
+            // Verify
+            if (active && newName != null)
+            {
+                Assert.AreEqual(newName, machine.Name);
+            }
+            else
+            {
+                Assert.AreEqual(oldName, machine.Name);
+            }
+        }
 
         //[Test]
         //public void NullActiveMachine()
@@ -312,39 +444,37 @@ namespace CPvC.Test
         //    }
         //}
 
-        //[TestCase(false)]
-        //[TestCase(true)]
-        //public void ReadAudio(bool active)
-        //{
-        //    // Setup
-        //    MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object, null, null, null, null, null, _mockSelectRemoveMachine.Object, _mockSelectServerPort.Object, () => _mockSocket.Object, null);
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ReadAudio(bool active)
+        {
+            // Setup
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object);
 
-        //    Mock<ICoreMachine> coreMachine = new Mock<ICoreMachine>();
-        //    MachineViewModel machineViewModel = new MachineViewModel(coreMachine.Object, null, null, null, null, null, null, null);
+            Mock<IMachine> coreMachine = new Mock<IMachine>();
+            Mock<IMachine> coreMachine2 = new Mock<IMachine>();
 
-        //    Mock<ICoreMachine> coreMachine2 = new Mock<ICoreMachine>();
-        //    MachineViewModel machineViewModel2 = new MachineViewModel(coreMachine2.Object, null, null, null, null, null, null, null);
+            viewModel.Model.AddMachine(coreMachine.Object);
+            viewModel.Model.AddMachine(coreMachine2.Object);
 
-        //    viewModel.MachineViewModels.Add(machineViewModel);
-        //    viewModel.MachineViewModels.Add(machineViewModel2);
-        //    viewModel.ActiveMachineViewModel = active ? machineViewModel : null;
+            viewModel.ActiveMachine = active ? coreMachine.Object : null;
 
-        //    // Act
-        //    byte[] buffer = new byte[4];
-        //    int samples = viewModel.ReadAudio(buffer, 0, 1);
+            // Act
+            byte[] buffer = new byte[4];
+            int samples = viewModel.ReadAudio(buffer, 0, 1);
 
-        //    // Verify
-        //    if (active)
-        //    {
-        //        coreMachine.Verify(m => m.ReadAudio(buffer, 0, 1));
-        //        coreMachine2.Verify(m => m.AdvancePlayback(1));
-        //    }
-        //    else
-        //    {
-        //        coreMachine.Verify(m => m.AdvancePlayback(1));
-        //        coreMachine2.Verify(m => m.AdvancePlayback(1));
-        //    }
-        //}
+            // Verify
+            if (active)
+            {
+                coreMachine.Verify(m => m.ReadAudio(buffer, 0, 1));
+                coreMachine2.Verify(m => m.AdvancePlayback(1));
+            }
+            else
+            {
+                coreMachine.Verify(m => m.AdvancePlayback(1));
+                coreMachine2.Verify(m => m.AdvancePlayback(1));
+            }
+        }
 
         //[TestCase(false)]
         //[TestCase(true)]
@@ -658,7 +788,7 @@ namespace CPvC.Test
         public void OpenReplayMachine()
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+            MainViewModel viewModel = SetupViewModel(1);
 
             // Verify
             IEnumerable<ReplayMachine> replayMachines = viewModel.Machines.Where(m => m is ReplayMachine).Select(m => m as ReplayMachine);
@@ -670,7 +800,7 @@ namespace CPvC.Test
         public void StartServerSelectCancel()
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+            MainViewModel viewModel = SetupViewModel(1);
             viewModel.SelectServerPort += (object o, SelectServerPortEventArgs args) => args.SelectedPort = null;
 
             // Act
@@ -685,7 +815,7 @@ namespace CPvC.Test
         public void StartServerSelectOk(int port)
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+            MainViewModel viewModel = SetupViewModel(1);
             viewModel.SelectServerPort += (sender, args) => args.SelectedPort = (ushort)port;
             viewModel.CreateSocket += (sender, args) => args.CreatedSocket = _mockSocket.Object;
 
@@ -702,7 +832,7 @@ namespace CPvC.Test
         public void StopServer()
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+            MainViewModel viewModel = SetupViewModel(1);
             viewModel.SelectServerPort += (sender, args) => args.SelectedPort = 6128;
             viewModel.CreateSocket += (sender, args) => args.CreatedSocket = _mockSocket.Object;
             viewModel.StartServerCommand.Execute(null);
@@ -718,7 +848,7 @@ namespace CPvC.Test
         public void Connect()
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+            MainViewModel viewModel = SetupViewModel(1);
             Mock<IRemote> mockRemote = new Mock<IRemote>();
             RemoteMachine machine = new RemoteMachine(mockRemote.Object);
             viewModel.SelectRemoteMachine += (sender, e) =>
@@ -739,7 +869,7 @@ namespace CPvC.Test
         public void EmptyRemoteServers()
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+            MainViewModel viewModel = SetupViewModel(1);
             Mock<IRemote> mockRemote = new Mock<IRemote>();
             RemoteMachine machine = new RemoteMachine(mockRemote.Object);
             viewModel.SelectRemoteMachine += (sender, e) => { e.SelectedMachine = machine; };
@@ -756,7 +886,7 @@ namespace CPvC.Test
         public void ConnectCancel()
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1, null, null, null);
+            MainViewModel viewModel = SetupViewModel(1);
             Mock<IRemote> mockRemote = new Mock<IRemote>();
             viewModel.SelectRemoteMachine += (sender, e) => { e.SelectedMachine = null; };
 

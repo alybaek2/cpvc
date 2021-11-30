@@ -304,6 +304,14 @@ namespace CPvC
 
         }
 
+        public MainModel Model
+        {
+            get
+            {
+                return _model;
+            }
+        }
+
         private void InitModel(MainModel mainModel)
         {
             _model = mainModel;
@@ -324,6 +332,7 @@ namespace CPvC
                 return _model.Machines;
             }
         }
+
         public Command OpenMachineCommand
         {
             get { return _openMachineCommand; }
@@ -558,7 +567,7 @@ namespace CPvC
                 });
             if (machine == null)
             {
-                machine = _model.AddMachine(filepath, fileSystem, true);
+                machine = _model.AddMachine(fullFilepath, fileSystem, true);
             }
 
             return machine;
