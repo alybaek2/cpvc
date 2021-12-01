@@ -165,7 +165,7 @@ namespace CPvC
                         (_history.CurrentEvent.Bookmark == null && _history.CurrentEvent != _history.RootEvent) ||
                         (_history.CurrentEvent.Bookmark != null && !_history.CurrentEvent.Bookmark.System))
                     {
-                        AddCheckpointWithBookmarkEvent(true);
+                        AddBookmark(true);
                     }
                 }
                 finally
@@ -391,7 +391,8 @@ namespace CPvC
         {
             using (AutoPause())
             {
-                HistoryEvent historyEvent = AddCheckpointWithBookmarkEvent(system);
+                Bookmark bookmark = GetBookmark(system);
+                HistoryEvent historyEvent = _history.AddBookmark(_core.Ticks, bookmark);
 
                 Diagnostics.Trace("Created bookmark at tick {0}", _core.Ticks);
                 Status = String.Format("Bookmark added at {0}", Helpers.GetTimeSpanFromTicks(Core.Ticks).ToString(@"hh\:mm\:ss"));
@@ -525,14 +526,6 @@ namespace CPvC
         public bool CanCompact()
         {
             return !IsOpen && PersistantFilepath != null;
-        }
-
-        private HistoryEvent AddCheckpointWithBookmarkEvent(bool system)
-        {
-            Bookmark bookmark = GetBookmark(system);
-            HistoryEvent e = _history.AddBookmark(_core.Ticks, bookmark);
-
-            return e;
         }
 
         /// <summary>

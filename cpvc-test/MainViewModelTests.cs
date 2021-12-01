@@ -464,53 +464,41 @@ namespace CPvC.Test
             }
         }
 
-        //[TestCase(false)]
-        //[TestCase(true)]
-        //public void SetActiveMachine(bool closed)
-        //{
-        //    // Setup
-        //    Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
-        //    MainViewModel viewModel = SetupViewModel(1, null, null, null);
-        //    viewModel.PropertyChanged += propChanged.Object;
-        //    MachineViewModel machineViewModel = viewModel.MachineViewModels[0];
-        //    Machine machine = machineViewModel.Machine as Machine;
-        //    if (closed)
-        //    {
-        //        machineViewModel.CloseCommand.Execute(null);
-        //    }
-        //    else
-        //    {
-        //        machineViewModel.OpenCommand.Execute(null);
-        //    }
+        [Test]
+        public void SetActiveMachine()
+        {
+            // Setup
+            Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
+            MainViewModel viewModel = SetupViewModel(1);
+            viewModel.PropertyChanged += propChanged.Object;
 
-        //    // Act
-        //    viewModel.ActiveMachineViewModel = machineViewModel;
+            // Act
+            viewModel.ActiveMachine = _machine;
 
-        //    // Verify
-        //    Assert.IsFalse(machine.RequiresOpen);
-        //    Assert.AreEqual(machineViewModel, viewModel.ActiveMachineViewModel);
-        //    propChanged.Verify(PropertyChanged(viewModel, "ActiveItem"), Times.Once);
-        //    propChanged.Verify(PropertyChanged(viewModel, "ActiveMachineViewModel"), Times.Once);
-        //}
+            // Verify
+            Assert.AreEqual(_machine, viewModel.ActiveMachine);
+            propChanged.Verify(PropertyChanged(viewModel, "ActiveItem"), Times.Once);
+            propChanged.Verify(PropertyChanged(viewModel, "ActiveMachine"), Times.Once);
+        }
 
-        //[Test]
-        //public void SetActiveNonMachine()
-        //{
-        //    // Setup
-        //    Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
-        //    MainViewModel viewModel = SetupViewModel(0, null, null, null);
-        //    viewModel.PropertyChanged += propChanged.Object;
-        //    object nonMachine = new object();
+        [Test]
+        public void SetActiveNonMachine()
+        {
+            // Setup
+            Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
+            MainViewModel viewModel = SetupViewModel(0);
+            viewModel.PropertyChanged += propChanged.Object;
+            object nonMachine = new object();
 
-        //    // Act
-        //    viewModel.ActiveItem = nonMachine;
+            // Act
+            viewModel.ActiveItem = nonMachine;
 
-        //    // Verify
-        //    Assert.IsNull(viewModel.ActiveMachineViewModel.Machine);
-        //    Assert.AreEqual(nonMachine, viewModel.ActiveItem);
-        //    propChanged.Verify(PropertyChanged(viewModel, "ActiveItem"), Times.Once);
-        //    propChanged.Verify(PropertyChanged(viewModel, "ActiveMachineViewModel"), Times.Once);
-        //}
+            // Verify
+            Assert.IsNull(viewModel.ActiveMachine);
+            Assert.AreEqual(nonMachine, viewModel.ActiveItem);
+            propChanged.Verify(PropertyChanged(viewModel, "ActiveItem"), Times.Once);
+            propChanged.Verify(PropertyChanged(viewModel, "ActiveMachine"), Times.Once);
+        }
 
         //[Test]
         //public void Remove()
