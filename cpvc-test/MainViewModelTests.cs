@@ -223,20 +223,23 @@ namespace CPvC.Test
         //    return mockPrompt;
         //}
 
-        //[Test]
-        //public void OpenNull()
-        //{
-        //    // Setup
-        //    Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, false, null);
-        //    MainViewModel viewModel = SetupViewModel(0, prompt, null, null);
-        //    int machineViewModelCount = viewModel.MachineViewModels.Count;
+        [Test]
+        public void OpenNull()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(0);
+            viewModel.PromptForFile += (sender, args) =>
+            {
+                args.Filepath = null;
+            };
+            int machineViewModelCount = viewModel.Machines.Count;
 
-        //    // Act
-        //    viewModel.OpenMachineCommand.Execute(null);
+            // Act
+            viewModel.OpenMachineCommand.Execute(null);
 
-        //    // Verify
-        //    Assert.AreEqual(machineViewModelCount, viewModel.MachineViewModels.Count);
-        //}
+            // Verify
+            Assert.AreEqual(machineViewModelCount, viewModel.Machines.Count);
+        }
 
         [TestCase(false, true, false, 0, false)]
         [TestCase(true, false, false, 0, false)]
@@ -288,7 +291,7 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(It.IsAny<string>())).Throws(new Exception());
 
             // Act and Verify
-            Assert.Throws<Exception>(() => viewModel.OpenMachine("test.cpvc", _mockFileSystem.Object));
+            Assert.Throws<Exception>(() => viewModel.OpenMachine(_mockFileSystem.Object));
         }
 
         [Test]
@@ -318,7 +321,7 @@ namespace CPvC.Test
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object);
             viewModel.PromptForFile += (sender, args) =>
             {
-                if (args.FileType == FileTypes.Machine && !args.Existing)
+                if (args.FileType == FileTypes.Machine && args.Existing)
                 {
                     args.Filepath = filepath;
                 }
@@ -326,10 +329,10 @@ namespace CPvC.Test
 
             MockTextFile mockTextFile = new MockTextFile();
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(filepath)).Returns(mockTextFile);
-            viewModel.OpenMachine(filepath, _mockFileSystem.Object);
+            viewModel.OpenMachine(_mockFileSystem.Object);
 
             // Act
-            viewModel.OpenMachine(filepath, _mockFileSystem.Object);
+            viewModel.OpenMachine(_mockFileSystem.Object);
 
             // Verify
             Assert.AreEqual(1, viewModel.Machines.Count);

@@ -94,7 +94,7 @@ namespace CPvC
                 {
                     try
                     {
-                        OpenMachine(null, _fileSystem);
+                        OpenMachine(_fileSystem);
                     }
                     catch (Exception ex)
                     {
@@ -537,21 +537,18 @@ namespace CPvC
             machine.Start();
         }
 
-        public IMachine OpenMachine(string filepath, IFileSystem fileSystem)
+        public IMachine OpenMachine(IFileSystem fileSystem)
         {
+
+            PromptForFileEventArgs args = new PromptForFileEventArgs();
+            args.FileType = FileTypes.Machine;
+            args.Existing = true;
+            PromptForFile?.Invoke(this, args);
+
+            string filepath = args.Filepath;
             if (filepath == null)
             {
-
-                PromptForFileEventArgs args = new PromptForFileEventArgs();
-                args.FileType = FileTypes.Machine;
-                args.Existing = true;
-                PromptForFile?.Invoke(this, args);
-
-                filepath = args.Filepath;
-                if (filepath == null)
-                {
-                    return null;
-                }
+                return null;
             }
 
             string fullFilepath = System.IO.Path.GetFullPath(filepath);
