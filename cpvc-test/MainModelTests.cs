@@ -1,5 +1,6 @@
 ﻿using Moq;
 using NUnit.Framework;
+using System;
 
 namespace CPvC.Test
 {
@@ -20,6 +21,13 @@ namespace CPvC.Test
             _machine = LocalMachine.New("test", null, null);
             _mockSettings = new Mock<ISettings>();
             _mainModel = new MainModel(_mockSettings.Object, null);
+        }
+
+        [Test]
+        public void AddNullMachine()
+        {
+            // Act and Verify
+            Assert.Throws<ArgumentException>(() => _mainModel.AddMachine(null));
         }
 
         [Test]

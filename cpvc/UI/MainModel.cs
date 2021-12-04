@@ -66,6 +66,11 @@ namespace CPvC
 
         public void AddMachine(IMachine machine)
         {
+            if (machine == null)
+            {
+                throw new ArgumentException("Can't add a null machine.", nameof(machine));
+            }
+
             lock (_machines)
             {
                 _machines.Add(machine);

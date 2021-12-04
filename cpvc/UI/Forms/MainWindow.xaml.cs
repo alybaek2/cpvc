@@ -159,15 +159,14 @@ namespace CPvC.UI.Forms
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            // Todo: give the user a chance to cancel closing, if there are machines which have yet to be persisted.
-
-            // Stop audio prior to closing machines to ensure no audio callbacks are triggered
-            // during Dispose calls.
-            // Need to revisit this...proper locking of the relevant objects should make it so that audio can be stopped
-            // either before or after the machines are closed.
-            StopAudio();
-
-            _mainViewModel.CloseAll();
+            if (!_mainViewModel.CloseAll())
+            {
+                e.Cancel = true;
+            }
+            else
+            {
+                StopAudio();
+            }
         }
 
         private void ExitMenuItem_Click(object sender, RoutedEventArgs e)
@@ -403,11 +402,9 @@ namespace CPvC.UI.Forms
 
         private void CollectionViewSource_Filter(object sender, System.Windows.Data.FilterEventArgs e)
         {
-            if (e.Item is IPersistableMachine machine)
+            if (e.Item is IMachine machine)
             {
-                ////ICoreMachine cm = machine;
-                //IPersistableMachine pm = cm as IPersistableMachine;
-                e.Accepted = (machine == null || machine.IsOpen);
+                e.Accepted = !(machine is IPersistableMachine persistableMachine) || persistableMachine.IsOpen;
             }
             else
             {

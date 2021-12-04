@@ -692,6 +692,36 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void KeyPress()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1);
+            Mock<IInteractiveMachine> mockMachine = new Mock<IInteractiveMachine>();
+            mockMachine.Setup(m => m.Key(It.IsAny<byte>(), It.IsAny<bool>()));
+
+            // Act
+            viewModel.KeyPress(mockMachine.Object, 42, true);
+
+            // Verify
+            mockMachine.Verify(m => m.Key(42, true), Times.Once());
+        }
+
+        [Test]
+        public void EnableTurbo()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1);
+            Mock<ITurboableMachine> mockMachine = new Mock<ITurboableMachine>();
+            mockMachine.Setup(m => m.EnableTurbo(It.IsAny<bool>()));
+
+            // Act
+            viewModel.EnableTurbo(mockMachine.Object, true);
+
+            // Verify
+            mockMachine.Verify(m => m.EnableTurbo(true), Times.Once());
+        }
+
+        [Test]
         public void SeekToNextBookmark()
         {
             TestInterfacePassthrough<IPrerecordedMachine>(_mainViewModel.SeekToNextBookmarkCommand, m => m.SeekToNextBookmark());

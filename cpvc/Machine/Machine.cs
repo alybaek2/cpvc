@@ -185,7 +185,10 @@ namespace CPvC
 
         public void AdvancePlayback(int samples)
         {
-            Core?.AdvancePlayback(samples);
+            lock (_runningStateLock)
+            {
+                Core?.AdvancePlayback(samples);
+            }
         }
 
         /// <summary>

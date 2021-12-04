@@ -153,39 +153,42 @@ namespace CPvC
 
         public void Close()
         {
-            if (IsOpen)
+            lock (_runningStateLock)
             {
-                Stop();
-
-                try
+                if (IsOpen)
                 {
-                    // Create a system bookmark so the machine can resume from where it left off the next time it's loaded, but don't
-                    // create one if we already have a system bookmark at the current event, or we're at the root event.
-                    if ((_history.CurrentEvent.Ticks != Ticks) ||
-                        (_history.CurrentEvent.Bookmark == null && _history.CurrentEvent != _history.RootEvent) ||
-                        (_history.CurrentEvent.Bookmark != null && !_history.CurrentEvent.Bookmark.System))
+                    Stop();
+
+                    try
                     {
-                        AddBookmark(true);
+                        // Create a system bookmark so the machine can resume from where it left off the next time it's loaded, but don't
+                        // create one if we already have a system bookmark at the current event, or we're at the root event.
+                        if ((_history.CurrentEvent.Ticks != Ticks) ||
+                            (_history.CurrentEvent.Bookmark == null && _history.CurrentEvent != _history.RootEvent) ||
+                            (_history.CurrentEvent.Bookmark != null && !_history.CurrentEvent.Bookmark.System))
+                        {
+                            AddBookmark(true);
+                        }
+                    }
+                    finally
+                    {
                     }
                 }
-                finally
+
+                SetCore(null);
+
+                if (File != null)
                 {
+                    File.Dispose();
+                    File = null;
                 }
+
+                _history = new MachineHistory();
+
+                Status = null;
+
+                Display?.EnableGreyscale(true);
             }
-
-            SetCore(null);
-
-            if (File != null)
-            {
-                File.Dispose();
-                File = null;
-            }
-
-            _history = new MachineHistory();
-
-            Status = null;
-
-            Display?.EnableGreyscale(true);
         }
 
         /// <summary>

@@ -142,7 +142,7 @@ namespace CPvC
                 p =>
                 {
                     IMachine coreMachine = (IMachine)p;
-                    if (Close(coreMachine))
+                    if (Close(coreMachine, true))
                     {
                         _model.RemoveMachine(coreMachine);
                     }
@@ -157,7 +157,7 @@ namespace CPvC
             _closeCommand = new Command(
                 p =>
                 {
-                    Close((IMachine)p);
+                    Close((IMachine)p, true);
                 },
                 p =>
                 {
@@ -570,32 +570,63 @@ namespace CPvC
             return machine;
         }
 
-        public void CloseAll()
+        public bool CloseAll()
         {
             lock (Machines)
             {
                 foreach (IMachine machine in Machines)
                 {
-                    Close(machine);
-                }
-            }
-        }
+                    IPersistableMachine persistableMachine = machine as IPersistableMachine;
+                    if (persistableMachine == null || persistableMachine.PersistantFilepath != null)
+                    {
+                        continue;
+                    }
 
-        public bool Close(IMachine coreMachine)
-        {
-            if (coreMachine != null)
-            {
-                IPersistableMachine pm = coreMachine as IPersistableMachine;
-                if (pm != null && pm.PersistantFilepath == null)
-                {
                     ConfirmCloseEventArgs args = new ConfirmCloseEventArgs();
-                    args.Message = String.Format("Are you sure you want to close the \"{0}\" machine without persisting it?", coreMachine.Name);
+                    args.Message = "There are machines which haven't been persisted yet. Are you sure you want to exit?";
                     ConfirmClose?.Invoke(this, args);
 
                     if (!args.Result)
                     {
                         return false;
                     }
+
+                    break;
+                }
+
+                List<IMachine> machines = Machines.ToList();
+                foreach (IMachine machine in machines)
+                {
+                    if (!Close(machine, false))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        public bool Close(IMachine coreMachine, bool prompt)
+        {
+            if (coreMachine != null)
+            {
+                IPersistableMachine pm = coreMachine as IPersistableMachine;
+                if (pm != null && pm.PersistantFilepath == null)
+                {
+                    if (prompt)
+                    {
+                        ConfirmCloseEventArgs args = new ConfirmCloseEventArgs();
+                        args.Message = String.Format("Are you sure you want to close the \"{0}\" machine without persisting it?", coreMachine.Name);
+                        ConfirmClose?.Invoke(this, args);
+
+                        if (!args.Result)
+                        {
+                            return false;
+                        }
+                    }
+
+                    _model.RemoveMachine(coreMachine);
                 }
 
                 coreMachine.Close();
@@ -612,11 +643,6 @@ namespace CPvC
 
                 foreach (IMachine machine in Machines)
                 {
-                    if (machine == null)
-                    {
-                        continue;
-                    }
-
                     // Play audio only from the currently active machine; for the rest, just
                     // advance the audio playback position.
                     if (machine == ActiveMachine)
