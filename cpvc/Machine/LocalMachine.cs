@@ -557,7 +557,7 @@ namespace CPvC
             return _history.DeleteBookmark(e);
         }
 
-        public void SetCurrentEvent(HistoryEvent historyEvent)
+        private void SetCurrentEvent(HistoryEvent historyEvent)
         {
             if (historyEvent.Type == HistoryEventType.Bookmark)
             {
@@ -734,7 +734,7 @@ namespace CPvC
         {
             get
             {
-                return PersistantFilepath == null || File != null;
+                return (PersistantFilepath == null || File != null) && (Core != null);
             }
         }
 

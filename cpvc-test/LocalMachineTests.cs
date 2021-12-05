@@ -863,5 +863,91 @@ namespace CPvC.Test
             // Act and Verify
             Assert.DoesNotThrow(() => machine.SnapshotLimit = machine.SnapshotLimit + 42);
         }
+
+        [Test]
+        public void CanStart()
+        {
+            // Setup
+            _machine.Stop();
+
+            // Verify
+            Assert.True(_machine.CanStart);
+        }
+
+        [Test]
+        public void CantStart()
+        {
+            // Setup
+            _machine.Start();
+
+            // Verify
+            Assert.False(_machine.CanStart);
+        }
+
+        [Test]
+        public void CantStartClosedMachine()
+        {
+            // Setup
+            _machine.Close();
+
+            // Verify
+            Assert.False(_machine.CanStart);
+        }
+
+        [Test]
+        public void CantStopClosedMachine()
+        {
+            // Setup
+            _machine.Close();
+
+            // Verify
+            Assert.False(_machine.CanStop);
+        }
+
+        [Test]
+        public void ToggleSnapshotLimitOff()
+        {
+            // Setup
+            _machine.SnapshotLimit = 100;
+
+            // Act
+            _machine.ToggleReversibilityEnabled();
+
+            // Verify
+            Assert.Zero(_machine.SnapshotLimit);
+        }
+
+        [Test]
+        public void ToggleSnapshotLimitOn()
+        {
+            // Setup
+            _machine.SnapshotLimit = 0;
+
+            // Act
+            _machine.ToggleReversibilityEnabled();
+
+            // Verify
+            Assert.NotZero(_machine.SnapshotLimit);
+        }
+
+        [Test]
+        public void PersistAlreadyPersistedMachine()
+        {
+            // Setup
+            LocalMachine machine = LocalMachine.OpenFromFile(_mockFileSystem.Object, _filename);
+
+            // Act and Verify
+            Assert.Throws<InvalidOperationException>(() => machine.Persist(_mockFileSystem.Object, _filename));
+        }
+
+        [Test]
+        public void PersistToEmptyFilename()
+        {
+            // Setup
+            LocalMachine machine = LocalMachine.New("Test", null, null);
+
+            // Act and Verify
+            Assert.Throws<ArgumentException>(() => machine.Persist(_mockFileSystem.Object, ""));
+        }
     }
 }
