@@ -47,7 +47,7 @@ namespace CPvC.Test
             _mockSocket = new Mock<ISocket>();
 
             _machine = LocalMachine.New("test", null, null);
-            _mainViewModel = new MainViewModel(null, _mockFileSystem.Object);
+            _mainViewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
 
         }
 
@@ -309,6 +309,22 @@ namespace CPvC.Test
             // Verify
             Assert.AreEqual(0, viewModel.Machines.Count);
         }
+
+        [Test]
+        public void NewMachine()
+        {
+            // Setup
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object);
+
+            // Act
+            viewModel.NewMachine(_mockFileSystem.Object);
+
+            // Verify
+            Assert.AreEqual(1, viewModel.Machines.Count);
+            Assert.AreEqual(viewModel.Machines[0], viewModel.ActiveMachine);
+            Assert.AreEqual(RunningState.Running, viewModel.Machines[0].RunningState);
+        }
+
 
         /// <summary>
         /// Ensures that if we call MainViewModel.OpenMachine twice with the same filepath, the second call should return the same machine.
@@ -776,15 +792,76 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void ReverseStopForNonReversibleMachine()
+        public void ToggleReversibility()
         {
-            TestNoInterfacePassthrough<ITurboableMachine>(_mainViewModel.ReverseStopCommand);
+            TestInterfacePassthrough<IReversibleMachine>(_mainViewModel.ToggleReversibility, m => m.ToggleReversibilityEnabled());
         }
 
         [Test]
-        public void ToggleReversibility()
+        public void Compact()
         {
-            TestInterfacePassthrough<IReversibleMachine>(_mainViewModel.ReverseStopCommand, m => m.ReverseStop());
+            TestInterfacePassthrough<ICompactableMachine>(_mainViewModel.CompactCommand, m => m.Compact(_mockFileSystem.Object));
+        }
+
+        [Test]
+        public void Persist()
+        {
+            // Setup
+            Mock<IPersistableMachine> mockMachine = new Mock<IPersistableMachine>(MockBehavior.Strict);
+            mockMachine.SetupGet(m => m.PersistantFilepath).Returns(String.Empty);
+            mockMachine.Setup(m => m.Persist(_mockFileSystem.Object, "test.cpvc"));
+            _mainViewModel.PromptForFile += (sender, args) =>
+            {
+                args.Filepath = "test.cpvc";
+            };
+
+            // Act
+            _mainViewModel.PersistCommand.Execute(mockMachine.Object);
+
+            // Verify
+            mockMachine.Verify(m => m.Persist(_mockFileSystem.Object, "test.cpvc"), Times.Once());
+        }
+
+        [Test]
+        public void Pause()
+        {
+            TestInterfacePassthrough<IPausableMachine>(_mainViewModel.PauseCommand, m => m.Stop());
+        }
+
+        [Test]
+        public void Resume()
+        {
+            TestInterfacePassthrough<IPausableMachine>(_mainViewModel.ResumeCommand, m => m.Start());
+        }
+
+        [Test]
+        public void Remove()
+        {
+            // Setup
+            _mainViewModel.ConfirmClose += (sender, args) =>
+            {
+                args.Result = true;
+            };
+            _mainViewModel.NewMachineCommand.Execute(null);
+            IMachine machine = _mainViewModel.Machines[0];
+
+            // Act
+            _mainViewModel.RemoveCommand.Execute(machine);
+
+            // Verify
+            Assert.AreEqual(0, _mainViewModel.Machines.Count);
+        }
+
+        [Test]
+        public void Close()
+        {
+            TestInterfacePassthrough<IMachine>(_mainViewModel.CloseCommand, m => m.Close());
+        }
+
+        [Test]
+        public void ReverseStopForNonReversibleMachine()
+        {
+            TestNoInterfacePassthrough<ITurboableMachine>(_mainViewModel.ReverseStopCommand);
         }
 
         [Test]
