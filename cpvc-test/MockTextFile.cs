@@ -34,6 +34,11 @@ namespace CPvC.Test
             return _lines.Count;
         }
 
+        public void SeekToStart()
+        {
+            _readIndex = 0;
+        }
+
         public void Dispose()
         {
         }

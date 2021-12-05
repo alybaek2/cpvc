@@ -122,7 +122,7 @@
     <Compile Include="MachineHistoryTests.cs" />
     <Compile Include="MachineServerConnectionTests.cs" />
     <Compile Include="MachineServerListenerTests.cs" />
-    <Compile Include="MachineTests.cs" />
+    <Compile Include="LocalMachineTests.cs" />
     <Compile Include="MainModelTests.cs" />
     <Compile Include="MainViewModelTests.cs" />
     <Compile Include="MemoryByteStreamTests.cs" />

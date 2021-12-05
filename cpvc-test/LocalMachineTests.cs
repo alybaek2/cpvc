@@ -8,10 +8,12 @@ using static CPvC.Test.TestHelpers;
 namespace CPvC.Test
 {
     [TestFixture]
-    public class MachineTests
+    public class LocalMachineTests
     {
         private Mock<IFileSystem> _mockFileSystem;
         private Mock<MachineAuditorDelegate> _mockAuditor;
+
+        private string _filename = "test.cpvc";
 
         private LocalMachine _machine;
 
@@ -40,7 +42,12 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.FileLength(AnyString())).Returns(100);
 
             MockTextFile mockTextFile = new MockTextFile();
-            _mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile("test.cpvc")).Returns(mockTextFile);
+            mockTextFile.WriteLine("name:Test");
+            mockTextFile.WriteLine("key:1,10,58,True");
+            mockTextFile.WriteLine("key:2,20,58,False");
+            mockTextFile.WriteLine("current:1");
+            mockTextFile.WriteLine("deletebranch:2");
+            _mockFileSystem.Setup(fs => fs.OpenTextFile(_filename)).Callback(() => mockTextFile.SeekToStart()).Returns(mockTextFile);
 
             _mockAuditor = new Mock<MachineAuditorDelegate>();
 
@@ -795,40 +802,40 @@ namespace CPvC.Test
             }
         }
 
-        //// This test should be improved to make sure Compact is actually writing out what we
-        //// expect, instead of just checking the size is less than before.
-        //[Test]
-        //public void Compact()
-        //{
-        //    // Setup
-        //    MemoryFileByteStream memStream = new MemoryFileByteStream();
-        //    MachineFile file = new MachineFile(memStream);
-        //    MachineHistory writeHistory = new MachineHistory();
-        //    file.SetMachineHistory(writeHistory);
+        [Test]
+        public void CantCompact()
+        {
+            // Act and Verify
+            Assert.Throws<Exception>(() => _machine.Compact(_mockFileSystem.Object));
+        }
 
-        //    Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>();
-        //    mockFileSystem.Setup(x => x.OpenFileByteStream(It.IsAny<string>())).Returns(() => memStream);
+        [Test]
+        public void Compact()
+        {
+            // Setup
+            string tmpFilename = String.Format("{0}.tmp", _filename);
+            LocalMachine machine = LocalMachine.OpenFromFile(_mockFileSystem.Object, _filename);
+            machine.Close();
 
-        //    Machine machine = Machine.Create("test", null);
-        //    Run(machine, 100);
-        //    HistoryEvent event1 = machine.History.CurrentEvent;
-        //    machine.AddBookmark(false);
-        //    HistoryEvent event2 = machine.History.CurrentEvent;
-        //    machine.AddBookmark(false);
-        //    machine.SetCurrentEvent(event1);
-        //    machine.Reset();
-        //    machine.DeleteEventAndChildren(event2);
+            MockTextFile mockNewTextFile = new MockTextFile();
+            _mockFileSystem.Setup(fs => fs.OpenTextFile(tmpFilename)).Returns(mockNewTextFile);
 
-        //    Machine newMachine = Machine.Open("Test", "test.cpvc", mockFileSystem.Object, false);
-        //    Int64 oldSize = memStream.Length;
-        //    memStream.Clear();
+            // Act
+            machine.Compact(_mockFileSystem.Object);
 
-        //    // Act
-        //    machine.Compact(false);
-        //    Int64 newSize = memStream.Length;
+            // Verify
+            int keyLineCount = 0;
+            string line;
+            while ((line = mockNewTextFile.ReadLine()) != null)
+            {
+                if (line.StartsWith("key:"))
+                {
+                    keyLineCount++;
+                }
+            }
 
-        //    // Verify
-        //    Assert.Less(newSize, oldSize);
-        //}
+            Assert.AreEqual(1, keyLineCount);
+            _mockFileSystem.Verify(fs => fs.ReplaceFile(_filename, tmpFilename), Times.Once());
+        }
     }
 }

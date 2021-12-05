@@ -263,7 +263,7 @@ namespace CPvC
             );
 
             _compactCommand = new Command(
-                p => (p as ICompactableMachine)?.Compact(fileSystem, false),
+                p => (p as ICompactableMachine)?.Compact(fileSystem),
                 p => (p as ICompactableMachine)?.CanCompact() ?? false
             );
 

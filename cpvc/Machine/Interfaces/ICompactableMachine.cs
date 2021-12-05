@@ -2,7 +2,7 @@
 {
     public interface ICompactableMachine
     {
-        void Compact(IFileSystem fileSystem, bool enableDiffs);
+        void Compact(IFileSystem fileSystem);
         bool CanCompact();
     }
 }

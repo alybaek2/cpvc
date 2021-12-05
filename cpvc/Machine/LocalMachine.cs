@@ -500,7 +500,7 @@ namespace CPvC
         /// remove anything from the machine file, but simply log the fact they happened.
         /// </remarks>
         /// 
-        public void Compact(IFileSystem fileSystem, bool diffsEnabled)
+        public void Compact(IFileSystem fileSystem)
         {
             // Only allow closed machines to compact!
             if (!CanCompact())
@@ -528,7 +528,7 @@ namespace CPvC
 
         public bool CanCompact()
         {
-            return !IsOpen && PersistantFilepath != null;
+            return PersistantFilepath != null && File == null;
         }
 
         /// <summary>

@@ -17,7 +17,7 @@ namespace CPvC.Test
         public void Setup()
         {
             _bookmarkTicks = new List<UInt64>();
-            MachineTests machineTests = new MachineTests();
+            LocalMachineTests machineTests = new LocalMachineTests();
             machineTests.Setup();
             using (LocalMachine machine = machineTests.CreateMachine())
             {
