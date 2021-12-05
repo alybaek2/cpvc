@@ -837,5 +837,31 @@ namespace CPvC.Test
             Assert.AreEqual(1, keyLineCount);
             _mockFileSystem.Verify(fs => fs.ReplaceFile(_filename, tmpFilename), Times.Once());
         }
+
+        [Test]
+        public void SnapshotLimitPropertyChanged()
+        {
+            // Setup
+            LocalMachine machine = LocalMachine.OpenFromFile(_mockFileSystem.Object, _filename);
+            Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
+            machine.PropertyChanged += propChanged.Object;
+
+            // Act - note that setting the property to itself should not trigger the "property changed" event.
+            machine.SnapshotLimit = machine.SnapshotLimit;
+            machine.SnapshotLimit = machine.SnapshotLimit + 42;
+
+            // Verify
+            propChanged.Verify(p => p(machine, It.Is<PropertyChangedEventArgs>(e => e.PropertyName == nameof(machine.SnapshotLimit)), Times.Once());
+        }
+
+        [Test]
+        public void NoPropertyChangedHandlers()
+        {
+            // Setup
+            LocalMachine machine = LocalMachine.New("Test", null, null);
+
+            // Act and Verify
+            Assert.DoesNotThrow(() => machine.SnapshotLimit = machine.SnapshotLimit + 42);
+        }
     }
 }
