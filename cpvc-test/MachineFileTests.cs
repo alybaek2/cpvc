@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using System;
+using System.Linq;
 using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
@@ -99,6 +100,22 @@ namespace CPvC.Test
 
             // Verify
             Assert.True(HistoriesEqual(_fileReader.History, _history));
+        }
+
+        [Test]
+        public void WriteCompound()
+        {
+            // Setup
+            Bookmark bookmark = new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 });
+
+            // Act
+            _history.AddBookmark(100, bookmark);
+            _mockFile.Clear();
+            _fileWriter.WriteHistory("Test");
+
+            // Verify
+            Assert.AreEqual(1, _mockFile.Lines.Count(line => line.StartsWith("compound:")));
+            Assert.Zero(_mockFile.Lines.Count(line => line.StartsWith("blob:")));
         }
 
         [Test]

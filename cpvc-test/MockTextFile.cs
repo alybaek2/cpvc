@@ -34,8 +34,22 @@ namespace CPvC.Test
             return _lines.Count;
         }
 
+        public List<string> Lines
+        {
+            get
+            {
+                return _lines;
+            }
+        }
+
         public void SeekToStart()
         {
+            _readIndex = 0;
+        }
+
+        public void Clear()
+        {
+            _lines.Clear();
             _readIndex = 0;
         }
 

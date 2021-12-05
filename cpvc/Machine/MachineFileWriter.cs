@@ -202,20 +202,17 @@ namespace CPvC
                 Helpers.StrFromBytes(blob));
         }
 
-        static private string CompoundCommand(IEnumerable<string> commands, bool compress)
+        static private string CompoundCommand(IEnumerable<string> commands)
         {
             string str = String.Join("@", commands);
 
-            if (compress)
-            {
-                byte[] b = Encoding.UTF8.GetBytes(str);
-                str = Helpers.StrFromBytes(Helpers.Compress(b));
-            }
+            byte[] b = Encoding.UTF8.GetBytes(str);
+            str = Helpers.StrFromBytes(Helpers.Compress(b));
 
             return String.Format(
                 "{0}:{1},{2}",
                 _idCompound,
-                compress ? 1 : 0,
+                1,
                 str);
         }
 
@@ -357,7 +354,7 @@ namespace CPvC
             if (blobCommands.Count > 0)
             {
                 // Create a "compound" command for all the blobs.
-                string compoundCommand = CompoundCommand(blobCommands, true);
+                string compoundCommand = CompoundCommand(blobCommands);
 
                 lines.Insert(0, compoundCommand);
             }
