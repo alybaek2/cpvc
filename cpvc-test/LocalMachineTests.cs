@@ -851,7 +851,7 @@ namespace CPvC.Test
             machine.SnapshotLimit = machine.SnapshotLimit + 42;
 
             // Verify
-            propChanged.Verify(p => p(machine, It.Is<PropertyChangedEventArgs>(e => e.PropertyName == nameof(machine.SnapshotLimit)), Times.Once());
+            propChanged.Verify(p => p(machine, It.Is<PropertyChangedEventArgs>(e => e.PropertyName == nameof(machine.SnapshotLimit))), Times.Once());
         }
 
         [Test]
