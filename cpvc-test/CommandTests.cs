@@ -86,30 +86,5 @@ namespace CPvC.Test
             // Verify
             Assert.AreEqual(canExecute, result);
         }
-
-        [TestCase(false)]
-        [TestCase(true)]
-        public void CanExecuteChanged(bool subscribe)
-        {
-            // Setup
-            bool canExecuteChangeCalled = false;
-            TestObject testObject = new TestObject(false);
-            Command command = new Command(
-                p => { },
-                p => { return testObject.Flag; });
-            if (subscribe)
-            {
-                command.CanExecuteChanged += (sender, e) =>
-                {
-                    canExecuteChangeCalled = true;
-                };
-            }
-
-            // Act
-            command.InvokeCanExecuteChanged(null, null);
-
-            // Verify
-            Assert.AreEqual(subscribe, canExecuteChangeCalled);
-        }
     }
 }

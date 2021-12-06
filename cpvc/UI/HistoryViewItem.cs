@@ -38,7 +38,7 @@ namespace CPvC
         {
             get
             {
-                return HistoryEvent?.Ticks ?? 0;
+                return HistoryEvent?.EndTicks ?? 0;
             }
         }
 
@@ -57,7 +57,7 @@ namespace CPvC
 
         private int EventAncestorIndex(HistoryEvent historyEvent)
         {
-            return Events.FindIndex(descendant => historyEvent.IsEqualToOrAncestorOf(descendant));
+            return Events.FindIndex(descendant => historyEvent?.IsEqualToOrAncestorOf(descendant) ?? false);
         }
 
         public int AddEvent(int minIndex, HistoryEvent historyEvent)

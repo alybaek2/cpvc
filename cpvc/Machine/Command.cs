@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows.Input;
 
@@ -15,7 +16,15 @@ namespace CPvC
             _canExecute = canExecute;
         }
 
-        public event EventHandler CanExecuteChanged;
+        // This is a bit of a heavy-handed approach, but gets around a problem where
+        // CanExecute seemed to be called with null instead of the CommandParameter the
+        // command was bound to, possibly because CanExecute was being called prior to
+        // that binding taking place...
+        public event EventHandler CanExecuteChanged
+        {
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
+        }
 
         public void Execute(object parameter)
         {
@@ -25,11 +34,6 @@ namespace CPvC
         public bool CanExecute(object parameter)
         {
             return _canExecute(parameter);
-        }
-
-        public void InvokeCanExecuteChanged(object sender, PropertyChangedEventArgs e)
-        {
-            CanExecuteChanged?.Invoke(sender, e);
         }
     }
 }

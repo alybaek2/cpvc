@@ -10,11 +10,11 @@ namespace CPvC
         {
         }
 
-        public IFileByteStream OpenFileByteStream(string filepath)
+        public ITextFile OpenTextFile(string filepath)
         {
             System.IO.FileStream fileStream = System.IO.File.Open(filepath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
 
-            return new FileByteStream(fileStream);
+            return new TextFile(fileStream);
         }
 
         public void RenameFile(string oldFilename, string newFilename)

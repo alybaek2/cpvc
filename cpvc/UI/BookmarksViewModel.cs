@@ -16,7 +16,7 @@ namespace CPvC.UI
     {
         public delegate void ItemSelectedDelegate();
 
-        private Machine _machine;
+        private LocalMachine _machine;
         private HistoryViewItem _selectedItem;
         private Display _display;
 
@@ -53,7 +53,7 @@ namespace CPvC.UI
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public BookmarksViewModel(Machine machine, ItemSelectedDelegate itemSelected)
+        public BookmarksViewModel(LocalMachine machine, ItemSelectedDelegate itemSelected)
         {
             _replayTimelineCommand = new Command(
                 p => ReplayTimeline(itemSelected),
@@ -72,7 +72,12 @@ namespace CPvC.UI
 
             _deleteBranchesCommand = new Command(
                 p => DeleteBranches(),
-                p => (SelectedItem as HistoryViewItem)?.HistoryEvent != null
+                p =>
+                {
+                    HistoryEvent historyEvent = (SelectedItem as HistoryViewItem)?.HistoryEvent;
+
+                    return !historyEvent?.IsEqualToOrAncestorOf(machine.History.CurrentEvent) ?? false;
+                }
             );
 
             _display = new Display();
@@ -115,7 +120,7 @@ namespace CPvC.UI
                     {
                         bitmap = _machine.Display.Bitmap;
                     }
-                    else if (historyEvent.Type == HistoryEvent.Types.Checkpoint && historyEvent.Bookmark != null)
+                    else if (historyEvent.Type == HistoryEventType.Bookmark && historyEvent.Bookmark != null)
                     {
                         _display.GetFromBookmark(historyEvent.Bookmark);
 
@@ -140,7 +145,7 @@ namespace CPvC.UI
                 return true;
             }
 
-            if (historyEvent.Type == HistoryEvent.Types.Checkpoint && historyEvent.Bookmark != null)
+            if (historyEvent.Type == HistoryEventType.Bookmark && historyEvent.Bookmark != null)
             {
                 return true;
             }
@@ -194,7 +199,7 @@ namespace CPvC.UI
                     HistoryViewItem item = new HistoryViewItem(historyEvent);
 
                     // Figure out where this new item should be placed.
-                    int itemIndex = items.FindIndex(x => x.Ticks > historyEvent.Ticks);
+                    int itemIndex = items.FindIndex(x => x.Ticks > historyEvent.EndTicks);
                     if (itemIndex == -1)
                     {
                         // Not found? Add the item to the end.
@@ -259,9 +264,10 @@ namespace CPvC.UI
         {
             if (SelectedItem?.HistoryEvent.Bookmark != null)
             {
-                _machine.SetBookmark(SelectedItem.HistoryEvent, null);
-
-                RefreshHistoryViewItems();
+                if (_machine.DeleteBookmark(SelectedItem.HistoryEvent))
+                {
+                    RefreshHistoryViewItems();
+                }
             }
         }
 
@@ -295,17 +301,7 @@ namespace CPvC.UI
 
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
-            PropertyChangedEventArgs args = new PropertyChangedEventArgs(name);
-
-            if (name == "SelectedItem")
-            {
-                _deleteBookmarksCommand.InvokeCanExecuteChanged(this, args);
-                _deleteBranchesCommand.InvokeCanExecuteChanged(this, args);
-                _jumpToBookmarkCommand.InvokeCanExecuteChanged(this, args);
-                _replayTimelineCommand.InvokeCanExecuteChanged(this, args);
-            }
-
-            PropertyChanged?.Invoke(this, args);
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
     }
 }

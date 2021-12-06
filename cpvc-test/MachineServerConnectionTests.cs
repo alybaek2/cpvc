@@ -18,16 +18,16 @@ namespace CPvC.Test
         private Mock<IRemote> _mockRemote;
         private MachineServerConnection _serverConnection;
 
-        private List<ICoreMachine> _machines;
+        private List<IMachine> _machines;
         private List<Core> _cores;
 
-        private Mock<ICoreMachine>[] _mockMachines;
+        private Mock<IMachine>[] _mockMachines;
 
         [SetUp]
         public void Setup()
         {
             _cores = new List<Core>();
-            _mockMachines = new Mock<ICoreMachine>[2];
+            _mockMachines = new Mock<IMachine>[2];
 
             for (int i = 0; i < _mockMachines.Length; i++)
             {
@@ -35,7 +35,7 @@ namespace CPvC.Test
 
                 _cores.Add(core);
 
-                _mockMachines[i] = new Mock<ICoreMachine>();
+                _mockMachines[i] = new Mock<IMachine>();
 
                 _mockMachines[i].SetupGet(m => m.Name).Returns(String.Format("Machine{0}", i));
                 _mockMachines[i].SetupGet(m => m.Core).Returns(core);

@@ -151,6 +151,12 @@ namespace CPvC
             }
         }
 
+        public void Copy(Display display)
+        {
+            byte[] pixels = display.GetBitmapBytes();
+            _bitmap.WritePixels(_drawRect, pixels, Pitch, 0);
+        }
+
         public byte[] GetBitmapBytes()
         {
             byte[] pixels = new byte[_bitmap.PixelWidth * _bitmap.PixelHeight];

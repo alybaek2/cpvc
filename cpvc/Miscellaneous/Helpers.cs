@@ -71,26 +71,6 @@ namespace CPvC
             }
         }
 
-        static public byte[] BinaryUndiff(byte[] reference, byte[] diff)
-        {
-            using (MemoryStream outStream = new MemoryStream())
-            {
-                deltaq.BsDiff.BsPatch.Apply(reference, diff, outStream);
-
-                return outStream.ToArray();
-            }
-        }
-
-        static public byte[] BinaryDiff(byte[] reference, byte[] blob)
-        {
-            using (MemoryStream outStream = new MemoryStream())
-            {
-                deltaq.BsDiff.BsDiff.Create(reference, blob, outStream);
-
-                return outStream.ToArray();
-            }
-        }
-
         /// <summary>
         /// Splits a string based on a delimiter, while ignoring delimiters escaped with a backspace.
         /// </summary>
@@ -173,6 +153,31 @@ namespace CPvC
             }
 
             return null;
+        }
+
+        static public string StrFromBytes(byte[] bytes)
+        {
+            StringWriter strw = new StringWriter();
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                strw.Write(String.Format("{0:X2}", bytes[i]));
+            }
+
+            return strw.ToString();
+        }
+
+        static public byte[] BytesFromStr(string str)
+        {
+            byte[] bytes = new byte[str.Length / 2];
+
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                string h = str.Substring(i * 2, 2);
+                byte b = System.Convert.ToByte(h, 16);
+                bytes[i] = b;
+            }
+
+            return bytes;
         }
     }
 }

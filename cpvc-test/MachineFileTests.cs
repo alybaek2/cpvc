@@ -1,485 +1,266 @@
-﻿using Moq;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
 {
-    [TestFixture]
     public class MachineFileTests
     {
-        private List<string> _lines;
-        private MockFileByteStream _mockBinaryWriter;
-        private MachineFile _file;
+        static private readonly object[] CoreActionCases =
+        {
+            CoreAction.KeyPress(100, 42, true),
+            CoreAction.CoreVersion(100, 2),
+            CoreAction.LoadDisc(100, 1, new MemoryBlob(new byte[] { 0x01, 0x02 })),
+            CoreAction.LoadTape(100, new MemoryBlob(new byte[] { 0x01, 0x02 })),
+            CoreAction.Reset(100)
+        };
+
+        private MachineFileReader _fileReader;
+        private MachineFileWriter _fileWriter;
+        private MachineHistory _history;
+        private MockTextFile _mockFile;
 
         [SetUp]
         public void Setup()
         {
-            _lines = new List<string>();
-            _mockBinaryWriter = new MockFileByteStream();
-            _file = new MachineFile(_mockBinaryWriter.Object);
+            _mockFile = new MockTextFile();
+            _fileReader = new MachineFileReader();
+            _history = new MachineHistory();
+            _fileWriter = new MachineFileWriter(_mockFile, _history);
         }
 
-        [TearDown]
-        public void Teardown()
+        [TestCaseSource(nameof(CoreActionCases))]
+        public void WriteAndReadCoreAction(CoreAction coreAction)
         {
-            _lines = null;
-            _mockBinaryWriter = null;
-            _file = null;
+            // Act
+            _history.AddCoreAction(coreAction);
+            _fileReader.ReadFile(_mockFile);
+
+            // Verify
+            Assert.True(HistoriesEqual(_fileReader.History, _history));
         }
 
         [Test]
-        public void WriteName()
+        public void WriteAndReadRunUntil()
         {
-            // Setup
-            byte[] expected = new byte[]
-            {
-                0x00,
-                      0x04, 0x00, 0x00, 0x00,
-                      (byte)'t', (byte)'e', (byte)'s', (byte)'t'
-            };
-
             // Act
-            _file.WriteName("test");
+            _history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+            _history.SetCurrent(_history.RootEvent);
+            _fileReader.ReadFile(_mockFile);
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
+            Assert.True(HistoriesEqual(_fileReader.History, _history));
         }
 
         [Test]
-        public void WriteCurrentEvent()
+        public void WriteAndReadBookmark()
         {
             // Setup
-            HistoryEvent historyEvent = new HistoryEvent(25, HistoryEvent.Types.Checkpoint, 0);
-            byte[] expected = new byte[]
-            {
-                0x07,
-                      0x19, 0x00, 0x00, 0x00
-            };
+            Bookmark bookmark = new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 });
 
             // Act
-            _file.WriteCurrent(historyEvent);
+            _history.AddBookmark(100, bookmark);
+            _fileReader.ReadFile(_mockFile);
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
+            Assert.True(HistoriesEqual(_fileReader.History, _history));
         }
 
         [Test]
-        public void WriteDelete()
+        public void WriteAndReadDelete()
         {
             // Setup
-            HistoryEvent historyEvent = new HistoryEvent(25, HistoryEvent.Types.Checkpoint, 100);
-            byte[] expected = new byte[]
-            {
-                0x06,
-                      0x19, 0x00, 0x00, 0x00
-            };
+            Bookmark bookmark = new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 });
 
             // Act
-            _file.WriteDelete(historyEvent);
+            _history.AddBookmark(100, bookmark);
+            HistoryEvent historyEvent = _history.CurrentEvent;
+            _history.SetCurrent(_history.RootEvent);
+            _history.DeleteBookmark(historyEvent);
+            _fileReader.ReadFile(_mockFile);
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
+            Assert.True(HistoriesEqual(_fileReader.History, _history));
         }
 
         [Test]
-        public void WriteBookmark()
+        public void WriteAndReadDeleteBranch()
         {
             // Setup
-            Bookmark bookmark = new Bookmark(false, 5, new byte[] { 0x01, 0x02 }, null);
-            byte[] expected = new byte[]
-            {
-                0x08,
-                      0x19, 0x00, 0x00, 0x00,
-                      0x01,
-                      0x00,
-                      0x05, 0x00, 0x00, 0x00,
-                      0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
-                      0x00
-            };
+            Bookmark bookmark = new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 });
 
             // Act
-            _file.WriteBookmark(0x19, bookmark);
+            _history.AddBookmark(100, bookmark);
+            HistoryEvent historyEvent = _history.CurrentEvent;
+            _history.AddBookmark(200, bookmark);
+            _history.SetCurrent(_history.RootEvent);
+            _history.DeleteBranch(historyEvent);
+            _fileReader.ReadFile(_mockFile);
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
+            Assert.True(HistoriesEqual(_fileReader.History, _history));
         }
 
         [Test]
-        public void WriteNullBookmark()
+        public void WriteCompound()
         {
             // Setup
-            byte[] expected = new byte[]
-            {
-                0x08,
-                      0x19, 0x00, 0x00, 0x00,
-                      0x00
-            };
+            Bookmark bookmark = new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 });
 
             // Act
-            _file.WriteBookmark(0x19, null);
+            _history.AddBookmark(100, bookmark);
+            _mockFile.Clear();
+            _fileWriter.WriteHistory("Test");
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
+            Assert.AreEqual(1, _mockFile.Lines.Count(line => line.StartsWith("compound:")));
+            Assert.Zero(_mockFile.Lines.Count(line => line.StartsWith("blob:")));
         }
 
         [Test]
-        public void WriteCheckpointWithoutBookmark()
+        public void WriteAndReadName()
         {
             // Setup
-            DateTime timestamp = Helpers.NumberToDateTime(0);
-            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, null);
-            byte[] expected = new byte[]
-            {
-                0x05,
-                      0x19, 0x00, 0x00, 0x00,
-                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      0x00
-            };
+            LocalMachine machine = new LocalMachine(String.Empty);
+            _fileWriter.Machine = machine;
 
             // Act
-            _file.WriteHistoryEvent(historyEvent);
+            machine.Name = "Test";
+            _fileReader.ReadFile(_mockFile);
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
-        }
-
-        [TestCase(false)]
-        [TestCase(true)]
-        public void WriteCheckpointWithBookmark(bool system)
-        {
-            // Setup
-            DateTime timestamp = Helpers.NumberToDateTime(0);
-            HistoryEvent historyEvent = HistoryEvent.CreateCheckpoint(25, 100, timestamp, new Bookmark(system, 5, new byte[] { 0x01, 0x02 }, null));
-            byte[] expected = new byte[]
-            {
-                0x05,
-                      0x19, 0x00, 0x00, 0x00,
-                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      0x01,
-                      (byte)(system ? 0x01 : 0x00),
-                      0x05, 0x00, 0x00, 0x00,
-                      0x03, 0x04, 0x00, 0x00, 0x00, 0x63, 0x64, 0x02, 0x00,
-                      0x00
-            };
-
-            // Act
-            _file.WriteHistoryEvent(historyEvent);
-
-            // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
+            Assert.AreEqual(machine.Name, _fileReader.Name);
         }
 
         [Test]
-        public void WriteCoreReset()
+        public void WriteSetCurrentRoot()
         {
             // Setup
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.Reset(100));
-            byte[] expected = new byte[]
-            {
-                0x02,
-                      0x19, 0x00, 0x00, 0x00,
-                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-            };
+            _history.AddCoreAction(CoreAction.KeyPress(100, 42, true));
+            _history.SetCurrent(_history.RootEvent);
 
             // Act
-            _file.WriteHistoryEvent(historyEvent);
+            _fileReader.ReadFile(_mockFile);
 
             // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
+            Assert.AreEqual(_fileReader.History.RootEvent, _fileReader.History.CurrentEvent);
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public void WriteCoreKeyPress(bool down)
-        {
-            // Setup
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.KeyPress(100, Keys.A, down));
-            byte[] expected = new byte[]
-            {
-                0x01,
-                      0x19, 0x00, 0x00, 0x00,
-                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      (byte) ((down ? 0x80 : 0x00) + 58)
-            };
-
-            // Act
-            _file.WriteHistoryEvent(historyEvent);
-
-            // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
-        }
-
-        // LoadCore actions are only meant for remote and replay machines. Should never be needed to be written to a machine file.
         [Test]
-        public void WriteLoadCore()
+        public void WriteSetCurrentNonRoot()
         {
             // Setup
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.LoadCore(100, new MemoryBlob(new byte[] { 0x01, 0x02 })));
+            _history.AddCoreAction(CoreAction.KeyPress(100, 42, true));
+            HistoryEvent historyEvent = _history.AddCoreAction(CoreAction.KeyPress(100, 42, true));
+
+            // Act
+            _history.SetCurrent(historyEvent);
+            _fileReader.ReadFile(_mockFile);
+
+            // Verify
+            Assert.True(TestHelpers.HistoriesEqual(_history, _fileReader.History));
+            Assert.AreEqual(_fileReader.History.CurrentEvent, _fileReader.History.RootEvent.Children[0].Children[0]);
+        }
+
+        [Test]
+        public void MachineUnsubscribe()
+        {
+            // Setup
+            LocalMachine machine1 = LocalMachine.New(null, null, null);
+            LocalMachine machine2 = LocalMachine.New(null, null, null);
+            _fileWriter.Machine = machine1;
+            _fileWriter.Machine = machine2;
+
+            // Act
+            machine1.Name = "Test1";
+            int len1 = _mockFile.LineCount();
+            machine2.Name = "Test2";
+            int len2 = _mockFile.LineCount();
+            _fileWriter.Machine = null;
+            machine1.Name = "Test3";
+            machine2.Name = "Test4";
+            int len3 = _mockFile.LineCount();
+
+            // Verify
+            Assert.Zero(len1);
+            Assert.NotZero(len2);
+            Assert.AreEqual(len2, len3);
+        }
+
+        [Test]
+        public void Dispose()
+        {
+            // Setup
+            LocalMachine machine1 = LocalMachine.New(null, null, null);
+            machine1.Name = "Test";
+            _history.AddCoreAction(CoreAction.Reset(100));
+            int len1 = _mockFile.LineCount();
+
+            // Act
+            _fileWriter.Dispose();
+            machine1.Name = "Test";
+            _history.AddCoreAction(CoreAction.Reset(100));
+            int len2 = _mockFile.LineCount();
+
+            // Verify
+            Assert.NotZero(len1);
+            Assert.AreEqual(len1, len2);
+        }
+
+        [Test]
+        public void SetCurrentInvalid()
+        {
+            // Setup
+            _mockFile.WriteLine("current:42\r\n");
 
             // Act and Verify
-            Assert.Throws<Exception>(() => _file.WriteHistoryEvent(historyEvent));
+            ArgumentException ex = Assert.Throws<ArgumentException>(() => _fileReader.ReadFile(_mockFile));
+            Assert.AreEqual("id", ex.ParamName);
         }
 
-        // RunUntil actions shouldn't be written to the machine file as they would consume too much space and I/O!
         [Test]
-        public void WriteRunUntil()
+        public void ReadDeleteBookmarkInvalid()
         {
             // Setup
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.RunUntil(100, 0x123456, null));
+            _mockFile.WriteLine("deletebookmark:42\r\n");
 
             // Act and Verify
-            Assert.Throws<Exception>(() => _file.WriteHistoryEvent(historyEvent));
-        }
-
-        [TestCase(0)]
-        [TestCase(1)]
-        public void WriteDisc(byte drive)
-        {
-            // Setup
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.LoadDisc(100, drive, new MemoryBlob(new byte[] { 0x01, 0x02 })));
-            byte[] expected = new byte[]
-            {
-                0x03,
-                      0x19, 0x00, 0x00, 0x00,
-                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      drive,
-                      0x03, 0x04, 0x00, 0x00, 0x00, 0x63, 0x64, 0x02, 0x00
-            };
-
-            // Act
-            _file.WriteHistoryEvent(historyEvent);
-
-            // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
+            ArgumentException ex = Assert.Throws<ArgumentException>(() => _fileReader.ReadFile(_mockFile));
+            Assert.AreEqual("id", ex.ParamName);
         }
 
         [Test]
-        public void WriteTape()
+        public void ReadDeleteBranchInvalid()
         {
             // Setup
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, CoreAction.LoadTape(100, new MemoryBlob(new byte[] { 0x01, 0x02 })));
-            byte[] expected = new byte[]
-            {
-                0x04,
-                      0x19, 0x00, 0x00, 0x00,
-                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      0x03, 0x04, 0x00, 0x00, 0x00, 0x63, 0x64, 0x02, 0x00
-            };
-
-            // Act
-            _file.WriteHistoryEvent(historyEvent);
-
-            // Verify
-            Assert.IsTrue(expected.SequenceEqual(_mockBinaryWriter.Content));
-        }
-
-        [Test]
-        public void WriteInvalidHistoryEventType()
-        {
-            // Setup
-            HistoryEvent historyEvent = new HistoryEvent(25, (HistoryEvent.Types)99, 100);
+            _mockFile.WriteLine("deletebranch:42\r\n");
 
             // Act and Verify
-            Assert.Throws<Exception>(() => _file.WriteHistoryEvent(historyEvent));
+            ArgumentException ex = Assert.Throws<ArgumentException>(() => _fileReader.ReadFile(_mockFile));
+            Assert.AreEqual("id", ex.ParamName);
         }
 
         [Test]
-        public void WriteInvalidCoreActionType()
+        public void ReadUnknown()
         {
             // Setup
-            HistoryEvent historyEvent = HistoryEvent.CreateCoreAction(25, new CoreAction((CoreRequest.Types)99, 100));
+            _mockFile.WriteLine("unknown:\r\n");
 
             // Act and Verify
-            Assert.Throws<Exception>(() => _file.WriteHistoryEvent(historyEvent));
+            ArgumentException ex = Assert.Throws<ArgumentException>(() => _fileReader.ReadFile(_mockFile));
+            Assert.AreEqual("type", ex.ParamName);
         }
 
         [Test]
-        public void ReadReset()
+        public void WriteUnknown()
         {
             // Setup
-            Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
-            MockFileByteStream binaryFile = new MockFileByteStream(new List<byte> {
-                0x02,
-                      0x19, 0x00, 0x00, 0x00,
-                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-            });
+            CoreAction coreAction = new CoreAction((CoreRequest.Types)42, 0);
 
-            MachineFile file = new MachineFile(binaryFile.Object);
-
-            // Act
-            file.ReadFile(mockFileReader.Object);
-
-            // Verify
-            mockFileReader.Verify(reader => reader.AddHistoryEvent(CoreActionEvent(0x19, 100, CoreRequest.Types.Reset)));
-        }
-
-        [TestCase(false)]
-        [TestCase(true)]
-        public void ReadKey(bool down)
-        {
-            // Setup
-            Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
-            MockFileByteStream binaryFile = new MockFileByteStream(new List<byte> {
-                0x01,
-                      0x19, 0x00, 0x00, 0x00,
-                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      (byte) ((down ? 0x80 : 0x00) + Keys.A)
-            });
-
-            MachineFile file = new MachineFile(binaryFile.Object);
-
-            // Act
-            file.ReadFile(mockFileReader.Object);
-
-            // Verify
-            mockFileReader.Verify(reader => reader.AddHistoryEvent(KeyPressEvent(0x19, 100, Keys.A, down)));
-        }
-
-        [TestCase(0)]
-        [TestCase(1)]
-        public void ReadDisc(byte drive)
-        {
-            // Setup
-            Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
-            MockFileByteStream binaryFile = new MockFileByteStream(new List<byte> {
-                0x03,
-                      0x19, 0x00, 0x00, 0x00,
-                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      drive,
-                      0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02
-            });
-
-            MachineFile file = new MachineFile(binaryFile.Object);
-
-            // Act
-            file.ReadFile(mockFileReader.Object);
-
-            // Verify
-            mockFileReader.Verify(reader => reader.AddHistoryEvent(LoadDiscEvent(0x19, 100, drive, new byte[] { 0x01, 0x02 })));
-        }
-
-        [Test]
-        public void ReadTape()
-        {
-            // Setup
-            Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
-            MockFileByteStream binaryFile = new MockFileByteStream(new List<byte> {
-                0x04,
-                      0x19, 0x00, 0x00, 0x00,
-                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02
-            });
-
-            MachineFile file = new MachineFile(binaryFile.Object);
-
-            // Act
-            file.ReadFile(mockFileReader.Object);
-
-            // Verify
-            mockFileReader.Verify(reader => reader.AddHistoryEvent(LoadTapeEvent(0x19, 100, new byte[] { 0x01, 0x02 })));
-        }
-
-        [TestCase(false)]
-        [TestCase(true)]
-        public void ReadCheckpointWithBookmark(bool system)
-        {
-            // Setup
-            Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
-            MockFileByteStream binaryFile = new MockFileByteStream(new List<byte> {
-                0x05,
-                      0x19, 0x00, 0x00, 0x00,
-                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      0x01,
-                      (byte)(system ? 0x01 : 0x00),
-                      0x05, 0x00, 0x00, 0x00,
-                      0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
-                      0x00
-            });
-
-            MachineFile file = new MachineFile(binaryFile.Object);
-
-            // Act
-            file.ReadFile(mockFileReader.Object);
-
-            // Verify
-            mockFileReader.Verify(reader => reader.AddHistoryEvent(CheckpointWithBookmarkEvent(0x19, 100, system, 5, 27, 34)));
-        }
-
-        [Test]
-        public void ReadCheckpointWithoutBookmark()
-        {
-            // Setup
-            Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
-            MockFileByteStream binaryFile = new MockFileByteStream(new List<byte> {
-                0x05,
-                      0x19, 0x00, 0x00, 0x00,
-                      0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                      0x00
-            });
-
-            MachineFile file = new MachineFile(binaryFile.Object);
-
-            // Act
-            file.ReadFile(mockFileReader.Object);
-
-            // Verify
-            mockFileReader.Verify(reader => reader.AddHistoryEvent(CheckpointWithoutBookmarkEvent(0x19, 100)));
-        }
-
-        [TestCase(false)]
-        [TestCase(true)]
-        public void ReadBookmark(bool system)
-        {
-            // Setup
-            Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
-            MockFileByteStream binaryFile = new MockFileByteStream(new List<byte>
-            {
-                0x08,
-                      0x19, 0x00, 0x00, 0x00,
-                      0x01,
-                      (byte) (system ? 0x01 : 0x00),
-                      0x05, 0x00, 0x00, 0x00,
-                      0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02,
-                      0x00
-            });
-
-            MachineFile file = new MachineFile(binaryFile.Object);
-
-            // Act
-            file.ReadFile(mockFileReader.Object);
-
-            // Verify
-            mockFileReader.Verify(reader => reader.SetBookmark(0x19, BookmarkMatch(system, 5, 11, 18)));
-        }
-
-        [Test]
-        public void ReadNullBookmark()
-        {
-            // Setup
-            Mock<IMachineFileReader> mockFileReader = new Mock<IMachineFileReader>(MockBehavior.Loose);
-
-            MockFileByteStream mockWriter = new MockFileByteStream(new List<byte>
-            {
-                0x08,
-                      0x19, 0x00, 0x00, 0x00,
-                      0x00
-            });
-
-            MachineFile file = new MachineFile(mockWriter.Object);
-
-            // Act
-            file.ReadFile(mockFileReader.Object);
-
-            // Verify
-            mockFileReader.Verify(reader => reader.SetBookmark(0x19, null));
-            mockFileReader.VerifyNoOtherCalls();
+            // Act and Verify
+            ArgumentException ex = Assert.Throws<ArgumentException>(() => _history.AddCoreAction(coreAction));
+            Assert.AreEqual("type", ex.ParamName);
         }
     }
 }

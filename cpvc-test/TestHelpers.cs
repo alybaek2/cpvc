@@ -68,47 +68,47 @@ namespace CPvC.Test
             return It.Is<CoreAction>(r => r != null && r.Type == CoreRequest.Types.Reset);
         }
 
-        static public HistoryEvent CoreActionEvent(int id, CoreRequest.Types type)
-        {
-            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction.Type == type && h.Id == id);
-        }
+        //static public HistoryEvent CoreActionEvent(int id, CoreRequest.Types type)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction.Type == type && h.Id == id);
+        //}
 
-        static public HistoryEvent CoreActionEvent(int id, UInt64 ticks, CoreRequest.Types type)
-        {
-            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction.Type == type && h.Ticks == ticks && h.Id == id);
-        }
+        //static public HistoryEvent CoreActionEvent(int id, UInt64 ticks, CoreRequest.Types type)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction.Type == type && h.Ticks == ticks && h.Id == id);
+        //}
 
-        static public HistoryEvent KeyPressEvent(int id, UInt64 ticks, byte keyCode, bool keyDown)
-        {
-            return It.Is<HistoryEvent>(h => h != null &&
-                                            h.Type == HistoryEvent.Types.CoreAction &&
-                                            h.CoreAction.Type == CoreRequest.Types.KeyPress &&
-                                            h.CoreAction.KeyCode == keyCode &&
-                                            h.CoreAction.KeyDown == keyDown &&
-                                            h.Ticks == ticks &&
-                                            h.Id == id);
-        }
+        //static public HistoryEvent KeyPressEvent(int id, UInt64 ticks, byte keyCode, bool keyDown)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null &&
+        //                                    h.Type == HistoryEvent.Types.CoreAction &&
+        //                                    h.CoreAction.Type == CoreRequest.Types.KeyPress &&
+        //                                    h.CoreAction.KeyCode == keyCode &&
+        //                                    h.CoreAction.KeyDown == keyDown &&
+        //                                    h.Ticks == ticks &&
+        //                                    h.Id == id);
+        //}
 
-        static public HistoryEvent LoadDiscEvent(int id, UInt64 ticks, byte drive, byte[] disc)
-        {
-            return It.Is<HistoryEvent>(h => h != null &&
-                                            h.Type == HistoryEvent.Types.CoreAction &&
-                                            h.CoreAction.Type == CoreRequest.Types.LoadDisc &&
-                                            h.CoreAction.Drive == drive &&
-                                            h.CoreAction.MediaBuffer.GetBytes().SequenceEqual(disc) &&
-                                            h.Ticks == ticks &&
-                                            h.Id == id);
-        }
+        //static public HistoryEvent LoadDiscEvent(int id, UInt64 ticks, byte drive, byte[] disc)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null &&
+        //                                    h.Type == HistoryEvent.Types.CoreAction &&
+        //                                    h.CoreAction.Type == CoreRequest.Types.LoadDisc &&
+        //                                    h.CoreAction.Drive == drive &&
+        //                                    h.CoreAction.MediaBuffer.GetBytes().SequenceEqual(disc) &&
+        //                                    h.Ticks == ticks &&
+        //                                    h.Id == id);
+        //}
 
-        static public HistoryEvent LoadTapeEvent(int id, UInt64 ticks, byte[] tape)
-        {
-            return It.Is<HistoryEvent>(h => h != null &&
-                                            h.Type == HistoryEvent.Types.CoreAction &&
-                                            h.CoreAction.Type == CoreRequest.Types.LoadTape &&
-                                            h.CoreAction.MediaBuffer.GetBytes().SequenceEqual(tape) &&
-                                            h.Ticks == ticks &&
-                                            h.Id == id);
-        }
+        //static public HistoryEvent LoadTapeEvent(int id, UInt64 ticks, byte[] tape)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null &&
+        //                                    h.Type == HistoryEvent.Types.CoreAction &&
+        //                                    h.CoreAction.Type == CoreRequest.Types.LoadTape &&
+        //                                    h.CoreAction.MediaBuffer.GetBytes().SequenceEqual(tape) &&
+        //                                    h.Ticks == ticks &&
+        //                                    h.Id == id);
+        //}
 
         static public Bookmark BookmarkMatch(bool system, int version, int statePos, int screenPos)
         {
@@ -120,33 +120,33 @@ namespace CPvC.Test
                 ((IStreamBlob)(b.Screen)).Position == screenPos);
         }
 
-        static public HistoryEvent VersionEvent(int id)
-        {
-            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction != null && h.CoreAction.Type == CoreRequest.Types.CoreVersion && h.Id == id);
-        }
+        //static public HistoryEvent VersionEvent(int id)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction != null && h.CoreAction.Type == CoreRequest.Types.CoreVersion && h.Id == id);
+        //}
 
-        static public HistoryEvent CheckpointEvent(int id)
-        {
-            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id);
-        }
+        //static public HistoryEvent CheckpointEvent(int id)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id);
+        //}
 
-        static public HistoryEvent CheckpointWithBookmarkEvent(int id, UInt64 ticks, bool system, int version, int stateBlobPos, int screenBlobPos)
-        {
-            return It.Is<HistoryEvent>(h => h != null &&
-                                            h.Type == HistoryEvent.Types.Checkpoint &&
-                                            h.Id == id &&
-                                            h.Ticks == ticks &&
-                                            h.Bookmark != null &&
-                                            h.Bookmark.System == system &&
-                                            h.Bookmark.Version == version &&
-                                            ((IStreamBlob)(h.Bookmark.State)).Position == stateBlobPos &&
-                                            ((IStreamBlob)(h.Bookmark.Screen)).Position == screenBlobPos);
-        }
+        //static public HistoryEvent CheckpointWithBookmarkEvent(int id, UInt64 ticks, bool system, int version, int stateBlobPos, int screenBlobPos)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null &&
+        //                                    h.Type == HistoryEvent.Types.Checkpoint &&
+        //                                    h.Id == id &&
+        //                                    h.Ticks == ticks &&
+        //                                    h.Bookmark != null &&
+        //                                    h.Bookmark.System == system &&
+        //                                    h.Bookmark.Version == version &&
+        //                                    ((IStreamBlob)(h.Bookmark.State)).Position == stateBlobPos &&
+        //                                    ((IStreamBlob)(h.Bookmark.Screen)).Position == screenBlobPos);
+        //}
 
-        static public HistoryEvent CheckpointWithoutBookmarkEvent(int id, UInt64 ticks)
-        {
-            return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id && h.Ticks == ticks && h.Bookmark == null);
-        }
+        //static public HistoryEvent CheckpointWithoutBookmarkEvent(int id, UInt64 ticks)
+        //{
+        //    return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id && h.Ticks == ticks && h.Bookmark == null);
+        //}
 
         /// <summary>
         /// Returns a lambda representing the invocation of the IFileSystem.ReadBytes method with a specific filename.
@@ -188,12 +188,28 @@ namespace CPvC.Test
         /// </summary>
         /// <param name="machine">The machine whose core should be run.</param>
         /// <param name="ticks">The number of ticks to run the machine for.</param>
-        /// <param name="stopOnAudioOverrun">Indicates if the machine should stop in the event of an audio overrun.</param>
         /// <returns>The total number of ticks that the machine ran for. Note this may be slightly larger than <c>ticks</c>, since Z80 instructions take at least 4 ticks.</returns>
-        static public UInt64 Run(ICoreMachine machine, UInt64 ticks, bool stopOnAudioOverrun)
+        static public UInt64 Run(IMachine machine, UInt64 ticks)
         {
             UInt64 beforeTicks = machine.Core.Ticks;
-            machine.Core.RunUntil(beforeTicks + ticks, StopReasons.None, null);
+
+            ManualResetEvent e = new ManualResetEvent(false);
+            machine.Core.IdleRequest = () =>
+            {
+                e.Set();
+                return null;
+            };
+
+            machine.Core.PushRequest(CoreRequest.RunUntil(machine.Ticks + ticks));
+            machine.Core.Start();
+
+            while (!e.WaitOne(10))
+            {
+                machine.AdvancePlayback(48000);
+            }
+
+            machine.Core.Stop();
+            machine.Core.IdleRequest = null;
 
             return machine.Core.Ticks - beforeTicks;
         }
@@ -288,7 +304,12 @@ namespace CPvC.Test
             receive(action);
             machine.Start();
 
-            bool result = e.WaitOne(1000);
+            bool result = false;
+            while (!result)
+            {
+                result = e.WaitOne(100);
+                machine.AdvancePlayback(100000);
+            }
 
             machine.Core.Auditors -= processed;
 
@@ -331,18 +352,17 @@ namespace CPvC.Test
             return String.Format("{0}\\{1}", System.IO.Path.GetTempPath(), filename);
         }
 
-        static public Machine CreateTestMachine()
+        static public LocalMachine CreateTestMachine()
         {
             Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
             mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(AnyString()));
             mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
             mockFileSystem.Setup(fileSystem => fileSystem.FileLength(AnyString())).Returns(100);
 
-            MockFileByteStream mockBinaryWriter = new MockFileByteStream();
+            MockTextFile mockTextFile = new MockTextFile();
+            mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(AnyString())).Returns(mockTextFile);
 
-            mockFileSystem.Setup(fileSystem => fileSystem.OpenFileByteStream("test.cpvc")).Returns(mockBinaryWriter.Object);
-
-            Machine machine = Machine.New("test", "test.cpvc", mockFileSystem.Object);
+            LocalMachine machine = LocalMachine.New("test", null, null);
 
             // For consistency with automated builds, use all zero ROMs.
             byte[] zeroROM = new byte[0x4000];
@@ -367,6 +387,57 @@ namespace CPvC.Test
             RunForAWhile(machine);
 
             return machine;
+        }
+
+        static public bool ByteArraysEqual(byte[] bytes1, byte[] bytes2)
+        {
+            if (bytes1 == bytes2)
+            {
+                return true;
+            }
+
+            if (bytes1 == null || bytes2 == null)
+            {
+                return false;
+            }
+
+            return bytes1.SequenceEqual(bytes2);
+        }
+
+        static public bool BookmarksEqual(Bookmark bookmark1, Bookmark bookmark2)
+        {
+            if (bookmark1 == bookmark2)
+            {
+                return true;
+            }
+
+            if (bookmark1 == null || bookmark2 == null)
+            {
+                return false;
+            }
+
+            if (bookmark1.System != bookmark2.System)
+            {
+                return false;
+            }
+
+            if (bookmark1.Version != bookmark2.Version)
+            {
+                return false;
+            }
+
+            if (!ByteArraysEqual(bookmark1.Screen.GetBytes(), bookmark2.Screen.GetBytes()))
+            {
+                return false;
+            }
+
+            if (!ByteArraysEqual(bookmark1.State.GetBytes(), bookmark2.State.GetBytes()))
+            {
+                return false;
+            }
+
+            return true;
+
         }
 
         static public bool CoreRequestsEqual(CoreRequest request1, CoreRequest request2)
@@ -441,6 +512,75 @@ namespace CPvC.Test
             }
 
             return true;
+        }
+
+        static public bool HistoryEventsEqual(HistoryEvent event1, HistoryEvent event2)
+        {
+            if (event1 == event2)
+            {
+                return true;
+            }
+
+            if (event1 == null || event2 == null)
+            {
+                return false;
+            }
+
+            if (event1.Children.Count != event2.Children.Count)
+            {
+                return false;
+            }
+
+            if (event1.Type != event2.Type)
+            {
+                return false;
+            }
+
+            switch (event1.Type)
+            {
+                case HistoryEventType.Bookmark:
+                    if (!BookmarksEqual(event1.Bookmark, event2.Bookmark))
+                    {
+                        return false;
+                    }
+                    break;
+                case HistoryEventType.CoreAction:
+                    if (!CoreActionsEqual(event1.CoreAction, event2.CoreAction))
+                    {
+                        return false;
+                    }
+                    break;
+                case HistoryEventType.Root:
+                    break;
+                default:
+                    throw new Exception(String.Format("Unknown history event type {0}", event1.Type));
+            }
+
+            // This assumes the children are in the same order. Might need to change this in the future...
+            for (int i = 0; i < event1.Children.Count; i++)
+            {
+                if (!HistoryEventsEqual(event1.Children[i], event2.Children[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        static public bool HistoriesEqual(MachineHistory history1, MachineHistory history2)
+        {
+            if (history1 == history2)
+            {
+                return true;
+            }
+
+            if (history1 == null || history2 == null)
+            {
+                return false;
+            }
+
+            return HistoryEventsEqual(history1.RootEvent, history2.RootEvent);
         }
     }
 }

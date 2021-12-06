@@ -4,8 +4,8 @@ using System.ComponentModel;
 
 namespace CPvC
 {
-    public sealed class ReplayMachine : CoreMachine,
-        ICoreMachine,
+    public sealed class ReplayMachine : Machine,
+        IMachine,
         IPausableMachine,
         ITurboableMachine,
         IPrerecordedMachine,
@@ -14,6 +14,8 @@ namespace CPvC
         private UInt64 _endTicks;
 
         private List<HistoryEvent> _historyEvents;
+
+        private MachineHistory _history;
 
         public UInt64 EndTicks
         {
@@ -30,13 +32,29 @@ namespace CPvC
             _endTicks = historyEvent.Ticks;
             OnPropertyChanged("EndTicks");
 
-            _historyEvents = new List<HistoryEvent>();
+            _history = new MachineHistory();
+            List<HistoryEvent> historyEvents = new List<HistoryEvent>();
 
             while (historyEvent != null)
             {
-                _historyEvents.Insert(0, historyEvent.CloneWithoutChildren());
+                historyEvents.Insert(0, historyEvent);
 
                 historyEvent = historyEvent.Parent;
+            }
+
+            _historyEvents = new List<HistoryEvent>();
+
+            foreach (HistoryEvent e in historyEvents)
+            {
+                switch (e.Type)
+                {
+                    case HistoryEventType.CoreAction:
+                        _historyEvents.Add(_history.AddCoreAction(e.CoreAction.Clone()));
+                        break;
+                    case HistoryEventType.Bookmark:
+                        _historyEvents.Add(_history.AddBookmark(e.Ticks, e.Bookmark.Clone()));
+                        break;
+                }
             }
 
             SeekToBookmark(-1);
@@ -47,9 +65,20 @@ namespace CPvC
             get; set;
         }
 
-        public bool CanClose()
+        public bool CanStart
         {
-            return true;
+            get
+            {
+                return RunningState == RunningState.Paused;
+            }
+        }
+
+        public bool CanStop
+        {
+            get
+            {
+                return RunningState == RunningState.Running;
+            }
         }
 
         public void Close()
@@ -89,7 +118,7 @@ namespace CPvC
             for (int i = startIndex; i < _historyEvents.Count; i++)
             {
                 HistoryEvent historyEvent = _historyEvents[i];
-                if (historyEvent.Type == HistoryEvent.Types.CoreAction)
+                if (historyEvent.Type == HistoryEventType.CoreAction)
                 {
                     core.PushRequest(CoreRequest.RunUntil(historyEvent.Ticks));
                     core.PushRequest(historyEvent.CoreAction);
@@ -97,6 +126,9 @@ namespace CPvC
             }
 
             core.PushRequest(CoreRequest.RunUntil(_endTicks));
+
+            // This shouldn't be necessary since IdleRequest is set to null. Can probably get
+            // rid of CoreAction.Quit altogether, actually.
             core.Quit();
 
             Core = core;

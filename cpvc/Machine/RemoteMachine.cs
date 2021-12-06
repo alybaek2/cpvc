@@ -3,8 +3,8 @@ using System.ComponentModel;
 
 namespace CPvC
 {
-    public sealed class RemoteMachine : CoreMachine,
-        ICoreMachine,
+    public sealed class RemoteMachine : Machine,
+        IMachine,
         IInteractiveMachine,
         INotifyPropertyChanged,
         IDisposable
@@ -73,11 +73,6 @@ namespace CPvC
         public void Dispose()
         {
             Close();
-        }
-
-        public bool CanClose()
-        {
-            return true;
         }
 
         public void Close()

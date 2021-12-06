@@ -6,12 +6,12 @@ namespace CPvC
 {
     public class MachineServerConnection
     {
-        private ICoreMachine _machine;
-        private IEnumerable<ICoreMachine> _machines;
+        private IMachine _machine;
+        private IEnumerable<IMachine> _machines;
 
         private IRemote _remote;
 
-        public MachineServerConnection(IRemote remote, IEnumerable<ICoreMachine> machines)
+        public MachineServerConnection(IRemote remote, IEnumerable<IMachine> machines)
         {
             _remote = remote;
             _remote.ReceiveSelectMachine = ReceiveSelectMachine;
@@ -29,7 +29,7 @@ namespace CPvC
 
         private void ReceiveSelectMachine(string machineName)
         {
-            ICoreMachine machine = _machines.Where(m => m.Name == machineName).FirstOrDefault();
+            IMachine machine = _machines.Where(m => m.Name == machineName).FirstOrDefault();
             if (machine == _machine)
             {
                 return;
@@ -45,7 +45,7 @@ namespace CPvC
             _machine = machine;
             if (_machine != null)
             {
-                using (machine.AutoPause())
+                using ((machine as IPausableMachine)?.AutoPause())
                 {
                     byte[] state = _machine.Core.GetState();
 

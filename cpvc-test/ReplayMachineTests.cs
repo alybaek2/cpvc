@@ -17,9 +17,9 @@ namespace CPvC.Test
         public void Setup()
         {
             _bookmarkTicks = new List<UInt64>();
-            MachineTests machineTests = new MachineTests();
+            LocalMachineTests machineTests = new LocalMachineTests();
             machineTests.Setup();
-            using (Machine machine = machineTests.CreateMachine())
+            using (LocalMachine machine = machineTests.CreateMachine())
             {
                 RunForAWhile(machine);
                 machine.Key(Keys.A, true);
@@ -35,7 +35,7 @@ namespace CPvC.Test
                 RunForAWhile(machine);
                 machine.AddBookmark(false);
                 _bookmarkTicks.Add(machine.Ticks);
-                Run(machine, 4000000, false);
+                Run(machine, 4000000);
 
                 _finalHistoryEvent = machine.History.CurrentEvent;
             }
@@ -109,15 +109,15 @@ namespace CPvC.Test
             Assert.AreEqual("Test", machine.Name);
         }
 
-        [Test]
-        public void CanClose()
-        {
-            // Setup
-            ReplayMachine machine = CreateMachine();
+        //[Test]
+        //public void CanClose()
+        //{
+        //    // Setup
+        //    ReplayMachine machine = CreateMachine();
 
-            // Verify
-            Assert.True(machine.CanClose());
-        }
+        //    // Verify
+        //    Assert.True(machine.CanClose());
+        //}
 
         [Test]
         public void CloseTwice()

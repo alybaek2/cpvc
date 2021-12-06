@@ -82,9 +82,6 @@
     <DefineConstants>TRACE;DEBUG</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="deltaq, Version=1.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\deltaq.1.2.0\lib\netstandard2.0\deltaq.dll</HintPath>
-    </Reference>
     <Reference Include="ICSharpCode.SharpZipLib, Version=1.1.0.145, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpZipLib.1.1.0\lib\net45\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
@@ -115,14 +112,23 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Machine\CoreMachine.cs" />
+    <Compile Include="Events\PromptForNameEvent.cs" />
+    <Compile Include="Events\ReportErrorEvent.cs" />
+    <Compile Include="Events\ConfirmCloseEvent.cs" />
+    <Compile Include="Events\SelectRemoteMachineEvent.cs" />
+    <Compile Include="Events\SelectServerPortEvent.cs" />
+    <Compile Include="Events\CreateSocketEvent.cs" />
+    <Compile Include="Events\PromptForBookmarkEvent.cs" />
+    <Compile Include="Events\SelectItemEvent.cs" />
+    <Compile Include="Events\PromptForFileEvent.cs" />
+    <Compile Include="IO\ITextFile.cs" />
+    <Compile Include="IO\TextFile.cs" />
+    <Compile Include="Machine\HistoryEvent.cs" />
+    <Compile Include="Machine\HistoryNode.cs" />
+    <Compile Include="Machine\Machine.cs" />
     <Compile Include="Core\ICore.cs" />
-    <Compile Include="IO\BinaryFile.cs" />
-    <Compile Include="IO\FileByteStream.cs" />
-    <Compile Include="IO\IBinaryFile.cs" />
     <Compile Include="IO\IByteStream.cs" />
     <Compile Include="IO\IConnection.cs" />
-    <Compile Include="IO\IFileByteStream.cs" />
     <Compile Include="IO\IRemote.cs" />
     <Compile Include="IO\ISocket.cs" />
     <Compile Include="IO\IStreamBlob.cs" />
@@ -135,21 +141,21 @@
     <Compile Include="IO\SocketServer.cs" />
     <Compile Include="Config\ISettings.cs" />
     <Compile Include="Machine\Command.cs" />
+    <Compile Include="Machine\Interfaces\IPersistableMachine.cs" />
     <Compile Include="Machine\Interfaces\IReversibleMachine.cs" />
+    <Compile Include="Machine\MachineFileReader.cs" />
     <Compile Include="Machine\MachineHistory.cs" />
+    <Compile Include="Machine\MachineFileWriter.cs" />
     <Compile Include="Miscellaneous\AudioBuffer.cs" />
     <Compile Include="Miscellaneous\IBlob.cs" />
     <Compile Include="Machine\Interfaces\IBookmarkableMachine.cs" />
     <Compile Include="Machine\Interfaces\IInteractiveMachine.cs" />
-    <Compile Include="Machine\Interfaces\ICoreMachine.cs" />
-    <Compile Include="Machine\IMachineFileReader.cs" />
-    <Compile Include="Machine\Interfaces\IOpenableMachine.cs" />
+    <Compile Include="Machine\Interfaces\IMachine.cs" />
     <Compile Include="Machine\Interfaces\IPausableMachine.cs" />
     <Compile Include="Machine\Interfaces\ICompactableMachine.cs" />
     <Compile Include="Machine\Interfaces\IPrerecordedMachine.cs" />
     <Compile Include="Machine\Interfaces\IJumpableMachine.cs" />
     <Compile Include="Machine\Interfaces\ITurboableMachine.cs" />
-    <Compile Include="Machine\MachineFile.cs" />
     <Compile Include="Machine\MachineServerListener.cs" />
     <Compile Include="Machine\MachineServerConnection.cs" />
     <Compile Include="Miscellaneous\MemoryBlob.cs" />
@@ -179,7 +185,6 @@
     <Compile Include="UI\Forms\RenameWindow.xaml.cs">
       <DependentUpon>RenameWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Machine\HistoryEvent.cs" />
     <Compile Include="UI\Converters\RunningIcon.cs" />
     <Compile Include="Core\Core.cs" />
     <Compile Include="UI\Display.cs" />
@@ -197,7 +202,6 @@
       <DependentUpon>StartServerWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="UI\HistoryViewItem.cs" />
-    <Compile Include="UI\MachineViewModel.cs" />
     <Compile Include="UI\MainModel.cs" />
     <Compile Include="UI\MainViewModel.cs" />
     <Compile Include="UI\RemoteViewModel.cs" />
@@ -214,7 +218,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Miscellaneous\Helpers.cs" />
-    <Compile Include="Machine\Machine.cs" />
+    <Compile Include="Machine\LocalMachine.cs" />
     <Compile Include="Core\CoreRequest.cs" />
     <Compile Include="UI\Forms\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>

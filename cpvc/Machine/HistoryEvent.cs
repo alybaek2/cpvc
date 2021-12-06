@@ -1,110 +1,100 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace CPvC
 {
-    /// <summary>
-    /// Class that represents an event in a machine's timeline. Can either be an action taken by the core (e.g. a keypress)
-    /// or a checkpoint (which can be used to mark the end of a branch of the timeliine, for creating bookmarks, or for
-    /// branching the timeline). Note that RunUntil core actions are not recorded as part of the history.
-    /// </summary>
     public class HistoryEvent
     {
-        public enum Types
+        internal HistoryEvent(HistoryNode historyNode)
         {
-            Checkpoint,
-            CoreAction
+            Node = historyNode;
         }
 
-        public Types Type { get; }
-        public int Id { get; }
-        public UInt64 Ticks { get; }
-        public DateTime CreateDate { get; private set; }
-        public Bookmark Bookmark { get; set; }
-        public CoreAction CoreAction { get; private set; }
-        public HistoryEvent Parent { get; set; }
-        public List<HistoryEvent> Children { get; }
+        internal HistoryNode Node { get; private set; }
 
-        public HistoryEvent(int id, Types type, UInt64 ticks)
+        public HistoryEvent Parent
         {
-            Type = type;
-            Id = id;
-            Ticks = ticks;
-
-            Children = new List<HistoryEvent>();
-        }
-
-        public void AddChild(HistoryEvent historyEvent)
-        {
-            if (Children.Contains(historyEvent))
+            get
             {
-                return;
+                return Node.Parent?.HistoryEvent;
             }
-
-            Children.Add(historyEvent);
-            historyEvent.Parent = this;
         }
 
-        public void RemoveChild(HistoryEvent historyEvent)
+        public List<HistoryEvent> Children
         {
-            if (!Children.Contains(historyEvent))
+            get
             {
-                return;
+                return Node.Children.Select(x => x.HistoryEvent).ToList();
             }
+        }
 
-            historyEvent.Parent = null;
-            Children.Remove(historyEvent);
+        public HistoryEventType Type
+        {
+            get
+            {
+                return Node.Type;
+            }
+        }
+
+        public int Id
+        {
+            get
+            {
+                return Node.Id;
+            }
+        }
+
+        public Bookmark Bookmark
+        {
+            get
+            {
+                return Node.Bookmark;
+            }
+        }
+
+        public CoreAction CoreAction
+        {
+            get
+            {
+                return Node.CoreAction;
+            }
+        }
+
+        public UInt64 Ticks
+        {
+            get
+            {
+                return Node.Ticks;
+            }
+        }
+
+        public UInt64 EndTicks
+        {
+            get
+            {
+                if (Node.Type == HistoryEventType.CoreAction && Node.CoreAction.Type == CoreRequest.Types.RunUntil)
+                {
+                    return Node.CoreAction.StopTicks;
+                }
+
+                return Node.Ticks;
+            }
+        }
+
+        public DateTime CreateDate
+        {
+            get
+            {
+                return Node.CreateDate;
+            }
         }
 
         public bool IsEqualToOrAncestorOf(HistoryEvent ancestor)
         {
-            while (ancestor != null)
-            {
-                if (ancestor == this)
-                {
-                    return true;
-                }
-
-                ancestor = ancestor.Parent;
-            }
-
-            return false;
-        }
-
-        public List<HistoryEvent> GetSelfAndDescendents()
-        {
-            List<HistoryEvent> descendents = new List<HistoryEvent>();
-            descendents.Add(this);
-
-            for (int i = 0; i < descendents.Count; i++)
-            {
-                HistoryEvent historyEvent = descendents[i];
-                descendents.AddRange(historyEvent.Children);
-            }
-
-            return descendents;
-        }
-
-        static public HistoryEvent CreateCoreAction(int id, CoreAction coreAction)
-        {
-            HistoryEvent historyEvent = new HistoryEvent(id, Types.CoreAction, coreAction.Ticks)
-            {
-                CoreAction = coreAction
-            };
-
-            return historyEvent;
-        }
-
-        static public HistoryEvent CreateCheckpoint(int id, UInt64 ticks, DateTime createdDate, Bookmark bookmark)
-        {
-            HistoryEvent historyEvent = new HistoryEvent(id, Types.Checkpoint, ticks)
-            {
-                Bookmark = bookmark,
-                CreateDate = createdDate
-            };
-
-            return historyEvent;
+            return Node.IsEqualToOrAncestorOf(ancestor?.Node);
         }
 
         /// <summary>
@@ -116,36 +106,28 @@ namespace CPvC
         {
             List<HistoryEvent> events = new List<HistoryEvent>();
             events.Add(this);
+            UInt64 maxTicks = EndTicks;
 
             int i = 0;
             while (i < events.Count)
             {
                 HistoryEvent e = events[0];
+                events.RemoveAt(0);
+
                 if (e.Children.Count == 0)
                 {
-                    i++;
+                    if (e.EndTicks > maxTicks)
+                    {
+                        maxTicks = e.EndTicks;
+                    }
                 }
                 else
                 {
                     events.AddRange(e.Children);
-                    events.RemoveAt(0);
                 }
             }
 
-            return events.Select(x => x.Ticks).Max();
-        }
-
-        public HistoryEvent CloneWithoutChildren()
-        {
-            switch (Type)
-            {
-                case Types.CoreAction:
-                    return CreateCoreAction(Id, CoreAction.Clone());
-                case Types.Checkpoint:
-                    return CreateCheckpoint(Id, Ticks, CreateDate, Bookmark?.Clone() ?? null);
-            }
-
-            return null;
+            return maxTicks;
         }
     }
 }

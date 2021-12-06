@@ -107,7 +107,6 @@
   <ItemGroup>
     <Compile Include="AudioBufferTests.cs" />
     <Compile Include="AudioTests.cs" />
-    <Compile Include="BinaryFileTests.cs" />
     <Compile Include="BookmarksViewModelTests.cs" />
     <Compile Include="ConvertersTests.cs" />
     <Compile Include="CoreActionTests.cs" />
@@ -123,11 +122,11 @@
     <Compile Include="MachineHistoryTests.cs" />
     <Compile Include="MachineServerConnectionTests.cs" />
     <Compile Include="MachineServerListenerTests.cs" />
-    <Compile Include="MachineTests.cs" />
-    <Compile Include="MachineViewModelTests.cs" />
+    <Compile Include="LocalMachineTests.cs" />
+    <Compile Include="MainModelTests.cs" />
     <Compile Include="MainViewModelTests.cs" />
     <Compile Include="MemoryByteStreamTests.cs" />
-    <Compile Include="MockFileByteStream.cs" />
+    <Compile Include="MockTextFile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RemoteMachineTests.cs" />
     <Compile Include="RemoteTests.cs" />
@@ -144,6 +143,7 @@
     <Compile Include="SocketServerTests.cs" />
     <Compile Include="TestHelpers.cs" />
     <Compile Include="CommandTests.cs" />
+    <Compile Include="TextFileTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

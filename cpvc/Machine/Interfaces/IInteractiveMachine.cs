@@ -1,6 +1,6 @@
 ﻿namespace CPvC
 {
-    public interface IInteractiveMachine : ICoreMachine
+    public interface IInteractiveMachine
     {
         void Reset();
         void Key(byte keycode, bool down);

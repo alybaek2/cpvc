@@ -23,10 +23,21 @@ namespace CPvC.UI.Forms
         {
             _settings = new Settings();
             _fileSystem = new FileSystem();
-            _mainViewModel = new MainViewModel(_settings, _fileSystem, SelectItem, PromptForFile, PromptForBookmark, PromptForName, ReportError, SelectRemoteMachine, SelectServerPort, () => new Socket());
-            _audio = new Audio(_mainViewModel.ReadAudio);
+            _mainViewModel = new MainViewModel(_settings, _fileSystem);
+
+            _mainViewModel.PromptForFile += MainViewModel_PromptForFile;
+            _mainViewModel.SelectItem += MainViewModel_SelectItem;
+            _mainViewModel.PromptForBookmark += MainViewModel_PromptForBookmark;
+            _mainViewModel.PromptForName += MainViewModel_PromptForName;
+            _mainViewModel.SelectRemoteMachine += MainViewModel_SelectRemoteMachine;
+            _mainViewModel.SelectServerPort += MainViewModel_SelectServerPort;
+            _mainViewModel.ConfirmClose += MainViewModel_ConfirmClose;
+            _mainViewModel.ReportError += MainViewModel_ReportError;
+            _mainViewModel.CreateSocket += MainViewModel_CreateSocket;
 
             InitializeComponent();
+
+            _audio = new Audio(_mainViewModel.ReadAudio);
         }
 
         public void Dispose()
@@ -148,11 +159,14 @@ namespace CPvC.UI.Forms
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            // Stop audio prior to closing machines to ensure no audio callbacks are triggered
-            // during Dispose calls.
-            StopAudio();
-
-            _mainViewModel.CloseAll();
+            if (!_mainViewModel.CloseAll())
+            {
+                e.Cancel = true;
+            }
+            else
+            {
+                StopAudio();
+            }
         }
 
         private void ExitMenuItem_Click(object sender, RoutedEventArgs e)
@@ -164,17 +178,23 @@ namespace CPvC.UI.Forms
         {
             if (e.Key == Key.F1)
             {
-                _mainViewModel.ActiveMachineViewModel.ReverseStartCommand.Execute(null);
+                _mainViewModel.ReverseStartCommand.Execute(_mainViewModel.ActiveMachine);
             }
             else if (e.Key == Key.F2)
             {
-                _mainViewModel.ActiveMachineViewModel.TurboCommand.Execute(true);
+                if (_mainViewModel.ActiveMachine is ITurboableMachine machine)
+                {
+                    _mainViewModel.EnableTurbo(machine, true);
+                }
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);
             if (cpcKey.HasValue)
             {
-                _mainViewModel.ActiveMachineViewModel.KeyDownCommand.Execute(cpcKey.Value);
+                if (_mainViewModel.ActiveMachine is IInteractiveMachine machine)
+                {
+                    _mainViewModel.KeyPress(machine, cpcKey.Value, true);
+                }
             }
         }
 
@@ -182,17 +202,23 @@ namespace CPvC.UI.Forms
         {
             if (e.Key == Key.F1)
             {
-                _mainViewModel.ActiveMachineViewModel.ReverseStopCommand.Execute(null);
+                _mainViewModel.ReverseStopCommand.Execute(_mainViewModel.ActiveMachine);
             }
             else if (e.Key == Key.F2)
             {
-                _mainViewModel.ActiveMachineViewModel.TurboCommand.Execute(false);
+                if (_mainViewModel.ActiveMachine is ITurboableMachine machine)
+                {
+                    _mainViewModel.EnableTurbo(machine, false);
+                }
             }
 
             byte? cpcKey = _keyMap.GetKey(e.Key);
             if (cpcKey.HasValue)
             {
-                _mainViewModel.ActiveMachineViewModel.KeyUpCommand.Execute(cpcKey.Value);
+                if (_mainViewModel.ActiveMachine is IInteractiveMachine machine)
+                {
+                    _mainViewModel.KeyPress(machine, cpcKey.Value, false);
+                }
             }
         }
 
@@ -260,13 +286,10 @@ namespace CPvC.UI.Forms
 
         private HistoryEvent PromptForBookmark()
         {
-            Machine machine = _mainViewModel?.ActiveMachineViewModel?.Machine as Machine;
+            LocalMachine machine = _mainViewModel?.ActiveMachine as LocalMachine;
 
             using (machine.AutoPause())
             {
-                // Set a checkpoint here so the UI shows the current timeline position correctly.
-                machine.SetCheckpoint();
-
                 BookmarkSelectWindow dialog = new BookmarkSelectWindow(this, machine);
                 bool? result = dialog.ShowDialog();
                 if (result.HasValue && result.Value)
@@ -355,12 +378,12 @@ namespace CPvC.UI.Forms
 
         private void MachinePreviewGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is MachineViewModel machineViewModel)
+            if (sender is FrameworkElement element && element.DataContext is IMachine machine)
             {
-                ICoreMachine machine = machineViewModel.Machine as ICoreMachine;
                 try
                 {
-                    _mainViewModel.ActiveMachineViewModel = machineViewModel;
+                    _mainViewModel.OpenCommand.Execute(machine);
+                    _mainViewModel.ActiveMachine = machine;
                 }
                 catch (Exception ex)
                 {
@@ -371,22 +394,69 @@ namespace CPvC.UI.Forms
 
         private void ScreenGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is MachineViewModel machineViewModel)
+            if (sender is FrameworkElement element && element.DataContext is IMachine machine)
             {
-                machineViewModel.ToggleRunningCommand.Execute(null);
+                _mainViewModel.ToggleRunningCommand.Execute(machine);
             }
         }
 
-        private void OpenMachineViewModels_Filter(object sender, System.Windows.Data.FilterEventArgs e)
+        private void CollectionViewSource_Filter(object sender, System.Windows.Data.FilterEventArgs e)
         {
-            if (e.Item is MachineViewModel machineViewModel)
+            if (e.Item is IMachine machine)
             {
-                e.Accepted = !((machineViewModel.Machine as IOpenableMachine)?.RequiresOpen ?? false);
+                e.Accepted = !(machine is IPersistableMachine persistableMachine) || persistableMachine.IsOpen;
             }
             else
             {
                 e.Accepted = false;
             }
+        }
+
+        private void MainViewModel_ConfirmClose(object sender, ConfirmCloseEventArgs e)
+        {
+            MessageBoxResult result = MessageBox.Show(this, e.Message, "CPvC", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            e.Result = result == MessageBoxResult.Yes;
+        }
+
+        private void MainViewModel_CreateSocket(object sender, CreateSocketEventArgs e)
+        {
+            e.CreatedSocket = new Socket();
+        }
+
+        private void MainViewModel_PromptForBookmark(object sender, PromptForBookmarkEventArgs e)
+        {
+            e.SelectedBookmark = PromptForBookmark();
+        }
+
+        private void MainViewModel_PromptForFile(object sender, PromptForFileEventArgs e)
+        {
+            e.Filepath = PromptForFile(e.FileType, e.Existing);
+        }
+
+        private void MainViewModel_PromptForName(object sender, PromptForNameEventArgs e)
+        {
+            e.SelectedName = PromptForName(e.ExistingName);
+        }
+
+        private void MainViewModel_ReportError(object sender, ReportErrorEventArgs e)
+        {
+            ReportError(e.Message);
+        }
+
+        private void MainViewModel_SelectItem(object sender, SelectItemEventArgs e)
+        {
+            e.SelectedItem = SelectItem(e.Items);
+        }
+
+        private void MainViewModel_SelectRemoteMachine(object sender, SelectRemoteMachineEventArgs e)
+        {
+            e.SelectedMachine = SelectRemoteMachine(e.ServerInfo);
+        }
+
+        private void MainViewModel_SelectServerPort(object sender, SelectServerPortEventArgs e)
+        {
+            e.SelectedPort = SelectServerPort(e.DefaultPort);
         }
     }
 }
