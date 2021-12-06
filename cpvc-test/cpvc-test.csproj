@@ -143,6 +143,7 @@
     <Compile Include="SocketServerTests.cs" />
     <Compile Include="TestHelpers.cs" />
     <Compile Include="CommandTests.cs" />
+    <Compile Include="TextFileTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

@@ -11,9 +11,9 @@ namespace CPvC
     {
         private StreamReader _streamReader;
         private StreamWriter _streamWriter;
-        private FileStream _fileStream;
+        private Stream _fileStream;
 
-        public TextFile(FileStream byteStream)
+        public TextFile(Stream byteStream)
         {
             _fileStream = byteStream;
             _streamReader = new StreamReader(_fileStream);
@@ -23,6 +23,7 @@ namespace CPvC
         public void WriteLine(string line)
         {
             _streamWriter.WriteLine(line);
+            _streamWriter.Flush();
         }
 
         public string ReadLine()
