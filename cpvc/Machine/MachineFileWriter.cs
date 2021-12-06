@@ -65,12 +65,6 @@ namespace CPvC
             }
         }
 
-        public MachineFileWriter(ITextFile textFile)
-        {
-            _textFile = textFile;
-            _nextBlobId = 0;
-        }
-
         public MachineFileWriter(ITextFile textFile, MachineHistory machineHistory)
         {
             _textFile = textFile;
