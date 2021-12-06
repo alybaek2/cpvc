@@ -597,10 +597,7 @@ namespace CPvC
                 List<IMachine> machines = Machines.ToList();
                 foreach (IMachine machine in machines)
                 {
-                    if (!Close(machine, false))
-                    {
-                        return false;
-                    }
+                    Close(machine, false);
                 }
             }
 

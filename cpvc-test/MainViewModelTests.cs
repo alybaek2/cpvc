@@ -852,6 +852,53 @@ namespace CPvC.Test
             Assert.AreEqual(0, _mainViewModel.Machines.Count);
         }
 
+        [TestCase(false, false, true, false, true)]
+        [TestCase(false, true, false, false, true)]
+        [TestCase(true, false, false, false, false)]
+        [TestCase(true, false, false, true, true)]
+        public void CloseAll(bool newMachine, bool persistedMachine, bool nonPersistableMachine, bool confirmClose, bool expectedResult)
+        {
+            // Setup
+            MainViewModel mainViewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
+
+            if (newMachine)
+            {
+                mainViewModel.NewMachine(_mockFileSystem.Object);
+            }
+
+            if (persistedMachine)
+            {
+                mainViewModel.PromptForFile += (sender, args) =>
+                {
+                    args.Filepath = "test.cpvc";
+                };
+
+                MockTextFile mockTextFile = new MockTextFile();
+                mockTextFile.WriteLine("name:Test");
+                _mockFileSystem.Setup(fs => fs.OpenTextFile("test.cpvc")).Returns(mockTextFile);
+
+                mainViewModel.OpenMachine(_mockFileSystem.Object);
+            }
+
+            if (nonPersistableMachine)
+            {
+                MachineHistory history = new MachineHistory();
+
+                mainViewModel.OpenReplayMachine("Test (Replay)", history.RootEvent);
+            }
+
+            mainViewModel.ConfirmClose += (sender, args) =>
+            {
+                args.Result = confirmClose;
+            };
+
+            // Act
+            bool result = mainViewModel.CloseAll();
+
+            // Verify
+            Assert.AreEqual(expectedResult, result);
+        }
+
         [Test]
         public void Close()
         {
