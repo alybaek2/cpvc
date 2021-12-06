@@ -166,7 +166,6 @@ namespace CPvC
                 }
             );
 
-
             _openCommand = new Command(
                 p => (p as IPersistableMachine)?.OpenFromFile(fileSystem),
                 p => !(p as IPersistableMachine)?.IsOpen ?? false
@@ -301,7 +300,6 @@ namespace CPvC
                 p => (p as IReversibleMachine)?.ToggleReversibilityEnabled(),
                 p => p is IReversibleMachine
             );
-
         }
 
         public MainModel Model
@@ -539,7 +537,6 @@ namespace CPvC
 
         public IMachine OpenMachine(IFileSystem fileSystem)
         {
-
             PromptForFileEventArgs args = new PromptForFileEventArgs();
             args.FileType = FileTypes.Machine;
             args.Existing = true;
