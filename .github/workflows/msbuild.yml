@@ -1,0 +1,74 @@
+name: Build, Test, and Generate Code Coverage
+
+on: [push]
+
+env:
+  # Path to the solution file relative to the root of the project.
+  SOLUTION_FILE_PATH: cpvc.sln
+
+jobs:
+  build:
+    name: Build debug
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout files
+      uses: actions/checkout@v2
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    - name: Create dummy ROMs
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        del roms\os6128.rom
+        fsutil file createnew roms\os6128.rom 16384
+        del roms\amsdos6128.rom
+        fsutil file createnew roms\amsdos6128.rom 16384
+        del roms\basic6128.rom
+        fsutil file createnew roms\basic6128.rom 16384
+
+    - name: Restore NuGet packages
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+
+    - name: Build debug
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: msbuild /m /t:Rebuild /p:Configuration=Debug /p:Platform="x64" ${{env.SOLUTION_FILE_PATH}}
+
+    - name: Build release
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: msbuild /m /t:Rebuild /p:Configuration=Release /p:Platform="x64" ${{env.SOLUTION_FILE_PATH}}
+
+    - name: Upload test binaries
+      uses: actions/upload-artifact@v2
+      with:
+        name: cpvc-test-debug
+        path: cpvc-test\bin\x64\Debug\
+
+    - name: Upload test binaries
+      uses: actions/upload-artifact@v2
+      with:
+        name: cpvc-test-release
+        path: cpvc-test\bin\x64\Release\
+
+  test:
+    name: Test
+    needs: build
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout files
+      uses: actions/checkout@v2
+
+    - name: Download test binaries
+      uses: actions/download-artifact@v2
+      with:
+        name: cpvc-test-release
+
+    - name: Install NUnit
+      run: nuget install NUnit.ConsoleRunner -Version 3.11.1
+
+    - name: Run tests
+      run: ".\\NUnit.ConsoleRunner.3.11.1\\tools\\nunit3-console.exe" "cpvc-test\\bin\\x64\\Release\\cpvc-test.dll"
+
