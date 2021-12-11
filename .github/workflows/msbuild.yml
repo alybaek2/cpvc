@@ -66,10 +66,13 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: cpvc-test-release
+        path: bin
 
     - name: Install NUnit
       run: nuget install NUnit.ConsoleRunner -Version 3.11.1
 
+    - name: Run unit tests
+      run: ".\\NUnit.ConsoleRunner.3.11.1\\tools\\nunit3-console.exe" "bin\\cpvc-test.dll"
 
   coverage:
     name: Code coverage
@@ -86,6 +89,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: cpvc-test-debug
+        path: bin
 
     - name: Install OpenCover
       run: nuget install OpenCover -Version 4.7.922
@@ -101,7 +105,7 @@ jobs:
 
     - name: Generate code coverage
       run: |
-        &".\\OpenCover.4.7.922\\tools\\OpenCover.Console.exe" -target:".\\NUnit.ConsoleRunner.3.11.1\\tools\\nunit3-console.exe" -targetargs:"cpvc-test\\bin\\x64\\Debug\\cpvc-test.dll" -hideskipped:All -register:user -output:cpvc-coverage.xml -filter:"+[cpvc]* +[cpvc-core-clr]* -[cpvc-test]*" -excludebyfile:"d:\\agent\\*";"c:\\program files*";"*App.g.cs";"*.xaml.cs";"*\\obj\\*";"*.xaml";"*.Designer.cs";"*Socket.cs"
+        &".\\OpenCover.4.7.922\\tools\\OpenCover.Console.exe" -target:".\\NUnit.ConsoleRunner.3.11.1\\tools\\nunit3-console.exe" -targetargs:"bin\\cpvc-test.dll" -hideskipped:All -register:user -output:cpvc-coverage.xml -filter:"+[cpvc]* +[cpvc-core-clr]* -[cpvc-test]*" -excludebyfile:"d:\\agent\\*";"c:\\program files*";"*App.g.cs";"*.xaml.cs";"*\\obj\\*";"*.xaml";"*.Designer.cs";"*Socket.cs"
 
     - name: Process code coverage
       run: .\ReportGenerator.4.3.6\tools\net47\ReportGenerator.exe -targetdir:. -reporttypes:Cobertura -sourcedirs:. -reports:cpvc-coverage.xml
