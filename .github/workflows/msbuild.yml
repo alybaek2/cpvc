@@ -70,3 +70,46 @@ jobs:
     - name: Install NUnit
       run: nuget install NUnit.ConsoleRunner -Version 3.11.1
 
+
+  coverage:
+    name: Code coverage
+    needs: build
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout files
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+
+    - name: Download test binaries
+      uses: actions/download-artifact@v2
+      with:
+        name: cpvc-test-debug
+
+    - name: Install OpenCover
+      run: nuget install OpenCover -Version 4.7.922
+
+    - name: Install NUnit
+      run: nuget install NUnit.ConsoleRunner -Version 3.11.1
+
+    - name: Install Codecov reporter
+      run: nuget install Codecov -Version 1.12.0
+
+    - name: Generate code coverage
+      run: |
+        &".\\OpenCover.4.7.922\\tools\\OpenCover.Console.exe" -target:".\\NUnit.ConsoleRunner.3.11.1\\tools\\nunit3-console.exe" -targetargs:"cpvc-test\\bin\\x64\\Debug\\cpvc-test.dll" -filter:"+[cpvc]* +[cpvc-core-clr]* -[cpvc-test]*" -excludebyfile:"d:\\agent\\*";"c:\\program files*";"*App.g.cs";"*.xaml.cs";"*\\obj\\*";"*.xaml";"*.Designer.cs";"*Socket.cs" -hideskipped:All -register:user -output:cpvc-coverage.xml
+
+    - name: Process code coverage
+      run: .\ReportGenerator.4.3.6\tools\net47\ReportGenerator.exe -targetdir:. -reporttypes:Cobertura -sourcedirs:. -reports:cpvc-coverage.xml
+
+    - name: Upload code coverage report
+      run: .\Codecov.1.12.0\tools\win7-x86\codecov.exe --branch ${{github.ref_name}} --build ${{github.run_number}} --sha ${{github.sha}} --file "Cobertura.xml" --token ${{secrets.CPVC_CODECOV_TOKEN}}
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: code-coverage
+        path: |
+          cpvc-coverage.xml
+          Cobertura.xml
