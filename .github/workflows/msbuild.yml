@@ -98,7 +98,7 @@ jobs:
 
     - name: Generate code coverage
       run: |
-        &".\\OpenCover.4.7.922\\tools\\OpenCover.Console.exe" -target:".\\NUnit.ConsoleRunner.3.11.1\\tools\\nunit3-console.exe" -targetargs:"cpvc-test\\bin\\x64\\Debug\\cpvc-test.dll" -hideskipped:All -filter:"+[cpvc]* +[cpvc-core-clr]* -[cpvc-test]*" -excludebyfile:"d:\\agent\\*";"c:\\program files*";"*App.g.cs";"*.xaml.cs";"*\\obj\\*";"*.xaml";"*.Designer.cs";"*Socket.cs" -register:user -output:cpvc-coverage.xml
+        &".\\OpenCover.4.7.922\\tools\\OpenCover.Console.exe" -target:".\\NUnit.ConsoleRunner.3.11.1\\tools\\nunit3-console.exe" -targetargs:"cpvc-test\\bin\\x64\\Debug\\cpvc-test.dll" -hideskipped:All -register:user -output:cpvc-coverage.xml -filter:"+[cpvc]* +[cpvc-core-clr]* -[cpvc-test]*" -excludebyfile:"d:\\agent\\*";"c:\\program files*";"*App.g.cs";"*.xaml.cs";"*\\obj\\*";"*.xaml";"*.Designer.cs";"*Socket.cs"
 
     - name: Process code coverage
       run: .\ReportGenerator.4.3.6\tools\net47\ReportGenerator.exe -targetdir:. -reporttypes:Cobertura -sourcedirs:. -reports:cpvc-coverage.xml
