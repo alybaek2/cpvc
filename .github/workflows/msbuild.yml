@@ -21,11 +21,8 @@ jobs:
     - name: Create dummy ROMs
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
-        del roms\os6128.rom
         fsutil file createnew roms\os6128.rom 16384
-        del roms\amsdos6128.rom
         fsutil file createnew roms\amsdos6128.rom 16384
-        del roms\basic6128.rom
         fsutil file createnew roms\basic6128.rom 16384
 
     - name: Restore NuGet packages
