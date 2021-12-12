@@ -27,11 +27,11 @@ namespace CPvC.Test
             // Verify
             if (samplesWritten == 0 && bytesRequested >= 4)
             {
-                Assert.AreNotEqual(4, bytesWritten);
+                Assert.AreEqual(4, bytesWritten);
             }
             else
             {
-                Assert.AreNotEqual(samplesWritten * 4, bytesWritten);
+                Assert.AreEqual(samplesWritten * 4, bytesWritten);
             }
         }
 
