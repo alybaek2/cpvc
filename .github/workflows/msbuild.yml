@@ -7,7 +7,7 @@ env:
   SOLUTION_FILE_PATH: cpvc.sln
 
 jobs:
-  build:
+  builddebug:
     name: Build debug
     runs-on: windows-latest
 
@@ -35,15 +35,39 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: msbuild /m /t:Rebuild /p:Configuration=Debug /p:Platform="x64" ${{env.SOLUTION_FILE_PATH}}
 
-    - name: Build release
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: msbuild /m /t:Rebuild /p:Configuration=Release /p:Platform="x64" ${{env.SOLUTION_FILE_PATH}}
-
     - name: Upload test binaries
       uses: actions/upload-artifact@v2
       with:
         name: cpvc-test-debug
         path: cpvc-test\bin\x64\Debug\
+
+  buildrelease:
+    name: Build release
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout files
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    - name: Create dummy ROMs
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        fsutil file createnew roms\os6128.rom 16384
+        fsutil file createnew roms\amsdos6128.rom 16384
+        fsutil file createnew roms\basic6128.rom 16384
+
+    - name: Restore NuGet packages
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+
+    - name: Build release
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: msbuild /m /t:Rebuild /p:Configuration=Release /p:Platform="x64" ${{env.SOLUTION_FILE_PATH}}
 
     - name: Upload test binaries
       uses: actions/upload-artifact@v2
@@ -53,7 +77,7 @@ jobs:
 
   test:
     name: Test
-    needs: build
+    needs: buildrelease
     runs-on: windows-latest
 
     steps:
@@ -76,7 +100,7 @@ jobs:
 
   coverage:
     name: Code coverage
-    needs: build
+    needs: builddebug
     runs-on: windows-latest
 
     steps:
