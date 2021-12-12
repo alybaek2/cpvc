@@ -104,6 +104,14 @@ jobs:
       with:
         files: cpvc-test.xml
 
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: NUnit Tests
+        path: cpvc-test.xml
+        reporter: jest-junit
+
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       if: always()
