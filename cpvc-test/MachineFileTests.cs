@@ -103,19 +103,22 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void WriteCompound()
+        public void WriteAndReadCompound()
         {
             // Setup
             Bookmark bookmark = new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 });
 
             // Act
             _history.AddBookmark(100, bookmark);
+            _history.AddBookmark(200, bookmark);
             _mockFile.Clear();
             _fileWriter.WriteHistory("Test");
+            _fileReader.ReadFile(_mockFile);
 
             // Verify
             Assert.AreEqual(1, _mockFile.Lines.Count(line => line.StartsWith("compound:")));
             Assert.Zero(_mockFile.Lines.Count(line => line.StartsWith("blob:")));
+            Assert.True(HistoriesEqual(_fileReader.History, _history));
         }
 
         [Test]
