@@ -1,6 +1,6 @@
 # CPvC
 
-[![Build status](https://badge.buildkite.com/d5ba19b44c23f47b75db350b462738bf1dc048311058e34b16.svg)](https://buildkite.com/cpvc/build-and-test)
+[![Build status](https://github.com/alybaek2/cpvc/actions/workflows/msbuild.yml/badge.svg)](https://github.com/alybaek2/cpvc/actions/workflows/msbuild.yml)
 [![CodeFactor](https://www.codefactor.io/repository/github/alybaek2/cpvc/badge/master)](https://www.codefactor.io/repository/github/alybaek2/cpvc/overview/master)
 [![Coverage Status](https://coveralls.io/repos/github/alybaek2/cpvc/badge.svg?branch=master)](https://coveralls.io/github/alybaek2/cpvc?branch=master)
 [![codecov](https://codecov.io/gh/alybaek2/cpvc/branch/master/graph/badge.svg)](https://codecov.io/gh/alybaek2/cpvc)
