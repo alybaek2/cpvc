@@ -17,9 +17,6 @@ namespace CPvC
     /// </summary>
     public class Audio : WaveStream
     {
-        private const int _latency = 70;
-        private readonly IWavePlayer _wavePlayer;
-
         private const long _size = 48000;
         private readonly WaveFormat _waveFormat = new WaveFormat(48000, 16, 2);
         private long _position;
@@ -28,27 +25,6 @@ namespace CPvC
         public Audio(ReadAudioDelegate readAudioDelegate)
         {
             _readAudio = readAudioDelegate;
-
-            // Create audio device
-            WaveOutEvent waveOut = new WaveOutEvent
-            {
-                DeviceNumber = -1,
-                DesiredLatency = _latency
-            };
-
-            waveOut.Init(this);
-
-            _wavePlayer = waveOut;
-        }
-
-        public void Start()
-        {
-            _wavePlayer.Play();
-        }
-
-        public void Stop()
-        {
-            _wavePlayer.Stop();
         }
 
         // WaveStream implementation
