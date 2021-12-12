@@ -5,27 +5,6 @@ namespace CPvC.Test
 {
     public class AudioTests
     {
-        [TestCase(0)]
-        [TestCase(4)]
-        [TestCase(100)]
-        public void Play(int samplesWritten)
-        {
-            Mock<ReadAudioDelegate> readAudio = new Mock<ReadAudioDelegate>();
-            readAudio.Setup(x => x(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>())).Returns(samplesWritten);
-
-            using (Audio audio = new Audio(readAudio.Object))
-            {
-                // Act
-                audio.Start();
-                System.Threading.Thread.Sleep(400);
-                audio.Stop();
-            }
-
-            // Verify
-            readAudio.Verify(x => x(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.AtLeastOnce());
-            readAudio.VerifyNoOtherCalls();
-        }
-
         [TestCase(0, 0)]
         [TestCase(0, 3)]
         [TestCase(0, 4)]

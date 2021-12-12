@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NAudio.Wave;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -19,6 +20,8 @@ namespace CPvC.UI.Forms
 
         private readonly MainViewModel _mainViewModel;
 
+        private IWavePlayer _wavePlayer;
+
         public MainWindow()
         {
             _settings = new Settings();
@@ -38,6 +41,16 @@ namespace CPvC.UI.Forms
             InitializeComponent();
 
             _audio = new Audio(_mainViewModel.ReadAudio);
+
+            // Create audio device
+            WaveOutEvent waveOut = new WaveOutEvent
+            {
+                DeviceNumber = -1,
+                DesiredLatency = 70
+            };
+
+            waveOut.Init(_audio);
+            _wavePlayer = waveOut;
         }
 
         public void Dispose()
@@ -47,23 +60,15 @@ namespace CPvC.UI.Forms
 
         protected virtual void Dispose(bool disposing)
         {
-            if (_audio != null)
+            if (_wavePlayer != null)
             {
-                _audio.Stop();
+                _wavePlayer.Pause();
+                _wavePlayer.Dispose();
+                _wavePlayer = null;
+
                 _audio.Dispose();
                 _audio = null;
             }
-        }
-
-        private void StartAudio()
-        {
-            _audio.Start();
-        }
-
-        private void StopAudio()
-        {
-            _audio.Stop();
-            _audio = null;
         }
 
         public void InitKeyboardMap()
@@ -154,7 +159,7 @@ namespace CPvC.UI.Forms
 
             DataContext = _mainViewModel;
 
-            StartAudio();
+            _wavePlayer.Play();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -165,7 +170,8 @@ namespace CPvC.UI.Forms
             }
             else
             {
-                StopAudio();
+                _wavePlayer.Pause();
+                _wavePlayer = null;
             }
         }
 

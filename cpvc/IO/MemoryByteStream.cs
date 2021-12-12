@@ -50,16 +50,6 @@ namespace CPvC
             Write(BitConverter.GetBytes(u));
         }
 
-        public void SeekToEnd()
-        {
-            Position = Length; 
-        }
-
-        public string ReadLine()
-        {
-            throw new NotImplementedException();
-        }
-
         public UInt16 ReadUInt16()
         {
             UInt16 u = ReadByte();
