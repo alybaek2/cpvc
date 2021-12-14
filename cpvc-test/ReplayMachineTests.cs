@@ -68,6 +68,31 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void CanStart()
+        {
+            // Setup
+            ReplayMachine replayMachine = CreateMachine();
+
+            // Verify
+            Assert.True(replayMachine.CanStart);
+            Assert.False(replayMachine.CanStop);
+        }
+
+        [Test]
+        public void CanStop()
+        {
+            // Setup
+            ReplayMachine replayMachine = CreateMachine();
+
+            // Act
+            replayMachine.Start();
+
+            // Verify
+            Assert.False(replayMachine.CanStart);
+            Assert.True(replayMachine.CanStop);
+        }
+
+        [Test]
         public void EndTicks()
         {
             // Setup

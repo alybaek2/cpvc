@@ -28,9 +28,6 @@ namespace CPvC.Test
             _history.SetCurrent(_event0);
             _event01 = _history.AddCoreAction(CoreAction.Reset(300));
             _event010 = _history.AddBookmark(400, new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 }));
-
-            //_historyCopy = new MachineHistory();
-            //_history.CopyTo(_historyCopy);
         }
 
         [Test]
@@ -117,12 +114,16 @@ namespace CPvC.Test
             Assert.AreEqual(HistoryEventType.Bookmark, event3.Type);
         }
 
-        //[Test]
-        //public void Copy()
-        //{
-        //    // Verify
-        //    Assert.True(TestHelpers.HistoriesEqual(_history, _historyCopy));
-        //}
+        [Test]
+        public void SetBookmarkBadTicks()
+        {
+            // Setup
+            MachineHistory history = new MachineHistory();
+            HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => history.AddBookmark(99, new Bookmark(false, Core.LatestVersion, new byte[] { }, new byte[] { })));
+        }
 
         [Test]
         public void DeleteCurrentAndChildren()
