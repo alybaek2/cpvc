@@ -17,8 +17,6 @@ namespace CPvC.Test
         private HistoryEvent _event01;
         private HistoryEvent _event010;
 
-        //private MachineHistory _historyCopy;
-
         [SetUp]
         public void SetUp()
         {
@@ -186,25 +184,34 @@ namespace CPvC.Test
             Assert.Throws<Exception>(() => _history.DeleteBookmark(_history.RootEvent));
         }
 
-        //[Test]
-        //public void DeleteEventNotOurNode()
-        //{
-        //    // Act and Verify
-        //    Assert.Throws<Exception>(() => _history.DeleteEvent(_historyCopy.CurrentEvent));
-        //}
+        [Test]
+        public void DeleteEventNotOurNode()
+        {
+            // Setup
+            MachineHistory otherHistory = new MachineHistory();
 
-        //[Test]
-        //public void DeleteEventAndChildrenNotOurNode()
-        //{
-        //    // Act and Verify
-        //    Assert.Throws<Exception>(() => _history.DeleteEventAndChildren(_historyCopy.CurrentEvent));
-        //}
+            // Act and Verify
+            Assert.Throws<Exception>(() => _history.DeleteBookmark(otherHistory.CurrentEvent));
+        }
 
-        //[Test]
-        //public void SetCurrentNotOurNode()
-        //{
-        //    // Act and Verify
-        //    Assert.Throws<Exception>(() => _history.SetCurrent(_historyCopy.CurrentEvent));
-        //}
+        [Test]
+        public void DeleteEventAndChildrenNotOurNode()
+        {
+            // Setup
+            MachineHistory otherHistory = new MachineHistory();
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => _history.DeleteBranch(otherHistory.CurrentEvent));
+        }
+
+        [Test]
+        public void SetCurrentNotOurNode()
+        {
+            // Setup
+            MachineHistory otherHistory = new MachineHistory();
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => _history.SetCurrent(otherHistory.CurrentEvent));
+        }
     }
 }
