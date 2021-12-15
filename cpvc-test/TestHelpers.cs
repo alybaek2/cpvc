@@ -254,6 +254,37 @@ namespace CPvC.Test
             WaitForQueueToProcess(core);
         }
 
+        static public CoreAction ProcessOneRequest(Core core, CoreRequest request, int timeout)
+        {
+            CoreAction action = null;
+            ManualResetEvent e = new ManualResetEvent(false);
+            RequestProcessedDelegate processed = (c, r, a) =>
+            {
+                // Advance the audio playback so RunUntil requests don't stall.
+                core.AdvancePlayback(100000);
+
+                if (c == core && r == request)
+                {
+                    e.Set();
+                    action = a;
+                }
+            };
+
+            core.Auditors += processed;
+
+            core.PushRequest(request);
+
+            // Wait for at most one second.
+            bool result = e.WaitOne(timeout);
+            core.Auditors -= processed;
+            if (!result)
+            {
+                throw new TimeoutException("Timeout while waiting for request to process.");
+            }
+
+            return action;
+        }
+
         /// <summary>
         /// Returns once all the requests currently in the core's request queue are processed.
         /// </summary>

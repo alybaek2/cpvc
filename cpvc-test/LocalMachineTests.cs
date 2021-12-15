@@ -729,6 +729,7 @@ namespace CPvC.Test
 
             // Run for long enough to generate one snapshot, so that we can enter reverse mode.
             RunForAWhile(_machine, 1000000, 60000);
+            UInt64 ticksAfter = _machine.Ticks;
 
             // Act
             _machine.Reverse();
@@ -740,6 +741,7 @@ namespace CPvC.Test
             //          samples. Probably easier to do this once the Core class is
             //          hidden behind an interface and can be mocked.
             Assert.AreEqual(RunningState.Reverse, _machine.RunningState);
+            Assert.Less(_machine.Ticks, ticksAfter);
         }
 
         /// <summary>
@@ -948,6 +950,30 @@ namespace CPvC.Test
 
             // Act and Verify
             Assert.Throws<ArgumentException>(() => machine.Persist(_mockFileSystem.Object, ""));
+        }
+
+        [Test]
+        public void SnapshotLimit()
+        {
+            // Setup
+            LocalMachine machine = LocalMachine.New("Test", null, null);
+            machine.SnapshotLimit = 2;
+            machine.Core.PushRequest(CoreRequest.CreateSnapshot(1000000));
+            machine.Core.PushRequest(CoreRequest.CreateSnapshot(1000001));
+
+            // Act
+            TestHelpers.Run(machine, 400000);
+            machine.Start();
+
+            // Verify
+            CoreRequest request1 = CoreRequest.DeleteSnapshot(1000000);
+            CoreRequest request2 = CoreRequest.DeleteSnapshot(1000001);
+            CoreAction action1 = TestHelpers.ProcessOneRequest(machine.Core, request1, 2000);
+            CoreAction action2 = TestHelpers.ProcessOneRequest(machine.Core, request2, 2000);
+            machine.Stop();
+
+            Assert.Null(action1);
+            Assert.Null(action2);
         }
     }
 }

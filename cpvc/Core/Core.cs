@@ -565,7 +565,11 @@ namespace CPvC
 
         private CoreAction DeleteSnapshot(int id)
         {
-            _coreCLR.DeleteSnapshot(id);
+            bool result = _coreCLR.DeleteSnapshot(id);
+            if (!result)
+            {
+                return null;
+            }
 
             return CoreAction.DeleteSnapshot(Ticks, id);
         }

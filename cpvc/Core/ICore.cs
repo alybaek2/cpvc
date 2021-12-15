@@ -19,7 +19,7 @@ namespace CPvC
         byte[] GetState();
         void LoadState(byte[] state);
         bool CreateSnapshot(int id);
-        void DeleteSnapshot(int id);
+        bool DeleteSnapshot(int id);
         bool RevertToSnapshot(int id);
     }
 }
