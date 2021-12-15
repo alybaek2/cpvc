@@ -17,6 +17,8 @@ namespace CPvC.Test
 
         private LocalMachine _machine;
 
+        private MockTextFile _mockTextFile;
+
         public LocalMachine CreateMachine()
         {
             LocalMachine machine = LocalMachine.New("test", null, null);
@@ -41,13 +43,13 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
             _mockFileSystem.Setup(fileSystem => fileSystem.FileLength(AnyString())).Returns(100);
 
-            MockTextFile mockTextFile = new MockTextFile();
-            mockTextFile.WriteLine("name:Test");
-            mockTextFile.WriteLine("key:1,10,58,True");
-            mockTextFile.WriteLine("key:2,20,58,False");
-            mockTextFile.WriteLine("current:1");
-            mockTextFile.WriteLine("deletebranch:2");
-            _mockFileSystem.Setup(fs => fs.OpenTextFile(_filename)).Callback(() => mockTextFile.SeekToStart()).Returns(mockTextFile);
+            _mockTextFile = new MockTextFile();
+            _mockTextFile.WriteLine("name:Test");
+            _mockTextFile.WriteLine("key:1,10,58,True");
+            _mockTextFile.WriteLine("key:2,20,58,False");
+            _mockTextFile.WriteLine("current:1");
+            _mockTextFile.WriteLine("deletebranch:2");
+            _mockFileSystem.Setup(fs => fs.OpenTextFile(_filename)).Callback(() => _mockTextFile.SeekToStart()).Returns(_mockTextFile);
 
             _mockAuditor = new Mock<MachineAuditorDelegate>();
 
@@ -136,148 +138,91 @@ namespace CPvC.Test
             }
         }
 
-        ///// <summary>
-        ///// Ensures that a machine opened "lazily" sets the appropriate RequiresOpen property.
-        ///// </summary>
-        //[Test]
-        //public void OpenLazy()
-        //{
-        //    // Setup
-        //    _mockBinaryWriter.Content = new List<byte>
-        //    {
-        //        0x00,
-        //              0x04, 0x00, 0x00, 0x00,
-        //              (byte)'T', (byte)'e', (byte)'s', (byte)'t'
-        //    };
-
-        //    // Act
-        //    using (Machine machine = Machine.Open("Test", "test.cpvc", _mockFileSystem.Object, true))
-        //    {
-        //        // Verify
-        //        Assert.IsTrue(machine.RequiresOpen);
-        //        Assert.AreEqual(machine.Filepath, "test.cpvc");
-        //        Assert.AreEqual(machine.Name, "Test");
-        //    }
-        //}
-
-        //[Test]
-        //public void OpenInvalidBlockType()
-        //{
-        //    // Setup
-        //    _mockBinaryWriter.Content = new List<byte>
-        //    {
-        //        0x7f  // Unknown block type - should cause an exception when read.
-        //    };
-
-        //    // Act and Verify
-        //    Assert.Throws<Exception>(() =>
-        //    {
-        //        using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false)) { }
-        //    });
-        //}
-
-        //[Test]
-        //public void CanClose([Values(false, true)] bool requiresOpen)
-        //{
-        //    // Setup
-        //    if (requiresOpen)
-        //    {
-        //        _machine.Close();
-        //    }
-
-        //    // Act
-        //    bool canClose = _machine.CanClose();
-
-        //    // Verify
-        //    Assert.AreEqual(!requiresOpen, canClose);
-        //}
-
         /// <summary>
         /// Ensures an existing machine is opened with the expected state.
         /// </summary>
-        //[Test]
-        //public void Open()
-        //{
-        //    // Setup
-        //    RunForAWhile(_machine);
-        //    _machine.Key(Keys.A, true);
-        //    RunForAWhile(_machine);
-        //    _machine.LoadDisc(0, null);
-        //    RunForAWhile(_machine);
-        //    _machine.LoadTape(null);
-        //    RunForAWhile(_machine);
-        //    _machine.Reset();
-        //    RunForAWhile(_machine);
-        //    _machine.AddBookmark(false);
-        //    HistoryEvent bookmarkEvent = _machine.History.CurrentEvent;
-        //    RunForAWhile(_machine);
-        //    _machine.JumpToMostRecentBookmark();
-        //    HistoryEvent eventToDelete = bookmarkEvent.Children[0];
-        //    RunForAWhile(_machine);
-        //    _machine.SetBookmark(bookmarkEvent, null);
-        //    _machine.TrimTimeline(eventToDelete);
-        //    _machine.Close();
+        [Test]
+        public void Open()
+        {
+            // Setup
+            _mockTextFile.Clear();
+            _machine.Persist(_mockFileSystem.Object, _filename);
+            RunForAWhile(_machine);
+            _machine.Key(Keys.A, true);
+            RunForAWhile(_machine);
+            _machine.LoadDisc(0, null);
+            RunForAWhile(_machine);
+            _machine.LoadTape(null);
+            RunForAWhile(_machine);
+            _machine.Reset();
+            RunForAWhile(_machine);
+            _machine.AddBookmark(false);
+            HistoryEvent bookmarkEvent = _machine.History.CurrentEvent;
+            RunForAWhile(_machine);
+            _machine.JumpToMostRecentBookmark();
+            HistoryEvent eventToDelete = bookmarkEvent.Children[0];
+            RunForAWhile(_machine);
+            _machine.DeleteBookmark(bookmarkEvent);
+            _machine.TrimTimeline(eventToDelete);
+            _machine.Close();
 
-        //    using (Machine machine = Machine.Open("test", "test.cpvc", _mockFileSystem.Object, false))
-        //    {
-        //        // Verify
-        //        Assert.IsFalse(machine.RequiresOpen);
-        //        Assert.AreEqual(machine.Filepath, "test.cpvc");
-        //        Assert.AreEqual(machine.Name, "test");
+            using (LocalMachine machine = LocalMachine.OpenFromFile(_mockFileSystem.Object, "test.cpvc"))
+            {
+                // Verify
+                Assert.IsTrue(machine.IsOpen);
+                Assert.AreEqual(machine.PersistantFilepath, "test.cpvc");
+                Assert.AreEqual(machine.Name, "test");
 
-        //        Assert.AreEqual(HistoryEvent.Types.CoreAction, machine.History.RootEvent.Type);
-        //        Assert.AreEqual(CoreRequest.Types.CoreVersion, machine.History.RootEvent.CoreAction.Type);
-        //        Assert.AreEqual(1, machine.History.RootEvent.Children.Count);
+                Assert.AreEqual(HistoryEventType.Root, machine.History.RootEvent.Type);
+                Assert.AreEqual(1, machine.History.RootEvent.Children.Count);
 
-        //        HistoryEvent historyEvent = machine.History.RootEvent.Children[0];
-        //        Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
-        //        Assert.AreEqual(CoreRequest.Types.KeyPress, historyEvent.CoreAction.Type);
-        //        Assert.AreEqual(Keys.A, historyEvent.CoreAction.KeyCode);
-        //        Assert.IsTrue(historyEvent.CoreAction.KeyDown);
-        //        Assert.AreEqual(1, historyEvent.Children.Count);
+                HistoryEvent historyEvent = machine.History.RootEvent.Children[0];
+                Assert.AreEqual(HistoryEventType.CoreAction, historyEvent.Type);
+                Assert.AreEqual(CoreRequest.Types.KeyPress, historyEvent.CoreAction.Type);
+                Assert.AreEqual(Keys.A, historyEvent.CoreAction.KeyCode);
+                Assert.IsTrue(historyEvent.CoreAction.KeyDown);
+                Assert.AreEqual(1, historyEvent.Children.Count);
 
-        //        historyEvent = historyEvent.Children[0];
-        //        Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
-        //        Assert.AreEqual(CoreRequest.Types.LoadDisc, historyEvent.CoreAction.Type);
-        //        Assert.AreEqual(0, historyEvent.CoreAction.Drive);
-        //        Assert.IsNull(historyEvent.CoreAction.MediaBuffer.GetBytes());
-        //        Assert.AreEqual(1, historyEvent.Children.Count);
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEventType.CoreAction, historyEvent.Type);
+                Assert.AreEqual(CoreRequest.Types.LoadDisc, historyEvent.CoreAction.Type);
+                Assert.AreEqual(0, historyEvent.CoreAction.Drive);
+                Assert.IsNull(historyEvent.CoreAction.MediaBuffer.GetBytes());
+                Assert.AreEqual(1, historyEvent.Children.Count);
 
-        //        historyEvent = historyEvent.Children[0];
-        //        Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
-        //        Assert.AreEqual(CoreRequest.Types.LoadTape, historyEvent.CoreAction.Type);
-        //        Assert.IsNull(historyEvent.CoreAction.MediaBuffer.GetBytes());
-        //        Assert.AreEqual(1, historyEvent.Children.Count);
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEventType.CoreAction, historyEvent.Type);
+                Assert.AreEqual(CoreRequest.Types.LoadTape, historyEvent.CoreAction.Type);
+                Assert.IsNull(historyEvent.CoreAction.MediaBuffer.GetBytes());
+                Assert.AreEqual(1, historyEvent.Children.Count);
 
-        //        historyEvent = historyEvent.Children[0];
-        //        Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
-        //        Assert.AreEqual(CoreRequest.Types.Reset, historyEvent.CoreAction.Type);
-        //        Assert.AreEqual(1, historyEvent.Children.Count);
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEventType.CoreAction, historyEvent.Type);
+                Assert.AreEqual(CoreRequest.Types.Reset, historyEvent.CoreAction.Type);
+                Assert.AreEqual(1, historyEvent.Children.Count);
 
-        //        historyEvent = historyEvent.Children[0];
-        //        Assert.AreEqual(HistoryEvent.Types.Checkpoint, historyEvent.Type);
-        //        Assert.IsNull(historyEvent.Bookmark);
-        //        Assert.AreEqual(1, historyEvent.Children.Count);
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEventType.CoreAction, historyEvent.Type);
+                Assert.IsNull(historyEvent.Bookmark);
+                Assert.AreEqual(1, historyEvent.Children.Count);
 
-        //        historyEvent = historyEvent.Children[0];
-        //        Assert.AreEqual(HistoryEvent.Types.Checkpoint, historyEvent.Type);
-        //        Assert.IsNull(historyEvent.Bookmark);
-        //        Assert.AreEqual(1, historyEvent.Children.Count);
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEventType.Bookmark, historyEvent.Type);
+                Assert.IsNotNull(historyEvent.Bookmark);
 
-        //        historyEvent = historyEvent.Children[0];
-        //        Assert.AreEqual(HistoryEvent.Types.Checkpoint, historyEvent.Type);
-        //        Assert.IsNotNull(historyEvent.Bookmark);
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEventType.CoreAction, historyEvent.Type);
+                Assert.AreEqual(CoreRequest.Types.RunUntil, historyEvent.CoreAction.Type);
 
-        //        // Opening the machine should add a "Version" event.
-        //        historyEvent = historyEvent.Children[0];
-        //        Assert.AreEqual(HistoryEvent.Types.CoreAction, historyEvent.Type);
-        //        Assert.AreEqual(CoreRequest.Types.CoreVersion, historyEvent.CoreAction.Type);
+                historyEvent = historyEvent.Children[0];
+                Assert.AreEqual(HistoryEventType.Bookmark, historyEvent.Type);
+                Assert.IsNotNull(historyEvent.Bookmark);
 
-        //        Assert.AreEqual(historyEvent, machine.History.CurrentEvent);
+                Assert.AreEqual(historyEvent, machine.History.CurrentEvent);
 
-        //        _mockAuditor.Verify(a => a(It.Is<CoreAction>(c => c.Type == CoreRequest.Types.LoadCore)), Times.Once);
-        //    }
-        //}
+                _mockAuditor.Verify(a => a(It.Is<CoreAction>(c => c.Type == CoreRequest.Types.LoadCore)), Times.Once);
+            }
+        }
 
         ///// <summary>
         ///// Ensure that if a machine file is missing the final system bookmark that's written when

@@ -157,6 +157,11 @@ namespace CPvC
 
         static public string StrFromBytes(byte[] bytes)
         {
+            if (bytes == null)
+            {
+                return String.Empty;
+            }
+
             StringWriter strw = new StringWriter();
             for (int i = 0; i < bytes.Length; i++)
             {
@@ -168,6 +173,11 @@ namespace CPvC
 
         static public byte[] BytesFromStr(string str)
         {
+            if (str == String.Empty)
+            {
+                return null;
+            }
+
             byte[] bytes = new byte[str.Length / 2];
 
             for (int i = 0; i < bytes.Length; i++)
