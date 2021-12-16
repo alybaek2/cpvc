@@ -48,6 +48,7 @@ namespace CPvC.Test
 
             _machine = LocalMachine.New("test", null, null);
             _mainViewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
+            _mainViewModel.Model.AddMachine(_machine);
 
         }
 
@@ -873,6 +874,7 @@ namespace CPvC.Test
             {
                 args.Result = true;
             };
+            int machineCount = _mainViewModel.Machines.Count;
             _mainViewModel.NewMachineCommand.Execute(null);
             IMachine machine = _mainViewModel.Machines[0];
 
@@ -880,7 +882,7 @@ namespace CPvC.Test
             _mainViewModel.RemoveCommand.Execute(machine);
 
             // Verify
-            Assert.AreEqual(0, _mainViewModel.Machines.Count);
+            Assert.AreEqual(machineCount, _mainViewModel.Machines.Count);
         }
 
         [TestCase(false, false, true, false, true)]
@@ -934,6 +936,36 @@ namespace CPvC.Test
         public void Close()
         {
             TestInterfacePassthrough<IMachine>(_mainViewModel.CloseCommand, m => m.Close());
+        }
+
+        [Test]
+        public void CloseAndCancel()
+        {
+            // Setup
+            int machineCount = _mainViewModel.Machines.Count;
+            _mainViewModel.ConfirmClose += (sender, args) =>
+            {
+                args.Result = false;
+            };
+
+            // Act
+            _mainViewModel.CloseCommand.Execute(_machine);
+
+            // Verify
+            Assert.True(_machine.IsOpen);
+            Assert.AreEqual(machineCount, _mainViewModel.Machines.Count);
+        }
+
+        [Test]
+        public void CloseNoConfirmHandler()
+        {
+            // Act
+            int machineCount = _mainViewModel.Machines.Count;
+            _mainViewModel.CloseCommand.Execute(_machine);
+
+            // Verify
+            Assert.True(_machine.IsOpen);
+            Assert.AreEqual(machineCount, _mainViewModel.Machines.Count);
         }
 
         [Test]
