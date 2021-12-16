@@ -176,7 +176,7 @@ namespace CPvC
                 {
                     try
                     {
-                        Persist(p, fileSystem);
+                        Persist(p as IPersistableMachine, fileSystem);
                     }
                     catch (Exception ex)
                     {
@@ -759,11 +759,11 @@ namespace CPvC
             return buffer;
         }
 
-        public void Persist(object p, IFileSystem fileSystem)
+        public void Persist(IPersistableMachine machine, IFileSystem fileSystem)
         {
-            if (!(p is IPersistableMachine machine))
+            if (machine == null)
             {
-                throw new InvalidOperationException("Cannot persist this machine!");
+                throw new ArgumentException("Invalid machine!", nameof(machine));
             }
 
             if (!String.IsNullOrEmpty(machine.PersistantFilepath))

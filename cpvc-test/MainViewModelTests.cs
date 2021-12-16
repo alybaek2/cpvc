@@ -823,6 +823,37 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void PersistNonPersistableMachine()
+        {
+            // Setup
+            Mock<IJumpableMachine> mockMachine = new Mock<IJumpableMachine>();
+            Mock<ReportErrorEventHandler> mockReport = new Mock<ReportErrorEventHandler>();
+            _mainViewModel.ReportError += mockReport.Object;
+
+            // Act
+            _mainViewModel.PersistCommand.Execute(mockMachine.Object);
+
+            // Verify
+            mockReport.Verify(m => m(It.IsAny<object>(), It.IsAny<ReportErrorEventArgs>()), Times.Once());
+        }
+
+        [Test]
+        public void PersistAlreadyPersistedMachine()
+        {
+            // Setup
+            Mock<IPersistableMachine> mockMachine = new Mock<IPersistableMachine>();
+            mockMachine.SetupGet(m => m.PersistantFilepath).Returns("test.cpvc");
+            Mock<PromptForFileEventHandler> mockPrompt = new Mock<PromptForFileEventHandler>();
+            _mainViewModel.PromptForFile += mockPrompt.Object;
+
+            // Act
+            _mainViewModel.PersistCommand.Execute(mockMachine.Object);
+
+            // Verify
+            mockPrompt.VerifyNoOtherCalls();
+        }
+
+        [Test]
         public void Pause()
         {
             TestInterfacePassthrough<IPausableMachine>(_mainViewModel.PauseCommand, m => m.Stop());
