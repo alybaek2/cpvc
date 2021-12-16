@@ -30,7 +30,10 @@ namespace CPvC.Test
             machine.Core.SetUpperROM(0, zeroROM);
             machine.Core.SetUpperROM(7, zeroROM);
 
-            machine.Core.IdleRequest = () => CoreRequest.RunUntil(machine.Core.Ticks + 1000);
+            machine.Core.IdleRequest = () =>
+            {
+                return (machine.RunningState == RunningState.Running) ? CoreRequest.RunUntil(machine.Core.Ticks + 1000) : null;
+            };
 
             return machine;
         }
