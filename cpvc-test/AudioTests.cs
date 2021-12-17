@@ -76,7 +76,19 @@ namespace CPvC.Test
                 Assert.Greater(audio.Length, 0);
                 Assert.AreEqual(999, audio.Position);
             }
+        }
 
+        [Test]
+        public void CheckWaveFormat()
+        {
+            // Setup
+            using (Audio audio = new Audio(null))
+            {
+                // Verify
+                Assert.AreEqual(48000, audio.WaveFormat.SampleRate);
+                Assert.AreEqual(16, audio.WaveFormat.BitsPerSample);
+                Assert.AreEqual(2, audio.WaveFormat.Channels);
+            }
         }
     }
 }

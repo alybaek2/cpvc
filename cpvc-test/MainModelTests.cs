@@ -82,5 +82,18 @@ namespace CPvC.Test
             // Verify
             _mockSettings.VerifySet(s => s.RecentlyOpened = It.IsAny<string>(), Times.Never);
         }
+
+        [Test]
+        public void AddMachineTwice()
+        {
+            // Setup
+            _mainModel.AddMachine("test.cpvc", _mockFileSystem.Object, true);
+
+            // Act
+            LocalMachine machine = _mainModel.AddMachine("test.cpvc", _mockFileSystem.Object, true);
+
+            // Verify
+            Assert.IsNull(machine);
+        }
     }
 }
