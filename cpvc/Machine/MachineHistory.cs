@@ -129,11 +129,6 @@ namespace CPvC
             }
 
             HistoryNode parent = historyNode.Parent;
-            if (parent == null)
-            {
-                return false;
-            }
-
             parent.Children.Remove(historyNode);
             historyNode.Parent = null;
 
