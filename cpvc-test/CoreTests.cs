@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using System;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Threading;
 using static CPvC.Test.TestHelpers;
 
@@ -283,6 +284,23 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void RevertToInvalidSnapshot()
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                core.Start();
+
+                // Act
+                CoreAction action = TestHelpers.ProcessOneRequest(core, CoreRequest.RevertToSnapshot(42, null), 2000);
+                core.Stop();
+
+                // Verify
+                Assert.IsNull(action);
+            }
+        }
+
+        [Test]
         public void LoadCore()
         {
             // Setup
@@ -384,6 +402,45 @@ namespace CPvC.Test
 
                 // Verify
                 Assert.Greater(core.Ticks, ticks);
+            }
+        }
+
+        [Test]
+        public void CopyScreenNull()
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                // Act and Verify
+                Assert.DoesNotThrow(() => core.CopyScreen(IntPtr.Zero, 0));
+            }
+        }
+
+        [Test]
+        public void CopyScreenDisposed()
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                core.Dispose();
+                IntPtr buffer = Marshal.AllocHGlobal(100);
+
+                // Act and Verify
+                Assert.DoesNotThrow(() => core.CopyScreen(buffer, 100));
+                Marshal.FreeHGlobal(buffer);
+            }
+        }
+
+        [Test]
+        public void TicksDisposed()
+        {
+            // Setup
+            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                core.Dispose();
+
+                // Act and Verify
+                Assert.DoesNotThrow(() => { UInt64 ticks = core.Ticks; });
             }
         }
     }
