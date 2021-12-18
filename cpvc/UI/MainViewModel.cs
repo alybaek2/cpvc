@@ -815,6 +815,7 @@ namespace CPvC
             using ((machine as IPausableMachine)?.AutoPause())
             {
                 PromptForNameEventArgs args = new PromptForNameEventArgs();
+                args.ExistingName = machine.Name;
                 PromptForName?.Invoke(this, args);
 
                 string newName = args.SelectedName;

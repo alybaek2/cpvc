@@ -241,9 +241,9 @@ namespace CPvC
 
                         return CoreAction.RevertToSnapshot(ticks, snapshotId);
                     }
-                default:
-                    throw new Exception(String.Format("Unknown CoreAction type {0}!", type));
             }
+
+            throw new Exception(String.Format("Unknown CoreAction type {0}!", type));
         }
 
         static public CoreRequest CoreRequestFromBytes(MemoryByteStream stream)

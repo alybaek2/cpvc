@@ -169,5 +169,36 @@ namespace CPvC.Test
             // Verify
             Assert.AreEqual(contents.Length, length);
         }
+
+        [Test]
+        public void OpenTextFile()
+        {
+            // Setup
+            string filepath = TestHelpers.GetTempFilepath("test.txt");
+            FileSystem fs = new FileSystem();
+            fs.DeleteFile(filepath);
+
+            // Act
+            using (ITextFile textFile = fs.OpenTextFile(filepath))
+            {
+                textFile.WriteLine("abc");
+                textFile.WriteLine("123");
+            }
+
+            List<string> lines = new List<string>();
+            using (ITextFile textFile = fs.OpenTextFile(filepath))
+            {
+                lines.Add(textFile.ReadLine());
+                lines.Add(textFile.ReadLine());
+                lines.Add(textFile.ReadLine());
+            }
+
+            // Verify
+            Assert.AreEqual("abc", lines[0]);
+            Assert.AreEqual("123", lines[1]);
+            Assert.Null(lines[2]);
+
+            fs.DeleteFile(filepath);
+        }
     }
 }
