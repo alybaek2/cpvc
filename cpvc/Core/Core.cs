@@ -63,8 +63,6 @@ namespace CPvC
 
         private AudioBuffer _audioBuffer;
 
-        private SynchronizationContext _syncContext;
-
         public int Version
         {
             get
@@ -91,11 +89,6 @@ namespace CPvC
             _requestQueueNonEmpty = new AutoResetEvent(false);
 
             _audioBuffer = new AudioBuffer(48000);
-
-            // Ensure any OnPropChanged calls are executed on the main thread. There may be a better way of
-            // doing this, such as wrapping add and remove for Command.CanExecuteChanged in a lambda that
-            // calls the target on its own SynchronizationContext.
-            _syncContext = SynchronizationContext.Current;
         }
 
         static private ICore CreateVersionedCore(int version)
@@ -115,14 +108,7 @@ namespace CPvC
         {
             if (PropertyChanged != null)
             {
-                if (_syncContext != null)
-                {
-                    _syncContext.Post(_ => PropertyChanged(this, new PropertyChangedEventArgs(name)), null);
-                }
-                else
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs(name));
-                }
+                PropertyChanged(this, new PropertyChangedEventArgs(name));
             }
         }
 
