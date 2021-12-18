@@ -13,11 +13,9 @@ namespace CPvC
         public const byte _coreActionRunUntil = 5;
         public const byte _coreActionLoadCore = 6;
         public const byte _coreActionCoreVersion = 7;
-        public const byte _coreActionSaveSnapshot = 8;
-        public const byte _coreActionLoadSnapshot = 9;
-        public const byte _coreActionCreateSnapshot = 10;
-        public const byte _coreActionDeleteSnapshot = 11;
-        public const byte _coreActionRevertToSnapshot = 12;
+        public const byte _coreActionCreateSnapshot = 8;
+        public const byte _coreActionDeleteSnapshot = 9;
+        public const byte _coreActionRevertToSnapshot = 10;
 
         static public void SelectMachineToBytes(MemoryByteStream stream, string machineName)
         {
