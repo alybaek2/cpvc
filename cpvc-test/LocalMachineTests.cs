@@ -855,6 +855,26 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void CantStopPausedMachine()
+        {
+            // Setup
+            _machine.Stop();
+
+            // Verify
+            Assert.False(_machine.CanStop);
+        }
+
+        [Test]
+        public void CanStopRunningMachine()
+        {
+            // Setup
+            _machine.Start();
+
+            // Verify
+            Assert.True(_machine.CanStop);
+        }
+
+        [Test]
         public void ToggleSnapshotLimitOff()
         {
             // Setup

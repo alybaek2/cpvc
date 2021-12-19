@@ -233,5 +233,15 @@ namespace CPvC.Test
             // Act and Verify
             Assert.Throws<Exception>(() => _history.SetCurrent(otherHistory.CurrentEvent));
         }
+
+        [Test]
+        public void EqualOrAncestor()
+        {
+            // Verify
+            Assert.True(_event01.IsEqualToOrAncestorOf(_event01));
+            Assert.True(_event01.IsEqualToOrAncestorOf(_event010));
+            Assert.False(_event01.IsEqualToOrAncestorOf(_event0));
+            Assert.False(_event01.IsEqualToOrAncestorOf(null));
+        }
     }
 }

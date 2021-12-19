@@ -123,7 +123,7 @@ namespace CPvC
                 throw new Exception("Can't delete root node!");
             }
 
-            if (historyEvent.IsEqualToOrAncestorOf(_currentNode.HistoryEvent))
+            if (historyNode.IsEqualToOrAncestorOf(_currentNode))
             {
                 return false;
             }
