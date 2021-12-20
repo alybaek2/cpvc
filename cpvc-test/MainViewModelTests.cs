@@ -204,7 +204,7 @@ namespace CPvC.Test
             mockMachine.Verify(expr, Times.Once());
         }
 
-        private void TestNoInterfacePassthrough<T>(ICommand command) where T : class
+        private void TestNoInterfacePassthrough<T>(ICommand command, bool canExecute) where T : class
         {
             // Setup
             Mock<T> mockMachine = new Mock<T>(MockBehavior.Strict);
@@ -214,6 +214,7 @@ namespace CPvC.Test
 
             // Verify
             mockMachine.VerifyNoOtherCalls();
+            Assert.False(command.CanExecute(mockMachine));
         }
 
         //static private Mock<MainViewModel.PromptForFileDelegate> SetupPrompt(FileTypes fileType, bool existing, string filepath)
@@ -633,7 +634,7 @@ namespace CPvC.Test
         [Test]
         public void ResetNonInteractiveMachine()
         {
-            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.ResetCommand);
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.ResetCommand, false);
         }
 
         [Test]
@@ -645,7 +646,7 @@ namespace CPvC.Test
         [Test]
         public void DriveAEjectNonInteractiveMachine()
         {
-            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.DriveAEjectCommand);
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.DriveAEjectCommand, false);
         }
 
         [Test]
@@ -657,7 +658,7 @@ namespace CPvC.Test
         [Test]
         public void DriveBEjectNonInteractiveMachine()
         {
-            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.DriveBEjectCommand);
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.DriveBEjectCommand, false);
         }
 
         [Test]
@@ -669,7 +670,7 @@ namespace CPvC.Test
         [Test]
         public void TapeEjectNonInteractiveMachine()
         {
-            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.TapeEjectCommand);
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.TapeEjectCommand, false);
         }
 
         [Test]
@@ -681,7 +682,7 @@ namespace CPvC.Test
         [Test]
         public void ToggleRunningNonPausableMachine()
         {
-            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.ToggleRunningCommand);
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.ToggleRunningCommand, false);
         }
 
         [Test]
@@ -693,7 +694,7 @@ namespace CPvC.Test
         [Test]
         public void AddBookmarkToNonBookmarkableMachine()
         {
-            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.AddBookmarkCommand);
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.AddBookmarkCommand, false);
         }
 
         [Test]
@@ -705,7 +706,7 @@ namespace CPvC.Test
         [Test]
         public void JumpToMostRecentBookmarkForNonJumpableMachine()
         {
-            TestNoInterfacePassthrough<ITurboableMachine>(_mainViewModel.JumpToMostRecentBookmarkCommand);
+            TestNoInterfacePassthrough<ITurboableMachine>(_mainViewModel.JumpToMostRecentBookmarkCommand, false);
         }
 
         [Test]
@@ -747,7 +748,7 @@ namespace CPvC.Test
         [Test]
         public void SeekToNextBookmarkForNonPrerecordedMachine()
         {
-            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.SeekToNextBookmarkCommand);
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.SeekToNextBookmarkCommand, false);
         }
 
         [Test]
@@ -759,7 +760,7 @@ namespace CPvC.Test
         [Test]
         public void SeekToPrevBookmarkForNonPrerecordedMachine()
         {
-            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.SeekToPrevBookmarkCommand);
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.SeekToPrevBookmarkCommand, false);
         }
 
         [Test]
@@ -771,7 +772,7 @@ namespace CPvC.Test
         [Test]
         public void SeekToStartForNonPrerecordedMachine()
         {
-            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.SeekToStartCommand);
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.SeekToStartCommand, false);
         }
 
         [Test]
@@ -783,7 +784,7 @@ namespace CPvC.Test
         [Test]
         public void ReverseForNonReversibleMachine()
         {
-            TestNoInterfacePassthrough<ITurboableMachine>(_mainViewModel.ReverseStartCommand);
+            TestNoInterfacePassthrough<ITurboableMachine>(_mainViewModel.ReverseStartCommand, false);
         }
 
         [Test]
@@ -858,6 +859,43 @@ namespace CPvC.Test
         public void Pause()
         {
             TestInterfacePassthrough<IPausableMachine>(_mainViewModel.PauseCommand, m => m.Stop());
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void CanPause(bool canStop)
+        {
+            // Setup
+            Mock<IPausableMachine> mockMachine = new Mock<IPausableMachine>();
+            mockMachine.SetupGet(m => m.CanStop).Returns(canStop);
+
+            // Verify
+            Assert.AreEqual(canStop, _mainViewModel.PauseCommand.CanExecute(mockMachine.Object));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void CanResume(bool canStart)
+        {
+            // Setup
+            Mock<IPausableMachine> mockMachine = new Mock<IPausableMachine>();
+            mockMachine.SetupGet(m => m.CanStart).Returns(canStart);
+
+            // Verify
+            Assert.AreEqual(canStart, _mainViewModel.ResumeCommand.CanExecute(mockMachine.Object));
+        }
+
+        [Test]
+        public void CanPauseNonPausableMachine()
+        {
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.PauseCommand, false);
+        }
+
+
+        [Test]
+        public void CanResumeNonPausableMachine()
+        {
+            TestNoInterfacePassthrough<IJumpableMachine>(_mainViewModel.ResumeCommand, false);
         }
 
         [Test]
@@ -971,13 +1009,13 @@ namespace CPvC.Test
         [Test]
         public void ReverseStopForNonReversibleMachine()
         {
-            TestNoInterfacePassthrough<ITurboableMachine>(_mainViewModel.ReverseStopCommand);
+            TestNoInterfacePassthrough<ITurboableMachine>(_mainViewModel.ReverseStopCommand, false);
         }
 
         [Test]
         public void ToggleReversibilityForNonReversibleMachine()
         {
-            TestNoInterfacePassthrough<ITurboableMachine>(_mainViewModel.ReverseStopCommand);
+            TestNoInterfacePassthrough<ITurboableMachine>(_mainViewModel.ReverseStopCommand, false);
         }
 
         [Test]
