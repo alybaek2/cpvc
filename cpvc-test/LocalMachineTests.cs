@@ -943,5 +943,34 @@ namespace CPvC.Test
             Assert.Null(action1);
             Assert.Null(action2);
         }
+
+        [Test]
+        public void SnapshotLimitZero()
+        {
+            // Setup
+            LocalMachine machine = LocalMachine.New("Test", null, null);
+            int deleteSnapshotCount = 0;
+            int createSnapshotCount = 0;
+            machine.SnapshotLimit = 0;
+            machine.Auditors += (a) =>
+            {
+                switch (a.Type)
+                {
+                    case CoreRequest.Types.CreateSnapshot:
+                        createSnapshotCount++;
+                        break;
+                    case CoreRequest.Types.DeleteSnapshot:
+                        deleteSnapshotCount++;
+                        break;
+                }
+            };
+
+            // Act
+            TestHelpers.Run(machine, 400000);
+
+            // Verify
+            Assert.Zero(createSnapshotCount);
+            Assert.Zero(deleteSnapshotCount);
+        }
     }
 }

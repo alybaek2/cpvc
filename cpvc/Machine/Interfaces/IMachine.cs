@@ -5,7 +5,7 @@ namespace CPvC
 {
     public interface IMachine : INotifyPropertyChanged
     {
-        Core Core { get; set; }
+        Core Core { get; }
 
         void AdvancePlayback(int samples);
         int ReadAudio(byte[] buffer, int offset, int samplesRequested);
