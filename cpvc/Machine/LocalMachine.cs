@@ -59,7 +59,18 @@ namespace CPvC
             {
                 if (_file != value)
                 {
+                    if (_file != null)
+                    {
+                        _file.Machine = null;
+                    }
+
                     _file = value;
+
+                    if (_file != null)
+                    {
+                        _file.Machine = this;
+                    }
+
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(IsOpen));
                 }
@@ -647,7 +658,6 @@ namespace CPvC
 
                 File = machineFileWriter;
 
-                File.Machine = this;
                 PersistantFilepath = filepath;
 
                 return true;
@@ -684,7 +694,6 @@ namespace CPvC
                 _history = reader.History;
                 _name = reader.Name;
 
-                file.Machine = this;
                 File = file;
 
                 HistoryEvent historyEvent = _history.MostRecentBookmark();
@@ -698,11 +707,6 @@ namespace CPvC
                 // Make sure we remove our lock on the machine file...
                 textFile?.Dispose();
                 textFile = null;
-
-                if (File != null)
-                {
-                    File.Machine = null;
-                }
 
                 File = null;
 
