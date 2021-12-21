@@ -96,7 +96,7 @@ namespace CPvC
             }
         }
 
-        public LocalMachine(string name)
+        public LocalMachine(string name, MachineHistory history)
         {
             _name = name;
 
@@ -106,7 +106,7 @@ namespace CPvC
 
             _snapshots = new List<SnapshotInfo>();
 
-            _history = new MachineHistory();
+            _history = history;
         }
 
         public void Dispose()
@@ -146,14 +146,14 @@ namespace CPvC
             public HistoryEvent HistoryEvent { get; }
         }
 
+        static public LocalMachine New(string name, string persistentFilepath)
+        {
+            return New(name, new MachineHistory(), persistentFilepath);
+        }
+
         static public LocalMachine New(string name, MachineHistory history, string persistentFilepath)
         {
-            LocalMachine machine = new LocalMachine(name);
-            if (history != null)
-            {
-                machine._history = history;
-            }
-
+            LocalMachine machine = new LocalMachine(name, history);
             Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
             machine.SetCore(core);
 
@@ -468,10 +468,7 @@ namespace CPvC
         {
             using (AutoPause())
             {
-                if (!_history.DeleteBranch(historyEvent))
-                {
-                    return;
-                }
+                _history.DeleteBranch(historyEvent);
             }
         }
 
@@ -639,7 +636,7 @@ namespace CPvC
 
         static public LocalMachine OpenFromFile(IFileSystem fileSystem, string filepath)
         {
-            LocalMachine machine = new LocalMachine(null);
+            LocalMachine machine = new LocalMachine(null, new MachineHistory());
             machine.PersistantFilepath = filepath;
 
             machine.OpenFromFile(fileSystem);

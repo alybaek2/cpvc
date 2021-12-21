@@ -139,7 +139,7 @@ namespace CPvC.Test
         public void WriteAndReadName()
         {
             // Setup
-            LocalMachine machine = new LocalMachine(String.Empty);
+            LocalMachine machine = LocalMachine.New(String.Empty, null);
             _fileWriter.Machine = machine;
 
             // Act
@@ -184,8 +184,8 @@ namespace CPvC.Test
         public void MachineUnsubscribe()
         {
             // Setup
-            LocalMachine machine1 = LocalMachine.New(null, null, null);
-            LocalMachine machine2 = LocalMachine.New(null, null, null);
+            LocalMachine machine1 = LocalMachine.New(null, null);
+            LocalMachine machine2 = LocalMachine.New(null, null);
             _fileWriter.Machine = machine1;
             _fileWriter.Machine = machine2;
 
@@ -209,7 +209,7 @@ namespace CPvC.Test
         public void Dispose()
         {
             // Setup
-            LocalMachine machine1 = LocalMachine.New(null, null, null);
+            LocalMachine machine1 = LocalMachine.New(null, null);
             machine1.Name = "Test";
             _history.AddCoreAction(CoreAction.Reset(100));
             int len1 = _mockFile.LineCount();

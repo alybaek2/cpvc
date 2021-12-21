@@ -21,7 +21,7 @@ namespace CPvC.Test
 
         public LocalMachine CreateMachine()
         {
-            LocalMachine machine = LocalMachine.New("test", null, null);
+            LocalMachine machine = LocalMachine.New("test", null);
             machine.Auditors += _mockAuditor.Object;
 
             // For consistency with automated builds, use all zero ROMs.
@@ -105,7 +105,7 @@ namespace CPvC.Test
         public void SeekToLastBookmark(bool createBookmark)
         {
             // Setup
-            using (LocalMachine machine = LocalMachine.New("test", null, null))
+            using (LocalMachine machine = LocalMachine.New("test", null))
             {
                 machine.Core.IdleRequest = () => CoreRequest.RunUntil(machine.Core.Ticks + 1000);
                 machine.Auditors += _mockAuditor.Object;
@@ -742,7 +742,7 @@ namespace CPvC.Test
         public void NewMachineHasIdleRequestHandler()
         {
             // Setup
-            using (LocalMachine machine = LocalMachine.New("test", null, null))
+            using (LocalMachine machine = LocalMachine.New("test", null))
             {
                 // Act
                 RunForAWhile(machine);
@@ -808,7 +808,7 @@ namespace CPvC.Test
         public void NoPropertyChangedHandlers()
         {
             // Setup
-            LocalMachine machine = LocalMachine.New("Test", null, null);
+            LocalMachine machine = LocalMachine.New("Test", null);
 
             // Act and Verify
             Assert.DoesNotThrow(() => machine.SnapshotLimit = machine.SnapshotLimit + 42);
@@ -914,7 +914,7 @@ namespace CPvC.Test
         public void PersistToEmptyFilename()
         {
             // Setup
-            LocalMachine machine = LocalMachine.New("Test", null, null);
+            LocalMachine machine = LocalMachine.New("Test", null);
 
             // Act and Verify
             Assert.Throws<ArgumentException>(() => machine.Persist(_mockFileSystem.Object, ""));
@@ -924,7 +924,7 @@ namespace CPvC.Test
         public void SnapshotLimit()
         {
             // Setup
-            LocalMachine machine = LocalMachine.New("Test", null, null);
+            LocalMachine machine = LocalMachine.New("Test", null);
             machine.SnapshotLimit = 2;
             machine.Core.PushRequest(CoreRequest.CreateSnapshot(1000000));
             machine.Core.PushRequest(CoreRequest.CreateSnapshot(1000001));
@@ -948,7 +948,7 @@ namespace CPvC.Test
         public void SnapshotLimitZero()
         {
             // Setup
-            LocalMachine machine = LocalMachine.New("Test", null, null);
+            LocalMachine machine = LocalMachine.New("Test", null);
             int deleteSnapshotCount = 0;
             int createSnapshotCount = 0;
             machine.SnapshotLimit = 0;
