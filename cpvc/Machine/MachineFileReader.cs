@@ -83,7 +83,7 @@ namespace CPvC
 
             int compress = Convert.ToInt32(tokens[0]);
 
-            string commands = tokens[1];
+            string commands = line.Substring(tokens[0].Length + 1);
             if (compress == 1)
             {
                 byte[] bytes = Helpers.Uncompress(Helpers.BytesFromStr(commands));

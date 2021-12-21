@@ -562,6 +562,11 @@ namespace CPvC.Test
                 return false;
             }
 
+            if (event1.Ticks != event2.Ticks)
+            {
+                return false;
+            }
+
             if (event1.Type != event2.Type)
             {
                 return false;

@@ -265,5 +265,44 @@ namespace CPvC.Test
             ArgumentException ex = Assert.Throws<ArgumentException>(() => _history.AddCoreAction(coreAction));
             Assert.AreEqual("type", ex.ParamName);
         }
+
+        [Test]
+        public void MissingColon()
+        {
+            // Setup
+            _mockFile.WriteLine("key");
+
+            // Act and Verify
+            Assert.Throws<Exception>(() => _fileReader.ReadFile(_mockFile));
+        }
+
+        [Test]
+        public void DeleteInvalidBranch()
+        {
+            // Setup
+            _mockFile.WriteLine("key:0,100,42,True");
+            _mockFile.WriteLine("deletebranch:0");
+
+            // Act and Verify
+            Assert.Throws<InvalidOperationException>(() => _fileReader.ReadFile(_mockFile));
+        }
+
+        // There isn't anywhere in the code that writes out an uncompressed compound line, but
+        // test it anyway to ensure it's propertly handled.
+        [Test]
+        public void ReadUncompressedCompound()
+        {
+            // Setup
+            MachineHistory expectedHistory = new MachineHistory();
+            expectedHistory.AddCoreAction(CoreAction.KeyPress(100, 42, true));
+            expectedHistory.AddCoreAction(CoreAction.Reset(200));
+            _mockFile.WriteLine("compound:0,key:0,100,42,True@reset:1,200");
+
+            // Act
+            _fileReader.ReadFile(_mockFile);
+
+            // Verify
+            Assert.True(TestHelpers.HistoriesEqual(expectedHistory, _fileReader.History));
+        }
     }
 }
