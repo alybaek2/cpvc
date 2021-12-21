@@ -42,6 +42,20 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void CreateWriterWithoutFile()
+        {
+            // Setup
+            MachineHistory history = new MachineHistory();
+
+            // Act and Verify
+            ArgumentException thrown = Assert.Throws<ArgumentException>(() =>
+            {
+                MachineFileWriter fileWriter = new MachineFileWriter(null, history);
+            });
+            Assert.AreEqual("textFile", thrown.ParamName);
+        }
+
+        [Test]
         public void WriteAndReadRunUntil()
         {
             // Act

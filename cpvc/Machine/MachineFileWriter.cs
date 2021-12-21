@@ -48,15 +48,33 @@ namespace CPvC
             }
         }
 
+        private MachineHistory History
+        {
+            get
+            {
+                return _machineHistory;
+            }
+
+            set
+            {
+                if (_machineHistory != null)
+                {
+                    _machineHistory.Auditors -= HistoryEventHappened;
+                }
+
+                _machineHistory = value;
+
+                if (_machineHistory != null)
+                {
+                    _machineHistory.Auditors += HistoryEventHappened;
+                }
+            }
+        }
+
         public void Dispose()
         {
             Machine = null;
-
-            if (_machineHistory != null)
-            {
-                _machineHistory.Auditors -= HistoryEventHappened;
-            }
-            _machineHistory = null;
+            History = null;
 
             if (_textFile != null)
             {
@@ -65,28 +83,16 @@ namespace CPvC
             }
         }
 
-        public MachineFileWriter(ITextFile textFile, MachineHistory machineHistory)
-        {
-            _textFile = textFile;
-            _nextBlobId = 0;
-
-            _machineHistory = machineHistory;
-            if (_machineHistory != null)
-            {
-                _machineHistory.Auditors += HistoryEventHappened;
-            }
-        }
-
         public MachineFileWriter(ITextFile textFile, MachineHistory machineHistory, int nextBlobId)
         {
-            _textFile = textFile;
+            _textFile = textFile ?? throw new ArgumentException("Need a text file to write to!", nameof(textFile));
             _nextBlobId = nextBlobId;
 
-            _machineHistory = machineHistory;
-            if (_machineHistory != null)
-            {
-                _machineHistory.Auditors += HistoryEventHappened;
-            }
+            History = machineHistory;
+        }
+
+        public MachineFileWriter(ITextFile textFile, MachineHistory machineHistory) : this(textFile, machineHistory, 0)
+        {
         }
 
         private void HistoryEventHappened(HistoryEvent historyEvent, HistoryChangedAction changeAction)
@@ -304,7 +310,7 @@ namespace CPvC
 
             // As the history tree could be very deep, keep a "stack" of history events in order to avoid recursive calls.
             List<HistoryEvent> historyEvents = new List<HistoryEvent>();
-            historyEvents.AddRange(_machineHistory.RootEvent.Children);
+            historyEvents.AddRange(History.RootEvent.Children);
 
             HistoryEvent previousEvent = null;
             while (historyEvents.Count > 0)
@@ -325,7 +331,7 @@ namespace CPvC
                 historyEvents.InsertRange(0, currentEvent.Children);
             }
 
-            lines.Add(CurrentCommand(_machineHistory.CurrentEvent.Id));
+            lines.Add(CurrentCommand(History.CurrentEvent.Id));
 
             // If we have any blob commands, stick them in a compound command and put them at the start of the file.
             // Putting them in a single command should allow them to be better compressed than individually.
