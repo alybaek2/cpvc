@@ -275,10 +275,33 @@ namespace CPvC.UI
         {
             if (SelectedItem?.HistoryEvent != null)
             {
-                _machine.TrimTimeline(SelectedItem.HistoryEvent);
+                TrimTimeline(SelectedItem.HistoryEvent);
 
                 RefreshHistoryViewItems();
             }
+        }
+
+        /// <summary>
+        /// Removes a branch of the timeline.
+        /// </summary>
+        /// <param name="historyEvent">HistoryEvent object which belongs to the branch to be removed.</param>
+        public void TrimTimeline(HistoryEvent historyEvent)
+        {
+            if (historyEvent == null || historyEvent.Children.Count != 0 || historyEvent == _machine.History.CurrentEvent || historyEvent.Parent == null)
+            {
+                return;
+            }
+
+            // Walk up the tree to find the node to be removed...
+            HistoryEvent parent = historyEvent.Parent;
+            HistoryEvent child = historyEvent;
+            while (parent != null && parent.Children.Count == 1)
+            {
+                child = parent;
+                parent = parent.Parent;
+            }
+
+            _machine.DeleteBranch(child);
         }
 
         private void JumpToBookmark(ItemSelectedDelegate itemSelected)

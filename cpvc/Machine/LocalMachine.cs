@@ -464,8 +464,7 @@ namespace CPvC
         /// Deletes a branch of the history.
         /// </summary>
         /// <param name="historyEvent">History event to be deleted, along with all its descendents.</param>
-        /// <param name="loading">Indicates whether the MachineFile is being loaded from a file.</param>
-        private void DeleteBranch(HistoryEvent historyEvent, bool writeToFile)
+        public void DeleteBranch(HistoryEvent historyEvent)
         {
             using (AutoPause())
             {
@@ -473,32 +472,6 @@ namespace CPvC
                 {
                     return;
                 }
-            }
-        }
-
-        /// <summary>
-        /// Removes a branch of the timeline.
-        /// </summary>
-        /// <param name="historyEvent">HistoryEvent object which belongs to the branch to be removed.</param>
-        public void TrimTimeline(HistoryEvent historyEvent)
-        {
-            if (historyEvent == null || historyEvent.Children.Count != 0 || historyEvent == _history.CurrentEvent || historyEvent.Parent == null)
-            {
-                return;
-            }
-
-            // Walk up the tree to find the node to be removed...
-            HistoryEvent parent = historyEvent.Parent;
-            HistoryEvent child = historyEvent;
-            while (parent != null && parent.Children.Count == 1)
-            {
-                child = parent;
-                parent = parent.Parent;
-            }
-
-            if (parent != null)
-            {
-                DeleteBranch(child, true);
             }
         }
 

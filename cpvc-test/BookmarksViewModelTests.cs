@@ -321,5 +321,22 @@ namespace CPvC.Test
                 mockItemSelected.Verify(s => s(), nullSelectedItem ? Times.Never() : Times.Once());
             }
         }
+
+        [Test]
+        public void DeleteCurrent()
+        {
+            // Setup
+            using (LocalMachine machine = CreateMachineWithHistory())
+            {
+                BookmarksViewModel viewModel = new BookmarksViewModel(machine, null);
+                HistoryEvent historyEvent = machine.History.CurrentEvent;
+
+                // Act
+                viewModel.TrimTimeline(historyEvent);
+
+                // Verify
+                Assert.AreEqual(historyEvent, machine.History.CurrentEvent);
+            }
+        }
     }
 }

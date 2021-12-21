@@ -166,7 +166,7 @@ namespace CPvC.Test
             HistoryEvent eventToDelete = bookmarkEvent.Children[0];
             RunForAWhile(_machine);
             _machine.DeleteBookmark(bookmarkEvent);
-            _machine.TrimTimeline(eventToDelete);
+            _machine.DeleteBranch(eventToDelete);
             _machine.Close();
 
             using (LocalMachine machine = LocalMachine.OpenFromFile(_mockFileSystem.Object, "test.cpvc"))
