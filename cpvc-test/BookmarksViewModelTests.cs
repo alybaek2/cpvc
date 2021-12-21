@@ -338,5 +338,25 @@ namespace CPvC.Test
                 Assert.AreEqual(historyEvent, machine.History.CurrentEvent);
             }
         }
+
+        // This test (and possibly all of these tests) should be re-written to make
+        // it clear what they're testing!
+        [Test]
+        public void DeleteNonCurrent()
+        {
+            // Setup
+            using (LocalMachine machine = CreateMachineWithHistory())
+            {
+                BookmarksViewModel viewModel = new BookmarksViewModel(machine, null);
+                HistoryEvent historyEvent = machine.History.CurrentEvent;
+                machine.JumpToBookmark(machine.History.RootEvent.Children[0].Children[0]);
+
+                // Act
+                viewModel.TrimTimeline(historyEvent);
+
+                // Verify
+                Assert.AreEqual(1, machine.History.RootEvent.Children[0].Children[0].Children[1].Children[0].Children.Count);
+            }
+        }
     }
 }
