@@ -176,52 +176,49 @@ namespace CPvC.Test
                 Assert.AreEqual(machine.PersistantFilepath, "test.cpvc");
                 Assert.AreEqual(machine.Name, "test");
 
-                Assert.AreEqual(HistoryEventType.Root, machine.History.RootEvent.Type);
+                Assert.IsInstanceOf<RootHistoryEvent>(machine.History.RootEvent);
                 Assert.AreEqual(1, machine.History.RootEvent.Children.Count);
 
-                HistoryEvent historyEvent = machine.History.RootEvent.Children[0];
-                Assert.AreEqual(HistoryEventType.CoreAction, historyEvent.Type);
-                Assert.AreEqual(CoreRequest.Types.KeyPress, historyEvent.CoreAction.Type);
-                Assert.AreEqual(Keys.A, historyEvent.CoreAction.KeyCode);
-                Assert.IsTrue(historyEvent.CoreAction.KeyDown);
-                Assert.AreEqual(1, historyEvent.Children.Count);
+                CoreActionHistoryEvent coreActionHistoryEvent = machine.History.RootEvent.Children[0] as CoreActionHistoryEvent;
+                Assert.IsNotNull(coreActionHistoryEvent);
+                Assert.AreEqual(CoreRequest.Types.KeyPress, coreActionHistoryEvent.CoreAction.Type);
+                Assert.AreEqual(Keys.A, coreActionHistoryEvent.CoreAction.KeyCode);
+                Assert.IsTrue(coreActionHistoryEvent.CoreAction.KeyDown);
+                Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
-                historyEvent = historyEvent.Children[0];
-                Assert.AreEqual(HistoryEventType.CoreAction, historyEvent.Type);
-                Assert.AreEqual(CoreRequest.Types.LoadDisc, historyEvent.CoreAction.Type);
-                Assert.AreEqual(0, historyEvent.CoreAction.Drive);
-                Assert.IsNull(historyEvent.CoreAction.MediaBuffer.GetBytes());
-                Assert.AreEqual(1, historyEvent.Children.Count);
+                coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
+                Assert.IsNotNull(coreActionHistoryEvent);
+                Assert.AreEqual(CoreRequest.Types.LoadDisc, coreActionHistoryEvent.CoreAction.Type);
+                Assert.AreEqual(0, coreActionHistoryEvent.CoreAction.Drive);
+                Assert.IsNull(coreActionHistoryEvent.CoreAction.MediaBuffer.GetBytes());
+                Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
-                historyEvent = historyEvent.Children[0];
-                Assert.AreEqual(HistoryEventType.CoreAction, historyEvent.Type);
-                Assert.AreEqual(CoreRequest.Types.LoadTape, historyEvent.CoreAction.Type);
-                Assert.IsNull(historyEvent.CoreAction.MediaBuffer.GetBytes());
-                Assert.AreEqual(1, historyEvent.Children.Count);
+                coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
+                Assert.IsNotNull(coreActionHistoryEvent);
+                Assert.AreEqual(CoreRequest.Types.LoadTape, coreActionHistoryEvent.CoreAction.Type);
+                Assert.IsNull(coreActionHistoryEvent.CoreAction.MediaBuffer.GetBytes());
+                Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
-                historyEvent = historyEvent.Children[0];
-                Assert.AreEqual(HistoryEventType.CoreAction, historyEvent.Type);
-                Assert.AreEqual(CoreRequest.Types.Reset, historyEvent.CoreAction.Type);
-                Assert.AreEqual(1, historyEvent.Children.Count);
+                coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
+                Assert.IsNotNull(coreActionHistoryEvent);
+                Assert.AreEqual(CoreRequest.Types.Reset, coreActionHistoryEvent.CoreAction.Type);
+                Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
-                historyEvent = historyEvent.Children[0];
-                Assert.AreEqual(HistoryEventType.CoreAction, historyEvent.Type);
-                Assert.IsNull(historyEvent.Bookmark);
-                Assert.AreEqual(1, historyEvent.Children.Count);
+                coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
+                Assert.IsNotNull(coreActionHistoryEvent);
+                Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
-                historyEvent = historyEvent.Children[0];
-                Assert.AreEqual(HistoryEventType.Bookmark, historyEvent.Type);
-                Assert.IsNotNull(historyEvent.Bookmark);
+                BookmarkHistoryEvent bookmarkHistoryEvent = coreActionHistoryEvent.Children[0] as BookmarkHistoryEvent;
+                Assert.IsNotNull(bookmarkHistoryEvent);
 
-                historyEvent = historyEvent.Children[0];
-                Assert.AreEqual(HistoryEventType.CoreAction, historyEvent.Type);
-                Assert.AreEqual(CoreRequest.Types.RunUntil, historyEvent.CoreAction.Type);
+                coreActionHistoryEvent = bookmarkHistoryEvent.Children[0] as CoreActionHistoryEvent;
+                Assert.IsNotNull(coreActionHistoryEvent);
+                Assert.AreEqual(CoreRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
 
-                historyEvent = historyEvent.Children[0];
-                Assert.AreEqual(HistoryEventType.Bookmark, historyEvent.Type);
-                Assert.IsNotNull(historyEvent.Bookmark);
+                bookmarkHistoryEvent = coreActionHistoryEvent.Children[0] as BookmarkHistoryEvent;
+                Assert.IsNotNull(bookmarkHistoryEvent);
 
-                Assert.AreEqual(historyEvent, machine.History.CurrentEvent);
+                Assert.AreEqual(bookmarkHistoryEvent, machine.History.CurrentEvent);
 
                 _mockAuditor.Verify(a => a(It.Is<CoreAction>(c => c.Type == CoreRequest.Types.LoadCore)), Times.Once);
             }

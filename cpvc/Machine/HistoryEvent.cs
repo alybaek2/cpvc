@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public class HistoryEvent
+    public interface IHistoryEvent
     {
-        internal HistoryEvent(HistoryNode historyNode)
-        {
-            Node = historyNode;
-        }
 
-        internal HistoryNode Node { get; private set; }
+    }
+
+    public abstract class HistoryEvent
+    {
+        internal abstract HistoryNode Node { get; }
 
         public HistoryEvent Parent
         {
@@ -31,35 +31,11 @@ namespace CPvC
             }
         }
 
-        public HistoryEventType Type
-        {
-            get
-            {
-                return Node.Type;
-            }
-        }
-
         public int Id
         {
             get
             {
                 return Node.Id;
-            }
-        }
-
-        public Bookmark Bookmark
-        {
-            get
-            {
-                return Node.Bookmark;
-            }
-        }
-
-        public CoreAction CoreAction
-        {
-            get
-            {
-                return Node.CoreAction;
             }
         }
 
@@ -71,15 +47,10 @@ namespace CPvC
             }
         }
 
-        public UInt64 EndTicks
+        public virtual UInt64 EndTicks
         {
             get
             {
-                if (Node.Type == HistoryEventType.CoreAction && Node.CoreAction.Type == CoreRequest.Types.RunUntil)
-                {
-                    return Node.CoreAction.StopTicks;
-                }
-
                 return Node.Ticks;
             }
         }
@@ -129,5 +100,89 @@ namespace CPvC
 
             return maxTicks;
         }
+    }
+
+    public class RootHistoryEvent : HistoryEvent
+    {
+        internal RootHistoryEvent(HistoryNode historyNode)
+        {
+            _node = historyNode as RootHistoryNode;
+        }
+
+        internal override HistoryNode Node
+        {
+            get
+            {
+                return _node;
+            }
+        }
+
+        private RootHistoryNode _node;
+    }
+
+    public class BookmarkHistoryEvent : HistoryEvent
+    {
+        internal BookmarkHistoryEvent(BookmarkHistoryNode historyNode)
+        {
+            _node = historyNode;
+        }
+
+        internal override HistoryNode Node
+        {
+            get
+            {
+                return _node;
+            }
+        }
+
+        public Bookmark Bookmark
+        {
+            get
+            {
+                return _node.Bookmark;
+            }
+        }
+
+
+        private BookmarkHistoryNode _node;
+    }
+
+    public class CoreActionHistoryEvent : HistoryEvent
+    {
+        internal CoreActionHistoryEvent(CoreActionHistoryNode historyNode) : base()
+        {
+            _node = historyNode;
+        }
+
+        internal override HistoryNode Node
+        {
+            get
+            {
+                return _node;
+            }
+        }
+
+        public CoreAction CoreAction
+        {
+            get
+            {
+                return _node.CoreAction;
+            }
+        }
+
+        public override UInt64 EndTicks
+        {
+            get
+            {
+                if (_node.CoreAction.Type == CoreRequest.Types.RunUntil)
+                {
+                    return _node.CoreAction.StopTicks;
+                }
+
+                return _node.Ticks;
+            }
+        }
+
+        private CoreActionHistoryNode _node;
     }
 }

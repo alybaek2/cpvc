@@ -42,7 +42,7 @@ namespace CPvC.Test
             // Verify
             if (f.HasValue)
             {
-                Assert.IsTrue(converted is bool);
+                Assert.True(converted is bool);
                 Assert.AreEqual(!f.Value, (bool)converted);
             }
             else

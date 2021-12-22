@@ -46,13 +46,13 @@ namespace CPvC
 
             foreach (HistoryEvent e in historyEvents)
             {
-                switch (e.Type)
+                switch (e)
                 {
-                    case HistoryEventType.CoreAction:
-                        _historyEvents.Add(_history.AddCoreAction(e.CoreAction.Clone()));
+                    case CoreActionHistoryEvent coreActionHistoryEvent:
+                        _historyEvents.Add(_history.AddCoreAction(coreActionHistoryEvent.CoreAction.Clone()));
                         break;
-                    case HistoryEventType.Bookmark:
-                        _historyEvents.Add(_history.AddBookmark(e.Ticks, e.Bookmark.Clone()));
+                    case BookmarkHistoryEvent bookmarkHistoryEvent:
+                        _historyEvents.Add(_history.AddBookmark(e.Ticks, bookmarkHistoryEvent.Bookmark.Clone()));
                         break;
                 }
             }
@@ -109,7 +109,7 @@ namespace CPvC
             }
             else
             {
-                Bookmark bookmark = _historyEvents[bookmarkEventIndex].Bookmark;
+                Bookmark bookmark = (_historyEvents[bookmarkEventIndex] as BookmarkHistoryEvent)?.Bookmark;
                 core = Core.Create(bookmark.Version, bookmark.State.GetBytes());
                 Display.GetFromBookmark(bookmark);
                 startIndex = bookmarkEventIndex;
@@ -118,10 +118,10 @@ namespace CPvC
             for (int i = startIndex; i < _historyEvents.Count; i++)
             {
                 HistoryEvent historyEvent = _historyEvents[i];
-                if (historyEvent.Type == HistoryEventType.CoreAction)
+                if (historyEvent is CoreActionHistoryEvent coreActionHistoryEvent)
                 {
-                    core.PushRequest(CoreRequest.RunUntil(historyEvent.Ticks));
-                    core.PushRequest(historyEvent.CoreAction);
+                    core.PushRequest(CoreRequest.RunUntil(coreActionHistoryEvent.Ticks));
+                    core.PushRequest(coreActionHistoryEvent.CoreAction);
                 }
             }
 
@@ -144,13 +144,13 @@ namespace CPvC
 
         public void SeekToPreviousBookmark()
         {
-            int bookmarkIndex = _historyEvents.FindLastIndex(he => he.Ticks < _core.Ticks && he.Bookmark != null);
+            int bookmarkIndex = _historyEvents.FindLastIndex(he => he.Ticks < _core.Ticks && he is BookmarkHistoryEvent);
             SeekToBookmark(bookmarkIndex);
         }
 
         public void SeekToNextBookmark()
         {
-            int bookmarkIndex = _historyEvents.FindIndex(he => he.Ticks > _core.Ticks && he.Bookmark != null);
+            int bookmarkIndex = _historyEvents.FindIndex(he => he.Ticks > _core.Ticks && he is BookmarkHistoryEvent);
             if (bookmarkIndex != -1)
             {
                 SeekToBookmark(bookmarkIndex);

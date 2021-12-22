@@ -227,7 +227,7 @@ namespace CPvC.Test
                 Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
                 BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
                 HistoryViewItem bookmarkEventViewItem = viewModel.Items[3];
-                Bookmark bookmark = bookmarkEventViewItem.HistoryEvent.Bookmark;
+                Bookmark bookmark = (bookmarkEventViewItem.HistoryEvent as BookmarkHistoryEvent)?.Bookmark;
                 viewModel.SelectedItem = nullSelectedItem ? null : bookmarkEventViewItem;
                 HistoryEvent parentEvent = bookmarkEventViewItem.HistoryEvent.Parent;
                 List<HistoryEvent> childEvents = new List<HistoryEvent>();
@@ -239,7 +239,7 @@ namespace CPvC.Test
                 // Verify
                 if (nullSelectedItem)
                 {
-                    Assert.AreEqual(bookmark, bookmarkEventViewItem.HistoryEvent.Bookmark);
+                    Assert.AreEqual(bookmark, (bookmarkEventViewItem.HistoryEvent as BookmarkHistoryEvent)?.Bookmark);
                 }
                 else
                 {

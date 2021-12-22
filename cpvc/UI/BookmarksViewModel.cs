@@ -62,12 +62,12 @@ namespace CPvC.UI
 
             _jumpToBookmarkCommand = new Command(
                 p => JumpToBookmark(itemSelected),
-                p => (SelectedItem as HistoryViewItem)?.HistoryEvent.Bookmark != null
+                p => SelectedItem?.HistoryEvent is BookmarkHistoryEvent
             );
 
             _deleteBookmarksCommand = new Command(
                 p => DeleteBookmarks(),
-                p => (SelectedItem as HistoryViewItem)?.HistoryEvent.Bookmark != null
+                p => SelectedItem?.HistoryEvent is BookmarkHistoryEvent
             );
 
             _deleteBranchesCommand = new Command(
@@ -120,9 +120,9 @@ namespace CPvC.UI
                     {
                         bitmap = _machine.Display.Bitmap;
                     }
-                    else if (historyEvent.Type == HistoryEventType.Bookmark && historyEvent.Bookmark != null)
+                    else if (historyEvent is BookmarkHistoryEvent bookmarkHistoryEvent)
                     {
-                        _display.GetFromBookmark(historyEvent.Bookmark);
+                        _display.GetFromBookmark(bookmarkHistoryEvent.Bookmark);
 
                         bitmap = _display.Bitmap;
                     }
@@ -145,7 +145,7 @@ namespace CPvC.UI
                 return true;
             }
 
-            if (historyEvent.Type == HistoryEventType.Bookmark && historyEvent.Bookmark != null)
+            if (historyEvent is BookmarkHistoryEvent)
             {
                 return true;
             }
@@ -262,9 +262,9 @@ namespace CPvC.UI
 
         private void DeleteBookmarks()
         {
-            if (SelectedItem?.HistoryEvent.Bookmark != null)
+            if (SelectedItem?.HistoryEvent is BookmarkHistoryEvent bookmarkHistoryEvent)
             {
-                if (_machine.DeleteBookmark(SelectedItem.HistoryEvent))
+                if (_machine.DeleteBookmark(bookmarkHistoryEvent))
                 {
                     RefreshHistoryViewItems();
                 }
@@ -306,7 +306,7 @@ namespace CPvC.UI
 
         private void JumpToBookmark(ItemSelectedDelegate itemSelected)
         {
-            if (SelectedItem?.HistoryEvent.Bookmark != null)
+            if (SelectedItem?.HistoryEvent is BookmarkHistoryEvent)
             {
                 SelectedJumpEvent = SelectedItem.HistoryEvent;
                 itemSelected();

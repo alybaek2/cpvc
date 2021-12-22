@@ -6,13 +6,6 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public enum HistoryEventType
-    {
-        Root,
-        CoreAction,
-        Bookmark
-    }
-
     public enum HistoryChangedAction
     {
         Add,
@@ -40,19 +33,19 @@ namespace CPvC
             _nodes = new HashSet<HistoryNode>();
             _nextId = 0;
 
-            _rootNode = new HistoryNode();
+            _rootNode = new RootHistoryNode();
 
             _nodes.Add(_rootNode);
 
             _currentNode = _rootNode;
         }
 
-        public HistoryEvent AddCoreAction(CoreAction coreAction)
+        public CoreActionHistoryEvent AddCoreAction(CoreAction coreAction)
         {
             return AddCoreAction(coreAction, _nextId);
         }
 
-        public HistoryEvent AddCoreAction(CoreAction coreAction, int id)
+        public CoreActionHistoryEvent AddCoreAction(CoreAction coreAction, int id)
         {
             // Instead of continually adding "RunUntil" actions, just keep updating the
             // current one if it's a RunUntil, and only notify once we've finished. That
@@ -62,41 +55,43 @@ namespace CPvC
             bool notify = (coreAction.Type != CoreRequest.Types.RunUntil);
             if (!notify)
             {
-                if (_currentNode.Children.Count == 0 &&
-                    _currentNode.Type == HistoryEventType.CoreAction &&
-                    _currentNode.CoreAction.Type == CoreRequest.Types.RunUntil)
+                CoreActionHistoryNode currentCoreActionNode = _currentNode as CoreActionHistoryNode;
+                if (currentCoreActionNode != null &&
+                    currentCoreActionNode.Children.Count == 0 &&
+                    currentCoreActionNode.CoreAction.Type == CoreRequest.Types.RunUntil)
                 {
-                    _currentNode.CoreAction.StopTicks = coreAction.StopTicks;
+                    currentCoreActionNode.CoreAction.StopTicks = coreAction.StopTicks;
 
-                    return _currentNode.HistoryEvent;
+                    return currentCoreActionNode.HistoryEvent as CoreActionHistoryEvent;
                 }
             }
 
-            HistoryNode historyNode = new HistoryNode(id, coreAction.Ticks, coreAction, _currentNode, DateTime.Now);
+            CoreActionHistoryNode historyNode = new CoreActionHistoryNode(id, coreAction.Ticks, coreAction, _currentNode, DateTime.Now);
 
             _nextId = Math.Max(_nextId, id) + 1;
 
             AddChildNode(historyNode, notify);
 
-            return historyNode.HistoryEvent;
+            return historyNode.HistoryEvent as CoreActionHistoryEvent;
         }
 
-        public HistoryEvent AddBookmark(UInt64 ticks, Bookmark bookmark)
+        public BookmarkHistoryEvent AddBookmark(UInt64 ticks, Bookmark bookmark)
         {
             return AddBookmark(ticks, bookmark, _nextId);
         }
 
-        public HistoryEvent AddBookmark(UInt64 ticks, Bookmark bookmark, int id)
+        public BookmarkHistoryEvent AddBookmark(UInt64 ticks, Bookmark bookmark, int id)
         {
-            if (_currentNode.Children.Count == 0 &&
-                _currentNode.Type == HistoryEventType.CoreAction &&
-                _currentNode.CoreAction.Type == CoreRequest.Types.RunUntil)
+            CoreActionHistoryNode currentCoreActionNode = _currentNode as CoreActionHistoryNode;
+            if (currentCoreActionNode != null &&
+                currentCoreActionNode.Children.Count == 0 &&
+                currentCoreActionNode.CoreAction.Type == CoreRequest.Types.RunUntil)
             {
                 // This should probably be added to AddChildNode!
-                Auditors?.Invoke(_currentNode.HistoryEvent, HistoryChangedAction.Add);
+                Auditors?.Invoke(currentCoreActionNode.HistoryEvent, HistoryChangedAction.Add);
             }
 
-            HistoryNode historyNode = new HistoryNode(id, ticks, bookmark, _currentNode, DateTime.Now);
+            BookmarkHistoryNode historyNode = new BookmarkHistoryNode(id, ticks, bookmark, _currentNode, DateTime.Now);
 
             _nextId = Math.Max(_nextId, id) + 1;
 
@@ -107,7 +102,7 @@ namespace CPvC
 
             AddChildNode(historyNode, true);
 
-            return historyNode.HistoryEvent;
+            return historyNode.HistoryEvent as BookmarkHistoryEvent;
         }
 
         public bool DeleteBranch(HistoryEvent historyEvent)
@@ -191,7 +186,8 @@ namespace CPvC
             }
 
             // If the current node is a RunUntil, finish it off by sending a notification...
-            if (_currentNode.Type == HistoryEventType.CoreAction && _currentNode.CoreAction.Type == CoreRequest.Types.RunUntil)
+            CoreActionHistoryNode currentCoreActionNode = _currentNode as CoreActionHistoryNode;
+            if (currentCoreActionNode != null && currentCoreActionNode.CoreAction.Type == CoreRequest.Types.RunUntil)
             {
                 Auditors?.Invoke(_currentNode.HistoryEvent, HistoryChangedAction.Add);
             }
@@ -201,15 +197,20 @@ namespace CPvC
             Auditors?.Invoke(_currentNode.HistoryEvent, HistoryChangedAction.SetCurrent);
         }
 
-        public HistoryEvent MostRecentBookmark()
+        public BookmarkHistoryEvent MostRecentBookmark()
         {
             HistoryEvent historyEvent = CurrentEvent;
-            while (historyEvent.Type != HistoryEventType.Bookmark && historyEvent != RootEvent)
+            while (historyEvent != RootEvent)
             {
+                if (historyEvent is BookmarkHistoryEvent bookmarkHistoryEvent)
+                {
+                    return bookmarkHistoryEvent;
+                }
+
                 historyEvent = historyEvent.Parent;
             }
 
-            return historyEvent;
+            return null;
         }
 
         // Browsing methods

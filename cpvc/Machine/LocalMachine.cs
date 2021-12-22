@@ -174,9 +174,11 @@ namespace CPvC
                     {
                         // Create a system bookmark so the machine can resume from where it left off the next time it's loaded, but don't
                         // create one if we already have a system bookmark at the current event, or we're at the root event.
-                        if ((_history.CurrentEvent.Ticks != Ticks) ||
-                            (_history.CurrentEvent.Bookmark == null && _history.CurrentEvent != _history.RootEvent) ||
-                            (_history.CurrentEvent.Bookmark != null && !_history.CurrentEvent.Bookmark.System))
+                       BookmarkHistoryEvent currentBookmarkEvent = _history.CurrentEvent as BookmarkHistoryEvent;
+                        if (currentBookmarkEvent == null ||
+                            (currentBookmarkEvent.Ticks != Ticks) ||
+                            (currentBookmarkEvent.Bookmark == null && currentBookmarkEvent != _history.RootEvent) ||
+                            (currentBookmarkEvent.Bookmark != null && !currentBookmarkEvent.Bookmark.System))
                         {
                             AddBookmark(true);
                         }
@@ -327,7 +329,8 @@ namespace CPvC
                             // If the current event is a RunUntil, it may not be "finalized" yet (i.e. it may still
                             // be updated), so go with its parent.
                             HistoryEvent historyEvent = _history.CurrentEvent;
-                            if (historyEvent.Type == HistoryEventType.CoreAction && historyEvent.CoreAction.Type == CoreRequest.Types.RunUntil)
+                            CoreActionHistoryEvent coreActionEvent = historyEvent as CoreActionHistoryEvent;
+                            if (coreActionEvent != null && coreActionEvent.CoreAction.Type == CoreRequest.Types.RunUntil)
                             {
                                 historyEvent = historyEvent.Parent;
                             }
@@ -421,7 +424,7 @@ namespace CPvC
             HistoryEvent lastBookmarkEvent = _history.CurrentEvent;
             while (lastBookmarkEvent != null)
             {
-                if (lastBookmarkEvent.Type == HistoryEventType.Bookmark && !lastBookmarkEvent.Bookmark.System && lastBookmarkEvent.Ticks != Core.Ticks)
+                if (lastBookmarkEvent is BookmarkHistoryEvent b && !b.Bookmark.System && b.Ticks != Core.Ticks)
                 {
                     TimeSpan before = Helpers.GetTimeSpanFromTicks(Core.Ticks);
                     JumpToBookmark(lastBookmarkEvent);
@@ -540,23 +543,23 @@ namespace CPvC
 
         private void SetCurrentEvent(HistoryEvent historyEvent)
         {
-            if (historyEvent.Type == HistoryEventType.Bookmark)
+            if (historyEvent is BookmarkHistoryEvent bookmarkHistoryEvent)
             {
-                Core core = Core.Create(Core.LatestVersion, historyEvent.Bookmark.State.GetBytes());
+                Core core = Core.Create(Core.LatestVersion, bookmarkHistoryEvent.Bookmark.State.GetBytes());
                 SetCore(core);
 
-                Display.GetFromBookmark(historyEvent.Bookmark);
+                Display.GetFromBookmark(bookmarkHistoryEvent.Bookmark);
 
-                Auditors?.Invoke(CoreAction.LoadCore(historyEvent.Ticks, historyEvent.Bookmark.State));
+                Auditors?.Invoke(CoreAction.LoadCore(historyEvent.Ticks, bookmarkHistoryEvent.Bookmark.State));
             }
-            else if (historyEvent == History.RootEvent)
+            else if (historyEvent is RootHistoryEvent rootHistoryEvent)
             {
                 Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
                 SetCore(core);
 
                 Display.GetFromBookmark(null);
 
-                Auditors?.Invoke(CoreAction.Reset(historyEvent.Ticks));
+                Auditors?.Invoke(CoreAction.Reset(rootHistoryEvent.Ticks));
             }
             else
             {
@@ -666,8 +669,8 @@ namespace CPvC
 
                 File = file;
 
-                HistoryEvent historyEvent = _history.MostRecentBookmark();
-                SetCurrentEvent(historyEvent);
+                BookmarkHistoryEvent historyEvent = _history.MostRecentBookmark();
+                SetCurrentEvent(historyEvent ?? _history.RootEvent);
 
                 // Should probably be monitoring the IsOpen property, I think...
                 Display.EnableGreyscale(false);
@@ -697,7 +700,7 @@ namespace CPvC
             {
                 HistoryEvent historyEvent = machine.History.MostRecentBookmark();
 
-                machine.Display.GetFromBookmark(historyEvent.Bookmark);
+                machine.Display.GetFromBookmark((historyEvent as BookmarkHistoryEvent)?.Bookmark);
                 machine.Display.EnableGreyscale(true);
             }
 

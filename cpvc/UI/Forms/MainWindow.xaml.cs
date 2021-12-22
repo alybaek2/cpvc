@@ -307,9 +307,9 @@ namespace CPvC.UI.Forms
 
                         return null;
                     }
-                    else if (dialog.SelectedJumpEvent?.Bookmark != null)
+                    else if (dialog.SelectedJumpEvent is BookmarkHistoryEvent bookmarkHistoryEvent)
                     {
-                        return dialog.SelectedJumpEvent;
+                        return bookmarkHistoryEvent;
                     }
                 }
 

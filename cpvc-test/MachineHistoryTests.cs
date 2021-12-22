@@ -35,7 +35,7 @@ namespace CPvC.Test
             MachineHistory history = new MachineHistory();
 
             // Verify
-            Assert.AreEqual(HistoryEventType.Root, history.RootEvent.Type);
+            Assert.IsInstanceOf<RootHistoryEvent>(history.RootEvent);
         }
 
         [Test]
@@ -63,8 +63,8 @@ namespace CPvC.Test
             MachineHistory history = new MachineHistory();
 
             // Act
-            HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
-            HistoryEvent event2 = history.AddCoreAction(CoreAction.RunUntil(200, 300, null));
+            CoreActionHistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+            CoreActionHistoryEvent event2 = history.AddCoreAction(CoreAction.RunUntil(200, 300, null));
 
             // Verify
             Assert.AreEqual(1, history.RootEvent.Children.Count);
@@ -109,7 +109,7 @@ namespace CPvC.Test
 
             // Verify
             Assert.AreEqual(event3, history.CurrentEvent);
-            Assert.AreEqual(HistoryEventType.Bookmark, event3.Type);
+            Assert.IsInstanceOf<BookmarkHistoryEvent>(event3);
         }
 
         [Test]

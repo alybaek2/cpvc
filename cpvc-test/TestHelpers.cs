@@ -567,29 +567,44 @@ namespace CPvC.Test
                 return false;
             }
 
-            if (event1.Type != event2.Type)
+            // Should be implemented as a virtual Equals method.
+            switch (event1)
             {
-                return false;
-            }
+                case BookmarkHistoryEvent bookmarkEvent1:
+                    if (event2 is BookmarkHistoryEvent bookmarkEvent2)
+                    {
+                        if (!BookmarksEqual(bookmarkEvent1.Bookmark, bookmarkEvent2.Bookmark))
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        return false;
+                    }
 
-            switch (event1.Type)
-            {
-                case HistoryEventType.Bookmark:
-                    if (!BookmarksEqual(event1.Bookmark, event2.Bookmark))
+                    break;
+                case CoreActionHistoryEvent coreActionEvent1:
+                    if (event2 is CoreActionHistoryEvent coreActionEvent2)
+                    {
+                        if (!CoreActionsEqual(coreActionEvent1.CoreAction, coreActionEvent2.CoreAction))
+                        {
+                            return false;
+                        }
+                    }
+                    else
                     {
                         return false;
                     }
                     break;
-                case HistoryEventType.CoreAction:
-                    if (!CoreActionsEqual(event1.CoreAction, event2.CoreAction))
+                case RootHistoryEvent _:
+                    if (!(event2 is RootHistoryEvent))
                     {
                         return false;
                     }
-                    break;
-                case HistoryEventType.Root:
                     break;
                 default:
-                    throw new Exception(String.Format("Unknown history event type {0}", event1.Type));
+                    throw new Exception(String.Format("Unknown history event type {0}", event1.GetType().Name));
             }
 
             // This assumes the children are in the same order. Might need to change this in the future...

@@ -253,11 +253,11 @@ namespace CPvC
 
         private void GetLines(HistoryEvent historyEvent, List<string> lines)
         {
-            switch (historyEvent.Type)
+            switch (historyEvent)
             {
-                case HistoryEventType.Bookmark:
+                case BookmarkHistoryEvent bookmarkHistoryEvent:
                     {
-                        Bookmark bookmark = historyEvent.Bookmark;
+                        Bookmark bookmark = bookmarkHistoryEvent.Bookmark;
 
                         int stateBlobId = _nextBlobId++;
                         lines.Add(BlobCommand(stateBlobId, bookmark.State.GetBytes()));
@@ -268,8 +268,8 @@ namespace CPvC
                         lines.Add(AddBookmarkCommand(historyEvent.Id, historyEvent.Ticks, bookmark.System, bookmark.Version, stateBlobId, screenBlobId));
                     }
                     break;
-                case HistoryEventType.CoreAction:
-                    GetLines(historyEvent.Id, historyEvent.CoreAction, lines);
+                case CoreActionHistoryEvent coreActionHistoryEvent:
+                    GetLines(coreActionHistoryEvent.Id, coreActionHistoryEvent.CoreAction, lines);
                     break;
                 default:
                     throw new ArgumentException("Unknown history event type!", "historyEvent.Type");

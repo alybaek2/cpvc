@@ -158,10 +158,11 @@ namespace CPvC
                 DrawLine(cx, 1, cx, cy, Brushes.DarkBlue);
             }
 
-            if (historyEvent.Bookmark != null && !passthrough)
+            BookmarkHistoryEvent bookmarkHistoryEvent = historyEvent as BookmarkHistoryEvent;
+            if (bookmarkHistoryEvent != null && bookmarkHistoryEvent.Bookmark != null && !passthrough)
             {
                 // User bookmarks are drawn as a red dot, system bookmarks as dark red.
-                DrawDot(cx, historyEvent.Bookmark.System ? Brushes.DarkRed : Brushes.Crimson, true);
+                DrawDot(cx, bookmarkHistoryEvent.Bookmark.System ? Brushes.DarkRed : Brushes.Crimson, true);
             }
 
             if (passthrough)
@@ -188,7 +189,7 @@ namespace CPvC
             else
             {
                 // History events with no children are drawn as a terminating dot.
-                DrawDot(cx, (historyEvent?.Bookmark != null) ? (historyEvent.Bookmark.System ? Brushes.DarkRed : Brushes.Crimson) : Brushes.DarkBlue, historyEvent != currentEvent);
+                DrawDot(cx, (bookmarkHistoryEvent != null) ? (bookmarkHistoryEvent.Bookmark.System ? Brushes.DarkRed : Brushes.Crimson) : Brushes.DarkBlue, historyEvent != currentEvent);
             }
         }
     }
