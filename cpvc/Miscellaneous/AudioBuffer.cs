@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 
 namespace CPvC
@@ -177,7 +176,7 @@ namespace CPvC
 
         public void Write(IEnumerable<UInt16> samples)
         {
-            foreach(UInt16 sample in samples)
+            foreach (UInt16 sample in samples)
             {
                 Write(sample);
             }

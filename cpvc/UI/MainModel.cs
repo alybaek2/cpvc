@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 
 namespace CPvC
 {
@@ -144,7 +140,8 @@ namespace CPvC
         private IMachine GetPersistedMachine(string filepath)
         {
             return _machines.FirstOrDefault(
-                m => {
+                m =>
+                {
                     if (m is IPersistableMachine pm)
                     {
                         return String.Compare(pm.PersistantFilepath, filepath, true) == 0;

@@ -402,7 +402,7 @@ namespace CPvC.Test
             machine.Core.SetUpperROM(7, zeroROM);
 
             machine.Core.IdleRequest = () => CoreRequest.RunUntil(machine.Core.Ticks + 1000);
-            
+
             RunForAWhile(machine);
             machine.Key(Keys.A, true);
             RunForAWhile(machine);

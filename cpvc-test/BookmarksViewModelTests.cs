@@ -2,7 +2,6 @@
 using Moq;
 using NUnit.Framework;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Threading;
 using static CPvC.Test.TestHelpers;
 

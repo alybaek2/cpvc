@@ -1,7 +1,4 @@
-﻿using NUnit.Framework;
-using System;
-
-namespace CPvC.Test
+﻿namespace CPvC.Test
 {
     public class HistoryEventTests
     {

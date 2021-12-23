@@ -132,7 +132,7 @@ namespace CPvC
         /// <param name="enabled">Indicates whether turbo mode is to be enabled.</param>
         public void EnableTurbo(bool enabled)
         {
-            Core.AudioBuffer.ReadSpeed = (byte) (enabled ? 10 : 1);
+            Core.AudioBuffer.ReadSpeed = (byte)(enabled ? 10 : 1);
 
             Status = enabled ? "Turbo enabled" : "Turbo disabled";
         }

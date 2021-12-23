@@ -174,7 +174,7 @@ namespace CPvC
                     {
                         // Create a system bookmark so the machine can resume from where it left off the next time it's loaded, but don't
                         // create one if we already have a system bookmark at the current event, or we're at the root event.
-                       BookmarkHistoryEvent currentBookmarkEvent = _history.CurrentEvent as BookmarkHistoryEvent;
+                        BookmarkHistoryEvent currentBookmarkEvent = _history.CurrentEvent as BookmarkHistoryEvent;
                         if (currentBookmarkEvent == null ||
                             (currentBookmarkEvent.Ticks != Ticks) ||
                             (currentBookmarkEvent.Bookmark == null && currentBookmarkEvent != _history.RootEvent) ||
@@ -299,7 +299,7 @@ namespace CPvC
                                 break;
                         }
                     }
-                    
+
                     if (action.Type == CoreAction.Types.RunUntil)
                     {
                         lock (_snapshots)
@@ -364,7 +364,7 @@ namespace CPvC
             }
 
             Core = core;
-            
+
             if (Core != null)
             {
                 Core.Auditors += RequestProcessed;

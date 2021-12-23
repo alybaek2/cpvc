@@ -440,7 +440,7 @@ namespace CPvC
                     return false;
                 }
             }
-            
+
             UInt64 ticks = Ticks;
             switch (request.Type)
             {
