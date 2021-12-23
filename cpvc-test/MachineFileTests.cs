@@ -312,6 +312,24 @@ namespace CPvC.Test
             Assert.Throws<InvalidOperationException>(() => _fileReader.ReadFile(_mockFile));
         }
 
+        // There isn't anywhere in the code that writes out an uncompressed "arg" line, but
+        // test it anyway to ensure it's propertly handled.
+        [Test]
+        public void ReadUncompressedArgument()
+        {
+            // Setup
+            MachineHistory expectedHistory = new MachineHistory();
+            expectedHistory.AddCoreAction(CoreAction.LoadTape(100, new MemoryBlob(new byte[] { 0x01, 0x02 })));
+            _mockFile.WriteLine(String.Format("arg:1,False,0102"));
+            _mockFile.WriteLine("tape:1,100,$1");
+
+            // Act
+            _fileReader.ReadFile(_mockFile);
+
+            // Verify
+            Assert.True(TestHelpers.HistoriesEqual(expectedHistory, _fileReader.History));
+        }
+
         // There isn't anywhere in the code that writes out an uncompressed "args" line, but
         // test it anyway to ensure it's propertly handled.
         [Test]

@@ -109,7 +109,7 @@ namespace CPvC
             }
             else
             {
-                Bookmark bookmark = (_historyEvents[bookmarkEventIndex] as BookmarkHistoryEvent)?.Bookmark;
+                Bookmark bookmark = (_historyEvents[bookmarkEventIndex] as BookmarkHistoryEvent).Bookmark;
                 core = Core.Create(bookmark.Version, bookmark.State.GetBytes());
                 Display.GetFromBookmark(bookmark);
                 startIndex = bookmarkEventIndex;

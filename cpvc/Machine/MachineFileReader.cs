@@ -59,17 +59,6 @@ namespace CPvC
             return tokens[0];
         }
 
-        public void ReadBlob(string args)
-        {
-            string[] tokens = args.Split(',');
-
-            int id = Convert.ToInt32(tokens[0]);
-
-            _args[id] = tokens[1];
-
-            _nextLineId = Math.Max(_nextLineId, id) + 1;
-        }
-
         static public void ReadArgCommand(string line, Dictionary<int, string> args)
         {
             string[] tokens = line.Split(',');
