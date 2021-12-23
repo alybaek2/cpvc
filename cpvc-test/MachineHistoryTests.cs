@@ -39,6 +39,39 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void EndTicksReset()
+        {
+            // Setup
+            HistoryEvent historyEvent = _history.AddCoreAction(CoreAction.Reset(100));
+
+            // Verify
+            Assert.AreEqual(100, historyEvent.Ticks);
+            Assert.AreEqual(100, historyEvent.EndTicks);
+        }
+
+        [Test]
+        public void EndTicksKeyPress()
+        {
+            // Setup
+            HistoryEvent historyEvent = _history.AddCoreAction(CoreAction.KeyPress(100, 42, true));
+
+            // Verify
+            Assert.AreEqual(100, historyEvent.Ticks);
+            Assert.AreEqual(100, historyEvent.EndTicks);
+        }
+
+        [Test]
+        public void EndTicksRunUntil()
+        {
+            // Setup
+            HistoryEvent historyEvent = _history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+
+            // Verify
+            Assert.AreEqual(100, historyEvent.Ticks);
+            Assert.AreEqual(200, historyEvent.EndTicks);
+        }
+
+        [Test]
         public void AddEvent()
         {
             // Setup
@@ -242,6 +275,13 @@ namespace CPvC.Test
             Assert.True(_event01.IsEqualToOrAncestorOf(_event010));
             Assert.False(_event01.IsEqualToOrAncestorOf(_event0));
             Assert.False(_event01.IsEqualToOrAncestorOf(null));
+        }
+
+        [Test]
+        public void RootLine()
+        {
+            // Verify
+            Assert.Throws<NotImplementedException>(() => _history.RootEvent.GetLine());
         }
     }
 }

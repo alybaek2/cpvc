@@ -63,10 +63,7 @@ namespace CPvC
             }
         }
 
-        public virtual string GetLine()
-        {
-            return null;
-        }
+        public abstract string GetLine();
 
         public bool IsEqualToOrAncestorOf(HistoryEvent ancestor)
         {
@@ -116,7 +113,7 @@ namespace CPvC
 
         public override string GetLine()
         {
-            return null;
+            throw new NotImplementedException();
         }
 
         internal override HistoryNode Node

@@ -22,14 +22,6 @@
 
         public IBlob Screen { get; set; }
 
-        public Bookmark(bool system, int version, IBlob state, IBlob screen)
-        {
-            System = system;
-            Version = version;
-            State = state;
-            Screen = screen;
-        }
-
         public Bookmark(bool system, int version, byte[] state, byte[] screen)
         {
             System = system;
