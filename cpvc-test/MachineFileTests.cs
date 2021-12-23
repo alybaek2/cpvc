@@ -20,6 +20,8 @@ namespace CPvC.Test
         private MachineFileWriter _fileWriter;
         private MachineHistory _history;
         private MockTextFile _mockFile;
+        private byte[] _state;
+        private byte[] _screen;
 
         [SetUp]
         public void Setup()
@@ -28,6 +30,15 @@ namespace CPvC.Test
             _fileReader = new MachineFileReader();
             _history = new MachineHistory();
             _fileWriter = new MachineFileWriter(_mockFile, _history);
+
+            _state = new byte[1000];
+            _screen = new byte[1000];
+
+            for (int i = 0; i < 1000; i++)
+            {
+                _state[i] = (byte)(i % 256);
+                _screen[i] = (byte)((i + 1) % 256);
+            }
         }
 
         [TestCaseSource(nameof(CoreActionCases))]
@@ -117,10 +128,10 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void WriteAndReadCompound()
+        public void WriteAndReadArguments()
         {
             // Setup
-            Bookmark bookmark = new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 });
+            Bookmark bookmark = new Bookmark(false, 1, _state, _screen);
 
             // Act
             _history.AddBookmark(100, bookmark);
@@ -130,8 +141,8 @@ namespace CPvC.Test
             _fileReader.ReadFile(_mockFile);
 
             // Verify
-            Assert.AreEqual(1, _mockFile.Lines.Count(line => line.StartsWith("compound:")));
-            Assert.Zero(_mockFile.Lines.Count(line => line.StartsWith("blob:")));
+            Assert.AreEqual(1, _mockFile.Lines.Count(line => line.StartsWith("args:")));
+            Assert.Zero(_mockFile.Lines.Count(line => line.StartsWith("arg:")));
             Assert.True(HistoriesEqual(_fileReader.History, _history));
         }
 
@@ -301,16 +312,16 @@ namespace CPvC.Test
             Assert.Throws<InvalidOperationException>(() => _fileReader.ReadFile(_mockFile));
         }
 
-        // There isn't anywhere in the code that writes out an uncompressed compound line, but
+        // There isn't anywhere in the code that writes out an uncompressed "args" line, but
         // test it anyway to ensure it's propertly handled.
         [Test]
-        public void ReadUncompressedCompound()
+        public void ReadUncompressedArguments()
         {
             // Setup
             MachineHistory expectedHistory = new MachineHistory();
-            expectedHistory.AddCoreAction(CoreAction.KeyPress(100, 42, true));
-            expectedHistory.AddCoreAction(CoreAction.Reset(200));
-            _mockFile.WriteLine("compound:0,key:0,100,42,True@reset:1,200");
+            expectedHistory.AddBookmark(100, new Bookmark(true, 1, _state, _screen));
+            _mockFile.WriteLine(String.Format("args:False,1#{0}@2#{1}", Helpers.StrFromBytes(_state), Helpers.StrFromBytes(_screen)));
+            _mockFile.WriteLine("bookmark:4,100,True,1,$1,$2");
 
             // Act
             _fileReader.ReadFile(_mockFile);

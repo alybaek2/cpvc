@@ -12,26 +12,21 @@ namespace CPvC
         private MachineHistory _machineHistory;
         private Dictionary<int, HistoryEvent> _idToHistoryEvent;
         private int _nextLineId = 0;
-        private Dictionary<int, IBlob> _blobs;
+        private Dictionary<int, string> _args;
 
         public void ReadFile(ITextFile byteStream)
         {
             _idToHistoryEvent = new Dictionary<int, HistoryEvent>();
-            _blobs = new Dictionary<int, IBlob>();
+            _args = new Dictionary<int, string>();
 
             _name = null;
             _machineHistory = new MachineHistory();
             _idToHistoryEvent[_machineHistory.RootEvent.Id] = _machineHistory.RootEvent;
 
-            while (true)
+            string line;
+            while ((line = byteStream.ReadLine()) != null)
             {
-                string line = byteStream.ReadLine();
-                if (line == null)
-                {
-                    break;
-                }
-
-                ReadLine(line);
+                ProcessLine(line);
             }
         }
 
@@ -72,28 +67,49 @@ namespace CPvC
 
             int id = Convert.ToInt32(tokens[0]);
 
-            _blobs[id] = new MemoryBlob(Helpers.BytesFromStr(tokens[1]));
+            _args[id] = tokens[1];
 
             _nextLineId = Math.Max(_nextLineId, id) + 1;
         }
 
-        private void ReadCompoundCommand(string line)
+        static public void ReadArgCommand(string line, Dictionary<int, string> args)
+        {
+            string[] tokens = line.Split(',');
+            int argId = Convert.ToInt32(tokens[0]);
+            bool compress = Convert.ToBoolean(tokens[1]);
+            string argValue = tokens[2];
+            if (compress)
+            {
+                byte[] bytes = Helpers.Uncompress(Helpers.BytesFromStr(argValue));
+
+                argValue = Encoding.UTF8.GetString(bytes);
+            }
+
+            args[argId] = argValue;
+        }
+
+        public void ReadArgsCommand(string line, Dictionary<int, string> args)
         {
             string[] tokens = line.Split(',');
 
-            int compress = Convert.ToInt32(tokens[0]);
-
-            string commands = line.Substring(tokens[0].Length + 1);
-            if (compress == 1)
+            bool compress = Convert.ToBoolean(tokens[0]);
+            string argsArg = tokens[1];
+            if (compress)
             {
-                byte[] bytes = Helpers.Uncompress(Helpers.BytesFromStr(commands));
-
-                commands = Encoding.UTF8.GetString(bytes);
+                byte[] bytes = Helpers.Uncompress(Helpers.BytesFromStr(argsArg));
+                argsArg = Encoding.UTF8.GetString(bytes);
             }
 
-            foreach (string command in commands.Split('@'))
+            string[] argPairs = argsArg.Split('@');
+
+            foreach (string argPair in argPairs)
             {
-                ReadLine(command);
+                string[] argPairTokens = argPair.Split('#');
+
+                int argId = Convert.ToInt32(argPairTokens[0]);
+                string argValue = argPairTokens[1];
+
+                args[argId] = argValue;
             }
         }
 
@@ -106,12 +122,10 @@ namespace CPvC
             UInt64 ticks = Convert.ToUInt64(tokens[1]);
             bool system = Convert.ToBoolean(tokens[2]);
             int version = Convert.ToInt32(tokens[3]);
-            int stateBlobId = Convert.ToInt32(tokens[4]);
-            int screenBlobId = Convert.ToInt32(tokens[5]);
-            IBlob stateBlob = _blobs[stateBlobId];
-            IBlob screenBlob = _blobs[screenBlobId];
+            byte[] state = Helpers.BytesFromStr(tokens[4]);
+            byte[] screen = Helpers.BytesFromStr(tokens[5]);
 
-            Bookmark bookmark = new Bookmark(system, version, stateBlob, screenBlob);
+            Bookmark bookmark = new Bookmark(system, version, state, screen);
 
             HistoryEvent historyEvent = _machineHistory.AddBookmark(ticks, bookmark, id);
 
@@ -168,8 +182,7 @@ namespace CPvC
             int id = Convert.ToInt32(tokens[0]);
             UInt64 ticks = Convert.ToUInt64(tokens[1]);
             byte drive = Convert.ToByte(tokens[2]);
-            int mediaBlobId = Convert.ToInt32(tokens[3]);
-            IBlob mediaBlob = _blobs[mediaBlobId];
+            IBlob mediaBlob = new MemoryBlob(Helpers.BytesFromStr(tokens[3]));
 
             CoreAction action = CoreAction.LoadDisc(ticks, drive, mediaBlob);
 
@@ -208,8 +221,7 @@ namespace CPvC
 
             int id = Convert.ToInt32(tokens[0]);
             UInt64 ticks = Convert.ToUInt64(tokens[1]);
-            int mediaBlobId = Convert.ToInt32(tokens[2]);
-            IBlob mediaBlob = _blobs[mediaBlobId];
+            IBlob mediaBlob = new MemoryBlob(Helpers.BytesFromStr(tokens[2]));
 
             CoreAction action = CoreAction.LoadTape(ticks, mediaBlob);
 
@@ -262,8 +274,21 @@ namespace CPvC
             }
         }
 
-        private void ReadLine(string line)
+        private void ProcessLine(string line)
         {
+            // Check for large arguments
+            string[] tokens = line.Split(',');
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                if (tokens[i].StartsWith("$"))
+                {
+                    int argId = System.Convert.ToInt32(tokens[i].Substring(1));
+                    tokens[i] = _args[argId];
+                }
+            }
+
+            line = String.Join(",", tokens);
+
             int colon = line.IndexOf(':');
             if (colon == -1)
             {
@@ -308,11 +333,11 @@ namespace CPvC
                 case MachineFileWriter._idRunUntil:
                     ReadRunUntil(args);
                     break;
-                case MachineFileWriter._idBlob:
-                    ReadBlob(args);
+                case MachineFileWriter._idArg:
+                    ReadArgCommand(args, _args);
                     break;
-                case MachineFileWriter._idCompound:
-                    ReadCompoundCommand(args);
+                case MachineFileWriter._idArgs:
+                    ReadArgsCommand(args, _args);
                     break;
                 default:
                     throw new ArgumentException(String.Format("Unknown type {0}.", type), "type");

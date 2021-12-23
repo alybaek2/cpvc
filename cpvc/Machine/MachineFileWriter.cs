@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace CPvC
@@ -18,8 +19,8 @@ namespace CPvC
         public const string _idVersion = "version";
         public const string _idRunUntil = "run";
         public const string _idDeleteBookmark = "deletebookmark";
-        public const string _idBlob = "blob";
-        public const string _idCompound = "compound";
+        public const string _idArg = "arg";
+        public const string _idArgs = "args";
 
         private MachineHistory _machineHistory;
         private int _nextBlobId;
@@ -125,7 +126,7 @@ namespace CPvC
             return String.Format("{0}:{1}", _idName, name);
         }
 
-        static private string AddBookmarkCommand(int id, UInt64 ticks, bool system, int version, int stateBlobId, int screenBlobId)
+        static public string AddBookmarkCommand(int id, UInt64 ticks, bool system, int version, int stateBlobId, int screenBlobId)
         {
             return String.Format(
                 "{0}:{1},{2},{3},{4},{5},{6}",
@@ -138,7 +139,20 @@ namespace CPvC
                 screenBlobId);
         }
 
-        static private string KeyCommand(int id, UInt64 ticks, byte keyCode, bool keyDown)
+        static public string AddBookmarkCommand(int id, UInt64 ticks, bool system, int version, byte[] state, byte[] screen)
+        {
+            return String.Format(
+                "{0}:{1},{2},{3},{4},{5},{6}",
+                _idAddBookmark,
+                id,
+                ticks,
+                system,
+                version,
+                Helpers.StrFromBytes(state),
+                Helpers.StrFromBytes(screen));
+        }
+
+        static public string KeyCommand(int id, UInt64 ticks, byte keyCode, bool keyDown)
         {
             return String.Format("{0}:{1},{2},{3},{4}",
                 _idKey,
@@ -146,6 +160,16 @@ namespace CPvC
                 ticks,
                 keyCode,
                 keyDown);
+        }
+
+        static public string LoadDiscCommand(int id, UInt64 ticks, byte drive, byte[] media)
+        {
+            return String.Format("{0}:{1},{2},{3},{4}",
+                _idLoadDisc,
+                id,
+                ticks,
+                drive,
+                Helpers.StrFromBytes(media));
         }
 
         static private string LoadDiscCommand(int id, UInt64 ticks, byte drive, int mediaBlobId)
@@ -158,7 +182,16 @@ namespace CPvC
                 mediaBlobId);
         }
 
-        static private string LoadTapeCommand(int id, UInt64 ticks, int mediaBlobId)
+        static public string LoadTapeCommand(int id, UInt64 ticks, byte[] media)
+        {
+            return String.Format("{0}:{1},{2},{3}",
+                _idLoadTape,
+                id,
+                ticks,
+                Helpers.StrFromBytes(media));
+        }
+
+        static public string LoadTapeCommand(int id, UInt64 ticks, int mediaBlobId)
         {
             return String.Format("{0}:{1},{2},{3}",
                 _idLoadTape,
@@ -167,7 +200,7 @@ namespace CPvC
                 mediaBlobId);
         }
 
-        static private string RunCommand(int id, UInt64 ticks, UInt64 stopTicks)
+        static public string RunCommand(int id, UInt64 ticks, UInt64 stopTicks)
         {
             return String.Format("{0}:{1},{2},{3}",
                 _idRunUntil,
@@ -176,7 +209,7 @@ namespace CPvC
                 stopTicks);
         }
 
-        static private string ResetCommand(int id, UInt64 ticks)
+        static public string ResetCommand(int id, UInt64 ticks)
         {
             return String.Format("{0}:{1},{2}",
                 _idReset,
@@ -184,7 +217,7 @@ namespace CPvC
                 ticks);
         }
 
-        static private string VersionCommand(int id, UInt64 ticks, int version)
+        static public string VersionCommand(int id, UInt64 ticks, int version)
         {
             return String.Format("{0}:{1},{2},{3}",
                 _idVersion,
@@ -193,27 +226,27 @@ namespace CPvC
                 version);
         }
 
-        static private string BlobCommand(int blobId, byte[] blob)
+        static private string ArgCommand(int argId, string argValue, bool compress)
         {
-            return String.Format(
-                "{0}:{1},{2}",
-                _idBlob,
-                blobId,
-                Helpers.StrFromBytes(blob));
+            if (compress)
+            {
+                byte[] bytes = Encoding.UTF8.GetBytes(argValue);
+                argValue = Helpers.StrFromBytes(Helpers.Compress(bytes));
+            }
+
+            return String.Format("{0}:{1},{2},{3}", _idArg, argId, compress, argValue);
         }
 
-        static private string CompoundCommand(IEnumerable<string> commands)
+        static public string ArgsCommand(Dictionary<int, string> args, bool compress)
         {
-            string str = String.Join("@", commands);
+            string argsLine = String.Join("@", args.Keys.Select(key => String.Format("{0}#{1}", key, args[key])));
+            if (compress)
+            {
+                byte[] bytes = Encoding.UTF8.GetBytes(argsLine);
+                argsLine = Helpers.StrFromBytes(Helpers.Compress(bytes));
+            }
 
-            byte[] b = Encoding.UTF8.GetBytes(str);
-            str = Helpers.StrFromBytes(Helpers.Compress(b));
-
-            return String.Format(
-                "{0}:{1},{2}",
-                _idCompound,
-                1,
-                str);
+            return String.Format("{0}:{1},{2}", _idArgs, compress, argsLine);
         }
 
         private void GetLines(int id, CoreAction action, List<string> lines)
@@ -229,14 +262,14 @@ namespace CPvC
                 case CoreRequest.Types.LoadDisc:
                     {
                         int mediaBlobId = _nextBlobId++;
-                        lines.Add(BlobCommand(mediaBlobId, action.MediaBuffer.GetBytes()));
+                        lines.Add(ArgCommand(mediaBlobId, Helpers.StrFromBytes(action.MediaBuffer.GetBytes()), true));
                         lines.Add(LoadDiscCommand(id, action.Ticks, action.Drive, mediaBlobId));
                     }
                     break;
                 case CoreRequest.Types.LoadTape:
                     {
                         int mediaBlobId = _nextBlobId++;
-                        lines.Add(BlobCommand(mediaBlobId, action.MediaBuffer.GetBytes()));
+                        lines.Add(ArgCommand(mediaBlobId, Helpers.StrFromBytes(action.MediaBuffer.GetBytes()), true));
                         lines.Add(LoadTapeCommand(id, action.Ticks, mediaBlobId));
                     }
                     break;
@@ -253,27 +286,22 @@ namespace CPvC
 
         private void GetLines(HistoryEvent historyEvent, List<string> lines)
         {
-            switch (historyEvent)
+            string line = historyEvent.GetLine();
+
+            // Check for big parameters
+            string[] args = line.Split(',');
+            for (int i = 0; i < args.Length; i++)
             {
-                case BookmarkHistoryEvent bookmarkHistoryEvent:
-                    {
-                        Bookmark bookmark = bookmarkHistoryEvent.Bookmark;
-
-                        int stateBlobId = _nextBlobId++;
-                        lines.Add(BlobCommand(stateBlobId, bookmark.State.GetBytes()));
-
-                        int screenBlobId = _nextBlobId++;
-                        lines.Add(BlobCommand(screenBlobId, bookmark.Screen.GetBytes()));
-
-                        lines.Add(AddBookmarkCommand(historyEvent.Id, historyEvent.Ticks, bookmark.System, bookmark.Version, stateBlobId, screenBlobId));
-                    }
-                    break;
-                case CoreActionHistoryEvent coreActionHistoryEvent:
-                    GetLines(coreActionHistoryEvent.Id, coreActionHistoryEvent.CoreAction, lines);
-                    break;
-                default:
-                    throw new ArgumentException("Unknown history event type!", "historyEvent.Type");
+                string token = args[i];
+                if (token.Length > 100)
+                {
+                    int blobId = _nextBlobId++;
+                    lines.Add(ArgCommand(blobId, token, true));
+                    args[i] = String.Format("${0}", blobId);
+                }
             }
+
+            lines.Add(String.Join(",", args));
         }
 
         private List<string> GetLines(HistoryEvent historyEvent, HistoryChangedAction changeType)
@@ -333,16 +361,18 @@ namespace CPvC
 
             lines.Add(CurrentCommand(History.CurrentEvent.Id));
 
-            // If we have any blob commands, stick them in a compound command and put them at the start of the file.
+            // If we have any "arg" commands, stick them in a "args" command and put them at the start of the file.
             // Putting them in a single command should allow them to be better compressed than individually.
-            List<string> blobCommands = new List<string>();
+            Dictionary<int, string> args = new Dictionary<int, string>();
             int i = 0;
             while (i < lines.Count)
             {
-                if (lines[i].StartsWith(_idBlob))
+                string[] tokens = lines[i].Split(':');
+                if (tokens[0] == _idArg)
                 {
-                    blobCommands.Add(lines[i]);
                     lines.RemoveAt(i);
+
+                    MachineFileReader.ReadArgCommand(tokens[1], args);
                 }
                 else
                 {
@@ -351,12 +381,9 @@ namespace CPvC
             }
 
             // Write the file.
-            if (blobCommands.Count > 0)
+            if (args.Count > 0)
             {
-                // Create a "compound" command for all the blobs.
-                string compoundCommand = CompoundCommand(blobCommands);
-
-                lines.Insert(0, compoundCommand);
+                lines.Insert(0, ArgsCommand(args, true));
             }
 
             foreach (string line in lines)

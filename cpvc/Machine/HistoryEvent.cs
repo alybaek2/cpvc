@@ -63,6 +63,11 @@ namespace CPvC
             }
         }
 
+        public virtual string GetLine()
+        {
+            return null;
+        }
+
         public bool IsEqualToOrAncestorOf(HistoryEvent ancestor)
         {
             return Node.IsEqualToOrAncestorOf(ancestor?.Node);
@@ -109,6 +114,11 @@ namespace CPvC
             _node = historyNode as RootHistoryNode;
         }
 
+        public override string GetLine()
+        {
+            return null;
+        }
+
         internal override HistoryNode Node
         {
             get
@@ -125,6 +135,11 @@ namespace CPvC
         internal BookmarkHistoryEvent(BookmarkHistoryNode historyNode)
         {
             _node = historyNode;
+        }
+
+        public override string GetLine()
+        {
+            return MachineFileWriter.AddBookmarkCommand(Id, Ticks, Bookmark.System, Bookmark.Version, Bookmark.State.GetBytes(), Bookmark.Screen.GetBytes());
         }
 
         internal override HistoryNode Node
@@ -152,6 +167,27 @@ namespace CPvC
         internal CoreActionHistoryEvent(CoreActionHistoryNode historyNode) : base()
         {
             _node = historyNode;
+        }
+
+        public override string GetLine()
+        {
+            switch (CoreAction.Type)
+            {
+                case CoreRequest.Types.KeyPress:
+                    return MachineFileWriter.KeyCommand(Id, CoreAction.Ticks, CoreAction.KeyCode, CoreAction.KeyDown);
+                case CoreRequest.Types.Reset:
+                    return MachineFileWriter.ResetCommand(Id, CoreAction.Ticks);
+                case CoreRequest.Types.LoadDisc:
+                    return MachineFileWriter.LoadDiscCommand(Id, CoreAction.Ticks, CoreAction.Drive, CoreAction.MediaBuffer.GetBytes());
+                case CoreRequest.Types.LoadTape:
+                    return MachineFileWriter.LoadTapeCommand(Id, CoreAction.Ticks, CoreAction.MediaBuffer.GetBytes());
+                case CoreRequest.Types.CoreVersion:
+                    return MachineFileWriter.VersionCommand(Id, CoreAction.Ticks, CoreAction.Version);
+                case CoreRequest.Types.RunUntil:
+                    return MachineFileWriter.RunCommand(Id, CoreAction.Ticks, CoreAction.StopTicks);
+                default:
+                    throw new ArgumentException(String.Format("Unrecognized core action type {0}.", CoreAction.Type), "type");
+            }
         }
 
         internal override HistoryNode Node
