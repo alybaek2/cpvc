@@ -34,7 +34,6 @@ namespace CPvC
         public event SelectRemoteMachineEventHandler SelectRemoteMachine;
         public event SelectServerPortEventHandler SelectServerPort;
         public event ConfirmCloseEventHandler ConfirmClose;
-        public event ReportErrorEventHandler ReportError;
         public event CreateSocketEventHandler CreateSocket;
 
         private Command _openMachineCommand;
@@ -89,36 +88,12 @@ namespace CPvC
             ActiveMachine = null;
 
             _openMachineCommand = new Command(
-                p =>
-                {
-                    try
-                    {
-                        OpenMachine(_fileSystem);
-                    }
-                    catch (Exception ex)
-                    {
-                        ReportErrorEventArgs args = new ReportErrorEventArgs();
-                        args.Message = ex.Message;
-                        ReportError?.Invoke(this, args);
-                    }
-                },
+                p => OpenMachine(_fileSystem),
                 p => true
             );
 
             _newMachineCommand = new Command(
-                p =>
-                {
-                    try
-                    {
-                        NewMachine(_fileSystem);
-                    }
-                    catch (Exception ex)
-                    {
-                        ReportErrorEventArgs args = new ReportErrorEventArgs();
-                        args.Message = ex.Message;
-                        ReportError?.Invoke(this, args);
-                    }
-                },
+                p => NewMachine(_fileSystem),
                 p => true
             );
 
@@ -171,19 +146,7 @@ namespace CPvC
             );
 
             _persistCommand = new Command(
-                p =>
-                {
-                    try
-                    {
-                        Persist(p as IPersistableMachine, fileSystem);
-                    }
-                    catch (Exception ex)
-                    {
-                        ReportErrorEventArgs args = new ReportErrorEventArgs();
-                        args.Message = ex.Message;
-                        ReportError?.Invoke(this, args);
-                    }
-                },
+                p => Persist(p as IPersistableMachine, fileSystem),
                 p =>
                 {
                     IPersistableMachine pm = p as IPersistableMachine;

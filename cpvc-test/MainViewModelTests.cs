@@ -810,7 +810,7 @@ namespace CPvC.Test
             // Setup
             Mock<IPersistableMachine> mockMachine = new Mock<IPersistableMachine>(MockBehavior.Strict);
             mockMachine.SetupGet(m => m.PersistantFilepath).Returns(String.Empty);
-            mockMachine.Setup(m => m.Persist(_mockFileSystem.Object, "test.cpvc"));
+            mockMachine.Setup(m => m.Persist(_mockFileSystem.Object, "test.cpvc")).Returns(true);
             _mainViewModel.PromptForFile += (sender, args) =>
             {
                 args.Filepath = "test.cpvc";
@@ -828,14 +828,9 @@ namespace CPvC.Test
         {
             // Setup
             Mock<IJumpableMachine> mockMachine = new Mock<IJumpableMachine>();
-            Mock<ReportErrorEventHandler> mockReport = new Mock<ReportErrorEventHandler>();
-            _mainViewModel.ReportError += mockReport.Object;
 
-            // Act
-            _mainViewModel.PersistCommand.Execute(mockMachine.Object);
-
-            // Verify
-            mockReport.Verify(m => m(It.IsAny<object>(), It.IsAny<ReportErrorEventArgs>()), Times.Once());
+            // Act and Verify
+            Assert.Throws<ArgumentException>(() => _mainViewModel.PersistCommand.Execute(mockMachine.Object));
         }
 
         [Test]

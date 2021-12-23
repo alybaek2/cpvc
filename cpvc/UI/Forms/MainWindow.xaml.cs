@@ -35,7 +35,6 @@ namespace CPvC.UI.Forms
             _mainViewModel.SelectRemoteMachine += MainViewModel_SelectRemoteMachine;
             _mainViewModel.SelectServerPort += MainViewModel_SelectServerPort;
             _mainViewModel.ConfirmClose += MainViewModel_ConfirmClose;
-            _mainViewModel.ReportError += MainViewModel_ReportError;
             _mainViewModel.CreateSocket += MainViewModel_CreateSocket;
 
             InitializeComponent();
@@ -375,26 +374,12 @@ namespace CPvC.UI.Forms
             return (result.HasValue && result.Value) ? dialog.Machine : null;
         }
 
-        private void ReportError(string message)
-        {
-            // Need to replace this with a messagebox that is centred over its parent. This option
-            // doesn't seem to be available with MessageBox.Show().
-            MessageBox.Show(this, message, "CPvC", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-
         private void MachinePreviewGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (sender is FrameworkElement element && element.DataContext is IMachine machine)
             {
-                try
-                {
-                    _mainViewModel.OpenCommand.Execute(machine);
-                    _mainViewModel.ActiveMachine = machine;
-                }
-                catch (Exception ex)
-                {
-                    ReportError(String.Format("Unable to open {0}.\n\n{1}", machine.Name, ex.Message));
-                }
+                _mainViewModel.OpenCommand.Execute(machine);
+                _mainViewModel.ActiveMachine = machine;
             }
         }
 
@@ -443,11 +428,6 @@ namespace CPvC.UI.Forms
         private void MainViewModel_PromptForName(object sender, PromptForNameEventArgs e)
         {
             e.SelectedName = PromptForName(e.ExistingName);
-        }
-
-        private void MainViewModel_ReportError(object sender, ReportErrorEventArgs e)
-        {
-            ReportError(e.Message);
         }
 
         private void MainViewModel_SelectItem(object sender, SelectItemEventArgs e)
