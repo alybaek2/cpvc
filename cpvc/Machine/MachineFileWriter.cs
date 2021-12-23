@@ -126,19 +126,6 @@ namespace CPvC
             return String.Format("{0}:{1}", _idName, name);
         }
 
-        static public string AddBookmarkCommand(int id, UInt64 ticks, bool system, int version, int stateBlobId, int screenBlobId)
-        {
-            return String.Format(
-                "{0}:{1},{2},{3},{4},{5},{6}",
-                _idAddBookmark,
-                id,
-                ticks,
-                system,
-                version,
-                stateBlobId,
-                screenBlobId);
-        }
-
         static public string AddBookmarkCommand(int id, UInt64 ticks, bool system, int version, byte[] state, byte[] screen)
         {
             return String.Format(
@@ -172,16 +159,6 @@ namespace CPvC
                 Helpers.StrFromBytes(media));
         }
 
-        static private string LoadDiscCommand(int id, UInt64 ticks, byte drive, int mediaBlobId)
-        {
-            return String.Format("{0}:{1},{2},{3},{4}",
-                _idLoadDisc,
-                id,
-                ticks,
-                drive,
-                mediaBlobId);
-        }
-
         static public string LoadTapeCommand(int id, UInt64 ticks, byte[] media)
         {
             return String.Format("{0}:{1},{2},{3}",
@@ -189,15 +166,6 @@ namespace CPvC
                 id,
                 ticks,
                 Helpers.StrFromBytes(media));
-        }
-
-        static public string LoadTapeCommand(int id, UInt64 ticks, int mediaBlobId)
-        {
-            return String.Format("{0}:{1},{2},{3}",
-                _idLoadTape,
-                id,
-                ticks,
-                mediaBlobId);
         }
 
         static public string RunCommand(int id, UInt64 ticks, UInt64 stopTicks)
@@ -247,41 +215,6 @@ namespace CPvC
             }
 
             return String.Format("{0}:{1},{2}", _idArgs, compress, argsLine);
-        }
-
-        private void GetLines(int id, CoreAction action, List<string> lines)
-        {
-            switch (action.Type)
-            {
-                case CoreRequest.Types.KeyPress:
-                    lines.Add(KeyCommand(id, action.Ticks, action.KeyCode, action.KeyDown));
-                    break;
-                case CoreRequest.Types.Reset:
-                    lines.Add(ResetCommand(id, action.Ticks));
-                    break;
-                case CoreRequest.Types.LoadDisc:
-                    {
-                        int mediaBlobId = _nextBlobId++;
-                        lines.Add(ArgCommand(mediaBlobId, Helpers.StrFromBytes(action.MediaBuffer.GetBytes()), true));
-                        lines.Add(LoadDiscCommand(id, action.Ticks, action.Drive, mediaBlobId));
-                    }
-                    break;
-                case CoreRequest.Types.LoadTape:
-                    {
-                        int mediaBlobId = _nextBlobId++;
-                        lines.Add(ArgCommand(mediaBlobId, Helpers.StrFromBytes(action.MediaBuffer.GetBytes()), true));
-                        lines.Add(LoadTapeCommand(id, action.Ticks, mediaBlobId));
-                    }
-                    break;
-                case CoreRequest.Types.CoreVersion:
-                    lines.Add(VersionCommand(id, action.Ticks, action.Version));
-                    break;
-                case CoreRequest.Types.RunUntil:
-                    lines.Add(RunCommand(id, action.Ticks, action.StopTicks));
-                    break;
-                default:
-                    throw new ArgumentException(String.Format("Unrecognized core action type {0}.", action.Type), "type");
-            }
         }
 
         private void GetLines(HistoryEvent historyEvent, List<string> lines)
