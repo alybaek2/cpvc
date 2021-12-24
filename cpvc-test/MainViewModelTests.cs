@@ -809,7 +809,7 @@ namespace CPvC.Test
         {
             // Setup
             Mock<IPersistableMachine> mockMachine = new Mock<IPersistableMachine>(MockBehavior.Strict);
-            mockMachine.SetupGet(m => m.PersistantFilepath).Returns(String.Empty);
+            mockMachine.SetupGet(m => m.PersistantFilepath).Returns((string)null);
             mockMachine.Setup(m => m.Persist(_mockFileSystem.Object, "test.cpvc")).Returns(true);
             _mainViewModel.PromptForFile += (sender, args) =>
             {
@@ -821,6 +821,7 @@ namespace CPvC.Test
 
             // Verify
             mockMachine.Verify(m => m.Persist(_mockFileSystem.Object, "test.cpvc"), Times.Once());
+            Assert.True(_mainViewModel.PersistCommand.CanExecute(mockMachine.Object));
         }
 
         [Test]
@@ -831,6 +832,7 @@ namespace CPvC.Test
 
             // Act and Verify
             Assert.Throws<ArgumentException>(() => _mainViewModel.PersistCommand.Execute(mockMachine.Object));
+            Assert.False(_mainViewModel.PersistCommand.CanExecute(mockMachine.Object));
         }
 
         [Test]
@@ -847,6 +849,7 @@ namespace CPvC.Test
 
             // Verify
             mockPrompt.VerifyNoOtherCalls();
+            Assert.False(_mainViewModel.PersistCommand.CanExecute(mockMachine.Object));
         }
 
         [Test]
