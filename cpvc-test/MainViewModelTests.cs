@@ -384,39 +384,6 @@ namespace CPvC.Test
             }
         }
 
-        //[Test]
-        //public void NullActiveMachine()
-        //{
-        //    // Setup
-        //    Mock<MainViewModel.PromptForFileDelegate> prompt = SetupPrompt(FileTypes.Machine, true, null);
-
-        //    MainViewModel viewModel = SetupViewModel(1, prompt, null, null);
-        //    Machine machine = viewModel.Machines[0];
-        //    machine.Open();
-        //    viewModel.ActiveMachineViewModel = null;
-
-        //    // Act and Verify
-        //    Assert.DoesNotThrow(() =>
-        //    {
-        //        viewModel.ActiveMachineViewModel.KeyDownCommand.Execute(Keys.A);
-        //        viewModel.ActiveMachineViewModel.ResetCommand.Execute(null);
-        //        viewModel.ActiveMachineViewModel.PauseCommand.Execute(null);
-        //        viewModel.ActiveMachineViewModel.ResumeCommand.Execute(null);
-        //        viewModel.ActiveMachineViewModel.DriveACommand.Execute(null);
-        //        viewModel.ActiveMachineViewModel.TapeCommand.Execute(null);
-        //        viewModel.ActiveMachineViewModel.DriveAEjectCommand.Execute(null);
-        //        viewModel.ActiveMachineViewModel.TapeEjectCommand.Execute(null);
-        //        viewModel.ActiveMachineViewModel.AddBookmarkCommand.Execute(null);
-        //        viewModel.ActiveMachineViewModel.JumpToMostRecentBookmarkCommand.Execute(null);
-        //        viewModel.ActiveMachineViewModel.TurboCommand.Execute(null);
-        //        viewModel.ActiveMachineViewModel.CompactCommand.Execute(null);
-        //        viewModel.ActiveMachineViewModel.SeekToNextBookmarkCommand.Execute(null);
-        //        viewModel.ActiveMachineViewModel.SeekToPrevBookmarkCommand.Execute(null);
-        //        viewModel.ActiveMachineViewModel.SeekToStartCommand.Execute(null);
-        //        viewModel.ActiveMachineViewModel.CloseCommand.Execute(null);
-        //    });
-        //}
-
         [TestCase(false, true)]
         [TestCase(true, false)]
         [TestCase(true, true)]
@@ -1062,6 +1029,25 @@ namespace CPvC.Test
             mockPersistableMachine.Verify(m => m.Persist(_mockFileSystem.Object, "test.cpvc"), Times.Never());
             Assert.True(_mainViewModel.RemoveCommand.CanExecute(mockPersistableMachine.Object));
             Assert.False(confirmCloseCalled);
+        }
+
+        [Test]
+        public void CompactNullMachine()
+        {
+            // Verify
+            Assert.DoesNotThrow(() => _mainViewModel.CompactCommand.Execute(null));
+            Assert.False(_mainViewModel.CompactCommand.CanExecute(null));
+        }
+
+        [Test]
+        public void CompactNonCompactableMachine()
+        {
+            // Setup
+            Mock<IJumpableMachine> mockJumpableMachine = new Mock<IJumpableMachine>(MockBehavior.Strict);
+
+            // Verify
+            Assert.DoesNotThrow(() => _mainViewModel.CompactCommand.Execute(mockJumpableMachine.Object));
+            Assert.False(_mainViewModel.CompactCommand.CanExecute(mockJumpableMachine.Object));
         }
 
         [Test]
