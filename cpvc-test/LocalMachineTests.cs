@@ -667,6 +667,35 @@ namespace CPvC.Test
             propChanged.VerifyNoOtherCalls();
         }
 
+        /// <summary>
+        /// Ensures that when reading audio, the second and subsequent calls will
+        /// be able to fully populate the buffer that is provided. The first call
+        /// is expected to not be able to full populate the buffer (sue to the
+        /// setting of OverrunThreshold).
+        /// 
+        /// Note that if the machine wasn't able to fully populate the buffer, audio
+        /// would become "stuttery" and would slow the machine down.
+        /// </summary>
+        [Test]
+        public void ReadAudioFillsBuffer()
+        {
+            // Setup
+            _machine.Core.AudioBuffer.OverrunThreshold = 100;
+            _machine.Start();
+            int samples = 250;
+            byte[] buffer = new byte[samples * 4];
+            System.Threading.Thread.Sleep(100);
+            int firstReadSampleCount = _machine.ReadAudio(buffer, 0, buffer.Length);
+            System.Threading.Thread.Sleep(100);
+
+            // Act
+            int secondReadSampleCount = _machine.ReadAudio(buffer, 0, buffer.Length);
+
+            // Verify
+            Assert.Greater(samples, firstReadSampleCount);
+            Assert.AreEqual(samples, secondReadSampleCount);
+        }
+
         [Test]
         public void Reverse()
         {
