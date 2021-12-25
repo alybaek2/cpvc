@@ -992,6 +992,75 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void RemoveNotYetPersistedMachine()
+        {
+            // Setup
+            Mock<IPersistableMachine> mockPersistableMachine = new Mock<IPersistableMachine>(MockBehavior.Strict);
+            Mock<IMachine> mockMachine = mockPersistableMachine.As<IMachine>();
+            mockMachine.SetupGet(m => m.Name).Returns("Test");
+            mockMachine.Setup(m => m.Close());
+            mockPersistableMachine.SetupGet(m => m.PersistantFilepath).Returns("test.cpvc");
+
+            _mainViewModel.ConfirmClose += (sender, args) =>
+            {
+                args.Result = false;
+            };
+
+            // Act
+            _mainViewModel.RemoveCommand.Execute(mockPersistableMachine.Object);
+
+            // Verify
+            mockPersistableMachine.Verify(m => m.Persist(_mockFileSystem.Object, "test.cpvc"), Times.Never());
+            Assert.True(_mainViewModel.RemoveCommand.CanExecute(mockPersistableMachine.Object));
+        }
+
+        [Test]
+        public void RemovePersistedMachine()
+        {
+            // Setup
+            Mock<IPersistableMachine> mockPersistableMachine = new Mock<IPersistableMachine>(MockBehavior.Strict);
+            Mock<IMachine> mockMachine = mockPersistableMachine.As<IMachine>();
+            mockMachine.SetupGet(m => m.Name).Returns("Test");
+            mockMachine.Setup(m => m.Close());
+            mockPersistableMachine.SetupGet(m => m.PersistantFilepath).Returns("test.cpvc");
+
+            bool confirmCloseCalled = false;
+            _mainViewModel.ConfirmClose += (sender, args) =>
+            {
+                confirmCloseCalled = true;
+                args.Result = false;
+            };
+
+            // Act
+            _mainViewModel.RemoveCommand.Execute(mockPersistableMachine.Object);
+
+            // Verify
+            mockPersistableMachine.Verify(m => m.Persist(_mockFileSystem.Object, "test.cpvc"), Times.Never());
+            Assert.True(_mainViewModel.RemoveCommand.CanExecute(mockPersistableMachine.Object));
+            Assert.False(confirmCloseCalled);
+        }
+
+        [Test]
+        public void RemoveNullMachine()
+        {
+            // Setup
+            Mock<IPersistableMachine> mockPersistableMachine = new Mock<IPersistableMachine>(MockBehavior.Strict);
+            Mock<IMachine> mockMachine = mockPersistableMachine.As<IMachine>();
+            mockMachine.SetupGet(m => m.Name).Returns("Test");
+            mockMachine.Setup(m => m.Close());
+            mockPersistableMachine.SetupGet(m => m.PersistantFilepath).Returns("test.cpvc");
+
+            _mainViewModel.ConfirmClose += (sender, args) =>
+            {
+                args.Result = false;
+            };
+
+            // Act and Verify
+            Assert.DoesNotThrow(() => _mainViewModel.RemoveCommand.Execute(null));
+            Assert.False(_mainViewModel.RemoveCommand.CanExecute(null));
+        }
+
+        [Test]
         public void CloseNoConfirmHandler()
         {
             // Act

@@ -115,7 +115,7 @@ namespace CPvC
             _removeCommand = new Command(
                 p =>
                 {
-                    IMachine coreMachine = (IMachine)p;
+                    IMachine coreMachine = p as IMachine;
                     if (Close(coreMachine, true))
                     {
                         _model.RemoveMachine(coreMachine);
@@ -565,28 +565,30 @@ namespace CPvC
 
         public bool Close(IMachine coreMachine, bool prompt)
         {
-            if (coreMachine != null)
+            if (coreMachine == null)
             {
-                IPersistableMachine pm = coreMachine as IPersistableMachine;
-                if (pm != null && pm.PersistantFilepath == null)
+                return false;
+            }
+
+            IPersistableMachine pm = coreMachine as IPersistableMachine;
+            if (pm != null && pm.PersistantFilepath == null)
+            {
+                if (prompt)
                 {
-                    if (prompt)
+                    ConfirmCloseEventArgs args = new ConfirmCloseEventArgs();
+                    args.Message = String.Format("Are you sure you want to close the \"{0}\" machine without persisting it?", coreMachine.Name);
+                    ConfirmClose?.Invoke(this, args);
+
+                    if (!args.Result)
                     {
-                        ConfirmCloseEventArgs args = new ConfirmCloseEventArgs();
-                        args.Message = String.Format("Are you sure you want to close the \"{0}\" machine without persisting it?", coreMachine.Name);
-                        ConfirmClose?.Invoke(this, args);
-
-                        if (!args.Result)
-                        {
-                            return false;
-                        }
+                        return false;
                     }
-
-                    _model.RemoveMachine(coreMachine);
                 }
 
-                coreMachine.Close();
+                _model.RemoveMachine(coreMachine);
             }
+
+            coreMachine.Close();
 
             return true;
         }
