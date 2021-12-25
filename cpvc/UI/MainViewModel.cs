@@ -131,12 +131,13 @@ namespace CPvC
             _closeCommand = new Command(
                 p =>
                 {
-                    Close((IMachine)p, true);
+                    Close(p as IMachine, true);
                 },
                 p =>
                 {
+                    IMachine m = p as IMachine;
                     IPersistableMachine pm = p as IPersistableMachine;
-                    return (pm?.IsOpen ?? true);
+                    return (m != null && pm == null) || (pm?.IsOpen ?? true);
                 }
             );
 

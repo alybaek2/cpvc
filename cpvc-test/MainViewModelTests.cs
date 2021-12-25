@@ -974,6 +974,30 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void CanCloseOpenMachine()
+        {
+            // Setup
+            _machine.OpenFromFile(_mockFileSystem.Object);
+
+            // Verify
+            Assert.True(_mainViewModel.CloseCommand.CanExecute(_machine));
+        }
+
+        [Test]
+        public void CanCloseClosedMachine()
+        {
+            // Verify
+            Assert.True(_mainViewModel.CloseCommand.CanExecute(_machine));
+        }
+
+        [Test]
+        public void CanCloseNullMachine()
+        {
+            // Verify
+            Assert.True(_mainViewModel.CloseCommand.CanExecute(_machine));
+        }
+
+        [Test]
         public void CloseAndCancel()
         {
             // Setup
