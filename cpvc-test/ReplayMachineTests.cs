@@ -134,15 +134,15 @@ namespace CPvC.Test
             Assert.AreEqual("Test", machine.Name);
         }
 
-        //[Test]
-        //public void CanClose()
-        //{
-        //    // Setup
-        //    ReplayMachine machine = CreateMachine();
+        [Test]
+        public void CanClose()
+        {
+            // Setup
+            ReplayMachine machine = CreateMachine();
 
-        //    // Verify
-        //    Assert.True(machine.CanClose());
-        //}
+            // Verify
+            Assert.True(machine.CanClose);
+        }
 
         [Test]
         public void CloseTwice()

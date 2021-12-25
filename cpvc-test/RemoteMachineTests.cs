@@ -123,16 +123,16 @@ namespace CPvC.Test
             }
         }
 
-        //[Test]
-        //public void CanClose()
-        //{
-        //    // Setup
-        //    using (RemoteMachine machine = new RemoteMachine(_mockRemote.Object))
-        //    {
-        //        // Verify
-        //        Assert.True(machine.CanClose());
-        //    }
-        //}
+        [Test]
+        public void CanClose()
+        {
+            // Setup
+            using (RemoteMachine machine = new RemoteMachine(_mockRemote.Object))
+            {
+                // Verify
+                Assert.True(machine.CanClose);
+            }
+        }
 
         [Test]
         public void Key()
