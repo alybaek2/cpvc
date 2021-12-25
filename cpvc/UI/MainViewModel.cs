@@ -115,10 +115,10 @@ namespace CPvC
             _removeCommand = new Command(
                 p =>
                 {
-                    IMachine coreMachine = p as IMachine;
-                    if (Close(coreMachine, true))
+                    IMachine machine = p as IMachine;
+                    if (Close(machine, true))
                     {
-                        _model.RemoveMachine(coreMachine);
+                        _model.RemoveMachine(machine);
                     }
                 },
                 p =>
@@ -129,16 +129,8 @@ namespace CPvC
             );
 
             _closeCommand = new Command(
-                p =>
-                {
-                    Close(p as IMachine, true);
-                },
-                p =>
-                {
-                    IMachine m = p as IMachine;
-                    IPersistableMachine pm = p as IPersistableMachine;
-                    return (m != null && pm == null) || (pm?.IsOpen ?? true);
-                }
+                p => Close(p as IMachine, true),
+                p => (p as IMachine)?.CanClose ?? false
             );
 
             _openCommand = new Command(

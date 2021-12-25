@@ -82,6 +82,14 @@ namespace CPvC
             Core = null;
         }
 
+        public bool CanClose
+        {
+            get
+            {
+                return true;
+            }
+        }
+
         public void Key(byte keycode, bool down)
         {
             _remote.SendCoreRequest(CoreRequest.KeyPress(keycode, down));

@@ -204,6 +204,14 @@ namespace CPvC
             }
         }
 
+        public bool CanClose
+        {
+            get
+            {
+                return IsOpen;
+            }
+        }
+
         /// <summary>
         /// Delegate for VSync events.
         /// </summary>

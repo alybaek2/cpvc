@@ -19,6 +19,7 @@ namespace CPvC
         string Name { get; set; }
 
         void Close();
+        bool CanClose { get; }
 
         MachineAuditorDelegate Auditors { get; set; }
     }

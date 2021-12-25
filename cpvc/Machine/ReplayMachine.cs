@@ -86,6 +86,14 @@ namespace CPvC
             Core = null;
         }
 
+        public bool CanClose
+        {
+            get
+            {
+                return true;
+            }
+        }
+
         public new void Start()
         {
             // Would a better test be to see if the core has outstanding requests?
