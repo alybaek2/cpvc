@@ -6,7 +6,7 @@ namespace CPvC.Test
     [TestFixture]
     public class MachineHistoryTests
     {
-        private MachineHistory _history;
+        private History _history;
         private HistoryEvent _event0;
         private HistoryEvent _event00;
         private HistoryEvent _event01;
@@ -15,7 +15,7 @@ namespace CPvC.Test
         [SetUp]
         public void SetUp()
         {
-            _history = new MachineHistory();
+            _history = new History();
             _event0 = _history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
             _event00 = _history.AddCoreAction(CoreAction.KeyPress(200, 12, true));
             _history.SetCurrent(_event0);
@@ -27,7 +27,7 @@ namespace CPvC.Test
         public void Root()
         {
             // Setup
-            MachineHistory history = new MachineHistory();
+            History history = new History();
 
             // Verify
             Assert.IsInstanceOf<RootHistoryEvent>(history.RootEvent);
@@ -70,7 +70,7 @@ namespace CPvC.Test
         public void AddEvent()
         {
             // Setup
-            MachineHistory history = new MachineHistory();
+            History history = new History();
 
             // Act
             HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
@@ -88,7 +88,7 @@ namespace CPvC.Test
         public void CollapseRunUntilActions()
         {
             // Setup
-            MachineHistory history = new MachineHistory();
+            History history = new History();
 
             // Act
             CoreActionHistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
@@ -128,7 +128,7 @@ namespace CPvC.Test
         public void SetBookmark()
         {
             // Setup
-            MachineHistory history = new MachineHistory();
+            History history = new History();
             HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
             HistoryEvent event2 = history.AddCoreAction(CoreAction.KeyPress(200, 12, true));
 
@@ -144,7 +144,7 @@ namespace CPvC.Test
         public void SetBookmarkBadTicks()
         {
             // Setup
-            MachineHistory history = new MachineHistory();
+            History history = new History();
             HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
 
             // Act and Verify
@@ -236,7 +236,7 @@ namespace CPvC.Test
         public void DeleteEventNotOurNode()
         {
             // Setup
-            MachineHistory otherHistory = new MachineHistory();
+            History otherHistory = new History();
 
             // Act and Verify
             Assert.Throws<Exception>(() => _history.DeleteBookmark(otherHistory.CurrentEvent));
@@ -246,7 +246,7 @@ namespace CPvC.Test
         public void DeleteEventAndChildrenNotOurNode()
         {
             // Setup
-            MachineHistory otherHistory = new MachineHistory();
+            History otherHistory = new History();
 
             // Act and Verify
             Assert.Throws<Exception>(() => _history.DeleteBranch(otherHistory.CurrentEvent));
@@ -256,7 +256,7 @@ namespace CPvC.Test
         public void SetCurrentNotOurNode()
         {
             // Setup
-            MachineHistory otherHistory = new MachineHistory();
+            History otherHistory = new History();
 
             // Act and Verify
             Assert.Throws<Exception>(() => _history.SetCurrent(otherHistory.CurrentEvent));

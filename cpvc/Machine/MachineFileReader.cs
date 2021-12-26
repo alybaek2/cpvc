@@ -7,7 +7,7 @@ namespace CPvC
     public class MachineFileReader
     {
         private string _name;
-        private MachineHistory _machineHistory;
+        private History _machineHistory;
         private Dictionary<int, HistoryEvent> _idToHistoryEvent;
         private int _nextLineId = 0;
         private Dictionary<int, string> _args;
@@ -18,7 +18,7 @@ namespace CPvC
             _args = new Dictionary<int, string>();
 
             _name = null;
-            _machineHistory = new MachineHistory();
+            _machineHistory = new History();
             _idToHistoryEvent[_machineHistory.RootEvent.Id] = _machineHistory.RootEvent;
 
             string line;
@@ -36,7 +36,7 @@ namespace CPvC
             }
         }
 
-        public MachineHistory History
+        public History History
         {
             get
             {

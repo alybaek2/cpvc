@@ -18,7 +18,7 @@ namespace CPvC.Test
 
         private MachineFileReader _fileReader;
         private MachineFileWriter _fileWriter;
-        private MachineHistory _history;
+        private History _history;
         private MockTextFile _mockFile;
         private byte[] _state;
         private byte[] _screen;
@@ -28,7 +28,7 @@ namespace CPvC.Test
         {
             _mockFile = new MockTextFile();
             _fileReader = new MachineFileReader();
-            _history = new MachineHistory();
+            _history = new History();
             _fileWriter = new MachineFileWriter(_mockFile, _history);
 
             _state = new byte[1000];
@@ -56,7 +56,7 @@ namespace CPvC.Test
         public void CreateWriterWithoutFile()
         {
             // Setup
-            MachineHistory history = new MachineHistory();
+            History history = new History();
 
             // Act and Verify
             ArgumentException thrown = Assert.Throws<ArgumentException>(() =>
@@ -318,7 +318,7 @@ namespace CPvC.Test
         public void ReadUncompressedArgument()
         {
             // Setup
-            MachineHistory expectedHistory = new MachineHistory();
+            History expectedHistory = new History();
             expectedHistory.AddCoreAction(CoreAction.LoadTape(100, new MemoryBlob(new byte[] { 0x01, 0x02 })));
             _mockFile.WriteLine(String.Format("arg:1,False,0102"));
             _mockFile.WriteLine("tape:1,100,$1");
@@ -336,7 +336,7 @@ namespace CPvC.Test
         public void ReadUncompressedArguments()
         {
             // Setup
-            MachineHistory expectedHistory = new MachineHistory();
+            History expectedHistory = new History();
             expectedHistory.AddBookmark(100, new Bookmark(true, 1, _state, _screen));
             _mockFile.WriteLine(String.Format("args:False,1#{0}@2#{1}", Helpers.StrFromBytes(_state), Helpers.StrFromBytes(_screen)));
             _mockFile.WriteLine("bookmark:4,100,True,1,$1,$2");

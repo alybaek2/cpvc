@@ -30,7 +30,7 @@ namespace CPvC
     {
         private string _name;
 
-        public MachineHistory History
+        public History History
         {
             get
             {
@@ -40,7 +40,7 @@ namespace CPvC
 
         private RunningState _previousRunningState;
 
-        private MachineHistory _history;
+        private History _history;
 
         private int _snapshotLimit = 3000;
         private int _lastTakenSnapshotId = -1;
@@ -96,7 +96,7 @@ namespace CPvC
             }
         }
 
-        public LocalMachine(string name, MachineHistory history)
+        public LocalMachine(string name, History history)
         {
             _name = name;
 
@@ -148,10 +148,10 @@ namespace CPvC
 
         static public LocalMachine New(string name, string persistentFilepath)
         {
-            return New(name, new MachineHistory(), persistentFilepath);
+            return New(name, new History(), persistentFilepath);
         }
 
-        static public LocalMachine New(string name, MachineHistory history, string persistentFilepath)
+        static public LocalMachine New(string name, History history, string persistentFilepath)
         {
             LocalMachine machine = new LocalMachine(name, history);
             Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
@@ -196,7 +196,7 @@ namespace CPvC
                     File = null;
                 }
 
-                _history = new MachineHistory();
+                _history = new History();
 
                 Status = null;
 
@@ -647,7 +647,7 @@ namespace CPvC
 
         static public LocalMachine OpenFromFile(IFileSystem fileSystem, string filepath)
         {
-            LocalMachine machine = new LocalMachine(null, new MachineHistory());
+            LocalMachine machine = new LocalMachine(null, new History());
             machine.PersistantFilepath = filepath;
 
             machine.OpenFromFile(fileSystem);
@@ -677,7 +677,7 @@ namespace CPvC
 
                 File = file;
 
-                BookmarkHistoryEvent historyEvent = _history.MostRecentBookmark();
+                BookmarkHistoryEvent historyEvent = _history.CurrentEvent.MostRecent<BookmarkHistoryEvent>();
                 SetCurrentEvent(historyEvent ?? _history.RootEvent);
 
                 // Should probably be monitoring the IsOpen property, I think...
@@ -706,7 +706,7 @@ namespace CPvC
             LocalMachine machine = New(reader.Name, reader.History, filepath);
             if (machine.History != null)
             {
-                HistoryEvent historyEvent = machine.History.MostRecentBookmark();
+                HistoryEvent historyEvent = machine.History.CurrentEvent.MostRecent<BookmarkHistoryEvent>(); ;
 
                 machine.Display.GetFromBookmark((historyEvent as BookmarkHistoryEvent)?.Bookmark);
                 machine.Display.EnableGreyscale(true);

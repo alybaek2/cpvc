@@ -619,7 +619,7 @@ namespace CPvC.Test
             return true;
         }
 
-        static public bool HistoriesEqual(MachineHistory history1, MachineHistory history2)
+        static public bool HistoriesEqual(History history1, History history2)
         {
             if (history1 == history2)
             {

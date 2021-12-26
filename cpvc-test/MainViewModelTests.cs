@@ -961,7 +961,7 @@ namespace CPvC.Test
 
             if (nonPersistableMachine)
             {
-                MachineHistory history = new MachineHistory();
+                History history = new History();
 
                 mainViewModel.OpenReplayMachine("Test (Replay)", history.RootEvent);
             }

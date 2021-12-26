@@ -68,6 +68,22 @@ namespace CPvC
             return Node.IsEqualToOrAncestorOf(ancestor?.Node);
         }
 
+        public T MostRecent<T>() where T : HistoryEvent
+        {
+            HistoryEvent historyEvent = this;
+            while (!(historyEvent is RootHistoryEvent))
+            {
+                if (historyEvent is T historyEventType)
+                {
+                    return historyEventType;
+                }
+
+                historyEvent = historyEvent.Parent;
+            }
+
+            return null;
+        }
+
         /// <summary>
         /// Returns the maximum ticks value of any given HistoryEvent's descendents. Used when sorting children in <c>AddEventToItem</c>.
         /// </summary>

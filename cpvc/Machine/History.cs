@@ -12,9 +12,9 @@ namespace CPvC
     }
 
 
-    public class MachineHistory
+    public class History
     {
-        private HistoryNode _rootNode;
+        private RootHistoryNode _rootNode;
         private HistoryNode _currentNode;
 
         private HashSet<HistoryNode> _nodes;
@@ -25,7 +25,7 @@ namespace CPvC
 
         private int _nextId;
 
-        public MachineHistory()
+        public History()
         {
             _nodes = new HashSet<HistoryNode>();
             _nextId = 0;

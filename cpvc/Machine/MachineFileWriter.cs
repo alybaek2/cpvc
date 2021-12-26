@@ -21,7 +21,7 @@ namespace CPvC
         public const string _idArg = "arg";
         public const string _idArgs = "args";
 
-        private MachineHistory _machineHistory;
+        private History _machineHistory;
         private int _nextBlobId;
 
         private LocalMachine _machine;
@@ -48,7 +48,7 @@ namespace CPvC
             }
         }
 
-        private MachineHistory History
+        private History History
         {
             get
             {
@@ -83,7 +83,7 @@ namespace CPvC
             }
         }
 
-        public MachineFileWriter(ITextFile textFile, MachineHistory machineHistory, int nextBlobId)
+        public MachineFileWriter(ITextFile textFile, History machineHistory, int nextBlobId)
         {
             _textFile = textFile ?? throw new ArgumentException("Need a text file to write to!", nameof(textFile));
             _nextBlobId = nextBlobId;
@@ -91,7 +91,7 @@ namespace CPvC
             History = machineHistory;
         }
 
-        public MachineFileWriter(ITextFile textFile, MachineHistory machineHistory) : this(textFile, machineHistory, 0)
+        public MachineFileWriter(ITextFile textFile, History machineHistory) : this(textFile, machineHistory, 0)
         {
         }
 

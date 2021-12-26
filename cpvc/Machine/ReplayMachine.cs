@@ -15,7 +15,7 @@ namespace CPvC
 
         private List<HistoryEvent> _historyEvents;
 
-        private MachineHistory _history;
+        private History _history;
 
         public UInt64 EndTicks
         {
@@ -32,7 +32,7 @@ namespace CPvC
             _endTicks = historyEvent.Ticks;
             OnPropertyChanged("EndTicks");
 
-            _history = new MachineHistory();
+            _history = new History();
             List<HistoryEvent> historyEvents = new List<HistoryEvent>();
 
             while (historyEvent != null)
