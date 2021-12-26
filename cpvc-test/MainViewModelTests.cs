@@ -48,7 +48,6 @@ namespace CPvC.Test
             _machine = LocalMachine.New("test", null);
             _mainViewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
             _mainViewModel.Model.AddMachine(_machine);
-
         }
 
         [TearDown]
@@ -292,7 +291,7 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(It.IsAny<string>())).Throws(new Exception());
 
             // Act and Verify
-            Assert.Throws<Exception>(() => viewModel.OpenMachine(_mockFileSystem.Object));
+            Assert.Throws<Exception>(() => viewModel.OpenMachineCommand.Execute(_mockFileSystem.Object));
         }
 
         [Test]
@@ -346,10 +345,10 @@ namespace CPvC.Test
 
             MockTextFile mockTextFile = new MockTextFile();
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(filepath)).Returns(mockTextFile);
-            viewModel.OpenMachine(_mockFileSystem.Object);
+            viewModel.OpenMachineCommand.Execute(_mockFileSystem.Object);
 
             // Act
-            viewModel.OpenMachine(_mockFileSystem.Object);
+            viewModel.OpenMachineCommand.Execute(_mockFileSystem.Object);
 
             // Verify
             Assert.AreEqual(1, viewModel.Machines.Count);
@@ -757,18 +756,63 @@ namespace CPvC.Test
         public void ReverseStop()
         {
             TestInterfacePassthrough<IReversibleMachine>(_mainViewModel.ReverseStopCommand, m => m.ReverseStop());
+            Assert.True(_mainViewModel.ReverseStopCommand.CanExecute(_machine));
         }
 
         [Test]
         public void ToggleReversibility()
         {
             TestInterfacePassthrough<IReversibleMachine>(_mainViewModel.ToggleReversibility, m => m.ToggleReversibilityEnabled());
+            Assert.True(_mainViewModel.ToggleReversibility.CanExecute(_machine));
+        }
+
+        [Test]
+        public void ToggleReversibilityNullMachine()
+        {
+            // Act and Verify
+            Assert.DoesNotThrow(() => _mainViewModel.ToggleReversibility.Execute(null));
+            Assert.False(_mainViewModel.ToggleReversibility.CanExecute(null));
+        }
+
+        [Test]
+        public void CanToggleReversibilityNullMachine()
+        {
+            // Verify
+            Assert.False(_mainViewModel.ToggleReversibility.CanExecute(null));
         }
 
         [Test]
         public void Compact()
         {
             TestInterfacePassthrough<ICompactableMachine>(_mainViewModel.CompactCommand, m => m.Compact(_mockFileSystem.Object));
+        }
+
+        [Test]
+        public void CanCompactClosedMachine()
+        {
+            // Setup
+            LocalMachine machine = LocalMachine.New("Test", "test.cpvc");
+
+            // Verify
+            Assert.True(_mainViewModel.CompactCommand.CanExecute(machine));
+        }
+
+        [Test]
+        public void CanCompactOpenMachine()
+        {
+            // Setup
+            LocalMachine machine = LocalMachine.New("Test", "test.cpvc");
+            machine.OpenFromFile(_mockFileSystem.Object);
+
+            // Verify
+            Assert.False(_mainViewModel.CompactCommand.CanExecute(machine));
+        }
+
+        [Test]
+        public void CanCompactNullMachine()
+        {
+            // Verify
+            Assert.False(_mainViewModel.CompactCommand.CanExecute(null));
         }
 
         [Test]
@@ -912,7 +956,7 @@ namespace CPvC.Test
                 mockTextFile.WriteLine("name:Test");
                 _mockFileSystem.Setup(fs => fs.OpenTextFile("test.cpvc")).Returns(mockTextFile);
 
-                mainViewModel.OpenMachine(_mockFileSystem.Object);
+                _mainViewModel.OpenCommand.Execute(_mockFileSystem.Object);
             }
 
             if (nonPersistableMachine)
@@ -961,7 +1005,7 @@ namespace CPvC.Test
         public void CanCloseNullMachine()
         {
             // Verify
-            Assert.True(_mainViewModel.CloseCommand.CanExecute(_machine));
+            Assert.False(_mainViewModel.CloseCommand.CanExecute(null));
         }
 
         [Test]
@@ -1281,6 +1325,19 @@ namespace CPvC.Test
             // Verify
             mockCoreMachine.VerifyNoOtherCalls();
             Assert.False(_mainViewModel.OpenCommand.CanExecute(mockCoreMachine.Object));
+        }
+
+        [Test]
+        public void OpenMachineNoPromptHandler()
+        {
+            // Setup
+            int machineCount = _mainViewModel.Machines.Count;
+
+            // Act
+            _mainViewModel.OpenMachineCommand.Execute(_machine);
+
+            // Verify
+            Assert.AreEqual(machineCount, _mainViewModel.Machines.Count);
         }
 
         [Test]
