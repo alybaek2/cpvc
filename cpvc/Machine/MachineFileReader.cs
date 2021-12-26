@@ -129,7 +129,7 @@ namespace CPvC
 
             if (_idToHistoryEvent.TryGetValue(id, out HistoryEvent historyEvent))
             {
-                _machineHistory.SetCurrent(historyEvent);
+                _machineHistory.CurrentEvent = historyEvent;
             }
             else
             {

@@ -4,7 +4,7 @@ using System;
 namespace CPvC.Test
 {
     [TestFixture]
-    public class MachineHistoryTests
+    public class HistoryTests
     {
         private History _history;
         private HistoryEvent _event0;
@@ -18,7 +18,7 @@ namespace CPvC.Test
             _history = new History();
             _event0 = _history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
             _event00 = _history.AddCoreAction(CoreAction.KeyPress(200, 12, true));
-            _history.SetCurrent(_event0);
+            _history.CurrentEvent =_event0;
             _event01 = _history.AddCoreAction(CoreAction.Reset(300));
             _event010 = _history.AddBookmark(400, new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 }));
         }
@@ -108,7 +108,7 @@ namespace CPvC.Test
         public void SetCurrentEvent()
         {
             // Act
-            _history.SetCurrent(_event01);
+            _history.CurrentEvent = _event01;
 
             // Verify
             Assert.AreEqual(_event01, _history.CurrentEvent);
@@ -118,7 +118,7 @@ namespace CPvC.Test
         public void SetRootCurrentEvent()
         {
             // Act
-            _history.SetCurrent(_history.RootEvent);
+            _history.CurrentEvent = _history.RootEvent;
 
             // Verify
             Assert.AreEqual(_history.RootEvent, _history.CurrentEvent);
@@ -165,7 +165,7 @@ namespace CPvC.Test
         public void DeleteEventAndChildren()
         {
             // Setup
-            _history.SetCurrent(_event0);
+            _history.CurrentEvent = _event0;
 
             // Act
             bool result = _history.DeleteBranch(_event01);
@@ -259,7 +259,7 @@ namespace CPvC.Test
             History otherHistory = new History();
 
             // Act and Verify
-            Assert.Throws<Exception>(() => _history.SetCurrent(otherHistory.CurrentEvent));
+            Assert.Throws<Exception>(() => _history.CurrentEvent = otherHistory.CurrentEvent);
         }
 
         [Test]

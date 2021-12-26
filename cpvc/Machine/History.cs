@@ -180,22 +180,6 @@ namespace CPvC
             Auditors?.Invoke(_currentNode.HistoryEvent, HistoryChangedAction.SetCurrent);
         }
 
-        public BookmarkHistoryEvent MostRecentBookmark()
-        {
-            HistoryEvent historyEvent = CurrentEvent;
-            while (historyEvent != RootEvent)
-            {
-                if (historyEvent is BookmarkHistoryEvent bookmarkHistoryEvent)
-                {
-                    return bookmarkHistoryEvent;
-                }
-
-                historyEvent = historyEvent.Parent;
-            }
-
-            return null;
-        }
-
         // Browsing methods
         public HistoryEvent RootEvent
         {
@@ -210,6 +194,25 @@ namespace CPvC
             get
             {
                 return _currentNode.HistoryEvent;
+            }
+
+            set
+            {
+                if (!_nodes.Contains(value.Node))
+                {
+                    throw new Exception("Attempted to set the current event to an event that doesn't belong to this history!");
+                }
+
+                // If the current node is a RunUntil, finish it off by sending a notification...
+                CoreActionHistoryNode currentCoreActionNode = _currentNode as CoreActionHistoryNode;
+                if (currentCoreActionNode != null && currentCoreActionNode.CoreAction.Type == CoreRequest.Types.RunUntil)
+                {
+                    Auditors?.Invoke(_currentNode.HistoryEvent, HistoryChangedAction.Add);
+                }
+
+                _currentNode = value.Node;
+
+                Auditors?.Invoke(_currentNode.HistoryEvent, HistoryChangedAction.SetCurrent);
             }
         }
 

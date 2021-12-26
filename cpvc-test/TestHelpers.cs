@@ -243,19 +243,10 @@ namespace CPvC.Test
             machine.Stop();
         }
 
-        /// <summary>
-        /// Enqueues a request in a core and waits for it to be processed. If <c>request</c> is null, this method waits for the next request to be processed.
-        /// </summary>
-        /// <param name="core">Core to run.</param>
-        /// <param name="request">Request to be processed.</param>
-        static public void ProcessRequest(Core core, CoreRequest request)
+        static public CoreAction ProcessOneRequest(Core core, CoreRequest request, int timeout = 1000)
         {
-            core.PushRequest(request);
-            WaitForQueueToProcess(core);
-        }
+            CoreRequest nextRequest = CoreRequest.RunUntil(0);
 
-        static public CoreAction ProcessOneRequest(Core core, CoreRequest request, int timeout)
-        {
             CoreAction action = null;
             ManualResetEvent e = new ManualResetEvent(false);
             RequestProcessedDelegate processed = (c, r, a) =>
@@ -263,16 +254,23 @@ namespace CPvC.Test
                 // Advance the audio playback so RunUntil requests don't stall.
                 core.AdvancePlayback(100000);
 
-                if (c == core && r == request)
+                if (c == core)
                 {
-                    e.Set();
-                    action = a;
+                    if (r == nextRequest)
+                    {
+                        e.Set();
+                    }
+                    else if (r == request)
+                    {
+                        action = a;
+                    }
                 }
             };
 
             core.Auditors += processed;
 
             core.PushRequest(request);
+            core.PushRequest(nextRequest);
 
             // Wait for at most one second.
             bool result = e.WaitOne(timeout);
@@ -293,30 +291,7 @@ namespace CPvC.Test
         {
             // Insert a request that will effectively do nothing and wait for it
             // to be processed.
-            CoreRequest request = CoreRequest.RunUntil(0);
-            ManualResetEvent e = new ManualResetEvent(false);
-            RequestProcessedDelegate processed = (c, r, a) =>
-            {
-                // Advance the audio playback so RunUntil requests don't stall.
-                core.AdvancePlayback(100000);
-
-                if (c == core && (request == null || r == request))
-                {
-                    e.Set();
-                }
-            };
-
-            core.Auditors += processed;
-            core.PushRequest(request);
-
-            // Wait for at most one second.
-            bool result = e.WaitOne(1000);
-
-            core.Auditors -= processed;
-            if (!result)
-            {
-                throw new TimeoutException("Timeout while waiting for request to process.");
-            }
+            ProcessOneRequest(core, CoreRequest.RunUntil(0), 1000);
         }
 
         static public void ProcessRemoteRequest(RemoteMachine machine, ReceiveCoreActionDelegate receive, CoreAction action)
@@ -350,20 +325,6 @@ namespace CPvC.Test
             {
                 throw new TimeoutException("Timeout while waiting for request to process.");
             }
-        }
-
-        static public bool WaitForNextRequestProcessed(Core core)
-        {
-            try
-            {
-                ProcessRequest(core, null);
-            }
-            catch (TimeoutException)
-            {
-                return false;
-            }
-
-            return true;
         }
 
         static public bool RunUntilAudioOverrun(Core core, int timeout)

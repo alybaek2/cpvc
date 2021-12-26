@@ -141,7 +141,7 @@ namespace CPvC.Test
             _receiveCoreAction(coreAction);
 
             _cores[0].Start();
-            TestHelpers.ProcessRequest(_cores[0], coreAction);
+            TestHelpers.ProcessOneRequest(_cores[0], coreAction);
 
             // Verify
             Assert.AreEqual(1000, _machines[0].Ticks);
@@ -158,7 +158,7 @@ namespace CPvC.Test
 
             // Act
             _cores[0].Start();
-            TestHelpers.ProcessRequest(_cores[0], CoreRequest.RunUntil(_cores[0].Ticks + 1));
+            TestHelpers.ProcessOneRequest(_cores[0], CoreRequest.RunUntil(_cores[0].Ticks + 1));
 
             // Verify
             _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.RunUntil)));

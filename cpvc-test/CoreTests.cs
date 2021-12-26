@@ -195,9 +195,10 @@ namespace CPvC.Test
             core.Start();
 
             // Act
-            ProcessRequest(core, CoreRequest.RunUntil(100000));
+            ProcessOneRequest(core, CoreRequest.RunUntil(100000));
 
             // Verify
+            Assert.GreaterOrEqual(core.Ticks, 100000);
             mock.Verify(v => v(core), Times.Once);
         }
 
@@ -210,11 +211,11 @@ namespace CPvC.Test
                 core.Start();
 
                 core.SetScreen();
-                TestHelpers.ProcessRequest(core, CoreRequest.RunUntil(core.Ticks + 1));
+                TestHelpers.ProcessOneRequest(core, CoreRequest.RunUntil(core.Ticks + 1));
 
                 // Act
-                TestHelpers.ProcessRequest(core, CoreRequest.CoreVersion(1));
-                TestHelpers.ProcessRequest(core, CoreRequest.RunUntil(core.Ticks + 1));
+                TestHelpers.ProcessOneRequest(core, CoreRequest.CoreVersion(1));
+                TestHelpers.ProcessOneRequest(core, CoreRequest.RunUntil(core.Ticks + 1));
 
                 // Verify - To do!
             }
@@ -239,7 +240,7 @@ namespace CPvC.Test
                 core.Start();
 
                 // Act
-                TestHelpers.ProcessRequest(core, request);
+                TestHelpers.ProcessOneRequest(core, request);
 
                 // Verify
                 mockAuditor.Verify(a => a(core, request, null));
@@ -258,7 +259,7 @@ namespace CPvC.Test
                 core.Start();
 
                 // Verify
-                Assert.DoesNotThrow(() => ProcessRequest(core, CoreRequest.RunUntil(10)));
+                Assert.DoesNotThrow(() => ProcessOneRequest(core, CoreRequest.RunUntil(10)));
             }
         }
 
@@ -307,14 +308,14 @@ namespace CPvC.Test
             {
                 core.Start();
 
-                TestHelpers.ProcessRequest(core, CoreRequest.KeyPress(Keys.A, true));
-                TestHelpers.ProcessRequest(core, CoreRequest.RunUntil(core.Ticks + 1));
+                TestHelpers.ProcessOneRequest(core, CoreRequest.KeyPress(Keys.A, true));
+                TestHelpers.ProcessOneRequest(core, CoreRequest.RunUntil(core.Ticks + 1));
                 byte[] state = core.GetState();
-                TestHelpers.ProcessRequest(core, CoreRequest.RunUntil(core.Ticks + 1));
+                TestHelpers.ProcessOneRequest(core, CoreRequest.RunUntil(core.Ticks + 1));
 
                 // Act
                 byte[] preloadedState = core.GetState();
-                TestHelpers.ProcessRequest(core, CoreRequest.LoadCore(new MemoryBlob(state)));
+                TestHelpers.ProcessOneRequest(core, CoreRequest.LoadCore(new MemoryBlob(state)));
 
                 // Verify
                 byte[] loadedState = core.GetState();
@@ -336,7 +337,7 @@ namespace CPvC.Test
                 core.Start();
 
                 // Act
-                TestHelpers.WaitForNextRequestProcessed(core);
+                TestHelpers.WaitForQueueToProcess(core); // WaitForNextRequestProcessed(core);
 
                 // Verify
                 Assert.Greater(core.Ticks, 0);
@@ -352,14 +353,20 @@ namespace CPvC.Test
             // Setup
             using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
             {
+                bool requestProcessed = false;
+                core.Auditors += (c, r, a) =>
+                {
+                    requestProcessed = true;
+                };
+
                 core.IdleRequest = null;
-                core.Start();
 
                 // Act
-                bool result = TestHelpers.WaitForNextRequestProcessed(core);
+                core.Start();
+                System.Threading.Thread.Sleep(50);
 
                 // Verify
-                Assert.False(result);
+                Assert.False(requestProcessed);
             }
         }
 
@@ -397,7 +404,7 @@ namespace CPvC.Test
 
                 // Act - empty out the audio buffer and continue running
                 core.AudioBuffer.Advance(12000);
-                TestHelpers.ProcessRequest(core, CoreRequest.RunUntil(ticks + 4000000));
+                TestHelpers.ProcessOneRequest(core, CoreRequest.RunUntil(ticks + 4000000));
 
                 // Verify
                 Assert.Greater(core.Ticks, ticks);

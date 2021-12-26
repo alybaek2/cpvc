@@ -71,7 +71,7 @@ namespace CPvC.Test
         {
             // Act
             _history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
-            _history.SetCurrent(_history.RootEvent);
+            _history.CurrentEvent = _history.RootEvent;
             _fileReader.ReadFile(_mockFile);
 
             // Verify
@@ -101,7 +101,7 @@ namespace CPvC.Test
             // Act
             _history.AddBookmark(100, bookmark);
             HistoryEvent historyEvent = _history.CurrentEvent;
-            _history.SetCurrent(_history.RootEvent);
+            _history.CurrentEvent = _history.RootEvent;
             _history.DeleteBookmark(historyEvent);
             _fileReader.ReadFile(_mockFile);
 
@@ -119,7 +119,7 @@ namespace CPvC.Test
             _history.AddBookmark(100, bookmark);
             HistoryEvent historyEvent = _history.CurrentEvent;
             _history.AddBookmark(200, bookmark);
-            _history.SetCurrent(_history.RootEvent);
+            _history.CurrentEvent = _history.RootEvent;
             _history.DeleteBranch(historyEvent);
             _fileReader.ReadFile(_mockFile);
 
@@ -166,7 +166,7 @@ namespace CPvC.Test
         {
             // Setup
             _history.AddCoreAction(CoreAction.KeyPress(100, 42, true));
-            _history.SetCurrent(_history.RootEvent);
+            _history.CurrentEvent = _history.RootEvent;
 
             // Act
             _fileReader.ReadFile(_mockFile);
@@ -183,7 +183,7 @@ namespace CPvC.Test
             HistoryEvent historyEvent = _history.AddCoreAction(CoreAction.KeyPress(100, 42, true));
 
             // Act
-            _history.SetCurrent(historyEvent);
+            _history.CurrentEvent = historyEvent;
             _fileReader.ReadFile(_mockFile);
 
             // Verify

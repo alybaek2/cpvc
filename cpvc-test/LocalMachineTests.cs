@@ -680,9 +680,9 @@ namespace CPvC.Test
         public void ReadAudioFillsBuffer()
         {
             // Setup
-            _machine.Core.AudioBuffer.OverrunThreshold = 100;
+            _machine.Core.AudioBuffer.OverrunThreshold = 10;
             _machine.Start();
-            int samples = 250;
+            int samples = 100;
             byte[] buffer = new byte[samples * 4];
             System.Threading.Thread.Sleep(100);
             int firstReadSampleCount = _machine.ReadAudio(buffer, 0, buffer.Length);

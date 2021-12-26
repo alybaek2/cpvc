@@ -43,7 +43,7 @@ namespace CPvC.Test
                 CoreAction action = CoreAction.RunUntil(0, 1, null);
                 _receiveCoreAction(action);
 
-                TestHelpers.ProcessRequest(machine.Core, action);
+                TestHelpers.ProcessOneRequest(machine.Core, action);
 
                 // Verify
                 Assert.Greater(machine.Ticks, 0);

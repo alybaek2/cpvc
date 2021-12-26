@@ -324,7 +324,7 @@ namespace CPvC
                         HistoryEvent historyEvent = ((SnapshotInfo)request.UserData).HistoryEvent;
                         if (_history.CurrentEvent != historyEvent)
                         {
-                            _history.SetCurrent(historyEvent);
+                            _history.CurrentEvent = historyEvent;
                         }
 
                         Display.CopyScreenAsync();
@@ -574,7 +574,7 @@ namespace CPvC
                 throw new Exception("Can't set current event to an event that isn't the root or doesn't have a bookmark.");
             }
 
-            _history.SetCurrent(historyEvent);
+            _history.CurrentEvent = historyEvent;
         }
 
         public void Reverse()
