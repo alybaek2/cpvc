@@ -88,12 +88,12 @@ namespace CPvC
             ActiveMachine = null;
 
             _openMachineCommand = new Command(
-                p => OpenMachine(_fileSystem),
+                p => OpenMachine(),
                 p => true
             );
 
             _newMachineCommand = new Command(
-                p => NewMachine(_fileSystem),
+                p => NewMachine(),
                 p => true
             );
 
@@ -134,12 +134,12 @@ namespace CPvC
             );
 
             _openCommand = new Command(
-                p => (p as IPersistableMachine)?.OpenFromFile(fileSystem),
+                p => (p as IPersistableMachine)?.OpenFromFile(_fileSystem),
                 p => !(p as IPersistableMachine)?.IsOpen ?? false
             );
 
             _persistCommand = new Command(
-                p => Persist(p as IPersistableMachine, fileSystem),
+                p => Persist(p as IPersistableMachine),
                 p =>
                 {
                     IPersistableMachine pm = p as IPersistableMachine;
@@ -167,7 +167,7 @@ namespace CPvC
             );
 
             _driveACommand = new Command(
-                p => LoadDisc(p as IInteractiveMachine, 0, fileSystem),
+                p => LoadDisc(p as IInteractiveMachine, 0),
                 p => p is IInteractiveMachine
             );
 
@@ -177,7 +177,7 @@ namespace CPvC
             );
 
             _driveBCommand = new Command(
-                p => LoadDisc(p as IInteractiveMachine, 1, fileSystem),
+                p => LoadDisc(p as IInteractiveMachine, 1),
                 p => p is IInteractiveMachine
             );
 
@@ -187,7 +187,7 @@ namespace CPvC
             );
 
             _tapeCommand = new Command(
-                p => LoadTape(p as IInteractiveMachine, fileSystem),
+                p => LoadTape(p as IInteractiveMachine),
                 p => p is IInteractiveMachine
             );
 
@@ -217,7 +217,7 @@ namespace CPvC
             );
 
             _compactCommand = new Command(
-                p => (p as ICompactableMachine)?.Compact(fileSystem),
+                p => (p as ICompactableMachine)?.Compact(_fileSystem),
                 p => (p as ICompactableMachine)?.CanCompact() ?? false
             );
 
@@ -481,7 +481,7 @@ namespace CPvC
             replayMachine.Start();
         }
 
-        public void NewMachine(IFileSystem fileSystem)
+        private void NewMachine()
         {
             LocalMachine machine = LocalMachine.New("Untitled", null);
             _model.AddMachine(machine);
@@ -490,7 +490,7 @@ namespace CPvC
             machine.Start();
         }
 
-        public IMachine OpenMachine(IFileSystem fileSystem)
+        private IMachine OpenMachine()
         {
             PromptForFileEventArgs args = new PromptForFileEventArgs();
             args.FileType = FileTypes.Machine;
@@ -516,7 +516,7 @@ namespace CPvC
                 });
             if (machine == null)
             {
-                machine = _model.AddMachine(fullFilepath, fileSystem, true);
+                machine = _model.AddMachine(fullFilepath, _fileSystem, true);
             }
 
             return machine;
@@ -620,7 +620,7 @@ namespace CPvC
             machine.EnableTurbo(enable);
         }
 
-        private void LoadDisc(IInteractiveMachine machine, byte drive, IFileSystem fileSystem)
+        private void LoadDisc(IInteractiveMachine machine, byte drive)
         {
             if (machine == null)
             {
@@ -629,7 +629,7 @@ namespace CPvC
 
             using ((machine as IPausableMachine)?.AutoPause())
             {
-                byte[] image = PromptForMedia(true, fileSystem);
+                byte[] image = PromptForMedia(true);
                 if (image != null)
                 {
                     machine.LoadDisc(drive, image);
@@ -637,7 +637,7 @@ namespace CPvC
             }
         }
 
-        private void LoadTape(IInteractiveMachine machine, IFileSystem fileSystem)
+        private void LoadTape(IInteractiveMachine machine)
         {
             if (machine == null)
             {
@@ -646,7 +646,7 @@ namespace CPvC
 
             using ((machine as IPausableMachine)?.AutoPause())
             {
-                byte[] image = PromptForMedia(false, fileSystem);
+                byte[] image = PromptForMedia(false);
                 if (image != null)
                 {
                     machine.LoadTape(image);
@@ -654,7 +654,7 @@ namespace CPvC
             }
         }
 
-        private byte[] PromptForMedia(bool disc, IFileSystem fileSystem)
+        private byte[] PromptForMedia(bool disc)
         {
             string expectedExt = disc ? ".dsk" : ".cdt";
             FileTypes type = disc ? FileTypes.Disc : FileTypes.Tape;
@@ -676,7 +676,7 @@ namespace CPvC
             if (ext.ToLower() == ".zip")
             {
                 string entry = null;
-                List<string> entries = fileSystem.GetZipFileEntryNames(filename);
+                List<string> entries = _fileSystem.GetZipFileEntryNames(filename);
                 List<string> extEntries = entries.Where(x => System.IO.Path.GetExtension(x).ToLower() == expectedExt).ToList();
                 if (extEntries.Count == 0)
                 {
@@ -705,18 +705,18 @@ namespace CPvC
                 }
 
                 Diagnostics.Trace("Loading \"{0}\" from zip archive \"{1}\"", entry, filename);
-                buffer = fileSystem.GetZipFileEntry(filename, entry);
+                buffer = _fileSystem.GetZipFileEntry(filename, entry);
             }
             else
             {
                 Diagnostics.Trace("Loading \"{0}\"", filename);
-                buffer = fileSystem.ReadBytes(filename);
+                buffer = _fileSystem.ReadBytes(filename);
             }
 
             return buffer;
         }
 
-        public void Persist(IPersistableMachine machine, IFileSystem fileSystem)
+        public void Persist(IPersistableMachine machine)
         {
             if (machine == null)
             {
@@ -735,7 +735,7 @@ namespace CPvC
             PromptForFile?.Invoke(this, args);
 
             string filepath = args.Filepath;
-            machine.Persist(fileSystem, filepath);
+            machine.Persist(_fileSystem, filepath);
         }
 
         private void SelectBookmark(IJumpableMachine jumpableMachine)
@@ -788,7 +788,7 @@ namespace CPvC
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        public void StartServer(UInt16 defaultPort)
+        private void StartServer(UInt16 defaultPort)
         {
             CreateSocketEventArgs args2 = new CreateSocketEventArgs();
             CreateSocket?.Invoke(this, args2);
@@ -805,7 +805,7 @@ namespace CPvC
             }
         }
 
-        public void StopServer()
+        private void StopServer()
         {
             _machineServer.Stop();
         }

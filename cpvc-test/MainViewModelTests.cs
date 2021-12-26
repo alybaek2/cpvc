@@ -317,7 +317,7 @@ namespace CPvC.Test
             MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object);
 
             // Act
-            viewModel.NewMachine(_mockFileSystem.Object);
+            viewModel.NewMachineCommand.Execute(_mockFileSystem.Object);
 
             // Verify
             Assert.AreEqual(1, viewModel.Machines.Count);
@@ -942,7 +942,7 @@ namespace CPvC.Test
 
             if (newMachine)
             {
-                mainViewModel.NewMachine(_mockFileSystem.Object);
+                mainViewModel.NewMachineCommand.Execute(_mockFileSystem.Object);
             }
 
             if (persistedMachine)
