@@ -237,6 +237,16 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void DisposeWriterTwice()
+        {
+            // Setup
+            _fileWriter.Dispose();
+
+            // Act and Verify
+            Assert.DoesNotThrow(() => _fileWriter.Dispose());
+        }
+
+        [Test]
         public void SetCurrentInvalid()
         {
             // Setup

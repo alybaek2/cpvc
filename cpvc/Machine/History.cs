@@ -161,25 +161,6 @@ namespace CPvC
             return true;
         }
 
-        public void SetCurrent(HistoryEvent historyEvent)
-        {
-            if (!_nodes.Contains(historyEvent.Node))
-            {
-                throw new Exception("Attempted to set the current event to an event that doesn't belong to this history!");
-            }
-
-            // If the current node is a RunUntil, finish it off by sending a notification...
-            CoreActionHistoryNode currentCoreActionNode = _currentNode as CoreActionHistoryNode;
-            if (currentCoreActionNode != null && currentCoreActionNode.CoreAction.Type == CoreRequest.Types.RunUntil)
-            {
-                Auditors?.Invoke(_currentNode.HistoryEvent, HistoryChangedAction.Add);
-            }
-
-            _currentNode = historyEvent.Node;
-
-            Auditors?.Invoke(_currentNode.HistoryEvent, HistoryChangedAction.SetCurrent);
-        }
-
         // Browsing methods
         public HistoryEvent RootEvent
         {
