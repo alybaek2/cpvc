@@ -931,6 +931,22 @@ namespace CPvC.Test
             Assert.AreEqual(machineCount, _mainViewModel.Machines.Count);
         }
 
+        [Test]
+        public void RemoveNonPersistableMachine()
+        {
+            // Setup
+            Mock<IMachine> mockMachine = new Mock<IMachine>(MockBehavior.Strict);
+            mockMachine.Setup(m => m.Close());
+            int machineCount = _mainViewModel.Machines.Count;
+            _mainViewModel.Model.AddMachine(mockMachine.Object);
+
+            // Act
+            _mainViewModel.RemoveCommand.Execute(mockMachine.Object);
+
+            // Verify
+            Assert.AreEqual(machineCount, _mainViewModel.Machines.Count);
+        }
+
         [TestCase(false, false, true, false, true)]
         [TestCase(false, true, false, false, true)]
         [TestCase(true, false, false, false, false)]

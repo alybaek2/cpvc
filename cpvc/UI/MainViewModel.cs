@@ -564,6 +564,7 @@ namespace CPvC
             }
 
             IPersistableMachine pm = coreMachine as IPersistableMachine;
+            bool remove = pm == null;
             if (pm != null && pm.PersistantFilepath == null)
             {
                 if (prompt)
@@ -578,6 +579,11 @@ namespace CPvC
                     }
                 }
 
+                remove = true;
+            }
+
+            if (remove)
+            {
                 _model.RemoveMachine(coreMachine);
             }
 
