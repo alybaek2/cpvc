@@ -39,6 +39,11 @@ namespace CPvC
 
         public CoreActionHistoryEvent AddCoreAction(CoreAction coreAction)
         {
+            return AddCoreAction(coreAction, _nextId);
+        }
+
+        public CoreActionHistoryEvent AddCoreAction(CoreAction coreAction, int id)
+        {
             // Instead of continually adding "RunUntil" actions, just keep updating the
             // current one if it's a RunUntil, and only notify once we've finished. That
             // happens either when we add a non-RunUntil node after a RunUntil node, or
@@ -58,7 +63,9 @@ namespace CPvC
                 }
             }
 
-            CoreActionHistoryNode historyNode = new CoreActionHistoryNode(_nextId++, coreAction.Ticks, coreAction, _currentNode, DateTime.Now);
+            CoreActionHistoryNode historyNode = new CoreActionHistoryNode(id, coreAction.Ticks, coreAction, _currentNode, DateTime.Now);
+
+            _nextId = Math.Max(_nextId, id) + 1;
 
             AddChildNode(historyNode, notify);
 
@@ -66,6 +73,11 @@ namespace CPvC
         }
 
         public BookmarkHistoryEvent AddBookmark(UInt64 ticks, Bookmark bookmark)
+        {
+            return AddBookmark(ticks, bookmark, _nextId);
+        }
+
+        public BookmarkHistoryEvent AddBookmark(UInt64 ticks, Bookmark bookmark, int id)
         {
             CoreActionHistoryNode currentCoreActionNode = _currentNode as CoreActionHistoryNode;
             if (currentCoreActionNode != null &&
@@ -76,7 +88,9 @@ namespace CPvC
                 Auditors?.Invoke(currentCoreActionNode.HistoryEvent, HistoryChangedAction.Add);
             }
 
-            BookmarkHistoryNode historyNode = new BookmarkHistoryNode(_nextId++, ticks, bookmark, _currentNode, DateTime.Now);
+            BookmarkHistoryNode historyNode = new BookmarkHistoryNode(id, ticks, bookmark, _currentNode, DateTime.Now);
+
+            _nextId = Math.Max(_nextId, id) + 1;
 
             if (ticks < _currentNode.Ticks)
             {

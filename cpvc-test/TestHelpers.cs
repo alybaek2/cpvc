@@ -518,6 +518,11 @@ namespace CPvC.Test
                 return false;
             }
 
+            if (event1.Id != event2.Id)
+            {
+                return false;
+            }
+
             if (event1.Children.Count != event2.Children.Count)
             {
                 return false;

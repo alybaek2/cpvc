@@ -45,7 +45,7 @@ namespace CPvC.Test
         public void WriteAndReadCoreAction(CoreAction coreAction)
         {
             // Act
-            _history.AddCoreAction(coreAction);
+            _history.AddCoreAction(coreAction, 123456);
             _fileReader.ReadFile(_mockFile);
 
             // Verify
@@ -331,7 +331,7 @@ namespace CPvC.Test
             History expectedHistory = new History();
             expectedHistory.AddCoreAction(CoreAction.LoadTape(100, new MemoryBlob(new byte[] { 0x01, 0x02 })));
             _mockFile.WriteLine(String.Format("arg:1,False,0102"));
-            _mockFile.WriteLine("tape:1,100,$1");
+            _mockFile.WriteLine("tape:0,100,$1");
 
             // Act
             _fileReader.ReadFile(_mockFile);
@@ -349,7 +349,7 @@ namespace CPvC.Test
             History expectedHistory = new History();
             expectedHistory.AddBookmark(100, new Bookmark(true, 1, _state, _screen));
             _mockFile.WriteLine(String.Format("args:False,1#{0}@2#{1}", Helpers.StrFromBytes(_state), Helpers.StrFromBytes(_screen)));
-            _mockFile.WriteLine("bookmark:4,100,True,1,$1,$2");
+            _mockFile.WriteLine("bookmark:0,100,True,1,$1,$2");
 
             // Act
             _fileReader.ReadFile(_mockFile);

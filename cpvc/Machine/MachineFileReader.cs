@@ -114,7 +114,7 @@ namespace CPvC
 
             Bookmark bookmark = new Bookmark(system, version, state, screen);
 
-            HistoryEvent historyEvent = _machineHistory.AddBookmark(ticks, bookmark);
+            HistoryEvent historyEvent = _machineHistory.AddBookmark(ticks, bookmark, id);
 
             _idToHistoryEvent[id] = historyEvent;
 
@@ -217,7 +217,7 @@ namespace CPvC
 
         private HistoryEvent AddCoreAction(int id, CoreAction coreAction)
         {
-            HistoryEvent historyEvent = _machineHistory.AddCoreAction(coreAction);
+            HistoryEvent historyEvent = _machineHistory.AddCoreAction(coreAction, id);
             _idToHistoryEvent[id] = historyEvent;
 
             _nextLineId = Math.Max(_nextLineId, id + 1);
