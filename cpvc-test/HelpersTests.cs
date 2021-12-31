@@ -86,5 +86,49 @@ namespace CPvC.Test
             // Verify
             Assert.IsNull(endpoint);
         }
+
+        [Test]
+        public void HexStringFromBytes()
+        {
+            // Setup
+            byte[] bytes = new byte[] { 0x00, 0x09, 0x0a, 0x0f, 0x90, 0xa0, 0xf0 };
+
+            // Act
+            string hex = Helpers.StrFromBytes(bytes);
+
+            // Verify
+            Assert.AreEqual("00090A0F90A0F0", hex);
+        }
+
+        [Test]
+        public void BytesFromHexString()
+        {
+            // Setup
+            string hex = "00090A0F90A0F0";
+
+            // Act
+            byte[] bytes = Helpers.BytesFromStr(hex);
+
+            // Verify
+            Assert.AreEqual(new byte[] { 0x00, 0x09, 0x0a, 0x0f, 0x90, 0xa0, 0xf0 }, bytes);
+        }
+
+        [TestCase(16)]
+        [TestCase(255)]
+        public void HexCharFromInvalidByte(byte b)
+        {
+            // Act and Verify
+            Assert.Throws<ArgumentException>(() => Helpers.HexCharFromByte(b));
+        }
+
+        [TestCase('/')]
+        [TestCase(':')]
+        [TestCase('@')]
+        [TestCase('G')]
+        public void HexByteFromInvalidChar(char c)
+        {
+            // Act and Verify
+            Assert.Throws<ArgumentException>(() => Helpers.HexByteFromChar(c));
+        }
     }
 }

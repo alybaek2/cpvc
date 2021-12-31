@@ -162,13 +162,15 @@ namespace CPvC
                 return String.Empty;
             }
 
-            StringWriter strw = new StringWriter();
+            char[] hex = new char[bytes.Length * 2];
+
             for (int i = 0; i < bytes.Length; i++)
             {
-                strw.Write(String.Format("{0:X2}", bytes[i]));
+                hex[i * 2] = HexCharFromByte((byte)(bytes[i] >> 4));
+                hex[i * 2 + 1] = HexCharFromByte((byte)(bytes[i] & 0x0f));
             }
 
-            return strw.ToString();
+            return new string(hex);
         }
 
         static public byte[] BytesFromStr(string str)
@@ -182,12 +184,45 @@ namespace CPvC
 
             for (int i = 0; i < bytes.Length; i++)
             {
-                string h = str.Substring(i * 2, 2);
-                byte b = System.Convert.ToByte(h, 16);
-                bytes[i] = b;
+                byte hi = HexByteFromChar(str[2 * i]);
+                byte lo = HexByteFromChar(str[2 * i + 1]);
+
+                bytes[i] = (byte)((hi << 4) | lo);
             }
 
             return bytes;
+        }
+
+        static public byte HexByteFromChar(char c)
+        {
+            if ('0' <= c && c <= '9')
+            {
+                return (byte)(c - '0');
+            }
+            else if ('A' <= c && c <= 'F')
+            {
+                return (byte)(10 + c - 'A');
+            }
+            else if ('a' <= c && c <= 'f')
+            {
+                return (byte)(10 + c - 'a');
+            }
+
+            throw new ArgumentException(String.Format("Invalid hex char: {0}", c), nameof(c));
+        }
+
+        static public char HexCharFromByte(byte b)
+        {
+            if (0 <= b && b <= 9)
+            {
+                return (char)('0' + b);
+            }
+            else if (10 <= b && b <= 15)
+            {
+                return (char)('A' + b - 10);
+            }
+
+            throw new ArgumentException(String.Format("Invalid byte value: {0}", b), nameof(b));
         }
     }
 }
