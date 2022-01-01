@@ -14,16 +14,13 @@ namespace CPvC.UI
     /// </summary>
     public class BookmarksViewModel : INotifyPropertyChanged
     {
-        public delegate void ItemSelectedDelegate();
-
         private LocalMachine _machine;
-        private HistoryViewItem _selectedItem;
-        private Display _display;
 
         private Command _deleteBookmarksCommand;
         private Command _deleteBranchesCommand;
-        private Command _jumpToBookmarkCommand;
-        private Command _replayTimelineCommand;
+
+        private ObservableCollection<HistoryViewItem> _selectedItems;
+        private ReadOnlyObservableCollection<HistoryViewItem> _readOnlySelectedItems;
 
         public ICommand DeleteBookmarksCommand
         {
@@ -35,102 +32,50 @@ namespace CPvC.UI
             get { return _deleteBranchesCommand; }
         }
 
-        public ICommand JumpToBookmarkCommand
-        {
-            get { return _jumpToBookmarkCommand; }
-        }
-
-        public ICommand ReplayTimelineCommand
-        {
-            get { return _replayTimelineCommand; }
-        }
-
         public HistoryEvent SelectedJumpEvent { get; private set; }
         public HistoryEvent SelectedReplayEvent { get; private set; }
 
         public WriteableBitmap Bitmap { get; private set; }
         public ObservableCollection<HistoryViewItem> Items { get; }
 
+        public ReadOnlyObservableCollection<HistoryViewItem> SelectedItems
+        {
+            get
+            {
+                return _readOnlySelectedItems;
+            }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public BookmarksViewModel(LocalMachine machine, ItemSelectedDelegate itemSelected)
+        public BookmarksViewModel(LocalMachine machine)
         {
-            _replayTimelineCommand = new Command(
-                p => ReplayTimeline(itemSelected),
-                p => (SelectedItem as HistoryViewItem)?.HistoryEvent != null
-            );
-
-            _jumpToBookmarkCommand = new Command(
-                p => JumpToBookmark(itemSelected),
-                p => SelectedItem?.HistoryEvent is BookmarkHistoryEvent
-            );
+            _selectedItems = new ObservableCollection<HistoryViewItem>();
+            _readOnlySelectedItems = new ReadOnlyObservableCollection<HistoryViewItem>(_selectedItems);
 
             _deleteBookmarksCommand = new Command(
                 p => DeleteBookmarks(),
-                p => SelectedItem?.HistoryEvent is BookmarkHistoryEvent
+                p => SelectedItems.Any(item => item.HistoryEvent is BookmarkHistoryEvent)
             );
 
             _deleteBranchesCommand = new Command(
                 p => DeleteBranches(),
-                p =>
-                {
-                    HistoryEvent historyEvent = (SelectedItem as HistoryViewItem)?.HistoryEvent;
-
-                    return !historyEvent?.IsEqualToOrAncestorOf(machine.History.CurrentEvent) ?? false;
-                }
+                p => SelectedItems.Any(item => !item.HistoryEvent.IsEqualToOrAncestorOf(machine.History.CurrentEvent))
             );
 
-            _display = new Display();
             _machine = machine;
             Items = new ObservableCollection<HistoryViewItem>();
             RefreshHistoryViewItems();
-
-            // The initial selected item is set to the current event.
-            SelectedItem = Items.FirstOrDefault(i => i.HistoryEvent == _machine.History.CurrentEvent);
         }
 
-        /// <summary>
-        /// Represents the currently selected HistoryViewItem. Note that when this is
-        /// changed, other properties are recalculated as well.
-        /// </summary>
-        public HistoryViewItem SelectedItem
+        public void AddSelectedItem(HistoryViewItem addedItem)
         {
-            get
-            {
-                return _selectedItem;
-            }
+            _selectedItems.Add(addedItem);
+        }
 
-            set
-            {
-                if (_selectedItem == value)
-                {
-                    return;
-                }
-
-                _selectedItem = value;
-                OnPropertyChanged();
-
-                WriteableBitmap bitmap = null;
-                if (_selectedItem != null)
-                {
-                    HistoryEvent historyEvent = SelectedItem.HistoryEvent;
-
-                    // Even though the current event doesn't necessarily have a bookmark, we can still populate the display.
-                    if (historyEvent == _machine.History.CurrentEvent)
-                    {
-                        bitmap = _machine.Display.Bitmap;
-                    }
-                    else if (historyEvent is BookmarkHistoryEvent bookmarkHistoryEvent)
-                    {
-                        _display.GetFromBookmark(bookmarkHistoryEvent.Bookmark);
-
-                        bitmap = _display.Bitmap;
-                    }
-                }
-
-                Bitmap = bitmap;
-                OnPropertyChanged("Bitmap");
-            }
+        public void RemoveSelectedItem(HistoryViewItem removedItem)
+        {
+            _selectedItems.Remove(removedItem);
         }
 
         /// <summary>
@@ -262,21 +207,36 @@ namespace CPvC.UI
 
         private void DeleteBookmarks()
         {
-            if (SelectedItem?.HistoryEvent is BookmarkHistoryEvent bookmarkHistoryEvent)
+            bool refresh = false;
+
+            foreach (HistoryViewItem selectedItem in SelectedItems)
             {
-                if (_machine.DeleteBookmark(bookmarkHistoryEvent))
+                if (selectedItem.HistoryEvent is BookmarkHistoryEvent bookmarkHistoryEvent)
                 {
-                    RefreshHistoryViewItems();
+                    refresh |= _machine.DeleteBookmark(bookmarkHistoryEvent);
                 }
+            }
+
+            if (refresh)
+            {
+                RefreshHistoryViewItems();
             }
         }
 
         private void DeleteBranches()
         {
-            if (SelectedItem?.HistoryEvent != null)
-            {
-                TrimTimeline(SelectedItem.HistoryEvent);
+            bool refresh = false;
 
+            foreach (HistoryViewItem selectedItem in SelectedItems)
+            {
+                if (!selectedItem.HistoryEvent.IsEqualToOrAncestorOf(_machine.History.CurrentEvent))
+                {
+                    refresh |= TrimTimeline(selectedItem.HistoryEvent);
+                }
+            }
+
+            if (refresh)
+            {
                 RefreshHistoryViewItems();
             }
         }
@@ -285,11 +245,11 @@ namespace CPvC.UI
         /// Removes a branch of the timeline.
         /// </summary>
         /// <param name="historyEvent">HistoryEvent object which belongs to the branch to be removed.</param>
-        public void TrimTimeline(HistoryEvent historyEvent)
+        public bool TrimTimeline(HistoryEvent historyEvent)
         {
             if (historyEvent == null || historyEvent.Children.Count != 0 || historyEvent == _machine.History.CurrentEvent || historyEvent.Parent == null)
             {
-                return;
+                return false;
             }
 
             // Walk up the tree to find the node to be removed...
@@ -301,25 +261,7 @@ namespace CPvC.UI
                 parent = parent.Parent;
             }
 
-            _machine.DeleteBranch(child);
-        }
-
-        private void JumpToBookmark(ItemSelectedDelegate itemSelected)
-        {
-            if (SelectedItem?.HistoryEvent is BookmarkHistoryEvent)
-            {
-                SelectedJumpEvent = SelectedItem.HistoryEvent;
-                itemSelected();
-            }
-        }
-
-        private void ReplayTimeline(ItemSelectedDelegate itemSelected)
-        {
-            if (SelectedItem?.HistoryEvent != null)
-            {
-                SelectedReplayEvent = SelectedItem.HistoryEvent;
-                itemSelected();
-            }
+            return _machine.DeleteBranch(child);
         }
 
         protected void OnPropertyChanged([CallerMemberName] string name = null)

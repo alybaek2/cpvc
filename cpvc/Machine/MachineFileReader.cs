@@ -105,6 +105,10 @@ namespace CPvC
             string[] tokens = line.Split(',');
 
             int id = Convert.ToInt32(tokens[0]);
+            if (_idToHistoryEvent.ContainsKey(id))
+            {
+                throw new InvalidOperationException(String.Format("Id {0} has already been processed!", id));
+            }
 
             UInt64 ticks = Convert.ToUInt64(tokens[1]);
             bool system = Convert.ToBoolean(tokens[2]);
@@ -217,6 +221,11 @@ namespace CPvC
 
         private HistoryEvent AddCoreAction(int id, CoreAction coreAction)
         {
+            if (_idToHistoryEvent.ContainsKey(id))
+            {
+                throw new InvalidOperationException(String.Format("Id {0} has already been processed!", id));
+            }
+
             HistoryEvent historyEvent = _machineHistory.AddCoreAction(coreAction, id);
             _idToHistoryEvent[id] = historyEvent;
 
@@ -252,7 +261,7 @@ namespace CPvC
                 bool b = _machineHistory.DeleteBranch(historyEvent);
                 if (!b)
                 {
-                    throw new InvalidOperationException("Couldn't delete history event!");
+                    throw new InvalidOperationException(String.Format("Couldn't delete history event {0}!", id));
                 }
             }
             else

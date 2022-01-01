@@ -58,59 +58,32 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void SetSelectedItemNull()
-        {
-            // Setup
-            LocalMachine machine = LocalMachine.New("test", null);
-            RunForAWhile(machine);
-            machine.AddBookmark(true);
-            Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
-
-            BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
-
-            // Act
-            viewModel.SelectedItem = null;
-
-            // Verify
-            Assert.IsNull(viewModel.SelectedItem);
-            Assert.IsNull(viewModel.Bitmap);
-            Assert.IsFalse(viewModel.DeleteBookmarksCommand.CanExecute(null));
-            Assert.IsFalse(viewModel.JumpToBookmarkCommand.CanExecute(null));
-            Assert.IsFalse(viewModel.DeleteBranchesCommand.CanExecute(null));
-            Assert.IsFalse(viewModel.ReplayTimelineCommand.CanExecute(null));
-        }
-
-        [Test]
         public void SetSelectedItemCurrent()
         {
             // Setup
             LocalMachine machine = LocalMachine.New("test", null);
             RunForAWhile(machine);
             machine.AddBookmark(true);
-            Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
 
             // Act
-            BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
+            BookmarksViewModel viewModel = new BookmarksViewModel(machine);
 
             // The first item is the current event.
-            viewModel.SelectedItem = viewModel.Items[0];
+            viewModel.AddSelectedItem(viewModel.Items[0]);
 
             // Verify
-            Assert.AreEqual(machine.History.CurrentEvent, viewModel.SelectedItem.HistoryEvent);
-            Assert.AreEqual(viewModel.Items[0], viewModel.SelectedItem);
+            Assert.AreEqual(1, viewModel.SelectedItems.Count);
+            Assert.AreEqual(machine.History.CurrentEvent, viewModel.SelectedItems[0].HistoryEvent);
+            Assert.AreEqual(viewModel.Items[0], viewModel.SelectedItems[0]);
             Assert.IsNotNull(viewModel.Bitmap);
             Assert.IsTrue(viewModel.DeleteBookmarksCommand.CanExecute(null));
-            Assert.IsTrue(viewModel.JumpToBookmarkCommand.CanExecute(null));
             Assert.IsFalse(viewModel.DeleteBranchesCommand.CanExecute(null));
-            Assert.IsTrue(viewModel.ReplayTimelineCommand.CanExecute(null));
         }
 
         [Test]
         public void SetSelectedItemBookmark()
         {
             // Setup
-            Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
-
             LocalMachine machine = LocalMachine.New("test", null);
             RunForAWhile(machine);
             machine.AddBookmark(true);
@@ -119,19 +92,18 @@ namespace CPvC.Test
             machine.AddBookmark(true);
 
             // Act
-            BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
+            BookmarksViewModel viewModel = new BookmarksViewModel(machine);
 
             // The second item is the bookmark event.
-            viewModel.SelectedItem = viewModel.Items[1];
+            viewModel.AddSelectedItem(viewModel.Items[1]);
 
             // Verify
-            Assert.AreEqual(bookmarkEvent, viewModel.SelectedItem.HistoryEvent);
-            Assert.AreEqual(viewModel.Items[1], viewModel.SelectedItem);
+            Assert.AreEqual(1, viewModel.SelectedItems.Count);
+            Assert.AreEqual(bookmarkEvent, viewModel.SelectedItems[0].HistoryEvent);
+            Assert.AreEqual(viewModel.Items[1], viewModel.SelectedItems[0]);
             Assert.IsNotNull(viewModel.Bitmap);
             Assert.IsTrue(viewModel.DeleteBookmarksCommand.CanExecute(null));
-            Assert.IsTrue(viewModel.JumpToBookmarkCommand.CanExecute(null));
             Assert.IsFalse(viewModel.DeleteBranchesCommand.CanExecute(null));
-            Assert.IsTrue(viewModel.ReplayTimelineCommand.CanExecute(null));
         }
 
         [Test]
@@ -141,22 +113,20 @@ namespace CPvC.Test
             LocalMachine machine = LocalMachine.New("test", null);
             RunForAWhile(machine);
             machine.AddBookmark(true);
-            Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
 
             // Act
-            BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
+            BookmarksViewModel viewModel = new BookmarksViewModel(machine);
 
             // The last item is the root event.
-            viewModel.SelectedItem = viewModel.Items[1];
+            viewModel.AddSelectedItem(viewModel.Items[1]);
 
             // Verify
-            Assert.AreEqual(machine.History.RootEvent, viewModel.SelectedItem.HistoryEvent);
-            Assert.AreEqual(viewModel.Items[1], viewModel.SelectedItem);
+            Assert.AreEqual(1, viewModel.SelectedItems.Count);
+            Assert.AreEqual(machine.History.RootEvent, viewModel.SelectedItems[0].HistoryEvent);
+            Assert.AreEqual(viewModel.Items[1], viewModel.SelectedItems[0]);
             Assert.IsNull(viewModel.Bitmap);
             Assert.IsFalse(viewModel.DeleteBookmarksCommand.CanExecute(null));
-            Assert.IsFalse(viewModel.JumpToBookmarkCommand.CanExecute(null));
             Assert.IsFalse(viewModel.DeleteBranchesCommand.CanExecute(null));
-            Assert.IsTrue(viewModel.ReplayTimelineCommand.CanExecute(null));
         }
 
         [Test]
@@ -170,10 +140,9 @@ namespace CPvC.Test
             machine.Key(Keys.A, false);
             RunForAWhile(machine);
             machine.AddBookmark(true);
-            Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
 
             // Act
-            BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
+            BookmarksViewModel viewModel = new BookmarksViewModel(machine);
 
             // Verify
             Assert.AreEqual(2, viewModel.Items.Count);
@@ -202,10 +171,9 @@ namespace CPvC.Test
             HistoryEvent event300 = machine.History.CurrentEvent.Children[0];
             Run(machine, 300);
             machine.AddBookmark(true);
-            Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
 
             // Act
-            BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
+            BookmarksViewModel viewModel = new BookmarksViewModel(machine);
 
             // Verify
             Assert.AreEqual(6, viewModel.Items.Count);
@@ -223,11 +191,10 @@ namespace CPvC.Test
             // Setup
             using (LocalMachine machine = CreateMachineWithHistory())
             {
-                Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
-                BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
+                BookmarksViewModel viewModel = new BookmarksViewModel(machine);
                 HistoryViewItem bookmarkEventViewItem = viewModel.Items[3];
                 Bookmark bookmark = (bookmarkEventViewItem.HistoryEvent as BookmarkHistoryEvent)?.Bookmark;
-                viewModel.SelectedItem = nullSelectedItem ? null : bookmarkEventViewItem;
+                viewModel.AddSelectedItem(nullSelectedItem ? null : bookmarkEventViewItem);
                 HistoryEvent parentEvent = bookmarkEventViewItem.HistoryEvent.Parent;
                 List<HistoryEvent> childEvents = new List<HistoryEvent>();
                 childEvents.AddRange(bookmarkEventViewItem.HistoryEvent.Children);
@@ -257,11 +224,10 @@ namespace CPvC.Test
             // Setup
             using (LocalMachine machine = CreateMachineWithHistory())
             {
-                Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
-                BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
+                BookmarksViewModel viewModel = new BookmarksViewModel(machine);
                 HistoryViewItem branchViewItem = viewModel.Items[1];
                 HistoryEvent parentEvent = branchViewItem.HistoryEvent.Parent;
-                viewModel.SelectedItem = nullSelectedItem ? null : branchViewItem;
+                viewModel.AddSelectedItem(nullSelectedItem ? null : branchViewItem);
 
                 // Act
                 viewModel.DeleteBranchesCommand.Execute(null);
@@ -282,52 +248,12 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void JumpToBookmark([Values(false, true)] bool nullSelectedItem)
-        {
-            // Setup
-            using (LocalMachine machine = CreateMachineWithHistory())
-            {
-                Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
-                BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
-                HistoryViewItem bookmarkEventViewItem = viewModel.Items[3];
-                viewModel.SelectedItem = nullSelectedItem ? null : bookmarkEventViewItem;
-
-                // Act
-                viewModel.JumpToBookmarkCommand.Execute(null);
-
-                // Verify
-                Assert.That(viewModel.SelectedJumpEvent, Is.EqualTo(nullSelectedItem ? null : viewModel.SelectedJumpEvent));
-                mockItemSelected.Verify(s => s(), nullSelectedItem ? Times.Never() : Times.Once());
-            }
-        }
-
-        [Test]
-        public void ReplayTimeline([Values(false, true)] bool nullSelectedItem)
-        {
-            // Setup
-            using (LocalMachine machine = CreateMachineWithHistory())
-            {
-                Mock<BookmarksViewModel.ItemSelectedDelegate> mockItemSelected = new Mock<BookmarksViewModel.ItemSelectedDelegate>();
-                BookmarksViewModel viewModel = new BookmarksViewModel(machine, mockItemSelected.Object);
-                HistoryViewItem historyEventViewItem = viewModel.Items[1];
-                viewModel.SelectedItem = nullSelectedItem ? null : historyEventViewItem;
-
-                // Act
-                viewModel.ReplayTimelineCommand.Execute(null);
-
-                // Verify
-                Assert.That(viewModel.SelectedReplayEvent, Is.EqualTo(nullSelectedItem ? null : viewModel.SelectedReplayEvent));
-                mockItemSelected.Verify(s => s(), nullSelectedItem ? Times.Never() : Times.Once());
-            }
-        }
-
-        [Test]
         public void DeleteCurrent()
         {
             // Setup
             using (LocalMachine machine = CreateMachineWithHistory())
             {
-                BookmarksViewModel viewModel = new BookmarksViewModel(machine, null);
+                BookmarksViewModel viewModel = new BookmarksViewModel(machine);
                 HistoryEvent historyEvent = machine.History.CurrentEvent;
 
                 // Act
@@ -346,7 +272,7 @@ namespace CPvC.Test
             // Setup
             using (LocalMachine machine = CreateMachineWithHistory())
             {
-                BookmarksViewModel viewModel = new BookmarksViewModel(machine, null);
+                BookmarksViewModel viewModel = new BookmarksViewModel(machine);
                 HistoryEvent historyEvent = machine.History.CurrentEvent;
                 machine.JumpToBookmark(machine.History.RootEvent.Children[0].Children[0]);
 

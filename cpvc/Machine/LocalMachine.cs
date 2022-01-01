@@ -475,11 +475,11 @@ namespace CPvC
         /// Deletes a branch of the history.
         /// </summary>
         /// <param name="historyEvent">History event to be deleted, along with all its descendents.</param>
-        public void DeleteBranch(HistoryEvent historyEvent)
+        public bool DeleteBranch(HistoryEvent historyEvent)
         {
             using (AutoPause())
             {
-                _history.DeleteBranch(historyEvent);
+                return _history.DeleteBranch(historyEvent);
             }
         }
 
