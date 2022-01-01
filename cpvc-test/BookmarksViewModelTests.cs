@@ -75,7 +75,6 @@ namespace CPvC.Test
             Assert.AreEqual(1, viewModel.SelectedItems.Count);
             Assert.AreEqual(machine.History.CurrentEvent, viewModel.SelectedItems[0].HistoryEvent);
             Assert.AreEqual(viewModel.Items[0], viewModel.SelectedItems[0]);
-            Assert.IsNotNull(viewModel.Bitmap);
             Assert.IsTrue(viewModel.DeleteBookmarksCommand.CanExecute(null));
             Assert.IsFalse(viewModel.DeleteBranchesCommand.CanExecute(null));
         }
@@ -101,7 +100,6 @@ namespace CPvC.Test
             Assert.AreEqual(1, viewModel.SelectedItems.Count);
             Assert.AreEqual(bookmarkEvent, viewModel.SelectedItems[0].HistoryEvent);
             Assert.AreEqual(viewModel.Items[1], viewModel.SelectedItems[0]);
-            Assert.IsNotNull(viewModel.Bitmap);
             Assert.IsTrue(viewModel.DeleteBookmarksCommand.CanExecute(null));
             Assert.IsFalse(viewModel.DeleteBranchesCommand.CanExecute(null));
         }
@@ -124,7 +122,6 @@ namespace CPvC.Test
             Assert.AreEqual(1, viewModel.SelectedItems.Count);
             Assert.AreEqual(machine.History.RootEvent, viewModel.SelectedItems[0].HistoryEvent);
             Assert.AreEqual(viewModel.Items[1], viewModel.SelectedItems[0]);
-            Assert.IsNull(viewModel.Bitmap);
             Assert.IsFalse(viewModel.DeleteBookmarksCommand.CanExecute(null));
             Assert.IsFalse(viewModel.DeleteBranchesCommand.CanExecute(null));
         }
@@ -186,7 +183,7 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void DeleteBookmark([Values(false, true)] bool nullSelectedItem)
+        public void DeleteBookmark([Values(false, true)] bool hasSelectedItem)
         {
             // Setup
             using (LocalMachine machine = CreateMachineWithHistory())
@@ -194,7 +191,10 @@ namespace CPvC.Test
                 BookmarksViewModel viewModel = new BookmarksViewModel(machine);
                 HistoryViewItem bookmarkEventViewItem = viewModel.Items[3];
                 Bookmark bookmark = (bookmarkEventViewItem.HistoryEvent as BookmarkHistoryEvent)?.Bookmark;
-                viewModel.AddSelectedItem(nullSelectedItem ? null : bookmarkEventViewItem);
+                if (!hasSelectedItem)
+                {
+                    viewModel.AddSelectedItem(bookmarkEventViewItem);
+                }
                 HistoryEvent parentEvent = bookmarkEventViewItem.HistoryEvent.Parent;
                 List<HistoryEvent> childEvents = new List<HistoryEvent>();
                 childEvents.AddRange(bookmarkEventViewItem.HistoryEvent.Children);
@@ -203,7 +203,7 @@ namespace CPvC.Test
                 viewModel.DeleteBookmarksCommand.Execute(null);
 
                 // Verify
-                if (nullSelectedItem)
+                if (hasSelectedItem)
                 {
                     Assert.AreEqual(bookmark, (bookmarkEventViewItem.HistoryEvent as BookmarkHistoryEvent)?.Bookmark);
                 }
@@ -219,7 +219,7 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void DeleteBranch([Values(false, true)] bool nullSelectedItem)
+        public void DeleteBranch([Values(false, true)] bool hasSelectedItem)
         {
             // Setup
             using (LocalMachine machine = CreateMachineWithHistory())
@@ -227,7 +227,11 @@ namespace CPvC.Test
                 BookmarksViewModel viewModel = new BookmarksViewModel(machine);
                 HistoryViewItem branchViewItem = viewModel.Items[1];
                 HistoryEvent parentEvent = branchViewItem.HistoryEvent.Parent;
-                viewModel.AddSelectedItem(nullSelectedItem ? null : branchViewItem);
+
+                if (!hasSelectedItem)
+                {
+                    viewModel.AddSelectedItem(branchViewItem);
+                }
 
                 // Act
                 viewModel.DeleteBranchesCommand.Execute(null);
@@ -242,8 +246,8 @@ namespace CPvC.Test
                     }
                 }
 
-                Assert.AreEqual(nullSelectedItem, eventFound);
-                Assert.AreEqual(nullSelectedItem ? 2 : 1, parentEvent.Children.Count);
+                Assert.AreEqual(hasSelectedItem, eventFound);
+                Assert.AreEqual(hasSelectedItem ? 2 : 1, parentEvent.Children.Count);
             }
         }
 

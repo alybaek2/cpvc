@@ -20,7 +20,6 @@ namespace CPvC.UI
         private Command _deleteBranchesCommand;
 
         private ObservableCollection<HistoryViewItem> _selectedItems;
-        private ReadOnlyObservableCollection<HistoryViewItem> _readOnlySelectedItems;
 
         public ICommand DeleteBookmarksCommand
         {
@@ -35,23 +34,16 @@ namespace CPvC.UI
         public HistoryEvent SelectedJumpEvent { get; private set; }
         public HistoryEvent SelectedReplayEvent { get; private set; }
 
-        public WriteableBitmap Bitmap { get; private set; }
         public ObservableCollection<HistoryViewItem> Items { get; }
 
-        public ReadOnlyObservableCollection<HistoryViewItem> SelectedItems
-        {
-            get
-            {
-                return _readOnlySelectedItems;
-            }
-        }
+        public ReadOnlyObservableCollection<HistoryViewItem> SelectedItems { get; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         public BookmarksViewModel(LocalMachine machine)
         {
             _selectedItems = new ObservableCollection<HistoryViewItem>();
-            _readOnlySelectedItems = new ReadOnlyObservableCollection<HistoryViewItem>(_selectedItems);
+            SelectedItems = new ReadOnlyObservableCollection<HistoryViewItem>(_selectedItems);
 
             _deleteBookmarksCommand = new Command(
                 p => DeleteBookmarks(),
