@@ -15,21 +15,10 @@ namespace CPvC.UI
     public class BookmarksViewModel : INotifyPropertyChanged
     {
         private LocalMachine _machine;
-
-        private Command _deleteBookmarksCommand;
-        private Command _deleteBranchesCommand;
-
         private ObservableCollection<HistoryViewItem> _selectedItems;
 
-        public ICommand DeleteBookmarksCommand
-        {
-            get { return _deleteBookmarksCommand; }
-        }
-
-        public ICommand DeleteBranchesCommand
-        {
-            get { return _deleteBranchesCommand; }
-        }
+        public ICommand DeleteBookmarksCommand { get; }
+        public ICommand DeleteBranchesCommand { get; }
 
         public HistoryEvent SelectedJumpEvent { get; private set; }
         public HistoryEvent SelectedReplayEvent { get; private set; }
@@ -45,12 +34,12 @@ namespace CPvC.UI
             _selectedItems = new ObservableCollection<HistoryViewItem>();
             SelectedItems = new ReadOnlyObservableCollection<HistoryViewItem>(_selectedItems);
 
-            _deleteBookmarksCommand = new Command(
+            DeleteBookmarksCommand = new Command(
                 p => DeleteBookmarks(),
                 p => SelectedItems.Any(item => item.HistoryEvent is BookmarkHistoryEvent)
             );
 
-            _deleteBranchesCommand = new Command(
+            DeleteBranchesCommand = new Command(
                 p => DeleteBranches(),
                 p => SelectedItems.Any(item => !item.HistoryEvent.IsEqualToOrAncestorOf(machine.History.CurrentEvent))
             );
@@ -223,7 +212,7 @@ namespace CPvC.UI
             {
                 if (!selectedItem.HistoryEvent.IsEqualToOrAncestorOf(_machine.History.CurrentEvent))
                 {
-                    refresh |= TrimTimeline(selectedItem.HistoryEvent);
+                    refresh |= DeleteBranch(selectedItem.HistoryEvent);
                 }
             }
 
@@ -237,7 +226,7 @@ namespace CPvC.UI
         /// Removes a branch of the timeline.
         /// </summary>
         /// <param name="historyEvent">HistoryEvent object which belongs to the branch to be removed.</param>
-        public bool TrimTimeline(HistoryEvent historyEvent)
+        public bool DeleteBranch(HistoryEvent historyEvent)
         {
             if (historyEvent == null || historyEvent.Children.Count != 0 || historyEvent == _machine.History.CurrentEvent || historyEvent.Parent == null)
             {

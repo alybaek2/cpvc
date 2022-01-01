@@ -261,7 +261,7 @@ namespace CPvC.Test
                 HistoryEvent historyEvent = machine.History.CurrentEvent;
 
                 // Act
-                viewModel.TrimTimeline(historyEvent);
+                viewModel.DeleteBranch(historyEvent);
 
                 // Verify
                 Assert.AreEqual(historyEvent, machine.History.CurrentEvent);
@@ -281,7 +281,7 @@ namespace CPvC.Test
                 machine.JumpToBookmark(machine.History.RootEvent.Children[0].Children[0]);
 
                 // Act
-                viewModel.TrimTimeline(historyEvent);
+                viewModel.DeleteBranch(historyEvent);
 
                 // Verify
                 Assert.AreEqual(1, machine.History.RootEvent.Children[0].Children[0].Children[1].Children[0].Children.Count);
