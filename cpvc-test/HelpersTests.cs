@@ -100,12 +100,10 @@ namespace CPvC.Test
             Assert.AreEqual("00090A0F90A0F0", hex);
         }
 
-        [Test]
-        public void BytesFromHexString()
+        [TestCase("00090a0f90a0f0")]
+        [TestCase("00090A0F90A0F0")]
+        public void BytesFromHexString(string hex)
         {
-            // Setup
-            string hex = "00090A0F90A0F0";
-
             // Act
             byte[] bytes = Helpers.BytesFromStr(hex);
 

@@ -698,9 +698,9 @@ namespace CPvC
         static public LocalMachine GetClosedMachine(IFileSystem fileSystem, string filepath)
         {
             MachineFileReader reader = new MachineFileReader();
-            using (ITextFile fileByteStream = fileSystem.OpenTextFile(filepath))
+            using (ITextFile textFile = fileSystem.OpenTextFile(filepath))
             {
-                reader.ReadFile(fileByteStream);
+                reader.ReadFile(textFile);
             }
 
             LocalMachine machine = New(reader.Name, reader.History, filepath);

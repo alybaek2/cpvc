@@ -20,9 +20,6 @@ namespace CPvC.UI
         public ICommand DeleteBookmarksCommand { get; }
         public ICommand DeleteBranchesCommand { get; }
 
-        public HistoryEvent SelectedJumpEvent { get; private set; }
-        public HistoryEvent SelectedReplayEvent { get; private set; }
-
         public ObservableCollection<HistoryViewItem> Items { get; }
 
         public ReadOnlyObservableCollection<HistoryViewItem> SelectedItems { get; }
@@ -51,7 +48,10 @@ namespace CPvC.UI
 
         public void AddSelectedItem(HistoryViewItem addedItem)
         {
-            _selectedItems.Add(addedItem);
+            if (!_selectedItems.Contains(addedItem))
+            {
+                _selectedItems.Add(addedItem);
+            }
         }
 
         public void RemoveSelectedItem(HistoryViewItem removedItem)

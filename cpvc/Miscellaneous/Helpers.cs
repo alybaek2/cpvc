@@ -213,11 +213,11 @@ namespace CPvC
 
         static public char HexCharFromByte(byte b)
         {
-            if (0 <= b && b <= 9)
+            if (b <= 9)
             {
                 return (char)('0' + b);
             }
-            else if (10 <= b && b <= 15)
+            else if (b <= 15)
             {
                 return (char)('A' + b - 10);
             }

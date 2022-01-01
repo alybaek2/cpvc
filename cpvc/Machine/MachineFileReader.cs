@@ -12,7 +12,7 @@ namespace CPvC
         private int _nextLineId = 0;
         private Dictionary<int, string> _args;
 
-        public void ReadFile(ITextFile byteStream)
+        public void ReadFile(ITextFile textFile)
         {
             _idToHistoryEvent = new Dictionary<int, HistoryEvent>();
             _args = new Dictionary<int, string>();
@@ -22,7 +22,7 @@ namespace CPvC
             _idToHistoryEvent[_machineHistory.RootEvent.Id] = _machineHistory.RootEvent;
 
             string line;
-            while ((line = byteStream.ReadLine()) != null)
+            while ((line = textFile.ReadLine()) != null)
             {
                 ProcessLine(line);
             }

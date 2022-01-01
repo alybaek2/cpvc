@@ -2,6 +2,7 @@
 using Moq;
 using NUnit.Framework;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using static CPvC.Test.TestHelpers;
 
@@ -182,8 +183,9 @@ namespace CPvC.Test
             Assert.AreEqual(machine.History.RootEvent, viewModel.Items[5].HistoryEvent);
         }
 
-        [Test]
-        public void DeleteBookmark([Values(false, true)] bool hasSelectedItem)
+        [TestCase(false)]
+        [TestCase(true)]
+        public void DeleteBookmark(bool hasSelectedItem)
         {
             // Setup
             using (LocalMachine machine = CreateMachineWithHistory())
@@ -191,10 +193,12 @@ namespace CPvC.Test
                 BookmarksViewModel viewModel = new BookmarksViewModel(machine);
                 HistoryViewItem bookmarkEventViewItem = viewModel.Items[3];
                 Bookmark bookmark = (bookmarkEventViewItem.HistoryEvent as BookmarkHistoryEvent)?.Bookmark;
-                if (!hasSelectedItem)
+
+                if (hasSelectedItem)
                 {
                     viewModel.AddSelectedItem(bookmarkEventViewItem);
                 }
+
                 HistoryEvent parentEvent = bookmarkEventViewItem.HistoryEvent.Parent;
                 List<HistoryEvent> childEvents = new List<HistoryEvent>();
                 childEvents.AddRange(bookmarkEventViewItem.HistoryEvent.Children);
@@ -203,7 +207,7 @@ namespace CPvC.Test
                 viewModel.DeleteBookmarksCommand.Execute(null);
 
                 // Verify
-                if (hasSelectedItem)
+                if (!hasSelectedItem)
                 {
                     Assert.AreEqual(bookmark, (bookmarkEventViewItem.HistoryEvent as BookmarkHistoryEvent)?.Bookmark);
                 }
@@ -218,8 +222,9 @@ namespace CPvC.Test
             }
         }
 
-        [Test]
-        public void DeleteBranch([Values(false, true)] bool hasSelectedItem)
+        [TestCase(false)]
+        [TestCase(true)]
+        public void DeleteBranch(bool hasSelectedItem)
         {
             // Setup
             using (LocalMachine machine = CreateMachineWithHistory())
@@ -228,7 +233,7 @@ namespace CPvC.Test
                 HistoryViewItem branchViewItem = viewModel.Items[1];
                 HistoryEvent parentEvent = branchViewItem.HistoryEvent.Parent;
 
-                if (!hasSelectedItem)
+                if (hasSelectedItem)
                 {
                     viewModel.AddSelectedItem(branchViewItem);
                 }
@@ -237,17 +242,25 @@ namespace CPvC.Test
                 viewModel.DeleteBranchesCommand.Execute(null);
 
                 // Verify
-                bool eventFound = false;
-                for (int i = 0; i < viewModel.Items.Count; i++)
-                {
-                    if (viewModel.Items[i].HistoryEvent == branchViewItem.HistoryEvent)
-                    {
-                        eventFound = true;
-                    }
-                }
+                bool eventFound = viewModel.Items.Any(i => i.HistoryEvent == branchViewItem.HistoryEvent);
+                Assert.AreEqual(hasSelectedItem, !eventFound);
+                Assert.AreEqual(hasSelectedItem ? 1 : 2, parentEvent.Children.Count);
+            }
+        }
 
-                Assert.AreEqual(hasSelectedItem, eventFound);
-                Assert.AreEqual(hasSelectedItem ? 2 : 1, parentEvent.Children.Count);
+        [Test]
+        public void CanDeleteBranch()
+        {
+            // Setup
+            using (LocalMachine machine = CreateMachineWithHistory())
+            {
+                BookmarksViewModel viewModel = new BookmarksViewModel(machine);
+                HistoryViewItem branchViewItem = viewModel.Items[1];
+                HistoryEvent parentEvent = branchViewItem.HistoryEvent.Parent;
+                viewModel.AddSelectedItem(branchViewItem);
+
+                // Verify
+                Assert.True(viewModel.DeleteBranchesCommand.CanExecute(null));
             }
         }
 
@@ -285,6 +298,82 @@ namespace CPvC.Test
 
                 // Verify
                 Assert.AreEqual(1, machine.History.RootEvent.Children[0].Children[0].Children[1].Children[0].Children.Count);
+            }
+        }
+
+        [Test]
+        public void AddSelectedItem()
+        {
+            // Setup
+            using (LocalMachine machine = CreateMachineWithHistory())
+            {
+                BookmarksViewModel viewModel = new BookmarksViewModel(machine);
+                HistoryViewItem branchViewItem = viewModel.Items[1];
+                HistoryEvent parentEvent = branchViewItem.HistoryEvent.Parent;
+
+                // Act
+                viewModel.AddSelectedItem(branchViewItem);
+
+                // Verify
+                Assert.AreEqual(1, viewModel.SelectedItems.Count(i => i == branchViewItem));
+            }
+        }
+
+        [Test]
+        public void AddSelectedItemTwice()
+        {
+            // Setup
+            using (LocalMachine machine = CreateMachineWithHistory())
+            {
+                BookmarksViewModel viewModel = new BookmarksViewModel(machine);
+                HistoryViewItem branchViewItem = viewModel.Items[1];
+                HistoryEvent parentEvent = branchViewItem.HistoryEvent.Parent;
+
+                // Act
+                viewModel.AddSelectedItem(branchViewItem);
+                viewModel.AddSelectedItem(branchViewItem);
+
+                // Verify
+                Assert.AreEqual(1, viewModel.SelectedItems.Count(i => i == branchViewItem));
+            }
+        }
+
+        [Test]
+        public void RemoveSelectedItem()
+        {
+            // Setup
+            using (LocalMachine machine = CreateMachineWithHistory())
+            {
+                BookmarksViewModel viewModel = new BookmarksViewModel(machine);
+                HistoryViewItem branchViewItem = viewModel.Items[1];
+                HistoryEvent parentEvent = branchViewItem.HistoryEvent.Parent;
+                viewModel.AddSelectedItem(branchViewItem);
+
+                // Act
+                viewModel.RemoveSelectedItem(branchViewItem);
+
+                // Verify
+                Assert.AreEqual(0, viewModel.SelectedItems.Count(i => i == branchViewItem));
+            }
+        }
+
+        [Test]
+        public void RemoveSelectedItemTwice()
+        {
+            // Setup
+            using (LocalMachine machine = CreateMachineWithHistory())
+            {
+                BookmarksViewModel viewModel = new BookmarksViewModel(machine);
+                HistoryViewItem branchViewItem = viewModel.Items[1];
+                HistoryEvent parentEvent = branchViewItem.HistoryEvent.Parent;
+                viewModel.AddSelectedItem(branchViewItem);
+
+                // Act
+                viewModel.RemoveSelectedItem(branchViewItem);
+                viewModel.RemoveSelectedItem(branchViewItem);
+
+                // Verify
+                Assert.AreEqual(0, viewModel.SelectedItems.Count(i => i == branchViewItem));
             }
         }
     }
