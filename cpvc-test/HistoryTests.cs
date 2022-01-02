@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using Moq;
+using NUnit.Framework;
 using System;
 
 namespace CPvC.Test
@@ -122,6 +123,20 @@ namespace CPvC.Test
 
             // Verify
             Assert.AreEqual(_history.RootEvent, _history.CurrentEvent);
+        }
+
+        [Test]
+        public void SetCurrentEventToCurrentEvent()
+        {
+            // Setup
+            Mock<History.HistoryEventDelegate> mockAuditor = new Mock<History.HistoryEventDelegate>(MockBehavior.Loose);
+            _history.Auditors += mockAuditor.Object;
+
+            // Act
+            _history.CurrentEvent = _history.CurrentEvent;
+
+            // Verify
+            mockAuditor.VerifyNoOtherCalls();
         }
 
         [Test]

@@ -98,23 +98,35 @@ namespace CPvC.Test
         public void DeleteBookmarkNoSelection()
         {
             // Setup
-            int historyEventsCount = 0;
-            _history.Auditors += (historyEvent, changeAction) =>
-            {
-                historyEventsCount++;
-            };
+            Mock<History.HistoryEventDelegate> mockAuditor = new Mock<History.HistoryEventDelegate>(MockBehavior.Loose);
+            _history.Auditors += mockAuditor.Object;
 
             // Act
             _viewModel.DeleteBookmarksCommand.Execute(null);
 
             // Verify
-            Assert.Zero(historyEventsCount);
+            mockAuditor.VerifyNoOtherCalls();
         }
 
         [Test]
         public void DeleteBookmark()
         {
             // Setup
+            _viewModel.AddSelectedItem(_bookmark2ViewItem);
+
+            // Act
+            _viewModel.DeleteBookmarksCommand.Execute(null);
+
+            // Verify
+            Assert.False(_viewModel.Items.Contains(_bookmark2ViewItem));
+        }
+
+        [Test]
+        public void DeleteBookmarkMixedSelection()
+        {
+            // Setup
+            _history.CurrentEvent = _bookmark3Event;
+            _viewModel.AddSelectedItem(_leaf1ViewItem);
             _viewModel.AddSelectedItem(_bookmark2ViewItem);
 
             // Act
@@ -193,17 +205,14 @@ namespace CPvC.Test
         public void DeleteBranchNoSelection()
         {
             // Setup
-            int historyEventsCount = 0;
-            _history.Auditors += (historyEvent, changeAction) =>
-            {
-                historyEventsCount++;
-            };
+            Mock<History.HistoryEventDelegate> mockAuditor = new Mock<History.HistoryEventDelegate>(MockBehavior.Loose);
+            _history.Auditors += mockAuditor.Object;
 
             // Act
             _viewModel.DeleteBranchesCommand.Execute(null);
 
             // Verify
-            Assert.Zero(historyEventsCount);
+            mockAuditor.VerifyNoOtherCalls();
         }
 
         [Test]
@@ -217,6 +226,28 @@ namespace CPvC.Test
 
             // Verify
             Assert.False(_viewModel.Items.Contains(_leaf1ViewItem));
+        }
+
+        [Test]
+        public void DeleteBranchNonDeletable()
+        {
+            // Setup
+            Mock<History.HistoryEventDelegate> mockAuditor = new Mock<History.HistoryEventDelegate>(MockBehavior.Loose);
+            _history.Auditors += mockAuditor.Object;
+
+            _history.CurrentEvent = _bookmark3Event;
+            _viewModel.AddSelectedItem(_rootViewItem);
+            _viewModel.AddSelectedItem(_bookmark2ViewItem);
+            _viewModel.AddSelectedItem(_bookmark3ViewItem);
+
+            // Act
+            _viewModel.DeleteBranchesCommand.Execute(null);
+
+            // Verify
+            mockAuditor.VerifyNoOtherCalls();
+            Assert.True(_viewModel.Items.Contains(_rootViewItem));
+            Assert.True(_viewModel.Items.Contains(_bookmark2ViewItem));
+            Assert.True(_viewModel.Items.Contains(_bookmark3ViewItem));
         }
 
         [Test]
