@@ -13,6 +13,9 @@ namespace CPvC.Test
     {
         private Mock<IFileSystem> _mockFileSystem;
 
+        private LocalMachine _machine;
+        private BookmarksViewModel _viewModel;
+
         private LocalMachine CreateMachineWithHistory()
         {
             LocalMachine machine = LocalMachine.New("test", null);
@@ -50,11 +53,16 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.DeleteFile(AnyString()));
             _mockFileSystem.Setup(fileSystem => fileSystem.ReplaceFile(AnyString(), AnyString()));
             _mockFileSystem.Setup(ReadBytes()).Returns(new byte[1]);
+
+            _machine = CreateMachineWithHistory();
+            _viewModel = new BookmarksViewModel(_machine);
         }
 
         [TearDown]
         public void Teardown()
         {
+            _machine.Close();
+
             _mockFileSystem = null;
         }
 
@@ -222,30 +230,37 @@ namespace CPvC.Test
             }
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public void DeleteBranch(bool hasSelectedItem)
+        [Test]
+        public void DeleteBranchNoSelection()
         {
             // Setup
-            using (LocalMachine machine = CreateMachineWithHistory())
+            int historyEventsCount = 0;
+            _machine.History.Auditors += (historyEvent, changeAction) =>
             {
-                BookmarksViewModel viewModel = new BookmarksViewModel(machine);
-                HistoryViewItem branchViewItem = viewModel.Items[1];
-                HistoryEvent parentEvent = branchViewItem.HistoryEvent.Parent;
+                historyEventsCount++;
+            };
 
-                if (hasSelectedItem)
-                {
-                    viewModel.AddSelectedItem(branchViewItem);
-                }
+            // Act
+            _viewModel.DeleteBranchesCommand.Execute(null);
 
-                // Act
-                viewModel.DeleteBranchesCommand.Execute(null);
+            // Verify
+            Assert.Zero(historyEventsCount);
+        }
 
-                // Verify
-                bool eventFound = viewModel.Items.Any(i => i.HistoryEvent == branchViewItem.HistoryEvent);
-                Assert.AreEqual(hasSelectedItem, !eventFound);
-                Assert.AreEqual(hasSelectedItem ? 1 : 2, parentEvent.Children.Count);
-            }
+        [Test]
+        public void DeleteBranch()
+        {
+            // Setup
+            HistoryViewItem branchViewItem = _viewModel.Items[1];
+            HistoryEvent parentEvent = branchViewItem.HistoryEvent.Parent;
+            _viewModel.AddSelectedItem(branchViewItem);
+
+            // Act
+            _viewModel.DeleteBranchesCommand.Execute(null);
+
+            // Verify
+            Assert.False(_viewModel.Items.Contains(branchViewItem));
+            Assert.AreEqual(1, parentEvent.Children.Count);
         }
 
         [Test]

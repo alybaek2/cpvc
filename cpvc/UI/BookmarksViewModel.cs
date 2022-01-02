@@ -244,10 +244,5 @@ namespace CPvC.UI
 
             return _machine.DeleteBranch(child);
         }
-
-        protected void OnPropertyChanged([CallerMemberName] string name = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
     }
 }
