@@ -203,7 +203,7 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void DeleteEvent()
+        public void DeleteBookmark()
         {
             // Act
             bool result = _history.DeleteBookmark(_event01);

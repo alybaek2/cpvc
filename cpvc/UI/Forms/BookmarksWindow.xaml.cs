@@ -24,7 +24,7 @@ namespace CPvC.UI.Forms
 
             _machine = machine;
 
-            _viewModel = new BookmarksViewModel(_machine);
+            _viewModel = new BookmarksViewModel(_machine.History);
             _display = new Display();
 
             Owner = owner;

@@ -12,9 +12,9 @@ namespace CPvC.UI
     /// <summary>
     /// View model for the Bookmarks window.
     /// </summary>
-    public class BookmarksViewModel : INotifyPropertyChanged
+    public class BookmarksViewModel
     {
-        private LocalMachine _machine;
+        private History _history;
         private ObservableCollection<HistoryViewItem> _selectedItems;
 
         public ICommand DeleteBookmarksCommand { get; }
@@ -24,9 +24,7 @@ namespace CPvC.UI
 
         public ReadOnlyObservableCollection<HistoryViewItem> SelectedItems { get; }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public BookmarksViewModel(LocalMachine machine)
+        public BookmarksViewModel(History history)
         {
             _selectedItems = new ObservableCollection<HistoryViewItem>();
             SelectedItems = new ReadOnlyObservableCollection<HistoryViewItem>(_selectedItems);
@@ -38,10 +36,10 @@ namespace CPvC.UI
 
             DeleteBranchesCommand = new Command(
                 p => DeleteBranches(),
-                p => SelectedItems.Any(item => !item.HistoryEvent.IsEqualToOrAncestorOf(machine.History.CurrentEvent))
+                p => SelectedItems.Any(item => !item.HistoryEvent.IsEqualToOrAncestorOf(_history.CurrentEvent))
             );
 
-            _machine = machine;
+            _history = history;
             Items = new ObservableCollection<HistoryViewItem>();
             RefreshHistoryViewItems();
         }
@@ -108,7 +106,7 @@ namespace CPvC.UI
             // Avoid calling this function recursively since the depth of the history could be large...
             List<Tuple<int, HistoryEvent>> eventStack = new List<Tuple<int, HistoryEvent>>
             {
-                new Tuple<int, HistoryEvent>(0, _machine.History.RootEvent)
+                new Tuple<int, HistoryEvent>(0, _history.RootEvent)
             };
 
             // Note that items is sorted in ascending order of ticks (i.e. oldest to most recent).
@@ -171,7 +169,7 @@ namespace CPvC.UI
             for (int i = items.Count - 1; i >= 0; i--)
             {
                 HistoryViewItem item = items[i];
-                item.Draw(next, _machine.History.CurrentEvent);
+                item.Draw(next, _history.CurrentEvent);
 
                 next = item;
             }
@@ -194,7 +192,7 @@ namespace CPvC.UI
             {
                 if (selectedItem.HistoryEvent is BookmarkHistoryEvent bookmarkHistoryEvent)
                 {
-                    refresh |= _machine.DeleteBookmark(bookmarkHistoryEvent);
+                    refresh |= _history.DeleteBookmark(bookmarkHistoryEvent);
                 }
             }
 
@@ -210,7 +208,7 @@ namespace CPvC.UI
 
             foreach (HistoryViewItem selectedItem in SelectedItems)
             {
-                if (!selectedItem.HistoryEvent.IsEqualToOrAncestorOf(_machine.History.CurrentEvent))
+                if (!selectedItem.HistoryEvent.IsEqualToOrAncestorOf(_history.CurrentEvent))
                 {
                     refresh |= DeleteBranch(selectedItem.HistoryEvent);
                 }
@@ -228,7 +226,7 @@ namespace CPvC.UI
         /// <param name="historyEvent">HistoryEvent object which belongs to the branch to be removed.</param>
         public bool DeleteBranch(HistoryEvent historyEvent)
         {
-            if (historyEvent == null || historyEvent.Children.Count != 0 || historyEvent == _machine.History.CurrentEvent || historyEvent.Parent == null)
+            if (historyEvent == null || historyEvent.Children.Count != 0 || historyEvent == _history.CurrentEvent || historyEvent.Parent == null)
             {
                 return false;
             }
@@ -242,7 +240,7 @@ namespace CPvC.UI
                 parent = parent.Parent;
             }
 
-            return _machine.DeleteBranch(child);
+            return _history.DeleteBranch(child);
         }
     }
 }
