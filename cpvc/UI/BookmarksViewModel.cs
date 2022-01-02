@@ -36,7 +36,7 @@ namespace CPvC.UI
 
             DeleteBranchesCommand = new Command(
                 p => DeleteBranches(),
-                p => SelectedItems.Any(item => !item.HistoryEvent.IsEqualToOrAncestorOf(_history.CurrentEvent))
+                p => SelectedItems.Any(item => !(item.HistoryEvent.Children.Count != 0 || item.HistoryEvent == _history.CurrentEvent || item.HistoryEvent is RootHistoryEvent))
             );
 
             _history = history;
@@ -226,7 +226,7 @@ namespace CPvC.UI
         /// <param name="historyEvent">HistoryEvent object which belongs to the branch to be removed.</param>
         public bool DeleteBranch(HistoryEvent historyEvent)
         {
-            if (historyEvent == null || historyEvent.Children.Count != 0 || historyEvent == _history.CurrentEvent || historyEvent.Parent == null)
+            if (historyEvent.Children.Count != 0 || historyEvent == _history.CurrentEvent || historyEvent is RootHistoryEvent)
             {
                 return false;
             }

@@ -42,11 +42,15 @@ namespace CPvC.Test
             _history = new History();
 
             _bookmark1Event = _history.AddBookmark(100, new Bookmark(false, 0, null, null));
-            _leaf1Event = _history.AddCoreAction(CoreAction.RunUntil(100, 400, null));
+            _history.AddCoreAction(CoreAction.RunUntil(100, 400, null));
+            _leaf1Event = _history.AddCoreAction(CoreAction.KeyPress(400, 42, true));
             _history.CurrentEvent = _bookmark1Event;
             _bookmark2Event = _history.AddBookmark(200, new Bookmark(false, 0, null, null));
-            _leaf2Event = _history.AddCoreAction(CoreAction.RunUntil(200, 300, null));
+            _history.AddCoreAction(CoreAction.RunUntil(200, 300, null));
+            _leaf2Event = _history.AddCoreAction(CoreAction.KeyPress(300, 42, true));
             _history.CurrentEvent = _bookmark2Event;
+            _history.AddCoreAction(CoreAction.KeyPress(300, 42, true));
+            _history.AddCoreAction(CoreAction.KeyPress(400, 42, false));
             _bookmark3Event = _history.AddBookmark(500, new Bookmark(false, 0, null, null));
 
             // Diagram of this history...
@@ -111,14 +115,78 @@ namespace CPvC.Test
         public void DeleteBookmark()
         {
             // Setup
-            HistoryViewItem bookmarkEventViewItem = _viewModel.Items[3];
-            _viewModel.AddSelectedItem(bookmarkEventViewItem);
+            _viewModel.AddSelectedItem(_bookmark2ViewItem);
 
             // Act
             _viewModel.DeleteBookmarksCommand.Execute(null);
 
             // Verify
-            Assert.False(_viewModel.Items.Contains(bookmarkEventViewItem));
+            Assert.False(_viewModel.Items.Contains(_bookmark2ViewItem));
+        }
+
+        [Test]
+        public void CanDeleteNonBookmark()
+        {
+            // Setup
+            _history.CurrentEvent = _bookmark3Event;
+            _viewModel.AddSelectedItem(_leaf1ViewItem);
+
+            // Verify
+            Assert.False(_viewModel.DeleteBookmarksCommand.CanExecute(null));
+        }
+
+        [Test]
+        public void CanDeleteNonBookmarkMultipleSelected()
+        {
+            // Setup
+            _history.CurrentEvent = _bookmark3Event;
+            _viewModel.AddSelectedItem(_leaf1ViewItem);
+            _viewModel.AddSelectedItem(_leaf2ViewItem);
+
+            // Verify
+            Assert.False(_viewModel.DeleteBookmarksCommand.CanExecute(null));
+        }
+
+        [Test]
+        public void CanDeleteNonBookmarkMixedSelection()
+        {
+            // Setup
+            _history.CurrentEvent = _bookmark3Event;
+            _viewModel.AddSelectedItem(_leaf1ViewItem);
+            _viewModel.AddSelectedItem(_bookmark2ViewItem);
+
+            // Verify
+            Assert.True(_viewModel.DeleteBookmarksCommand.CanExecute(null));
+        }
+
+        [Test]
+        public void CanDeleteBookmarkNothingSelected()
+        {
+            // Verify
+            Assert.False(_viewModel.DeleteBookmarksCommand.CanExecute(null));
+        }
+
+        [Test]
+        public void CanDeleteBookmark()
+        {
+            // Setup
+            _history.CurrentEvent = _leaf1Event;
+            _viewModel.AddSelectedItem(_bookmark3ViewItem);
+
+            // Verify
+            Assert.True(_viewModel.DeleteBookmarksCommand.CanExecute(null));
+        }
+
+        [Test]
+        public void CanDeleteBookmarkMultipleSelected()
+        {
+            // Setup
+            _history.CurrentEvent = _leaf1Event;
+            _viewModel.AddSelectedItem(_bookmark2ViewItem);
+            _viewModel.AddSelectedItem(_bookmark3ViewItem);
+
+            // Verify
+            Assert.True(_viewModel.DeleteBookmarksCommand.CanExecute(null));
         }
 
         [Test]
@@ -155,10 +223,64 @@ namespace CPvC.Test
         public void CanDeleteBranch()
         {
             // Setup
+            _history.CurrentEvent = _bookmark3Event;
             _viewModel.AddSelectedItem(_leaf1ViewItem);
 
             // Verify
             Assert.True(_viewModel.DeleteBranchesCommand.CanExecute(null));
+        }
+
+        [Test]
+        public void CanDeleteBranchMultipleSelected()
+        {
+            // Setup
+            _history.CurrentEvent = _bookmark3Event;
+            _viewModel.AddSelectedItem(_leaf1ViewItem);
+            _viewModel.AddSelectedItem(_leaf2ViewItem);
+
+            // Verify
+            Assert.True(_viewModel.DeleteBranchesCommand.CanExecute(null));
+        }
+
+        [Test]
+        public void CanDeleteBranchMixedSelection()
+        {
+            // Setup
+            _history.CurrentEvent = _bookmark3Event;
+            _viewModel.AddSelectedItem(_leaf1ViewItem);
+            _viewModel.AddSelectedItem(_bookmark3ViewItem);
+
+            // Verify
+            Assert.True(_viewModel.DeleteBranchesCommand.CanExecute(null));
+        }
+
+        [Test]
+        public void CanDeleteBranchDescendant()
+        {
+            // Setup
+            _history.CurrentEvent = _bookmark1Event;
+            _viewModel.AddSelectedItem(_leaf1ViewItem);
+
+            // Verify
+            Assert.True(_viewModel.DeleteBranchesCommand.CanExecute(null));
+        }
+
+        [Test]
+        public void CanDeleteBranchMultipleChildren()
+        {
+            // Setup
+            _history.CurrentEvent = _bookmark1Event;
+            _viewModel.AddSelectedItem(_bookmark2ViewItem);
+
+            // Verify
+            Assert.False(_viewModel.DeleteBranchesCommand.CanExecute(null));
+        }
+
+        [Test]
+        public void CanDeleteBranchNoSelection()
+        {
+            // Verify
+            Assert.False(_viewModel.DeleteBranchesCommand.CanExecute(null));
         }
 
         [Test]
