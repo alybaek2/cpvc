@@ -150,7 +150,7 @@ namespace CPvC
 
         public override string GetLine()
         {
-            return MachineFileWriter.AddBookmarkCommand(Id, Ticks, Bookmark.System, Bookmark.Version, Bookmark.State.GetBytes(), Bookmark.Screen.GetBytes());
+            return MachineFileWriter.AddBookmarkCommand(Id, Ticks, Bookmark.System, Bookmark.Version, Node.CreateDate, Bookmark.State.GetBytes(), Bookmark.Screen.GetBytes());
         }
 
         internal override HistoryNode Node

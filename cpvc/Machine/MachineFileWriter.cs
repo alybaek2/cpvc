@@ -125,15 +125,16 @@ namespace CPvC
             return String.Format("{0}:{1}", _idName, name);
         }
 
-        static public string AddBookmarkCommand(int id, UInt64 ticks, bool system, int version, byte[] state, byte[] screen)
+        static public string AddBookmarkCommand(int id, UInt64 ticks, bool system, int version, DateTime creationTime, byte[] state, byte[] screen)
         {
             return String.Format(
-                "{0}:{1},{2},{3},{4},{5},{6}",
+                "{0}:{1},{2},{3},{4},{5},{6},{7}",
                 _idAddBookmark,
                 id,
                 ticks,
                 system,
                 version,
+                creationTime.Ticks,
                 Helpers.StrFromBytes(state),
                 Helpers.StrFromBytes(screen));
         }

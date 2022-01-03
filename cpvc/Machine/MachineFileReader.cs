@@ -113,12 +113,15 @@ namespace CPvC
             UInt64 ticks = Convert.ToUInt64(tokens[1]);
             bool system = Convert.ToBoolean(tokens[2]);
             int version = Convert.ToInt32(tokens[3]);
-            byte[] state = Helpers.BytesFromStr(tokens[4]);
-            byte[] screen = Helpers.BytesFromStr(tokens[5]);
+            Int64 dateTimeTicks = Convert.ToInt64(tokens[4]);
+            byte[] state = Helpers.BytesFromStr(tokens[5]);
+            byte[] screen = Helpers.BytesFromStr(tokens[6]);
+
+            DateTime creationTime = new DateTime(dateTimeTicks, DateTimeKind.Utc);
 
             Bookmark bookmark = new Bookmark(system, version, state, screen);
 
-            HistoryEvent historyEvent = _machineHistory.AddBookmark(ticks, bookmark, id);
+            HistoryEvent historyEvent = _machineHistory.AddBookmark(ticks, bookmark, creationTime, id);
 
             _idToHistoryEvent[id] = historyEvent;
 

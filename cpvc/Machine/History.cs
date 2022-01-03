@@ -74,10 +74,15 @@ namespace CPvC
 
         public BookmarkHistoryEvent AddBookmark(UInt64 ticks, Bookmark bookmark)
         {
-            return AddBookmark(ticks, bookmark, _nextId);
+            return AddBookmark(ticks, bookmark, DateTime.UtcNow, _nextId);
         }
 
-        public BookmarkHistoryEvent AddBookmark(UInt64 ticks, Bookmark bookmark, int id)
+        public BookmarkHistoryEvent AddBookmark(UInt64 ticks, Bookmark bookmark, DateTime creationTime)
+        {
+            return AddBookmark(ticks, bookmark, creationTime, _nextId);
+        }
+
+        public BookmarkHistoryEvent AddBookmark(UInt64 ticks, Bookmark bookmark, DateTime creationTime, int id)
         {
             CoreActionHistoryNode currentCoreActionNode = _currentNode as CoreActionHistoryNode;
             if (currentCoreActionNode != null &&
@@ -88,7 +93,7 @@ namespace CPvC
                 Auditors?.Invoke(currentCoreActionNode.HistoryEvent, HistoryChangedAction.Add);
             }
 
-            BookmarkHistoryNode historyNode = new BookmarkHistoryNode(id, ticks, bookmark, _currentNode, DateTime.Now);
+            BookmarkHistoryNode historyNode = new BookmarkHistoryNode(id, ticks, bookmark, _currentNode, creationTime);
 
             _nextId = Math.Max(_nextId, id) + 1;
 

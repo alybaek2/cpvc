@@ -28,21 +28,13 @@ namespace CPvC
 
         public HistoryViewItem(HistoryEvent historyEvent)
         {
+            HistoryEvent = historyEvent ?? throw new ArgumentException("History event must be non-null!", nameof(historyEvent));
+
             Canvas = new Canvas();
             Events = new List<HistoryEvent>();
-
-            HistoryEvent = historyEvent;
         }
 
-        public UInt64 Ticks
-        {
-            get
-            {
-                return HistoryEvent?.EndTicks ?? 0;
-            }
-        }
-
-        public DateTime? CreateDate
+        public DateTime CreateDate
         {
             get
             {
