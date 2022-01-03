@@ -347,9 +347,9 @@ namespace CPvC.Test
         {
             // Setup
             History expectedHistory = new History();
-            expectedHistory.AddBookmark(100, new Bookmark(true, 1, _state, _screen));
+            expectedHistory.AddBookmark(100, new Bookmark(true, 1, _state, _screen), new DateTime(123456789, DateTimeKind.Utc));
             _mockFile.WriteLine(String.Format("args:False,1#{0}@2#{1}", Helpers.StrFromBytes(_state), Helpers.StrFromBytes(_screen)));
-            _mockFile.WriteLine("bookmark:0,100,True,1,$1,$2");
+            _mockFile.WriteLine("bookmark:0,100,True,1,123456789,$1,$2");
 
             // Act
             _fileReader.ReadFile(_mockFile);
