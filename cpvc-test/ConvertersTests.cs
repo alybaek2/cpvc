@@ -98,5 +98,58 @@ namespace CPvC.Test
 
             Assert.IsNull(original);
         }
+
+        [Test]
+        public void LocalDateTimeFromUtc()
+        {
+            // Setup
+            DateTime value = new DateTime(2020, 4, 2, 13, 22, 59, DateTimeKind.Utc);
+            CPvC.UI.Converters.LocalDateTime conv = new UI.Converters.LocalDateTime();
+
+            // Act
+            object converted = conv.Convert(value, null, null, null);
+
+            // Verify
+            Assert.AreEqual(converted, value.ToLocalTime());
+        }
+
+        [Test]
+        public void LocalDateTimeFromLocal()
+        {
+            // Setup
+            DateTime value = new DateTime(2020, 4, 2, 13, 22, 59, DateTimeKind.Local);
+            CPvC.UI.Converters.LocalDateTime conv = new UI.Converters.LocalDateTime();
+
+            // Act
+            object converted = conv.Convert(value, null, null, null);
+
+            // Verify
+            Assert.AreEqual(converted, value);
+        }
+
+        [Test]
+        public void LocalDateTimeFromNull()
+        {
+            // Setup
+            object value = null;
+            CPvC.UI.Converters.LocalDateTime conv = new UI.Converters.LocalDateTime();
+
+            // Act
+            object converted = conv.Convert(value, null, null, null);
+
+            // Verify
+            Assert.Null(converted);
+        }
+
+        [Test]
+        public void LocalDateTimeConvertBack()
+        {
+            // Setup
+            object value = null;
+            CPvC.UI.Converters.LocalDateTime conv = new UI.Converters.LocalDateTime();
+
+            // Act and Verify
+            Assert.Throws<NotSupportedException>(() => conv.ConvertBack(value, null, null, null));
+        }
     }
 }

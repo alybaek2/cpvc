@@ -171,6 +171,7 @@
     <Compile Include="Miscellaneous\Diagnostics.cs" />
     <Compile Include="UI\BookmarksViewModel.cs" />
     <Compile Include="UI\Converters\BooleanInverter.cs" />
+    <Compile Include="UI\Converters\LocalDateTime.cs" />
     <Compile Include="UI\FileTypes.cs" />
     <Compile Include="IO\FileSystem.cs" />
     <Compile Include="IO\IFileSystem.cs" />

@@ -34,14 +34,6 @@ namespace CPvC
             Events = new List<HistoryEvent>();
         }
 
-        public DateTime CreateDate
-        {
-            get
-            {
-                return HistoryEvent.CreateDate.ToLocalTime();
-            }
-        }
-
         private int EventIndex(HistoryEvent historyEvent)
         {
             return Events.IndexOf(historyEvent);
