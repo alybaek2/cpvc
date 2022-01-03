@@ -208,10 +208,7 @@ namespace CPvC.UI
 
             foreach (HistoryViewItem selectedItem in SelectedItems)
             {
-                if (!selectedItem.HistoryEvent.IsEqualToOrAncestorOf(_history.CurrentEvent))
-                {
-                    refresh |= DeleteBranch(selectedItem.HistoryEvent);
-                }
+                refresh |= DeleteBranch(selectedItem.HistoryEvent);
             }
 
             if (refresh)
