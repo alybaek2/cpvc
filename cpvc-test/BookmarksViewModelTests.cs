@@ -255,6 +255,20 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void DeleteBranchFromCurrent()
+        {
+            // Setup
+            _history.CurrentEvent = _bookmark2Event;
+            _viewModel.AddSelectedItem(_bookmark3ViewItem);
+
+            // Act
+            _viewModel.DeleteBranchesCommand.Execute(null);
+
+            // Verify
+            Assert.False(_viewModel.Items.Contains(_leaf1ViewItem));
+        }
+
+        [Test]
         public void DeleteBranchMultiple()
         {
             // Setup

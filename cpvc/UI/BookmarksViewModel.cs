@@ -231,7 +231,7 @@ namespace CPvC.UI
             // Walk up the tree to find the node to be removed...
             HistoryEvent parent = historyEvent.Parent;
             HistoryEvent child = historyEvent;
-            while (parent != null && parent.Children.Count == 1)
+            while (parent != _history.CurrentEvent && parent.Children.Count == 1)
             {
                 child = parent;
                 parent = parent.Parent;
