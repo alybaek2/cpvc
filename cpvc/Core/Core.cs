@@ -587,7 +587,7 @@ namespace CPvC
             stopTicks = Math.Min(stopTicks, Ticks + 1000);
 
             List<UInt16> audioSamples = new List<UInt16>();
-            byte stopReason = RunUntil(stopTicks, (byte)(StopReasons.VSync), audioSamples);
+            byte stopReason = RunUntil(stopTicks, StopReasons.VSync, audioSamples);
 
             foreach (UInt16 sample in audioSamples)
             {

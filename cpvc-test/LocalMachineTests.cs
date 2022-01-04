@@ -32,7 +32,7 @@ namespace CPvC.Test
 
             machine.Core.IdleRequest = () =>
             {
-                return (machine.RunningState == RunningState.Running) ? CoreRequest.RunUntil(machine.Core.Ticks + 1000) : null;
+                return (machine.RunningState == RunningState.Running) ? CoreRequest.RunUntil(machine.Core.Ticks + 10) : null;
             };
 
             return machine;
@@ -670,7 +670,7 @@ namespace CPvC.Test
         /// <summary>
         /// Ensures that when reading audio, the second and subsequent calls will
         /// be able to fully populate the buffer that is provided. The first call
-        /// is expected to not be able to full populate the buffer (sue to the
+        /// is expected to not be able to full populate the buffer (due to the
         /// setting of OverrunThreshold).
         /// 
         /// Note that if the machine wasn't able to fully populate the buffer, audio

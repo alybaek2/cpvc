@@ -151,7 +151,7 @@ namespace CPvC
             return New(name, new History(), persistentFilepath);
         }
 
-        static public LocalMachine New(string name, History history, string persistentFilepath)
+        static private LocalMachine New(string name, History history, string persistentFilepath)
         {
             LocalMachine machine = new LocalMachine(name, history);
             Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);

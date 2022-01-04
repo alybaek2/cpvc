@@ -92,17 +92,20 @@ namespace CPvC
 
         public void Advance(int samples)
         {
-            int maxSamples = _writePosition - _readPosition;
-            if (samples > maxSamples)
+            lock (_buffer)
             {
-                samples = maxSamples;
-            }
+                int maxSamples = _writePosition - _readPosition;
+                if (samples > maxSamples)
+                {
+                    samples = maxSamples;
+                }
 
-            _readPosition += samples;
+                _readPosition += samples;
 
-            if (!Overrun())
-            {
-                _underrunEvent.Set();
+                if (!Overrun())
+                {
+                    _underrunEvent.Set();
+                }
             }
         }
 
@@ -120,29 +123,32 @@ namespace CPvC
 
         private bool Read(bool back, out UInt16 sample)
         {
-            if ((_writePosition - _readPosition) < ReadSpeed)
+            lock (_buffer)
             {
-                sample = 0;
-                return false;
-            }
+                if ((_writePosition - _readPosition) < ReadSpeed)
+                {
+                    sample = 0;
+                    return false;
+                }
 
-            if (back)
-            {
-                _writePosition -= ReadSpeed;
-                sample = _buffer[BufferPos(_writePosition)];
-            }
-            else
-            {
-                sample = _buffer[BufferPos(_readPosition)];
-                _readPosition += ReadSpeed;
-            }
+                if (back)
+                {
+                    _writePosition -= ReadSpeed;
+                    sample = _buffer[BufferPos(_writePosition)];
+                }
+                else
+                {
+                    sample = _buffer[BufferPos(_readPosition)];
+                    _readPosition += ReadSpeed;
+                }
 
-            if (!Overrun())
-            {
-                _underrunEvent.Set();
-            }
+                if (!Overrun())
+                {
+                    _underrunEvent.Set();
+                }
 
-            return true;
+                return true;
+            }
         }
 
         private bool Overrun()
@@ -157,20 +163,23 @@ namespace CPvC
 
         public void Write(UInt16 sample)
         {
-            if ((_maxSize == -1) || (_writePosition < _maxSize))
+            lock (_buffer)
             {
-                _buffer.Add(sample);
-            }
-            else
-            {
-                _buffer[BufferPos(_writePosition)] = sample;
-            }
+                if ((_maxSize == -1) || (_writePosition < _maxSize))
+                {
+                    _buffer.Add(sample);
+                }
+                else
+                {
+                    _buffer[BufferPos(_writePosition)] = sample;
+                }
 
-            _writePosition++;
+                _writePosition++;
 
-            if (Overrun())
-            {
-                _underrunEvent.Reset();
+                if (Overrun())
+                {
+                    _underrunEvent.Reset();
+                }
             }
         }
 
