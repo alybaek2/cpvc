@@ -41,7 +41,7 @@
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                 <Button x:Name="_replayButton" Content="Replay Selected Timeline" Width="150" Height="20" Margin="10,10,10,10" Command="{Binding ReplayCommand, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"/>
             </StackPanel>
-            <ListView x:Name="_historyListView" Margin="10,10,10,10" Height="250" Width="{Binding ActualWidth, ElementName=_grid, Mode=OneWay}" ItemsSource="{Binding Items, Mode=OneWay}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}" SelectionChanged="HistoryListView_SelectionChanged">
+            <ListView x:Name="_historyListView" Margin="10,10,10,10" Height="250" Width="{Binding ActualWidth, ElementName=_grid, Mode=OneWay}" ItemsSource="{Binding Items, Mode=OneWay}" SelectedItem="{Binding CurrentItem, Mode=OneTime}" SelectionChanged="HistoryListView_SelectionChanged">
                 <ListView.ItemContainerStyle>
                     <Style TargetType="{x:Type ListViewItem}">
                         <Setter Property="BorderThickness" Value="0"/>

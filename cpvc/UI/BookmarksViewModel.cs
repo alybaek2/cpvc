@@ -24,6 +24,14 @@ namespace CPvC.UI
 
         public ReadOnlyObservableCollection<HistoryViewItem> SelectedItems { get; }
 
+        public HistoryViewItem CurrentItem
+        {
+            get
+            {
+                return Items.FirstOrDefault(item => item.HistoryEvent == _history.CurrentEvent);
+            }
+        }
+
         public BookmarksViewModel(History history)
         {
             _selectedItems = new ObservableCollection<HistoryViewItem>();
