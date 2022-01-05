@@ -146,7 +146,7 @@ namespace CPvC
             if (bookmarkHistoryEvent != null && bookmarkHistoryEvent.Bookmark != null && !passthrough)
             {
                 // User bookmarks are drawn as a red dot, system bookmarks as dark red.
-                DrawDot(cx, bookmarkHistoryEvent.Bookmark.System ? Brushes.DarkRed : Brushes.Crimson, true);
+                DrawDot(cx, bookmarkHistoryEvent.Bookmark.System ? Brushes.DarkRed : Brushes.Crimson, historyEvent != currentEvent);
             }
 
             if (passthrough)
