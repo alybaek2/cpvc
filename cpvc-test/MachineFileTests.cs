@@ -59,7 +59,7 @@ namespace CPvC.Test
             History history = new History();
 
             // Act and Verify
-            ArgumentException thrown = Assert.Throws<ArgumentException>(() =>
+            ArgumentException thrown = Assert.Throws<ArgumentNullException>(() =>
             {
                 MachineFileWriter fileWriter = new MachineFileWriter(null, history);
             });

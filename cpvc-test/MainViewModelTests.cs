@@ -842,7 +842,7 @@ namespace CPvC.Test
             Mock<IJumpableMachine> mockMachine = new Mock<IJumpableMachine>();
 
             // Act and Verify
-            Assert.Throws<ArgumentException>(() => _mainViewModel.PersistCommand.Execute(mockMachine.Object));
+            Assert.Throws<ArgumentNullException>(() => _mainViewModel.PersistCommand.Execute(mockMachine.Object));
             Assert.False(_mainViewModel.PersistCommand.CanExecute(mockMachine.Object));
         }
 

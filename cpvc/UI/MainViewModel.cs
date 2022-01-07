@@ -726,7 +726,7 @@ namespace CPvC
         {
             if (machine == null)
             {
-                throw new ArgumentException("Invalid machine!", nameof(machine));
+                throw new ArgumentNullException(nameof(machine));
             }
 
             if (!String.IsNullOrEmpty(machine.PersistantFilepath))

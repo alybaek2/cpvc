@@ -85,7 +85,7 @@ namespace CPvC
 
         public MachineFileWriter(ITextFile textFile, History machineHistory, int nextBlobId)
         {
-            _textFile = textFile ?? throw new ArgumentException("Need a text file to write to!", nameof(textFile));
+            _textFile = textFile ?? throw new ArgumentNullException(nameof(textFile));
             _nextBlobId = nextBlobId;
 
             History = machineHistory;

@@ -27,7 +27,7 @@ namespace CPvC.Test
         public void AddNullMachine()
         {
             // Act and Verify
-            Assert.Throws<ArgumentException>(() => _mainModel.AddMachine(null));
+            Assert.Throws<ArgumentNullException>(() => _mainModel.AddMachine(null));
         }
 
         [Test]

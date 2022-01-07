@@ -28,7 +28,7 @@ namespace CPvC
 
         public HistoryViewItem(HistoryEvent historyEvent)
         {
-            HistoryEvent = historyEvent ?? throw new ArgumentException("History event must be non-null!", nameof(historyEvent));
+            HistoryEvent = historyEvent ?? throw new ArgumentNullException(nameof(historyEvent));
 
             Canvas = new Canvas();
             Events = new List<HistoryEvent>();

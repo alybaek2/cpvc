@@ -629,7 +629,7 @@ namespace CPvC
 
                 if (String.IsNullOrEmpty(filepath))
                 {
-                    throw new ArgumentException("Invalid filepath.");
+                    throw new ArgumentException("Invalid filepath.", nameof(filepath));
                 }
 
                 ITextFile textFile = fileSystem.OpenTextFile(filepath);
