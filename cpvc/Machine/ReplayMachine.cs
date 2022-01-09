@@ -11,9 +11,9 @@ namespace CPvC
         IPrerecordedMachine,
         INotifyPropertyChanged
     {
-        private UInt64 _endTicks;
+        private readonly UInt64 _endTicks;
 
-        private List<HistoryEvent> _historyEvents;
+        private readonly List<HistoryEvent> _historyEvents;
 
         private History _history;
 

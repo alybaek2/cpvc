@@ -36,37 +36,37 @@ namespace CPvC
         public event ConfirmCloseEventHandler ConfirmClose;
         public event CreateSocketEventHandler CreateSocket;
 
-        private Command _openMachineCommand;
-        private Command _newMachineCommand;
-        private Command _startServerCommand;
-        private Command _stopServerCommand;
-        private Command _connectCommand;
-        private Command _removeCommand;
-        private Command _closeCommand;
+        private readonly Command _openMachineCommand;
+        private readonly Command _newMachineCommand;
+        private readonly Command _startServerCommand;
+        private readonly Command _stopServerCommand;
+        private readonly Command _connectCommand;
+        private readonly Command _removeCommand;
+        private readonly Command _closeCommand;
 
-        private Command _driveACommand;
-        private Command _driveAEjectCommand;
-        private Command _driveBCommand;
-        private Command _driveBEjectCommand;
-        private Command _tapeCommand;
-        private Command _tapeEjectCommand;
-        private Command _resetCommand;
-        private Command _persistCommand;
-        private Command _openCommand;
-        private Command _pauseCommand;
-        private Command _resumeCommand;
-        private Command _toggleRunningCommand;
-        private Command _addBookmarkCommand;
-        private Command _jumpToMostRecentBookmarkCommand;
-        private Command _browseBookmarksCommand;
-        private Command _compactCommand;
-        private Command _renameCommand;
-        private Command _seekToNextBookmarkCommand;
-        private Command _seekToPrevBookmarkCommand;
-        private Command _seekToStartCommand;
-        private Command _reverseStartCommand;
-        private Command _reverseStopCommand;
-        private Command _toggleSnapshotCommand;
+        private readonly Command _driveACommand;
+        private readonly Command _driveAEjectCommand;
+        private readonly Command _driveBCommand;
+        private readonly Command _driveBEjectCommand;
+        private readonly Command _tapeCommand;
+        private readonly Command _tapeEjectCommand;
+        private readonly Command _resetCommand;
+        private readonly Command _persistCommand;
+        private readonly Command _openCommand;
+        private readonly Command _pauseCommand;
+        private readonly Command _resumeCommand;
+        private readonly Command _toggleRunningCommand;
+        private readonly Command _addBookmarkCommand;
+        private readonly Command _jumpToMostRecentBookmarkCommand;
+        private readonly Command _browseBookmarksCommand;
+        private readonly Command _compactCommand;
+        private readonly Command _renameCommand;
+        private readonly Command _seekToNextBookmarkCommand;
+        private readonly Command _seekToPrevBookmarkCommand;
+        private readonly Command _seekToStartCommand;
+        private readonly Command _reverseStartCommand;
+        private readonly Command _reverseStopCommand;
+        private readonly Command _toggleSnapshotCommand;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -492,9 +492,9 @@ namespace CPvC
 
         private IMachine OpenMachine()
         {
-            PromptForFileEventArgs args = new PromptForFileEventArgs();
-            args.FileType = FileTypes.Machine;
-            args.Existing = true;
+            PromptForFileEventArgs args = new PromptForFileEventArgs(FileTypes.Machine, true);
+            //args.FileType = FileTypes.Machine;
+            //args.Existing = true;
             PromptForFile?.Invoke(this, args);
 
             string filepath = args.Filepath;
@@ -665,9 +665,7 @@ namespace CPvC
             string expectedExt = disc ? ".dsk" : ".cdt";
             FileTypes type = disc ? FileTypes.Disc : FileTypes.Tape;
 
-            PromptForFileEventArgs args = new PromptForFileEventArgs();
-            args.FileType = type;
-            args.Existing = true;
+            PromptForFileEventArgs args = new PromptForFileEventArgs(type, true);
             PromptForFile?.Invoke(this, args);
 
             string filename = args.Filepath;
@@ -735,9 +733,7 @@ namespace CPvC
                 return;
             }
 
-            PromptForFileEventArgs args = new PromptForFileEventArgs();
-            args.FileType = FileTypes.Machine;
-            args.Existing = false;
+            PromptForFileEventArgs args = new PromptForFileEventArgs(FileTypes.Machine, false);
             PromptForFile?.Invoke(this, args);
 
             string filepath = args.Filepath;

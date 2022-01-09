@@ -19,7 +19,7 @@ namespace CPvC.Test
             _history = new History();
             _event0 = _history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
             _event00 = _history.AddCoreAction(CoreAction.KeyPress(200, 12, true));
-            _history.CurrentEvent =_event0;
+            _history.CurrentEvent = _event0;
             _event01 = _history.AddCoreAction(CoreAction.Reset(300));
             _event010 = _history.AddBookmark(400, new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 }));
         }

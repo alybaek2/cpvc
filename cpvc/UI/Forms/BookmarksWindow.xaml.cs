@@ -62,7 +62,7 @@ namespace CPvC.UI.Forms
         {
             if (e.AddedItems != null)
             {
-                foreach(HistoryViewItem addedItem in e.AddedItems)
+                foreach (HistoryViewItem addedItem in e.AddedItems)
                 {
                     _viewModel.AddSelectedItem(addedItem);
                 }

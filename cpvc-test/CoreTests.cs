@@ -225,7 +225,7 @@ namespace CPvC.Test
         public void CreateInvalidVersion()
         {
             // Setup and Verify
-            Assert.Throws<Exception>(() => Core.Create(2, Core.Type.CPC6128));
+            Assert.Throws<ArgumentException>(() => Core.Create(2, Core.Type.CPC6128));
         }
 
         [Test]

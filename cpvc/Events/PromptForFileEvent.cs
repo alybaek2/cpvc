@@ -4,12 +4,14 @@ namespace CPvC
 {
     public class PromptForFileEventArgs : EventArgs
     {
-        public PromptForFileEventArgs()
+        public PromptForFileEventArgs(FileTypes fileType, bool existing)
         {
+            FileType = fileType;
+            Existing = existing;
         }
 
-        public FileTypes FileType { get; set; }
-        public bool Existing { get; set; }
+        public FileTypes FileType { get; private set; }
+        public bool Existing { get; private set; }
 
         public string Filepath { get; set; }
     }

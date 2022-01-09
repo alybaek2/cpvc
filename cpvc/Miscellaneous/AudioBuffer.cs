@@ -12,12 +12,12 @@ namespace CPvC
             10392, 16706, 23339, 29292, 36969, 46421, 55195, 65535
         };
 
-        private List<UInt16> _buffer;
+        private readonly List<UInt16> _buffer;
         private int _writePosition;
         private int _readPosition;
-        private ManualResetEvent _underrunEvent;
+        private readonly ManualResetEvent _underrunEvent;
 
-        private int _maxSize;
+        private readonly int _maxSize;
 
         public int OverrunThreshold { get; set; }
         public byte ReadSpeed { get; set; }

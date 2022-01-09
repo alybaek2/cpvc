@@ -98,7 +98,7 @@ namespace CPvC
                 case 1:
                     return new Corev1();
                 default:
-                    throw new Exception(String.Format("Cannot instantiate CLR core version {0}.", version));
+                    throw new ArgumentException(String.Format("Cannot instantiate CLR core version {0}.", version), nameof(version));
             }
         }
 
@@ -106,10 +106,7 @@ namespace CPvC
 
         private void OnPropertyChanged(string name)
         {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(name));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
         public void Dispose()
@@ -543,10 +540,9 @@ namespace CPvC
 
         private CoreAction CreateSnapshot(int id)
         {
-            bool success = _coreCLR.CreateSnapshot(id);
-            CoreAction coreAction = CoreAction.CreateSnapshot(Ticks, id);
+            _coreCLR.CreateSnapshot(id);
 
-            return coreAction;
+            return CoreAction.CreateSnapshot(Ticks, id);
         }
 
         private CoreAction DeleteSnapshot(int id)

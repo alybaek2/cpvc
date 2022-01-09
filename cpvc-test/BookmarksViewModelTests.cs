@@ -1,7 +1,6 @@
 ﻿using CPvC.UI;
 using Moq;
 using NUnit.Framework;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using static CPvC.Test.TestHelpers;
