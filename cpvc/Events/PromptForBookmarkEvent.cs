@@ -1,8 +1,8 @@
-﻿using System;
+﻿using System.ComponentModel;
 
 namespace CPvC
 {
-    public class PromptForBookmarkEventArgs : EventArgs
+    public class PromptForBookmarkEventArgs : HandledEventArgs
     {
         public PromptForBookmarkEventArgs()
         {

@@ -124,7 +124,7 @@ namespace CPvC
                 p =>
                 {
                     IPersistableMachine pm = p as IPersistableMachine;
-                    return (pm?.PersistantFilepath != null);
+                    return pm?.PersistantFilepath != null;
                 }
             );
 
@@ -528,14 +528,12 @@ namespace CPvC
             {
                 foreach (IMachine machine in Machines)
                 {
-                    IPersistableMachine persistableMachine = machine as IPersistableMachine;
-                    if (persistableMachine == null || persistableMachine.PersistantFilepath != null)
+                    if (!(machine is IPersistableMachine persistableMachine) || persistableMachine.PersistantFilepath != null)
                     {
                         continue;
                     }
 
-                    ConfirmCloseEventArgs args = new ConfirmCloseEventArgs();
-                    args.Message = "There are machines which haven't been persisted yet. Are you sure you want to exit?";
+                    ConfirmCloseEventArgs args = new ConfirmCloseEventArgs("There are machines which haven't been persisted yet. Are you sure you want to exit?");
                     ConfirmClose?.Invoke(this, args);
 
                     if (!args.Result)
@@ -569,8 +567,7 @@ namespace CPvC
             {
                 if (prompt)
                 {
-                    ConfirmCloseEventArgs args = new ConfirmCloseEventArgs();
-                    args.Message = String.Format("Are you sure you want to close the \"{0}\" machine without persisting it?", coreMachine.Name);
+                    ConfirmCloseEventArgs args = new ConfirmCloseEventArgs(String.Format("Are you sure you want to close the \"{0}\" machine without persisting it?", coreMachine.Name));
                     ConfirmClose?.Invoke(this, args);
 
                     if (!args.Result)
@@ -665,10 +662,10 @@ namespace CPvC
             string expectedExt = disc ? ".dsk" : ".cdt";
             FileTypes type = disc ? FileTypes.Disc : FileTypes.Tape;
 
-            PromptForFileEventArgs args = new PromptForFileEventArgs(type, true);
-            PromptForFile?.Invoke(this, args);
+            PromptForFileEventArgs promptForFileArgs = new PromptForFileEventArgs(type, true);
+            PromptForFile?.Invoke(this, promptForFileArgs);
 
-            string filename = args.Filepath;
+            string filename = promptForFileArgs.Filepath;
             if (filename == null)
             {
                 // Action was cancelled by the user.
@@ -696,11 +693,10 @@ namespace CPvC
                 }
                 else
                 {
-                    SelectItemEventArgs args2 = new SelectItemEventArgs();
-                    args2.Items = extEntries;
-                    SelectItem?.Invoke(this, args2);
+                    SelectItemEventArgs selectItemArgs = new SelectItemEventArgs(extEntries);
+                    SelectItem?.Invoke(this, selectItemArgs);
 
-                    entry = args2.SelectedItem;
+                    entry = selectItemArgs.SelectedItem;
                     if (entry == null)
                     {
                         // Action was cancelled by the user.
@@ -773,8 +769,7 @@ namespace CPvC
 
             using ((machine as IPausableMachine)?.AutoPause())
             {
-                PromptForNameEventArgs args = new PromptForNameEventArgs();
-                args.ExistingName = machine.Name;
+                PromptForNameEventArgs args = new PromptForNameEventArgs(machine.Name);
                 PromptForName?.Invoke(this, args);
 
                 string newName = args.SelectedName;
@@ -792,15 +787,14 @@ namespace CPvC
 
         private void StartServer(UInt16 defaultPort)
         {
-            CreateSocketEventArgs args2 = new CreateSocketEventArgs();
-            CreateSocket?.Invoke(this, args2);
-            ISocket socket = args2.CreatedSocket;
+            CreateSocketEventArgs createSocketArgs = new CreateSocketEventArgs();
+            CreateSocket?.Invoke(this, createSocketArgs);
+            ISocket socket = createSocketArgs.CreatedSocket;
 
-            SelectServerPortEventArgs args = new SelectServerPortEventArgs();
-            args.DefaultPort = defaultPort;
-            SelectServerPort?.Invoke(this, args);
+            SelectServerPortEventArgs selectPortArgs = new SelectServerPortEventArgs(defaultPort);
+            SelectServerPort?.Invoke(this, selectPortArgs);
 
-            UInt16? port = args.SelectedPort;
+            UInt16? port = selectPortArgs.SelectedPort;
             if (port.HasValue)
             {
                 _machineServer.Start(socket, port.Value);
@@ -814,8 +808,7 @@ namespace CPvC
 
         public void Connect(ServerInfo serverInfo)
         {
-            SelectRemoteMachineEventArgs args = new SelectRemoteMachineEventArgs();
-            args.ServerInfo = serverInfo;
+            SelectRemoteMachineEventArgs args = new SelectRemoteMachineEventArgs(serverInfo);
             SelectRemoteMachine?.Invoke(this, args);
 
             RemoteMachine remoteMachine = args.SelectedMachine;

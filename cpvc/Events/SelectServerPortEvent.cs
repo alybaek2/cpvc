@@ -1,14 +1,16 @@
 ﻿using System;
+using System.ComponentModel;
 
 namespace CPvC
 {
-    public class SelectServerPortEventArgs : EventArgs
+    public class SelectServerPortEventArgs : HandledEventArgs
     {
-        public SelectServerPortEventArgs()
+        public SelectServerPortEventArgs(UInt16 defaultPort)
         {
+            DefaultPort = defaultPort;
         }
 
-        public UInt16 DefaultPort { get; set; }
+        public UInt16 DefaultPort { get; private set; }
 
         public UInt16? SelectedPort { get; set; }
     }

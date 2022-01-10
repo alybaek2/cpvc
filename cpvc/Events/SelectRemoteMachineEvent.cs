@@ -1,14 +1,15 @@
-﻿using System;
+﻿using System.ComponentModel;
 
 namespace CPvC
 {
-    public class SelectRemoteMachineEventArgs : EventArgs
+    public class SelectRemoteMachineEventArgs : HandledEventArgs
     {
-        public SelectRemoteMachineEventArgs()
+        public SelectRemoteMachineEventArgs(ServerInfo serverInfo)
         {
+            ServerInfo = serverInfo;
         }
 
-        public ServerInfo ServerInfo { get; set; }
+        public ServerInfo ServerInfo { get; private set; }
 
         public RemoteMachine SelectedMachine { get; set; }
     }

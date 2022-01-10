@@ -1,8 +1,8 @@
-﻿using System;
+﻿using System.ComponentModel;
 
 namespace CPvC
 {
-    public class CreateSocketEventArgs : EventArgs
+    public class CreateSocketEventArgs : HandledEventArgs
     {
         public CreateSocketEventArgs()
         {

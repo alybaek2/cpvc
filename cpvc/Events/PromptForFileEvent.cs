@@ -1,8 +1,8 @@
-﻿using System;
+﻿using System.ComponentModel;
 
 namespace CPvC
 {
-    public class PromptForFileEventArgs : EventArgs
+    public class PromptForFileEventArgs : HandledEventArgs
     {
         public PromptForFileEventArgs(FileTypes fileType, bool existing)
         {

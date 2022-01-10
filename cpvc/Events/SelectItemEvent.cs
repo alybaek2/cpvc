@@ -1,15 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace CPvC
 {
-    public class SelectItemEventArgs : EventArgs
+    public class SelectItemEventArgs : HandledEventArgs
     {
-        public SelectItemEventArgs()
+        public SelectItemEventArgs(List<string> items)
         {
+            Items = items;
         }
 
-        public List<string> Items { get; set; }
+        public List<string> Items { get; private set; }
 
         public string SelectedItem { get; set; }
     }

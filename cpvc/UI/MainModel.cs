@@ -96,8 +96,7 @@ namespace CPvC
             {
                 foreach (IMachine machine in _machines)
                 {
-                    IPersistableMachine pm = machine as IPersistableMachine;
-                    if (pm == null || pm.PersistantFilepath == null)
+                    if (!(machine is IPersistableMachine pm) || pm.PersistantFilepath == null)
                     {
                         continue;
                     }
@@ -106,7 +105,7 @@ namespace CPvC
                 }
             }
 
-            _settings.RecentlyOpened = Helpers.JoinWithEscape(',', machineFilepathNameMap.Keys); // machineFilepathNameMap.Select(kv => Helpers.JoinWithEscape(';', new List<string> { kv.Value, kv.Key })));
+            _settings.RecentlyOpened = Helpers.JoinWithEscape(',', machineFilepathNameMap.Keys);
         }
 
         /// <summary>

@@ -28,8 +28,6 @@ namespace CPvC
 
         private ITextFile _textFile;
 
-        static private Dictionary<string, LocalMachine> _machines = new Dictionary<string, LocalMachine>();
-
         public LocalMachine Machine
         {
             set

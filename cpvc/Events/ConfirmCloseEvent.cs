@@ -1,14 +1,15 @@
-﻿using System;
+﻿using System.ComponentModel;
 
 namespace CPvC
 {
-    public class ConfirmCloseEventArgs : EventArgs
+    public class ConfirmCloseEventArgs : HandledEventArgs
     {
-        public ConfirmCloseEventArgs()
+        public ConfirmCloseEventArgs(string message)
         {
+            Message = message;
         }
 
-        public string Message { get; set; }
+        public string Message { get; private set; }
 
         public bool Result { get; set; }
     }
