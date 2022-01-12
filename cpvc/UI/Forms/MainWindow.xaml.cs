@@ -405,6 +405,11 @@ namespace CPvC.UI.Forms
 
         private void MainViewModel_ConfirmClose(object sender, ConfirmCloseEventArgs e)
         {
+            if (e.Handled)
+            {
+                return;
+            }
+
             e.Handled = true;
 
             MessageBoxResult result = MessageBox.Show(this, e.Message, "CPvC", MessageBoxButton.YesNo, MessageBoxImage.Question);
@@ -413,42 +418,77 @@ namespace CPvC.UI.Forms
 
         private void MainViewModel_CreateSocket(object sender, CreateSocketEventArgs e)
         {
+            if (e.Handled)
+            {
+                return;
+            }
+
             e.Handled = true;
             e.CreatedSocket = new Socket();
         }
 
         private void MainViewModel_PromptForBookmark(object sender, PromptForBookmarkEventArgs e)
         {
+            if (e.Handled)
+            {
+                return;
+            }
+
             e.Handled = true;
             e.SelectedBookmark = PromptForBookmark();
         }
 
         private void MainViewModel_PromptForFile(object sender, PromptForFileEventArgs e)
         {
+            if (e.Handled)
+            {
+                return;
+            }
+
             e.Handled = true;
             e.Filepath = PromptForFile(e.FileType, e.Existing);
         }
 
         private void MainViewModel_PromptForName(object sender, PromptForNameEventArgs e)
         {
+            if (e.Handled)
+            {
+                return;
+            }
+
             e.Handled = true;
             e.SelectedName = PromptForName(e.ExistingName);
         }
 
         private void MainViewModel_SelectItem(object sender, SelectItemEventArgs e)
         {
+            if (e.Handled)
+            {
+                return;
+            }
+
             e.Handled = true;
             e.SelectedItem = SelectItem(e.Items);
         }
 
         private void MainViewModel_SelectRemoteMachine(object sender, SelectRemoteMachineEventArgs e)
         {
+            if (e.Handled)
+            {
+                return;
+            }
+
             e.Handled = true;
             e.SelectedMachine = SelectRemoteMachine(e.ServerInfo);
         }
 
         private void MainViewModel_SelectServerPort(object sender, SelectServerPortEventArgs e)
         {
+            if (e.Handled)
+            {
+                return;
+            }
+
             e.Handled = true;
             e.SelectedPort = SelectServerPort(e.DefaultPort);
         }

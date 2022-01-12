@@ -64,8 +64,9 @@
         </Grid.RowDefinitions>
         <Menu Height="30" Margin="0" VerticalAlignment="Top" VerticalContentAlignment="Center">
             <MenuItem Header="File">
-                <MenuItem Header="New..." Command="{Binding NewMachineCommand}" />
+                <MenuItem Header="New" Command="{Binding NewMachineCommand}" />
                 <MenuItem Header="Open..." Command="{Binding OpenMachineCommand}"/>
+                <MenuItem Header="Persist..." Command="{Binding PersistCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
                 <Separator/>
                 <MenuItem Header="Close" Command="{Binding CloseCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
                 <Separator/>
@@ -298,7 +299,7 @@
                                                                     <MenuItem Header="Resume" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.ResumeCommand}" CommandParameter="{Binding}"/>
                                                                     <MenuItem Header="Open" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.OpenCommand}" CommandParameter="{Binding}"/>
                                                                     <MenuItem Header="Close" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.CloseCommand}" CommandParameter="{Binding}"/>
-                                                                    <MenuItem Header="Persist" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.PersistCommand}" CommandParameter="{Binding}"/>
+                                                                    <MenuItem Header="Persist..." Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.PersistCommand}" CommandParameter="{Binding}"/>
                                                                     <MenuItem Header="Remove" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.RemoveCommand}" CommandParameter="{Binding}"/>
                                                                     <MenuItem Header="Compact" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.CompactCommand}" CommandParameter="{Binding}"/>
                                                                 </ContextMenu>
