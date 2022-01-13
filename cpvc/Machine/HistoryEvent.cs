@@ -150,7 +150,7 @@ namespace CPvC
 
         public override string GetLine()
         {
-            return MachineFileWriter.AddBookmarkCommand(Id, Ticks, Bookmark.System, Bookmark.Version, Node.CreateDate, Bookmark.State.GetBytes(), Bookmark.Screen.GetBytes());
+            return MachineFile.AddBookmarkCommand(Id, Ticks, Bookmark.System, Bookmark.Version, Node.CreateDate, Bookmark.State.GetBytes(), Bookmark.Screen.GetBytes());
         }
 
         internal override HistoryNode Node
@@ -185,17 +185,17 @@ namespace CPvC
             switch (CoreAction.Type)
             {
                 case CoreRequest.Types.KeyPress:
-                    return MachineFileWriter.KeyCommand(Id, CoreAction.Ticks, CoreAction.KeyCode, CoreAction.KeyDown);
+                    return MachineFile.KeyCommand(Id, CoreAction.Ticks, CoreAction.KeyCode, CoreAction.KeyDown);
                 case CoreRequest.Types.Reset:
-                    return MachineFileWriter.ResetCommand(Id, CoreAction.Ticks);
+                    return MachineFile.ResetCommand(Id, CoreAction.Ticks);
                 case CoreRequest.Types.LoadDisc:
-                    return MachineFileWriter.LoadDiscCommand(Id, CoreAction.Ticks, CoreAction.Drive, CoreAction.MediaBuffer.GetBytes());
+                    return MachineFile.LoadDiscCommand(Id, CoreAction.Ticks, CoreAction.Drive, CoreAction.MediaBuffer.GetBytes());
                 case CoreRequest.Types.LoadTape:
-                    return MachineFileWriter.LoadTapeCommand(Id, CoreAction.Ticks, CoreAction.MediaBuffer.GetBytes());
+                    return MachineFile.LoadTapeCommand(Id, CoreAction.Ticks, CoreAction.MediaBuffer.GetBytes());
                 case CoreRequest.Types.CoreVersion:
-                    return MachineFileWriter.VersionCommand(Id, CoreAction.Ticks, CoreAction.Version);
+                    return MachineFile.VersionCommand(Id, CoreAction.Ticks, CoreAction.Version);
                 case CoreRequest.Types.RunUntil:
-                    return MachineFileWriter.RunCommand(Id, CoreAction.Ticks, CoreAction.StopTicks);
+                    return MachineFile.RunCommand(Id, CoreAction.Ticks, CoreAction.StopTicks);
                 default:
                     throw new ArgumentException(String.Format("Unrecognized core action type {0}.", CoreAction.Type), "type");
             }

@@ -142,9 +142,8 @@
     <Compile Include="Machine\Command.cs" />
     <Compile Include="Machine\Interfaces\IPersistableMachine.cs" />
     <Compile Include="Machine\Interfaces\IReversibleMachine.cs" />
-    <Compile Include="Machine\MachineFileReader.cs" />
     <Compile Include="Machine\History.cs" />
-    <Compile Include="Machine\MachineFileWriter.cs" />
+    <Compile Include="Machine\MachineFile.cs" />
     <Compile Include="Miscellaneous\AudioBuffer.cs" />
     <Compile Include="Miscellaneous\IBlob.cs" />
     <Compile Include="Machine\Interfaces\IBookmarkableMachine.cs" />

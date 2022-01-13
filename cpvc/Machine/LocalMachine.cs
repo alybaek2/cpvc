@@ -46,9 +46,9 @@ namespace CPvC
         private int _lastTakenSnapshotId = -1;
         private List<SnapshotInfo> _snapshots;
 
-        private MachineFileWriter _file;
+        private MachineFile _file;
 
-        private MachineFileWriter File
+        private MachineFile File
         {
             get
             {
@@ -503,16 +503,16 @@ namespace CPvC
             string oldFilepath = PersistantFilepath;
             string newFilepath = oldFilepath + ".tmp";
 
-            MachineFileReader reader = new MachineFileReader();
+            MachineFileInfo info = null;
             using (ITextFile textFile = fileSystem.OpenTextFile(oldFilepath))
             {
-                reader.ReadFile(textFile);
+                info = MachineFile.Read(textFile);
             }
 
             using (ITextFile textFile = fileSystem.OpenTextFile(newFilepath))
-            using (MachineFileWriter writer = new MachineFileWriter(textFile, reader.History))
+            using (MachineFile writer = new MachineFile(textFile, info.History))
             {
-                writer.WriteHistory(reader.Name);
+                writer.WriteHistory(info.Name);
             }
 
             fileSystem.ReplaceFile(oldFilepath, newFilepath);
@@ -633,11 +633,11 @@ namespace CPvC
                 }
 
                 ITextFile textFile = fileSystem.OpenTextFile(filepath);
-                MachineFileWriter machineFileWriter = new MachineFileWriter(textFile, _history);
+                MachineFile machineFile = new MachineFile(textFile, _history);
 
-                machineFileWriter.WriteHistory(_name);
+                machineFile.WriteHistory(_name);
 
-                File = machineFileWriter;
+                File = machineFile;
 
                 PersistantFilepath = filepath;
 
@@ -667,13 +667,11 @@ namespace CPvC
             try
             {
                 textFile = fileSystem.OpenTextFile(PersistantFilepath);
-                MachineFileReader reader = new MachineFileReader();
-                reader.ReadFile(textFile);
+                MachineFileInfo info = MachineFile.Read(textFile);
+                MachineFile file = new MachineFile(textFile, info.History, info.NextLineId);
 
-                MachineFileWriter file = new MachineFileWriter(textFile, reader.History, reader.NextLineId);
-
-                _history = reader.History;
-                _name = reader.Name;
+                _history = info.History;
+                _name = info.Name;
 
                 File = file;
 
@@ -697,13 +695,13 @@ namespace CPvC
 
         static public LocalMachine GetClosedMachine(IFileSystem fileSystem, string filepath)
         {
-            MachineFileReader reader = new MachineFileReader();
+            MachineFileInfo info = null;
             using (ITextFile textFile = fileSystem.OpenTextFile(filepath))
             {
-                reader.ReadFile(textFile);
+                info = MachineFile.Read(textFile);
             }
 
-            LocalMachine machine = New(reader.Name, reader.History, filepath);
+            LocalMachine machine = New(info.Name, info.History, filepath);
             if (machine.History != null)
             {
                 HistoryEvent historyEvent = machine.History.CurrentEvent.MostRecent<BookmarkHistoryEvent>(); ;

@@ -16,8 +16,8 @@ namespace CPvC.Test
             CoreAction.Reset(100)
         };
 
-        private MachineFileReader _fileReader;
-        private MachineFileWriter _fileWriter;
+        private MachineFileInfo _fileInfo;
+        private MachineFile _file;
         private History _history;
         private MockTextFile _mockFile;
         private byte[] _state;
@@ -27,9 +27,8 @@ namespace CPvC.Test
         public void Setup()
         {
             _mockFile = new MockTextFile();
-            _fileReader = new MachineFileReader();
             _history = new History();
-            _fileWriter = new MachineFileWriter(_mockFile, _history);
+            _file = new MachineFile(_mockFile, _history);
 
             _state = new byte[1000];
             _screen = new byte[1000];
@@ -46,10 +45,10 @@ namespace CPvC.Test
         {
             // Act
             _history.AddCoreAction(coreAction, 123456);
-            _fileReader.ReadFile(_mockFile);
+            _fileInfo = MachineFile.Read(_mockFile);
 
             // Verify
-            Assert.True(HistoriesEqual(_fileReader.History, _history));
+            Assert.True(HistoriesEqual(_fileInfo.History, _history));
         }
 
         [Test]
@@ -61,7 +60,7 @@ namespace CPvC.Test
             // Act and Verify
             ArgumentException thrown = Assert.Throws<ArgumentNullException>(() =>
             {
-                MachineFileWriter fileWriter = new MachineFileWriter(null, history);
+                MachineFile fileWriter = new MachineFile(null, history);
             });
             Assert.AreEqual("textFile", thrown.ParamName);
         }
@@ -72,10 +71,10 @@ namespace CPvC.Test
             // Act
             _history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
             _history.CurrentEvent = _history.RootEvent;
-            _fileReader.ReadFile(_mockFile);
+            _fileInfo = MachineFile.Read(_mockFile);
 
             // Verify
-            Assert.True(HistoriesEqual(_fileReader.History, _history));
+            Assert.True(HistoriesEqual(_fileInfo.History, _history));
         }
 
         [Test]
@@ -86,10 +85,10 @@ namespace CPvC.Test
 
             // Act
             _history.AddBookmark(100, bookmark);
-            _fileReader.ReadFile(_mockFile);
+            _fileInfo = MachineFile.Read(_mockFile);
 
             // Verify
-            Assert.True(HistoriesEqual(_fileReader.History, _history));
+            Assert.True(HistoriesEqual(_fileInfo.History, _history));
         }
 
         [Test]
@@ -103,10 +102,10 @@ namespace CPvC.Test
             HistoryEvent historyEvent = _history.CurrentEvent;
             _history.CurrentEvent = _history.RootEvent;
             _history.DeleteBookmark(historyEvent);
-            _fileReader.ReadFile(_mockFile);
+            _fileInfo = MachineFile.Read(_mockFile);
 
             // Verify
-            Assert.True(HistoriesEqual(_fileReader.History, _history));
+            Assert.True(HistoriesEqual(_fileInfo.History, _history));
         }
 
         [Test]
@@ -121,10 +120,10 @@ namespace CPvC.Test
             _history.AddBookmark(200, bookmark);
             _history.CurrentEvent = _history.RootEvent;
             _history.DeleteBranch(historyEvent);
-            _fileReader.ReadFile(_mockFile);
+            _fileInfo = MachineFile.Read(_mockFile);
 
             // Verify
-            Assert.True(HistoriesEqual(_fileReader.History, _history));
+            Assert.True(HistoriesEqual(_fileInfo.History, _history));
         }
 
         [Test]
@@ -137,13 +136,13 @@ namespace CPvC.Test
             _history.AddBookmark(100, bookmark);
             _history.AddBookmark(200, bookmark);
             _mockFile.Clear();
-            _fileWriter.WriteHistory("Test");
-            _fileReader.ReadFile(_mockFile);
+            _file.WriteHistory("Test");
+            _fileInfo = MachineFile.Read(_mockFile);
 
             // Verify
             Assert.AreEqual(1, _mockFile.Lines.Count(line => line.StartsWith("args:")));
             Assert.Zero(_mockFile.Lines.Count(line => line.StartsWith("arg:")));
-            Assert.True(HistoriesEqual(_fileReader.History, _history));
+            Assert.True(HistoriesEqual(_fileInfo.History, _history));
         }
 
         [Test]
@@ -151,14 +150,14 @@ namespace CPvC.Test
         {
             // Setup
             LocalMachine machine = LocalMachine.New(String.Empty, null);
-            _fileWriter.Machine = machine;
+            _file.Machine = machine;
 
             // Act
             machine.Name = "Test";
-            _fileReader.ReadFile(_mockFile);
+            _fileInfo = MachineFile.Read(_mockFile);
 
             // Verify
-            Assert.AreEqual(machine.Name, _fileReader.Name);
+            Assert.AreEqual(machine.Name, _fileInfo.Name);
         }
 
         [Test]
@@ -169,10 +168,10 @@ namespace CPvC.Test
             _history.CurrentEvent = _history.RootEvent;
 
             // Act
-            _fileReader.ReadFile(_mockFile);
+            _fileInfo = MachineFile.Read(_mockFile);
 
             // Verify
-            Assert.AreEqual(_fileReader.History.RootEvent, _fileReader.History.CurrentEvent);
+            Assert.AreEqual(_fileInfo.History.RootEvent, _fileInfo.History.CurrentEvent);
         }
 
         [Test]
@@ -184,11 +183,11 @@ namespace CPvC.Test
 
             // Act
             _history.CurrentEvent = historyEvent;
-            _fileReader.ReadFile(_mockFile);
+            _fileInfo = MachineFile.Read(_mockFile);
 
             // Verify
-            Assert.True(TestHelpers.HistoriesEqual(_history, _fileReader.History));
-            Assert.AreEqual(_fileReader.History.CurrentEvent, _fileReader.History.RootEvent.Children[0].Children[0]);
+            Assert.True(TestHelpers.HistoriesEqual(_history, _fileInfo.History));
+            Assert.AreEqual(_fileInfo.History.CurrentEvent, _fileInfo.History.RootEvent.Children[0].Children[0]);
         }
 
         [Test]
@@ -197,15 +196,15 @@ namespace CPvC.Test
             // Setup
             LocalMachine machine1 = LocalMachine.New(null, null);
             LocalMachine machine2 = LocalMachine.New(null, null);
-            _fileWriter.Machine = machine1;
-            _fileWriter.Machine = machine2;
+            _file.Machine = machine1;
+            _file.Machine = machine2;
 
             // Act
             machine1.Name = "Test1";
             int len1 = _mockFile.LineCount();
             machine2.Name = "Test2";
             int len2 = _mockFile.LineCount();
-            _fileWriter.Machine = null;
+            _file.Machine = null;
             machine1.Name = "Test3";
             machine2.Name = "Test4";
             int len3 = _mockFile.LineCount();
@@ -226,7 +225,7 @@ namespace CPvC.Test
             int len1 = _mockFile.LineCount();
 
             // Act
-            _fileWriter.Dispose();
+            _file.Dispose();
             machine1.Name = "Test";
             _history.AddCoreAction(CoreAction.Reset(100));
             int len2 = _mockFile.LineCount();
@@ -240,10 +239,10 @@ namespace CPvC.Test
         public void DisposeWriterTwice()
         {
             // Setup
-            _fileWriter.Dispose();
+            _file.Dispose();
 
             // Act and Verify
-            Assert.DoesNotThrow(() => _fileWriter.Dispose());
+            Assert.DoesNotThrow(() => _file.Dispose());
         }
 
         [Test]
@@ -253,7 +252,7 @@ namespace CPvC.Test
             _mockFile.WriteLine("current:42\r\n");
 
             // Act and Verify
-            ArgumentException ex = Assert.Throws<ArgumentException>(() => _fileReader.ReadFile(_mockFile));
+            ArgumentException ex = Assert.Throws<ArgumentException>(() => _fileInfo = MachineFile.Read(_mockFile));
             Assert.AreEqual("id", ex.ParamName);
         }
 
@@ -264,7 +263,7 @@ namespace CPvC.Test
             _mockFile.WriteLine("deletebookmark:42\r\n");
 
             // Act and Verify
-            ArgumentException ex = Assert.Throws<ArgumentException>(() => _fileReader.ReadFile(_mockFile));
+            ArgumentException ex = Assert.Throws<ArgumentException>(() => _fileInfo = MachineFile.Read(_mockFile));
             Assert.AreEqual("id", ex.ParamName);
         }
 
@@ -275,7 +274,7 @@ namespace CPvC.Test
             _mockFile.WriteLine("deletebranch:42\r\n");
 
             // Act and Verify
-            ArgumentException ex = Assert.Throws<ArgumentException>(() => _fileReader.ReadFile(_mockFile));
+            ArgumentException ex = Assert.Throws<ArgumentException>(() => _fileInfo = MachineFile.Read(_mockFile));
             Assert.AreEqual("id", ex.ParamName);
         }
 
@@ -286,7 +285,7 @@ namespace CPvC.Test
             _mockFile.WriteLine("unknown:\r\n");
 
             // Act and Verify
-            ArgumentException ex = Assert.Throws<ArgumentException>(() => _fileReader.ReadFile(_mockFile));
+            ArgumentException ex = Assert.Throws<ArgumentException>(() => _fileInfo = MachineFile.Read(_mockFile));
             Assert.AreEqual("type", ex.ParamName);
         }
 
@@ -308,7 +307,7 @@ namespace CPvC.Test
             _mockFile.WriteLine("key");
 
             // Act and Verify
-            Assert.Throws<Exception>(() => _fileReader.ReadFile(_mockFile));
+            Assert.Throws<Exception>(() => _fileInfo = MachineFile.Read(_mockFile));
         }
 
         [Test]
@@ -319,7 +318,7 @@ namespace CPvC.Test
             _mockFile.WriteLine("deletebranch:0");
 
             // Act and Verify
-            Assert.Throws<InvalidOperationException>(() => _fileReader.ReadFile(_mockFile));
+            Assert.Throws<InvalidOperationException>(() => _fileInfo = MachineFile.Read(_mockFile));
         }
 
         // There isn't anywhere in the code that writes out an uncompressed "arg" line, but
@@ -334,10 +333,10 @@ namespace CPvC.Test
             _mockFile.WriteLine("tape:0,100,$1");
 
             // Act
-            _fileReader.ReadFile(_mockFile);
+            _fileInfo = MachineFile.Read(_mockFile);
 
             // Verify
-            Assert.True(TestHelpers.HistoriesEqual(expectedHistory, _fileReader.History));
+            Assert.True(TestHelpers.HistoriesEqual(expectedHistory, _fileInfo.History));
         }
 
         // There isn't anywhere in the code that writes out an uncompressed "args" line, but
@@ -352,10 +351,10 @@ namespace CPvC.Test
             _mockFile.WriteLine("bookmark:0,100,True,1,123456789,$1,$2");
 
             // Act
-            _fileReader.ReadFile(_mockFile);
+            _fileInfo = MachineFile.Read(_mockFile);
 
             // Verify
-            Assert.True(TestHelpers.HistoriesEqual(expectedHistory, _fileReader.History));
+            Assert.True(TestHelpers.HistoriesEqual(expectedHistory, _fileInfo.History));
         }
     }
 }
