@@ -128,7 +128,7 @@ namespace CPvC.UI
                     HistoryViewItem item = new HistoryViewItem(historyEvent);
 
                     // Figure out where this new item should be placed.
-                    int itemIndex = items.FindIndex(x => x.HistoryEvent.EndTicks > historyEvent.EndTicks);
+                    int itemIndex = items.FindIndex(x => x.HistoryEvent.Ticks > historyEvent.Ticks);
                     if (itemIndex == -1)
                     {
                         // Not found? Add the item to the end.

@@ -135,12 +135,9 @@ namespace CPvC
 
             core.PushRequest(CoreRequest.RunUntil(_endTicks));
 
-            // This shouldn't be necessary since IdleRequest is set to null. Can probably get
-            // rid of CoreAction.Quit altogether, actually.
-            core.Quit();
-
             Core = core;
             Core.Auditors = RequestProcessed;
+            Core.IdleRequest += IdleRequest;
 
             SetCoreRunning();
         }
@@ -174,6 +171,13 @@ namespace CPvC
         private void RequestProcessed(Core core, CoreRequest request, CoreAction action)
         {
             Auditors?.Invoke(action);
+        }
+
+        private CoreRequest IdleRequest()
+        {
+            Core.Running = false;
+
+            return null;
         }
     }
 }

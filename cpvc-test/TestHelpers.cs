@@ -461,8 +461,6 @@ namespace CPvC.Test
                     return request1.Drive == request2.Drive && request1.MediaBuffer.GetBytes().SequenceEqual(request2.MediaBuffer.GetBytes());
                 case CoreRequest.Types.LoadTape:
                     return request1.MediaBuffer.GetBytes().SequenceEqual(request2.MediaBuffer.GetBytes());
-                case CoreRequest.Types.Quit:
-                    return true;
                 case CoreRequest.Types.Reset:
                     return true;
                 case CoreRequest.Types.RunUntil:

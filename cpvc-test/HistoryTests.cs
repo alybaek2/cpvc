@@ -42,7 +42,6 @@ namespace CPvC.Test
 
             // Verify
             Assert.AreEqual(100, historyEvent.Ticks);
-            Assert.AreEqual(100, historyEvent.EndTicks);
         }
 
         [Test]
@@ -53,7 +52,6 @@ namespace CPvC.Test
 
             // Verify
             Assert.AreEqual(100, historyEvent.Ticks);
-            Assert.AreEqual(100, historyEvent.EndTicks);
         }
 
         [Test]
@@ -63,8 +61,7 @@ namespace CPvC.Test
             HistoryEvent historyEvent = _history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
 
             // Verify
-            Assert.AreEqual(100, historyEvent.Ticks);
-            Assert.AreEqual(200, historyEvent.EndTicks);
+            Assert.AreEqual(200, historyEvent.Ticks);
         }
 
         [Test]

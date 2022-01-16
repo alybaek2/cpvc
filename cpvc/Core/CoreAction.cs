@@ -139,8 +139,6 @@ namespace CPvC
                     return CoreAction.LoadDisc(Ticks, Drive, (MediaBuffer != null) ? (new MemoryBlob(MediaBuffer.GetBytes())) : null);
                 case Types.LoadTape:
                     return CoreAction.LoadTape(Ticks, (MediaBuffer != null) ? (new MemoryBlob(MediaBuffer.GetBytes())) : null);
-                case Types.Quit:
-                    return new CoreAction(Types.Quit, Ticks);
                 case Types.Reset:
                     return CoreAction.Reset(Ticks);
                 case Types.RunUntil:

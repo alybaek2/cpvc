@@ -336,12 +336,7 @@ namespace CPvC
                             // Figure out what history event should be set as current if we revert to this snapshot.
                             // If the current event is a RunUntil, it may not be "finalized" yet (i.e. it may still
                             // be updated), so go with its parent.
-                            HistoryEvent historyEvent = _history.CurrentEvent;
-                            CoreActionHistoryEvent coreActionEvent = historyEvent as CoreActionHistoryEvent;
-                            if (coreActionEvent != null && coreActionEvent.CoreAction.Type == CoreRequest.Types.RunUntil)
-                            {
-                                historyEvent = historyEvent.Parent;
-                            }
+                            HistoryEvent historyEvent = _history.MostRecentClosedEvent(_history.CurrentEvent);
 
                             SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId, historyEvent);
                             _snapshots.Add(newSnapshot);

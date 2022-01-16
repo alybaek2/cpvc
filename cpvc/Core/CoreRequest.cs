@@ -168,10 +168,5 @@ namespace CPvC
 
             return request;
         }
-
-        static public CoreRequest Quit()
-        {
-            return new CoreRequest(Types.Quit);
-        }
     }
 }

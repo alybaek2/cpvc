@@ -207,7 +207,14 @@ namespace CPvC
             }
             else
             {
-                _core.SetCoreThreadState(_runningState != RunningState.Paused);
+                if (_runningState != RunningState.Paused)
+                {
+                    _core.Start();
+                }
+                else
+                {
+                    _core.Stop();
+                }
             }
 
             OnPropertyChanged("RunningState");
@@ -299,7 +306,18 @@ namespace CPvC
 
         protected void CorePropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            OnPropertyChanged(e.PropertyName);
+            if (e.PropertyName == nameof(Core.Running))
+            {
+                if (!Core.Running)
+                {
+                    _runningState = RunningState.Paused;
+                    OnPropertyChanged(nameof(RunningState));
+                }
+            }
+            else
+            {
+                OnPropertyChanged(e.PropertyName);
+            }
         }
 
         protected void OnPropertyChanged([CallerMemberName] string name = null)

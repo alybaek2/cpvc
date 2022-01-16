@@ -181,8 +181,9 @@ namespace CPvC.Test
             machine.SeekToNextBookmark();
 
             machine.Start();
-            while (machine.RunningState == RunningState.Running)
+            while (machine.Ticks < machine.EndTicks)
             {
+                machine.AdvancePlayback(100000);
                 Thread.Sleep(10);
             }
 
@@ -190,19 +191,15 @@ namespace CPvC.Test
             Mock<MachineAuditorDelegate> auditor = new Mock<MachineAuditorDelegate>();
             machine.Auditors += auditor.Object;
             machine.Start();
-            while (machine.RunningState == RunningState.Running)
+            while (machine.Ticks < machine.EndTicks)
             {
+                machine.AdvancePlayback(100000);
                 Thread.Sleep(10);
             }
 
             // Verify
             auditor.VerifyNoOtherCalls();
-            if (machine.RunningState == RunningState.Running)
-            {
-                machine.Stop();
-                Assert.Fail();
-            }
-
+            Assert.AreEqual(RunningState.Paused, machine.RunningState);
             Assert.AreEqual(machine.EndTicks, machine.Ticks);
         }
 

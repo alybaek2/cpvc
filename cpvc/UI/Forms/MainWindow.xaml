@@ -329,7 +329,7 @@
             <Button Content="&lt;&lt;" Command="{Binding SeekToPrevBookmarkCommand}"/>
             <Button Content=">>" Command="{Binding SeekToNextBookmarkCommand}"/>
             <Button Content=" |&lt; " Command="{Binding SeekToStartCommand}"/>
-            <Slider Width="300" VerticalAlignment="Center" HorizontalAlignment="Right" Minimum="0" Maximum="{Binding EndTicks, Mode=OneWay}" Value="{Binding ActiveMachine.Ticks, Mode=OneWay}"/>
+            <Slider Width="300" VerticalAlignment="Center" HorizontalAlignment="Right" Minimum="0" Maximum="{Binding Ticks, Mode=OneWay}" Value="{Binding ActiveMachine.Ticks, Mode=OneWay}"/>
         </StatusBar>
     </Grid>
 </Window>

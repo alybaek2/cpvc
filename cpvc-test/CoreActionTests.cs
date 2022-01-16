@@ -168,20 +168,6 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void CloneQuit()
-        {
-            // Setup
-            CoreAction action = new CoreAction(CoreRequest.Types.Quit, 100);
-
-            // Act
-            CoreAction clone = action.Clone();
-
-            // Verify
-            Assert.AreEqual(CoreRequest.Types.Quit, clone.Type);
-            Assert.AreEqual(100, clone.Ticks);
-        }
-
-        [Test]
         public void CloneLoadCore()
         {
             // Setup

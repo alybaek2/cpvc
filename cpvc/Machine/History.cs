@@ -37,6 +37,18 @@ namespace CPvC
             _currentNode = _rootNode;
         }
 
+        public HistoryEvent MostRecentClosedEvent(HistoryEvent historyEvent)
+        {
+            if (historyEvent == CurrentEvent &&
+                historyEvent is CoreActionHistoryEvent coreActionHistoryEvent &&
+                coreActionHistoryEvent.CoreAction.Type == CoreRequest.Types.RunUntil)
+            {
+                return historyEvent.Parent;
+            }
+
+            return historyEvent;
+        }
+
         public CoreActionHistoryEvent AddCoreAction(CoreAction coreAction)
         {
             return AddCoreAction(coreAction, _nextId);
@@ -49,11 +61,10 @@ namespace CPvC
             // happens either when we add a non-RunUntil node after a RunUntil node, or
             // when we change the current node and the current node is a RunUntil. See
             // SetCurrentNode for that case.
-            bool notify = (coreAction.Type != CoreRequest.Types.RunUntil);
+            bool notify = coreAction.Type != CoreRequest.Types.RunUntil;
             if (!notify)
             {
-                CoreActionHistoryNode currentCoreActionNode = _currentNode as CoreActionHistoryNode;
-                if (currentCoreActionNode != null &&
+                if (_currentNode is CoreActionHistoryNode currentCoreActionNode &&
                     currentCoreActionNode.Children.Count == 0 &&
                     currentCoreActionNode.CoreAction.Type == CoreRequest.Types.RunUntil)
                 {
@@ -84,13 +95,12 @@ namespace CPvC
 
         public BookmarkHistoryEvent AddBookmark(UInt64 ticks, Bookmark bookmark, DateTime creationTime, int id)
         {
-            CoreActionHistoryNode currentCoreActionNode = _currentNode as CoreActionHistoryNode;
-            if (currentCoreActionNode != null &&
+            if (_currentNode is CoreActionHistoryNode currentCoreActionNode &&
                 currentCoreActionNode.Children.Count == 0 &&
                 currentCoreActionNode.CoreAction.Type == CoreRequest.Types.RunUntil)
             {
                 // This should probably be added to AddChildNode!
-                Auditors?.Invoke(currentCoreActionNode.HistoryEvent, HistoryChangedAction.Add);
+                Notify(currentCoreActionNode.HistoryEvent, HistoryChangedAction.Add);
             }
 
             BookmarkHistoryNode historyNode = new BookmarkHistoryNode(id, ticks, bookmark, _currentNode, creationTime);
@@ -142,7 +152,7 @@ namespace CPvC
                 nodesToRemove.RemoveAt(0);
             }
 
-            Auditors?.Invoke(historyEvent, HistoryChangedAction.DeleteBranch);
+            Notify(historyEvent, HistoryChangedAction.DeleteBranch);
 
             return true;
         }
@@ -175,7 +185,7 @@ namespace CPvC
             historyNode.Parent.Children.Remove(historyNode);
             historyNode.Parent = null;
 
-            Auditors?.Invoke(historyEvent, HistoryChangedAction.DeleteBookmark);
+            Notify(historyEvent, HistoryChangedAction.DeleteBookmark);
 
             return true;
         }
@@ -212,12 +222,12 @@ namespace CPvC
                 CoreActionHistoryNode currentCoreActionNode = _currentNode as CoreActionHistoryNode;
                 if (currentCoreActionNode != null && currentCoreActionNode.CoreAction.Type == CoreRequest.Types.RunUntil)
                 {
-                    Auditors?.Invoke(_currentNode.HistoryEvent, HistoryChangedAction.Add);
+                    Notify(_currentNode.HistoryEvent, HistoryChangedAction.Add);
                 }
 
                 _currentNode = value.Node;
 
-                Auditors?.Invoke(_currentNode.HistoryEvent, HistoryChangedAction.SetCurrent);
+                Notify(_currentNode.HistoryEvent, HistoryChangedAction.SetCurrent);
             }
         }
 
@@ -229,8 +239,13 @@ namespace CPvC
 
             if (notify)
             {
-                Auditors?.Invoke(historyNode.HistoryEvent, HistoryChangedAction.Add);
+                Notify(historyNode.HistoryEvent, HistoryChangedAction.Add);
             }
+        }
+
+        private void Notify(HistoryEvent historyEvent, HistoryChangedAction action)
+        {
+            Auditors?.Invoke(historyEvent, action);
         }
     }
 }

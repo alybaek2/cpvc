@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace CPvC
@@ -61,6 +62,8 @@ namespace CPvC
         private AutoResetEvent _audioReady;
         private AutoResetEvent _requestQueueNonEmpty;
 
+        private ManualResetEvent _runningEvent;
+
         private AudioBuffer _audioBuffer;
 
         public int Version
@@ -88,7 +91,12 @@ namespace CPvC
             _audioReady = new AutoResetEvent(true);
             _requestQueueNonEmpty = new AutoResetEvent(false);
 
+            _runningEvent = new ManualResetEvent(false);
+
             _audioBuffer = new AudioBuffer(48000);
+
+            _coreThread = new Thread(CoreThread);
+            _coreThread.Start();
         }
 
         static private ICore CreateVersionedCore(int version)
@@ -104,7 +112,7 @@ namespace CPvC
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private void OnPropertyChanged(string name)
+        private void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
@@ -112,6 +120,10 @@ namespace CPvC
         public void Dispose()
         {
             Stop();
+
+            _quitThread = true;
+            _coreThread?.Join();
+            _coreThread = null;
 
             Auditors = null;
             BeginVSync = null;
@@ -156,11 +168,6 @@ namespace CPvC
         public void Reset()
         {
             PushRequest(CoreRequest.Reset());
-        }
-
-        public void Quit()
-        {
-            PushRequest(CoreRequest.Quit());
         }
 
         /// <summary>
@@ -221,6 +228,33 @@ namespace CPvC
                 {
                     return _coreCLR?.Ticks() ?? 0;
                 }
+            }
+        }
+
+        public bool Running
+        {
+            get
+            {
+                return _runningEvent.WaitOne(0);
+            }
+
+            set
+            {
+                if (value == Running)
+                {
+                    return;
+                }
+
+                if (value)
+                {
+                    _runningEvent.Set();
+                }
+                else
+                {
+                    _runningEvent.Reset();
+                }
+
+                OnPropertyChanged();
             }
         }
 
@@ -288,12 +322,12 @@ namespace CPvC
 
         public void Start()
         {
-            SetCoreThreadState(true);
+            _runningEvent.Set();
         }
 
         public void Stop()
         {
-            SetCoreThreadState(false);
+            _runningEvent.Reset();
         }
 
         public void SetLowerROM(byte[] lowerROM)
@@ -348,6 +382,11 @@ namespace CPvC
         {
             while (!_quitThread)
             {
+                if (!_runningEvent.WaitOne(20))
+                {
+                    continue;
+                }
+
                 if (ProcessNextRequest())
                 {
                     break;
@@ -388,27 +427,6 @@ namespace CPvC
                 if (_requests.Count > 0)
                 {
                     _requestQueueNonEmpty.Set();
-                }
-            }
-        }
-
-        public void SetCoreThreadState(bool running)
-        {
-            if (running)
-            {
-                if (_coreThread == null || !_coreThread.IsAlive)
-                {
-                    _coreThread = new Thread(CoreThread);
-                    _coreThread.Start();
-                }
-            }
-            else
-            {
-                if (_coreThread != null && _coreThread.IsAlive)
-                {
-                    _quitThread = true;
-                    _coreThread.Join();
-                    _coreThread = null;
                 }
             }
         }
@@ -520,9 +538,6 @@ namespace CPvC
                     }
 
                     break;
-                case CoreRequest.Types.Quit:
-                    RemoveFirstRequest();
-                    return true;
                 default:
                     Diagnostics.Trace("Unknown core request type {0}. Ignoring request.", request.Type);
                     break;

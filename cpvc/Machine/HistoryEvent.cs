@@ -37,15 +37,7 @@ namespace CPvC
             }
         }
 
-        public UInt64 Ticks
-        {
-            get
-            {
-                return Node.Ticks;
-            }
-        }
-
-        public virtual UInt64 EndTicks
+        public virtual UInt64 Ticks
         {
             get
             {
@@ -93,7 +85,7 @@ namespace CPvC
         {
             List<HistoryEvent> events = new List<HistoryEvent>();
             events.Add(this);
-            UInt64 maxTicks = EndTicks;
+            UInt64 maxTicks = Ticks;
 
             int i = 0;
             while (i < events.Count)
@@ -103,9 +95,9 @@ namespace CPvC
 
                 if (e.Children.Count == 0)
                 {
-                    if (e.EndTicks > maxTicks)
+                    if (e.Ticks > maxTicks)
                     {
-                        maxTicks = e.EndTicks;
+                        maxTicks = e.Ticks;
                     }
                 }
                 else
@@ -217,7 +209,7 @@ namespace CPvC
             }
         }
 
-        public override UInt64 EndTicks
+        public override UInt64 Ticks
         {
             get
             {
