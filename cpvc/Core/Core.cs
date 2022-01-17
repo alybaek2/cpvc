@@ -322,12 +322,12 @@ namespace CPvC
 
         public void Start()
         {
-            _runningEvent.Set();
+            Running = true;
         }
 
         public void Stop()
         {
-            _runningEvent.Reset();
+            Running = false;
         }
 
         public void SetLowerROM(byte[] lowerROM)

@@ -306,21 +306,10 @@ namespace CPvC
 
         protected void CorePropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(Core.Running))
-            {
-                if (!Core.Running)
-                {
-                    _runningState = RunningState.Paused;
-                    OnPropertyChanged(nameof(RunningState));
-                }
-            }
-            else
-            {
-                OnPropertyChanged(e.PropertyName);
-            }
+            OnPropertyChanged(e.PropertyName);
         }
 
-        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        protected virtual void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }

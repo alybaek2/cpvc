@@ -69,7 +69,7 @@ namespace CPvC
         {
             get
             {
-                return RunningState == RunningState.Paused;
+                return RunningState == RunningState.Paused && Ticks < EndTicks;
             }
         }
 
@@ -175,9 +175,20 @@ namespace CPvC
 
         private CoreRequest IdleRequest()
         {
-            Core.Running = false;
+            Stop();
 
             return null;
+        }
+
+        protected override void OnPropertyChanged(string name)
+        {
+            if (name == nameof(RunningState))
+            {
+                base.OnPropertyChanged(nameof(CanStart));
+                base.OnPropertyChanged(nameof(CanStop));
+            }
+
+            base.OnPropertyChanged(name);
         }
     }
 }
