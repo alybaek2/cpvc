@@ -295,7 +295,10 @@ namespace CPvC
                     lines.Add(CurrentCommand(currentEvent.Parent.Id));
                 }
 
-                GetLines(currentEvent, lines);
+                if (History.IsClosedEvent(currentEvent)) // currentEvent is CoreActionHistoryEvent coreActionHistoryEvent && coreActionHistoryEvent.CoreAction.Type == CoreRequest.Types.RunUntil && coreActionHistoryEvent.Children.Count == 1)
+                {
+                    GetLines(currentEvent, lines);
+                }
 
                 historyEvents.RemoveAt(0);
                 previousEvent = currentEvent;
@@ -304,7 +307,8 @@ namespace CPvC
                 historyEvents.InsertRange(0, currentEvent.Children);
             }
 
-            lines.Add(CurrentCommand(History.CurrentEvent.Id));
+            HistoryEvent historyEvent = History.MostRecentClosedEvent(History.CurrentEvent);
+            lines.Add(CurrentCommand(historyEvent.Id));
 
             // If we have any "arg" commands, stick them in a "args" command and put them at the start of the file.
             // Putting them in a single command should allow them to be better compressed than individually.

@@ -181,9 +181,19 @@ namespace CPvC.Test
 
                 CoreActionHistoryEvent coreActionHistoryEvent = machine.History.RootEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
+                Assert.AreEqual(CoreRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
+                Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
+
+                coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
+                Assert.IsNotNull(coreActionHistoryEvent);
                 Assert.AreEqual(CoreRequest.Types.KeyPress, coreActionHistoryEvent.CoreAction.Type);
                 Assert.AreEqual(Keys.A, coreActionHistoryEvent.CoreAction.KeyCode);
                 Assert.IsTrue(coreActionHistoryEvent.CoreAction.KeyDown);
+                Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
+
+                coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
+                Assert.IsNotNull(coreActionHistoryEvent);
+                Assert.AreEqual(CoreRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
@@ -195,8 +205,18 @@ namespace CPvC.Test
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
+                Assert.AreEqual(CoreRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
+                Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
+
+                coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
+                Assert.IsNotNull(coreActionHistoryEvent);
                 Assert.AreEqual(CoreRequest.Types.LoadTape, coreActionHistoryEvent.CoreAction.Type);
                 Assert.IsNull(coreActionHistoryEvent.CoreAction.MediaBuffer.GetBytes());
+                Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
+
+                coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
+                Assert.IsNotNull(coreActionHistoryEvent);
+                Assert.AreEqual(CoreRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;

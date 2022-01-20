@@ -37,11 +37,18 @@ namespace CPvC
             _currentNode = _rootNode;
         }
 
+        public bool IsClosedEvent(HistoryEvent historyEvent)
+        {
+            return
+                historyEvent != CurrentEvent ||
+                historyEvent.Children.Count > 0 ||
+                !(historyEvent is CoreActionHistoryEvent coreActionHistoryEvent) ||
+                coreActionHistoryEvent.CoreAction.Type != CoreRequest.Types.RunUntil;
+        }
+
         public HistoryEvent MostRecentClosedEvent(HistoryEvent historyEvent)
         {
-            if (historyEvent == CurrentEvent &&
-                historyEvent is CoreActionHistoryEvent coreActionHistoryEvent &&
-                coreActionHistoryEvent.CoreAction.Type == CoreRequest.Types.RunUntil)
+            if (!IsClosedEvent(historyEvent))
             {
                 return historyEvent.Parent;
             }
@@ -61,8 +68,7 @@ namespace CPvC
             // happens either when we add a non-RunUntil node after a RunUntil node, or
             // when we change the current node and the current node is a RunUntil. See
             // SetCurrentNode for that case.
-            bool notify = coreAction.Type != CoreRequest.Types.RunUntil;
-            if (!notify)
+            if (coreAction.Type == CoreRequest.Types.RunUntil)
             {
                 if (_currentNode is CoreActionHistoryNode currentCoreActionNode &&
                     currentCoreActionNode.Children.Count == 0 &&
@@ -78,7 +84,7 @@ namespace CPvC
 
             _nextId = Math.Max(_nextId, id) + 1;
 
-            AddChildNode(historyNode, notify);
+            AddChildNode(historyNode, coreAction.Type != CoreRequest.Types.RunUntil);
 
             return historyNode.HistoryEvent as CoreActionHistoryEvent;
         }
@@ -95,14 +101,6 @@ namespace CPvC
 
         public BookmarkHistoryEvent AddBookmark(UInt64 ticks, Bookmark bookmark, DateTime creationTime, int id)
         {
-            if (_currentNode is CoreActionHistoryNode currentCoreActionNode &&
-                currentCoreActionNode.Children.Count == 0 &&
-                currentCoreActionNode.CoreAction.Type == CoreRequest.Types.RunUntil)
-            {
-                // This should probably be added to AddChildNode!
-                Notify(currentCoreActionNode.HistoryEvent, HistoryChangedAction.Add);
-            }
-
             BookmarkHistoryNode historyNode = new BookmarkHistoryNode(id, ticks, bookmark, _currentNode, creationTime);
 
             _nextId = Math.Max(_nextId, id) + 1;
@@ -220,12 +218,13 @@ namespace CPvC
 
                 // If the current node is a RunUntil, finish it off by sending a notification...
                 CoreActionHistoryNode currentCoreActionNode = _currentNode as CoreActionHistoryNode;
+                _currentNode = value.Node;
+
                 if (currentCoreActionNode != null && currentCoreActionNode.CoreAction.Type == CoreRequest.Types.RunUntil)
                 {
-                    Notify(_currentNode.HistoryEvent, HistoryChangedAction.Add);
+                    Notify(currentCoreActionNode.HistoryEvent, HistoryChangedAction.Add);
                 }
 
-                _currentNode = value.Node;
 
                 Notify(_currentNode.HistoryEvent, HistoryChangedAction.SetCurrent);
             }
@@ -233,19 +232,26 @@ namespace CPvC
 
         private void AddChildNode(HistoryNode historyNode, bool notify)
         {
+            bool notifyCurrent = !IsClosedEvent(_currentNode.HistoryEvent);
             _currentNode.Children.Add(historyNode);
             _nodes.Add(historyNode);
+
+            if (notifyCurrent)
+            {
+                Notify(_currentNode.HistoryEvent, HistoryChangedAction.Add);
+            }
+
             _currentNode = historyNode;
 
-            if (notify)
-            {
-                Notify(historyNode.HistoryEvent, HistoryChangedAction.Add);
-            }
+            Notify(historyNode.HistoryEvent, HistoryChangedAction.Add);
         }
 
         private void Notify(HistoryEvent historyEvent, HistoryChangedAction action)
         {
-            Auditors?.Invoke(historyEvent, action);
+            if (IsClosedEvent(historyEvent))
+            {
+                Auditors?.Invoke(historyEvent, action);
+            }
         }
     }
 }

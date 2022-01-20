@@ -481,7 +481,6 @@ namespace CPvC
         /// <summary>
         /// Rewrites the machine file according to the current in-memory representation of the timeline.
         /// </summary>
-        /// <param name="diffsEnabled">Enable calculation of diffs. Setting this to true can cause compacting to take a long time.</param>
         /// <remarks>
         /// This is useful for compacting the size of the machine file, due to the fact that bookmark and timeline deletions don't actually
         /// remove anything from the machine file, but simply log the fact they happened.
@@ -503,6 +502,7 @@ namespace CPvC
             {
                 info = MachineFile.Read(textFile);
             }
+
 
             using (ITextFile textFile = fileSystem.OpenTextFile(newFilepath))
             using (MachineFile writer = new MachineFile(textFile, info.History))
