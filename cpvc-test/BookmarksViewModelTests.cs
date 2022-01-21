@@ -443,5 +443,25 @@ namespace CPvC.Test
             // Verify
             Assert.AreEqual(0, _viewModel.SelectedItems.Count(i => i == _leaf1ViewItem));
         }
+
+        [Test]
+        public void CurrentItemNonRoot()
+        {
+            // Setup
+            _history.CurrentEvent = _bookmark3Event;
+
+            // Verify
+            Assert.AreEqual(_viewModel.Items[0].HistoryEvent, _history.CurrentEvent);
+        }
+
+        [Test]
+        public void CurrentItemRoot()
+        {
+            // Setup
+            _history.CurrentEvent = _history.RootEvent;
+
+            // Verify
+            Assert.AreEqual(_viewModel.Items[_viewModel.Items.Count - 1].HistoryEvent, _history.CurrentEvent);
+        }
     }
 }

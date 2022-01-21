@@ -295,7 +295,7 @@ namespace CPvC
                     lines.Add(CurrentCommand(currentEvent.Parent.Id));
                 }
 
-                if (History.IsClosedEvent(currentEvent)) // currentEvent is CoreActionHistoryEvent coreActionHistoryEvent && coreActionHistoryEvent.CoreAction.Type == CoreRequest.Types.RunUntil && coreActionHistoryEvent.Children.Count == 1)
+                if (History.IsClosedEvent(currentEvent) && !(currentEvent is CoreActionHistoryEvent coreActionHistoryEvent && coreActionHistoryEvent.CoreAction.Type == CoreRequest.Types.RunUntil && coreActionHistoryEvent.Children.Count == 1))
                 {
                     GetLines(currentEvent, lines);
                 }
