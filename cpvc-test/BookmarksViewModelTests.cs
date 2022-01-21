@@ -451,7 +451,7 @@ namespace CPvC.Test
             _history.CurrentEvent = _bookmark3Event;
 
             // Verify
-            Assert.AreEqual(_viewModel.Items[0].HistoryEvent, _history.CurrentEvent);
+            Assert.AreEqual(_viewModel.Items[0], _viewModel.CurrentItem);
         }
 
         [Test]
@@ -461,7 +461,7 @@ namespace CPvC.Test
             _history.CurrentEvent = _history.RootEvent;
 
             // Verify
-            Assert.AreEqual(_viewModel.Items[_viewModel.Items.Count - 1].HistoryEvent, _history.CurrentEvent);
+            Assert.AreEqual(_viewModel.Items[_viewModel.Items.Count - 1], _viewModel.CurrentItem);
         }
     }
 }
