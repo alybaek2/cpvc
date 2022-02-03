@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace CPvC
 {
@@ -27,6 +29,8 @@ namespace CPvC
 
         private IFileSystem _fileSystem;
 
+        private Action<Action> _canExecuteChangedInvoker;
+
         public event PromptForFileEventHandler PromptForFile;
         public event SelectItemEventHandler SelectItem;
         public event PromptForBookmarkEventHandler PromptForBookmark;
@@ -35,6 +39,8 @@ namespace CPvC
         public event SelectServerPortEventHandler SelectServerPort;
         public event ConfirmCloseEventHandler ConfirmClose;
         public event CreateSocketEventHandler CreateSocket;
+
+        private List<Command> _allCommands;
 
         private readonly Command _openMachineCommand;
         private readonly Command _newMachineCommand;
@@ -74,10 +80,11 @@ namespace CPvC
 
         private ISettings _settings;
 
-        public MainViewModel(ISettings settings, IFileSystem fileSystem)
+        public MainViewModel(ISettings settings, IFileSystem fileSystem, Action<Action> canExecuteChangedInvoker)
         {
             _settings = settings;
             _fileSystem = fileSystem;
+            _canExecuteChangedInvoker = canExecuteChangedInvoker;
 
             InitModel(new MainModel(settings, fileSystem));
 
@@ -85,34 +92,36 @@ namespace CPvC
 
             LoadRecentServersSetting();
 
+            _allCommands = new List<Command>();
+
             ActiveMachine = null;
 
-            _openMachineCommand = new Command(
+            _openMachineCommand = CreateCommand(
                 p => OpenMachine(),
                 p => true
             );
 
-            _newMachineCommand = new Command(
+            _newMachineCommand = CreateCommand(
                 p => NewMachine(),
                 p => true
             );
 
-            _startServerCommand = new Command(
+            _startServerCommand = CreateCommand(
                 p => StartServer(6128),
                 p => true
             );
 
-            _stopServerCommand = new Command(
+            _stopServerCommand = CreateCommand(
                 p => StopServer(),
                 p => true
             );
 
-            _connectCommand = new Command(
+            _connectCommand = CreateCommand(
                 p => Connect(p as ServerInfo),
                 p => true
             );
 
-            _removeCommand = new Command(
+            _removeCommand = CreateCommand(
                 p =>
                 {
                     IMachine machine = p as IMachine;
@@ -128,22 +137,21 @@ namespace CPvC
                 }
             );
 
-            _closeCommand = new Command(
+            _closeCommand = CreateCommand(
                 p => Close(p as IMachine, true),
                 p => (p as IMachine)?.CanClose ?? false
             );
 
-            _openCommand = new Command(
+            _openCommand = CreateCommand(
                 p => (p as IPersistableMachine)?.OpenFromFile(_fileSystem),
                 p => !(p as IPersistableMachine)?.IsOpen ?? false
             );
 
-            _persistCommand = new Command(
+            _persistCommand = CreateCommand(
                 p => Persist(p as IPersistableMachine),
                 p =>
                 {
-                    IPersistableMachine pm = p as IPersistableMachine;
-                    if (pm != null)
+                    if (p is IPersistableMachine pm)
                     {
                         return pm.PersistantFilepath == null;
                     }
@@ -151,110 +159,119 @@ namespace CPvC
                     return false;
                 });
 
-            _pauseCommand = new Command(
+            _pauseCommand = CreateCommand(
                 p => (p as IPausableMachine)?.Stop(),
                 p => (p as IPausableMachine)?.CanStop ?? false
             );
 
-            _resumeCommand = new Command(
+            _resumeCommand = CreateCommand(
                 p => (p as IPausableMachine)?.Start(),
                 p => (p as IPausableMachine)?.CanStart ?? false
             );
 
-            _resetCommand = new Command(
+            _resetCommand = CreateCommand(
                 p => (p as IInteractiveMachine)?.Reset(),
                 p => p is IInteractiveMachine
             );
 
-            _driveACommand = new Command(
+            _driveACommand = CreateCommand(
                 p => LoadDisc(p as IInteractiveMachine, 0),
                 p => p is IInteractiveMachine
             );
 
-            _driveAEjectCommand = new Command(
+            _driveAEjectCommand = CreateCommand(
                 p => (p as IInteractiveMachine)?.LoadDisc(0, null),
                 p => p is IInteractiveMachine
             );
 
-            _driveBCommand = new Command(
+            _driveBCommand = CreateCommand(
                 p => LoadDisc(p as IInteractiveMachine, 1),
                 p => p is IInteractiveMachine
             );
 
-            _driveBEjectCommand = new Command(
+            _driveBEjectCommand = CreateCommand(
                 p => (p as IInteractiveMachine)?.LoadDisc(1, null),
                 p => p is IInteractiveMachine
             );
 
-            _tapeCommand = new Command(
+            _tapeCommand = CreateCommand(
                 p => LoadTape(p as IInteractiveMachine),
                 p => p is IInteractiveMachine
             );
 
-            _tapeEjectCommand = new Command(
+            _tapeEjectCommand = CreateCommand(
                 p => (p as IInteractiveMachine)?.LoadTape(null),
                 p => p is IInteractiveMachine
             );
 
-            _toggleRunningCommand = new Command(
+            _toggleRunningCommand = CreateCommand(
                 p => (p as IPausableMachine)?.ToggleRunning(),
                 p => p is IPausableMachine
             );
 
-            _addBookmarkCommand = new Command(
+            _addBookmarkCommand = CreateCommand(
                 p => (p as IBookmarkableMachine)?.AddBookmark(false),
                 p => p is IBookmarkableMachine
             );
 
-            _jumpToMostRecentBookmarkCommand = new Command(
+            _jumpToMostRecentBookmarkCommand = CreateCommand(
                 p => (p as IJumpableMachine)?.JumpToMostRecentBookmark(),
                 p => p is IJumpableMachine
             );
 
-            _browseBookmarksCommand = new Command(
+            _browseBookmarksCommand = CreateCommand(
                 p => SelectBookmark(p as IJumpableMachine),
                 p => p is IJumpableMachine
             );
 
-            _compactCommand = new Command(
+            _compactCommand = CreateCommand(
                 p => (p as ICompactableMachine)?.Compact(_fileSystem),
-                p => (p as ICompactableMachine)?.CanCompact() ?? false
+                p => (p as ICompactableMachine)?.CanCompact ?? false
             );
 
-            _renameCommand = new Command(
+            _renameCommand = CreateCommand(
                 p => RenameMachine(p as IMachine),
                 p => p is IMachine
             );
 
-            _seekToNextBookmarkCommand = new Command(
+            _seekToNextBookmarkCommand = CreateCommand(
                 p => (p as IPrerecordedMachine)?.SeekToNextBookmark(),
                 p => p is IPrerecordedMachine
             );
 
-            _seekToPrevBookmarkCommand = new Command(
+            _seekToPrevBookmarkCommand = CreateCommand(
                 p => (p as IPrerecordedMachine)?.SeekToPreviousBookmark(),
                 p => p is IPrerecordedMachine
             );
 
-            _seekToStartCommand = new Command(
+            _seekToStartCommand = CreateCommand(
                 p => (p as IPrerecordedMachine)?.SeekToStart(),
                 p => p is IPrerecordedMachine
             );
 
-            _reverseStartCommand = new Command(
+            _reverseStartCommand = CreateCommand(
                 p => (p as IReversibleMachine)?.Reverse(),
                 p => p is IReversibleMachine
             );
 
-            _reverseStopCommand = new Command(
+            _reverseStopCommand = CreateCommand(
                 p => (p as IReversibleMachine)?.ReverseStop(),
                 p => p is IReversibleMachine
             );
 
-            _toggleSnapshotCommand = new Command(
+            _toggleSnapshotCommand = CreateCommand(
                 p => (p as IReversibleMachine)?.ToggleReversibilityEnabled(),
                 p => p is IReversibleMachine
             );
+        }
+
+        private Command CreateCommand(Action<object> execute, Predicate<object> canExecute)
+        {
+            Command command = new Command(execute, canExecute, _canExecuteChangedInvoker);
+
+            _allCommands.Add(command);
+
+            return command;
         }
 
         public MainModel Model
@@ -268,6 +285,52 @@ namespace CPvC
         private void InitModel(MainModel mainModel)
         {
             _model = mainModel;
+
+            ((INotifyCollectionChanged)mainModel.Machines).CollectionChanged += Machines_CollectionChanged;
+
+            foreach (Machine machine in mainModel.Machines)
+            {
+                machine.PropertyChanged += Machine_PropertyChanged;
+            }
+        }
+
+        private void Machines_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    foreach (IMachine machine in e.NewItems)
+                    {
+                        machine.PropertyChanged += Machine_PropertyChanged;
+                    }
+
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    foreach (IMachine machine in e.OldItems)
+                    {
+                        machine.PropertyChanged -= Machine_PropertyChanged;
+                    }
+
+                    break;
+            }
+
+            UpdateCommands(sender, e);
+        }
+
+        private void Machine_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != nameof(Machine.Ticks))
+            {
+                UpdateCommands(sender, e);
+            }
+        }
+
+        private void UpdateCommands(object sender, EventArgs e)
+        {
+            foreach (Command command in _allCommands)
+            {
+                command.InvokeCanExecuteChanged(sender, e);
+            }
         }
 
         public ObservableCollection<ServerInfo> RecentServers
@@ -296,62 +359,62 @@ namespace CPvC
             get { return _newMachineCommand; }
         }
 
-        public ICommand StartServerCommand
+        public Command StartServerCommand
         {
             get { return _startServerCommand; }
         }
 
-        public ICommand StopServerCommand
+        public Command StopServerCommand
         {
             get { return _stopServerCommand; }
         }
 
-        public ICommand ConnectCommand
+        public Command ConnectCommand
         {
             get { return _connectCommand; }
         }
 
-        public ICommand RemoveCommand
+        public Command RemoveCommand
         {
             get { return _removeCommand; }
         }
 
-        public ICommand CloseCommand
+        public Command CloseCommand
         {
             get { return _closeCommand; }
         }
 
-        public ICommand ResetCommand
+        public Command ResetCommand
         {
             get { return _resetCommand; }
         }
 
-        public ICommand DriveACommand
+        public Command DriveACommand
         {
             get { return _driveACommand; }
         }
 
-        public ICommand DriveBCommand
+        public Command DriveBCommand
         {
             get { return _driveBCommand; }
         }
 
-        public ICommand DriveAEjectCommand
+        public Command DriveAEjectCommand
         {
             get { return _driveAEjectCommand; }
         }
 
-        public ICommand DriveBEjectCommand
+        public Command DriveBEjectCommand
         {
             get { return _driveBEjectCommand; }
         }
 
-        public ICommand TapeCommand
+        public Command TapeCommand
         {
             get { return _tapeCommand; }
         }
 
-        public ICommand TapeEjectCommand
+        public Command TapeEjectCommand
         {
             get { return _tapeEjectCommand; }
         }
@@ -361,77 +424,77 @@ namespace CPvC
             get { return _persistCommand; }
         }
 
-        public ICommand OpenCommand
+        public Command OpenCommand
         {
             get { return _openCommand; }
         }
 
-        public ICommand PauseCommand
+        public Command PauseCommand
         {
             get { return _pauseCommand; }
         }
 
-        public ICommand ResumeCommand
+        public Command ResumeCommand
         {
             get { return _resumeCommand; }
         }
 
-        public ICommand ToggleRunningCommand
+        public Command ToggleRunningCommand
         {
             get { return _toggleRunningCommand; }
         }
 
-        public ICommand AddBookmarkCommand
+        public Command AddBookmarkCommand
         {
             get { return _addBookmarkCommand; }
         }
 
-        public ICommand JumpToMostRecentBookmarkCommand
+        public Command JumpToMostRecentBookmarkCommand
         {
             get { return _jumpToMostRecentBookmarkCommand; }
         }
 
-        public ICommand BrowseBookmarksCommand
+        public Command BrowseBookmarksCommand
         {
             get { return _browseBookmarksCommand; }
         }
 
-        public ICommand CompactCommand
+        public Command CompactCommand
         {
             get { return _compactCommand; }
         }
 
-        public ICommand RenameCommand
+        public Command RenameCommand
         {
             get { return _renameCommand; }
         }
 
-        public ICommand SeekToNextBookmarkCommand
+        public Command SeekToNextBookmarkCommand
         {
             get { return _seekToNextBookmarkCommand; }
         }
 
-        public ICommand SeekToPrevBookmarkCommand
+        public Command SeekToPrevBookmarkCommand
         {
             get { return _seekToPrevBookmarkCommand; }
         }
 
-        public ICommand SeekToStartCommand
+        public Command SeekToStartCommand
         {
             get { return _seekToStartCommand; }
         }
 
-        public ICommand ReverseStartCommand
+        public Command ReverseStartCommand
         {
             get { return _reverseStartCommand; }
         }
 
-        public ICommand ReverseStopCommand
+        public Command ReverseStopCommand
         {
             get { return _reverseStopCommand; }
         }
 
-        public ICommand ToggleReversibility
+        public Command ToggleReversibility
         {
             get { return _toggleSnapshotCommand; }
         }
@@ -452,6 +515,8 @@ namespace CPvC
                 _activeItem = value;
                 OnPropertyChanged();
                 OnPropertyChanged("ActiveMachine");
+
+                UpdateCommands(this, null);
             }
         }
 
@@ -468,6 +533,8 @@ namespace CPvC
 
                 OnPropertyChanged();
                 OnPropertyChanged("ActiveItem");
+
+                UpdateCommands(this, null);
             }
         }
 

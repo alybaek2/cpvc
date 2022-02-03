@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace CPvC
 {
@@ -7,22 +8,16 @@ namespace CPvC
     {
         private readonly Predicate<object> _canExecute;
         private readonly Action<object> _execute;
+        private Action<Action> _canExecuteChangedInvoker;
 
-        public Command(Action<object> execute, Predicate<object> canExecute)
+        public Command(Action<object> execute, Predicate<object> canExecute, Action<Action> canExecuteChangedInvoker2)
         {
             _execute = execute;
             _canExecute = canExecute;
+            _canExecuteChangedInvoker = canExecuteChangedInvoker2;
         }
 
-        // This is a bit of a heavy-handed approach, but gets around a problem where
-        // CanExecute seemed to be called with null instead of the CommandParameter the
-        // command was bound to, possibly because CanExecute was being called prior to
-        // that binding taking place...
-        public event EventHandler CanExecuteChanged
-        {
-            add { CommandManager.RequerySuggested += value; }
-            remove { CommandManager.RequerySuggested -= value; }
-        }
+        public event EventHandler CanExecuteChanged;
 
         public void Execute(object parameter)
         {
@@ -32,6 +27,11 @@ namespace CPvC
         public bool CanExecute(object parameter)
         {
             return _canExecute(parameter);
+        }
+
+        public void InvokeCanExecuteChanged(object sender, EventArgs e)
+        {
+            _canExecuteChangedInvoker(new Action(() => CanExecuteChanged?.Invoke(sender, e)));
         }
     }
 }

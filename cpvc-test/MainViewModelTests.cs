@@ -5,11 +5,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 using System.Windows.Input;
+using System.Windows.Threading;
 using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
 {
+    [Apartment(ApartmentState.STA)]
     [TestFixture]
     public class MainViewModelTests
     {
@@ -21,6 +24,8 @@ namespace CPvC.Test
 
         private MainViewModel _mainViewModel;
         private LocalMachine _machine;
+
+        static private Action<Action> _canExecuteChangedInvoker = action => action();
 
         [SetUp]
         public void Setup()
@@ -46,7 +51,7 @@ namespace CPvC.Test
             _mockSocket = new Mock<ISocket>();
 
             _machine = LocalMachine.New("test", null);
-            _mainViewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
+            _mainViewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, _canExecuteChangedInvoker);
             _mainViewModel.Model.AddMachine(_machine);
         }
 
@@ -63,7 +68,7 @@ namespace CPvC.Test
         {
             _settingGet = String.Join(",", Enumerable.Range(0, machineCount).Select(x => String.Format("test{0}.cpvc", x)));
 
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object, _canExecuteChangedInvoker);
 
             // Create a Replay machine.
             HistoryEvent historyEvent = null;
@@ -112,7 +117,7 @@ namespace CPvC.Test
             string ext = (fileType == FileTypes.Tape) ? "cdt" : "dsk";
             string filename = nullFilename ? null : (isZipped ? "test.zip" : String.Format("test.{0}", ext));
 
-            MainViewModel mainViewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object);
+            MainViewModel mainViewModel = new MainViewModel(mockSettings.Object, mockFileSystem.Object, _canExecuteChangedInvoker);
             mainViewModel.Model.AddMachine(mockMachine.Object);
             mainViewModel.PromptForFile += (sender, args) =>
             {
@@ -285,7 +290,7 @@ namespace CPvC.Test
             PromptForFileEventHandler mockPrompt = (object sender, PromptForFileEventArgs args) => args.Filepath = "test.cpvc";
 
             Mock<ISocket> mockSocket = new Mock<ISocket>();
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, _canExecuteChangedInvoker);
             viewModel.PromptForFile += mockPrompt;
             MockTextFile mockTextFile = new MockTextFile();
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(It.IsAny<string>())).Throws(new Exception());
@@ -304,7 +309,7 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(AnyString())).Throws(new Exception());
 
             // Act
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, _canExecuteChangedInvoker);
 
             // Verify
             Assert.AreEqual(0, viewModel.Machines.Count);
@@ -314,7 +319,7 @@ namespace CPvC.Test
         public void NewMachine()
         {
             // Setup
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object, _canExecuteChangedInvoker);
 
             // Act
             viewModel.NewMachineCommand.Execute(_mockFileSystem.Object);
@@ -334,7 +339,7 @@ namespace CPvC.Test
         {
             // Setup
             string filepath = "test.cpvc";
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object, _canExecuteChangedInvoker);
             viewModel.PromptForFile += (sender, args) =>
             {
                 if (args.FileType == FileTypes.Machine && args.Existing)
@@ -423,7 +428,7 @@ namespace CPvC.Test
         public void ReadAudio(bool active)
         {
             // Setup
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object, _canExecuteChangedInvoker);
 
             Mock<IMachine> coreMachine = new Mock<IMachine>();
             Mock<IMachine> coreMachine2 = new Mock<IMachine>();
@@ -954,7 +959,7 @@ namespace CPvC.Test
         public void CloseAll(bool newMachine, bool persistedMachine, bool nonPersistableMachine, bool confirmClose, bool expectedResult)
         {
             // Setup
-            MainViewModel mainViewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
+            MainViewModel mainViewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, _canExecuteChangedInvoker);
 
             if (newMachine)
             {
@@ -1275,7 +1280,7 @@ namespace CPvC.Test
             _remoteServersSetting = "localhost:6128";
 
             // Act
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, _canExecuteChangedInvoker);
 
             // Verify
             Assert.AreEqual(1, viewModel.RecentServers.Count);
@@ -1290,7 +1295,7 @@ namespace CPvC.Test
             _remoteServersSetting = "localhost:6128;host2:3333";
 
             // Act
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, _canExecuteChangedInvoker);
 
             // Verify
             Assert.AreEqual(2, viewModel.RecentServers.Count);
@@ -1308,7 +1313,7 @@ namespace CPvC.Test
             _remoteServersSetting = null;
 
             // Act
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object);
+            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, _canExecuteChangedInvoker);
 
             // Verify
             Assert.IsNull(viewModel.RecentServers);
@@ -1362,6 +1367,38 @@ namespace CPvC.Test
             // Act and Verify
             Assert.DoesNotThrow(() => _mainViewModel.OpenCommand.Execute(null));
             Assert.False(_mainViewModel.OpenCommand.CanExecute(null));
+        }
+
+        static private readonly object[] CanExecuteChangedCases =
+        {
+            new object[] { nameof(MainViewModel.OpenCommand), nameof(IPersistableMachine.IsOpen) },
+            new object[] { nameof(MainViewModel.CloseCommand), nameof(IMachine.CanClose) },
+            new object[] { nameof(MainViewModel.PauseCommand), nameof(IPausableMachine.CanStop) },
+            new object[] { nameof(MainViewModel.ResumeCommand), nameof(IPausableMachine.CanStart) },
+            new object[] { nameof(MainViewModel.PersistCommand), nameof(IPersistableMachine.PersistantFilepath) },
+            new object[] { nameof(MainViewModel.CompactCommand), nameof(ICompactableMachine.CanCompact) },
+            new object[] { nameof(MainViewModel.RemoveCommand), nameof(IPersistableMachine.PersistantFilepath) }
+        };
+
+        [TestCaseSource(nameof(CanExecuteChangedCases))]
+        public void CanExecuteChanged(string commandName, string propertyName)
+        {
+            // Setup
+            ICommand command = (ICommand)typeof(MainViewModel).GetProperty(commandName).GetValue(_mainViewModel);
+
+            Mock<IMachine> mockMachine = new Mock<IMachine>();
+            Mock<INotifyPropertyChanged> mockPropertyChanged = mockMachine.As<INotifyPropertyChanged>();
+            _mainViewModel.Model.AddMachine(mockMachine.Object);
+
+            Mock<EventHandler> canExecuteChangedHandler = new Mock<EventHandler>();
+            command.CanExecuteChanged += canExecuteChangedHandler.Object;
+
+            // Act
+            PropertyChangedEventArgs args = new PropertyChangedEventArgs(propertyName);
+            mockPropertyChanged.Raise(p => p.PropertyChanged += null, args);
+
+            // Modify
+            canExecuteChangedHandler.Verify(h => h(mockPropertyChanged.Object, args));
         }
     }
 }

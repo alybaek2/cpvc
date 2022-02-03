@@ -7,7 +7,7 @@
         xmlns:cpvc="clr-namespace:CPvC"
         xmlns:System="clr-namespace:System;assembly=mscorlib" x:Name="_mainWindow" x:Class="CPvC.UI.Forms.MainWindow"
         mc:Ignorable="d"
-        Title="CPvC" Height="705.125" Width="784.535" Closing="Window_Closing" Loaded="Window_Loaded" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp" SizeToContent="WidthAndHeight" ResizeMode="NoResize" Icon="../Resources/cpvc.png">
+        Title="CPvC" Height="705.125" Width="784.535" Closing="Window_Closing" Loaded="Window_Loaded" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp" SizeToContent="WidthAndHeight" ResizeMode="NoResize" Icon="../Resources/cpvc.png" ContextMenuOpening="MainWindow_ContextMenuOpening">
     <Window.Resources>
         <converters:Ticks x:Key="ticksConverter" />
         <converters:IsNotNull x:Key="isNotNullConverter" />

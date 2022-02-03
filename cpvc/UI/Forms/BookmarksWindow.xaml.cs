@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Media.Imaging;
 
 namespace CPvC.UI.Forms
@@ -24,7 +25,12 @@ namespace CPvC.UI.Forms
 
             _machine = machine;
 
-            _viewModel = new BookmarksViewModel(_machine.History);
+            Action<Action> canExecuteChangedInvoker = (action) =>
+            {
+                Dispatcher.BeginInvoke(action, null);
+            };
+
+            _viewModel = new BookmarksViewModel(_machine.History, canExecuteChangedInvoker);
             _display = new Display();
 
             Owner = owner;
@@ -39,7 +45,8 @@ namespace CPvC.UI.Forms
                         DialogResult = true;
                     }
                 },
-                p => _viewModel.SelectedItems.Count == 1
+                p => _viewModel.SelectedItems.Count == 1,
+                canExecuteChangedInvoker
             );
 
             JumpCommand = new Command(
@@ -52,7 +59,8 @@ namespace CPvC.UI.Forms
                         DialogResult = true;
                     }
                 },
-                p => _viewModel.SelectedItems.Count == 1 && _viewModel.SelectedItems[0].HistoryEvent is BookmarkHistoryEvent
+                p => _viewModel.SelectedItems.Count == 1 && _viewModel.SelectedItems[0].HistoryEvent is BookmarkHistoryEvent,
+                canExecuteChangedInvoker
             );
 
             DataContext = _viewModel;
@@ -66,6 +74,9 @@ namespace CPvC.UI.Forms
                 {
                     _viewModel.AddSelectedItem(addedItem);
                 }
+
+                JumpCommand.InvokeCanExecuteChanged(this, new EventArgs());
+                ReplayCommand.InvokeCanExecuteChanged(this, new EventArgs());
             }
 
             if (e.RemovedItems != null)
@@ -74,6 +85,9 @@ namespace CPvC.UI.Forms
                 {
                     _viewModel.RemoveSelectedItem(removedItem);
                 }
+
+                JumpCommand.InvokeCanExecuteChanged(this, new EventArgs());
+                ReplayCommand.InvokeCanExecuteChanged(this, new EventArgs());
             }
 
             if (_historyListView.SelectedItems.Count == 1)

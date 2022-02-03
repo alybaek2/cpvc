@@ -1,6 +1,7 @@
 ﻿using NUnit.Framework;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Threading;
 
 namespace CPvC.Test
 {
@@ -62,7 +63,8 @@ namespace CPvC.Test
             bool executeCalled = false;
             Command command = new Command(
                 p => { executeCalled = true; },
-                p => { return canExecute; });
+                p => { return canExecute; },
+                action => action());
 
             // Act
             command.Execute(null);
@@ -78,7 +80,8 @@ namespace CPvC.Test
             // Setup
             Command command = new Command(
                 p => { },
-                p => { return canExecute; });
+                p => { return canExecute; },
+                action => action());
 
             // Act
             bool result = command.CanExecute(null);

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace CPvC
 {
@@ -489,9 +490,9 @@ namespace CPvC
         public void Compact(IFileSystem fileSystem)
         {
             // Only allow closed machines to compact!
-            if (!CanCompact())
+            if (!CanCompact)
             {
-                throw new Exception("Can't compact an open machine!");
+                throw new InvalidOperationException();
             }
 
             string oldFilepath = PersistantFilepath;
@@ -513,9 +514,12 @@ namespace CPvC
             fileSystem.ReplaceFile(oldFilepath, newFilepath);
         }
 
-        public bool CanCompact()
+        public bool CanCompact
         {
-            return PersistantFilepath != null && File == null;
+            get
+            {
+                return PersistantFilepath != null && !IsOpen;
+            }
         }
 
         /// <summary>
@@ -732,6 +736,17 @@ namespace CPvC
                     OnPropertyChanged(nameof(IsOpen));
                 }
             }
+        }
+
+        protected override void OnPropertyChanged([CallerMemberName] string name = null)
+        {
+            if (name == nameof(RunningState))
+            {
+                base.OnPropertyChanged(nameof(CanStart));
+                base.OnPropertyChanged(nameof(CanStop));
+            }
+
+            base.OnPropertyChanged(name);
         }
     }
 }

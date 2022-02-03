@@ -17,7 +17,7 @@ namespace CPvC.Test
                 0x03, 0x00, 0x00, 0x00, 0x44, 0x45, 0x46
             };
 
-        static object[] CoreRequestCases =
+        static private object[] CoreRequestCases =
         {
             new object[] { CoreRequest.KeyPress(Keys.A, true), new byte[] { 0x01, 58, 0xFF } , false },
             new object[] { CoreRequest.Reset(), new byte[] { 0x02 } , false },
@@ -32,7 +32,7 @@ namespace CPvC.Test
             new object[] { new CoreRequest((CoreRequest.Types) 99), new byte[] { 99 }, true }
         };
 
-        static object[] CoreActionCases =
+        static private object[] CoreActionCases =
         {
             new object[] { CoreAction.KeyPress(0x01234567, Keys.A, true), new byte[] { 0x01, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 58, 0xFF } , false },
             new object[] { CoreAction.Reset(0x01234567), new byte[] { 0x02, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00 } , false },

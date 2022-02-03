@@ -70,7 +70,7 @@ namespace CPvC.Test
             //  50  |     |
             //   0: o-----/
 
-            _viewModel = new BookmarksViewModel(_history);
+            _viewModel = new BookmarksViewModel(_history, action => action());
 
             Assert.AreEqual(7, _viewModel.Items.Count);
 

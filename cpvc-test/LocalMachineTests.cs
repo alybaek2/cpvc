@@ -802,7 +802,7 @@ namespace CPvC.Test
         public void CantCompact()
         {
             // Act and Verify
-            Assert.Throws<Exception>(() => _machine.Compact(_mockFileSystem.Object));
+            Assert.Throws<InvalidOperationException>(() => _machine.Compact(_mockFileSystem.Object));
         }
 
         [Test]

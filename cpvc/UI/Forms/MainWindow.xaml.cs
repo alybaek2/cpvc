@@ -24,9 +24,14 @@ namespace CPvC.UI.Forms
 
         public MainWindow()
         {
+            Action<Action> canExecuteChangedInvoker = (action) =>
+            {
+                Dispatcher.BeginInvoke(action, null);
+            };
+
             _settings = new Settings();
             _fileSystem = new FileSystem();
-            _mainViewModel = new MainViewModel(_settings, _fileSystem);
+            _mainViewModel = new MainViewModel(_settings, _fileSystem, canExecuteChangedInvoker);
 
             _mainViewModel.PromptForFile += MainViewModel_PromptForFile;
             _mainViewModel.SelectItem += MainViewModel_SelectItem;
@@ -491,6 +496,20 @@ namespace CPvC.UI.Forms
 
             e.Handled = true;
             e.SelectedPort = SelectServerPort(e.DefaultPort);
+        }
+
+        // This method handler is to get around a problem where opening a context menu doesn't
+        // seem to trigger any calls to CanExecute to correctly enable/disable the menu's items.
+        private void MainWindow_ContextMenuOpening(object sender, System.Windows.Controls.ContextMenuEventArgs e)
+        {
+            EventArgs args = new EventArgs();
+            _mainViewModel.PauseCommand.InvokeCanExecuteChanged(sender, args);
+            _mainViewModel.ResumeCommand.InvokeCanExecuteChanged(sender, args);
+            _mainViewModel.OpenCommand.InvokeCanExecuteChanged(sender, args);
+            _mainViewModel.CloseCommand.InvokeCanExecuteChanged(sender, args);
+            _mainViewModel.PersistCommand.InvokeCanExecuteChanged(sender, args);
+            _mainViewModel.RemoveCommand.InvokeCanExecuteChanged(sender, args);
+            _mainViewModel.CompactCommand.InvokeCanExecuteChanged(sender, args);
         }
     }
 }

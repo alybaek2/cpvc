@@ -3,6 +3,6 @@
     public interface ICompactableMachine
     {
         void Compact(IFileSystem fileSystem);
-        bool CanCompact();
+        bool CanCompact { get; }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace CPvC.UI
 {
@@ -14,8 +15,8 @@ namespace CPvC.UI
         private History _history;
         private ObservableCollection<HistoryViewItem> _selectedItems;
 
-        public ICommand DeleteBookmarksCommand { get; }
-        public ICommand DeleteBranchesCommand { get; }
+        public Command DeleteBookmarksCommand { get; }
+        public Command DeleteBranchesCommand { get; }
 
         public ObservableCollection<HistoryViewItem> Items { get; }
 
@@ -29,19 +30,21 @@ namespace CPvC.UI
             }
         }
 
-        public BookmarksViewModel(History history)
+        public BookmarksViewModel(History history, Action<Action> canExecuteChangedInvoker)
         {
             _selectedItems = new ObservableCollection<HistoryViewItem>();
             SelectedItems = new ReadOnlyObservableCollection<HistoryViewItem>(_selectedItems);
 
             DeleteBookmarksCommand = new Command(
                 p => DeleteBookmarks(),
-                p => SelectedItems.Any(item => item.HistoryEvent is BookmarkHistoryEvent)
+                p => SelectedItems.Any(item => item.HistoryEvent is BookmarkHistoryEvent),
+                canExecuteChangedInvoker
             );
 
             DeleteBranchesCommand = new Command(
                 p => DeleteBranches(),
-                p => SelectedItems.Any(item => !(item.HistoryEvent.Children.Count != 0 || item.HistoryEvent == _history.CurrentEvent || item.HistoryEvent is RootHistoryEvent))
+                p => SelectedItems.Any(item => !(item.HistoryEvent.Children.Count != 0 || item.HistoryEvent == _history.CurrentEvent || item.HistoryEvent is RootHistoryEvent)),
+                canExecuteChangedInvoker
             );
 
             _history = history;
@@ -54,6 +57,9 @@ namespace CPvC.UI
             if (!_selectedItems.Contains(addedItem))
             {
                 _selectedItems.Add(addedItem);
+
+                DeleteBookmarksCommand.InvokeCanExecuteChanged(this, new EventArgs());
+                DeleteBranchesCommand.InvokeCanExecuteChanged(this, new EventArgs());
             }
         }
 
