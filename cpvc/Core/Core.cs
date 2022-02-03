@@ -387,10 +387,7 @@ namespace CPvC
                     continue;
                 }
 
-                if (ProcessNextRequest())
-                {
-                    break;
-                }
+                ProcessNextRequest();
             }
 
             _quitThread = false;
@@ -431,7 +428,7 @@ namespace CPvC
             }
         }
 
-        private bool ProcessNextRequest()
+        private void ProcessNextRequest()
         {
             bool success = true;
 
@@ -452,7 +449,7 @@ namespace CPvC
                 if (request == null)
                 {
                     _requestQueueNonEmpty.WaitOne(20);
-                    return false;
+                    return;
                 }
             }
 
@@ -550,7 +547,7 @@ namespace CPvC
 
             Auditors?.Invoke(this, request, action);
 
-            return false;
+            return;
         }
 
         private CoreAction CreateSnapshot(int id)
