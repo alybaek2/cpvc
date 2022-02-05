@@ -189,11 +189,11 @@ namespace CPvC
         }
 
         // Browsing methods
-        public HistoryEvent RootEvent
+        public RootHistoryEvent RootEvent
         {
             get
             {
-                return _rootNode.HistoryEvent;
+                return _rootNode.HistoryEvent as RootHistoryEvent;
             }
         }
 

@@ -815,14 +815,25 @@ namespace CPvC
                 PromptForBookmarkEventArgs args = new PromptForBookmarkEventArgs();
                 PromptForBookmark?.Invoke(this, args);
 
+                bool updateStatus = true;
                 HistoryEvent historyEvent = args.SelectedBookmark;
-                if (historyEvent != null)
+                switch (historyEvent)
                 {
-                    jumpableMachine.JumpToBookmark(historyEvent);
-                    if (jumpableMachine is IMachine machine)
-                    {
-                        machine.Status = String.Format("Jumped to {0}", Helpers.GetTimeSpanFromTicks(historyEvent.Ticks).ToString(@"hh\:mm\:ss"));
-                    }
+                    case BookmarkHistoryEvent bookmarkHistoryEvent:
+                        jumpableMachine.JumpToBookmark(bookmarkHistoryEvent);
+                        break;
+                    case RootHistoryEvent _:
+                        jumpableMachine.JumpToRoot();
+                        break;
+                    default:
+                        updateStatus = false;
+                        break;
+                }
+
+                // This should really be done in the call to JumpToBookmark/Root...
+                if (updateStatus)
+                {
+                    (jumpableMachine as IMachine).Status = String.Format("Jumped to {0}", Helpers.GetTimeSpanFromTicks(historyEvent.Ticks).ToString(@"hh\:mm\:ss"));
                 }
             }
         }

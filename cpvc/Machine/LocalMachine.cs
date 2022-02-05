@@ -178,7 +178,7 @@ namespace CPvC
                         BookmarkHistoryEvent currentBookmarkEvent = _history.CurrentEvent as BookmarkHistoryEvent;
                         if (currentBookmarkEvent == null ||
                             (currentBookmarkEvent.Ticks != Ticks) ||
-                            (currentBookmarkEvent.Bookmark == null && currentBookmarkEvent != _history.RootEvent) ||
+                            (currentBookmarkEvent.Bookmark == null) ||
                             (currentBookmarkEvent.Bookmark != null && !currentBookmarkEvent.Bookmark.System))
                         {
                             AddBookmark(true);
@@ -431,7 +431,7 @@ namespace CPvC
                 if (lastBookmarkEvent is BookmarkHistoryEvent b && !b.Bookmark.System && b.Ticks != Core.Ticks)
                 {
                     TimeSpan before = Helpers.GetTimeSpanFromTicks(Core.Ticks);
-                    JumpToBookmark(lastBookmarkEvent);
+                    JumpToBookmark(b);
                     TimeSpan after = Helpers.GetTimeSpanFromTicks(Core.Ticks);
                     Status = String.Format("Rewound to {0} (-{1})", after.ToString(@"hh\:mm\:ss"), (after - before).ToString(@"hh\:mm\:ss"));
                     return;
@@ -441,7 +441,7 @@ namespace CPvC
             }
 
             // No bookmarks? Go all the way back to the root!
-            JumpToBookmark(_history.RootEvent);
+            JumpToRoot();
             Status = "Rewound to start";
         }
 
@@ -459,11 +459,22 @@ namespace CPvC
         /// Changes the current position in the timeline.
         /// </summary>
         /// <param name="bookmarkEvent">The event to become the current event in the timeline. This event must have a bookmark.</param>
-        public void JumpToBookmark(HistoryEvent bookmarkEvent)
+        public void JumpToBookmark(BookmarkHistoryEvent bookmarkEvent)
         {
             using (AutoPause())
             {
                 SetCurrentEvent(bookmarkEvent);
+            }
+        }
+
+        /// <summary>
+        /// Changes the current position in the timeline to the root.
+        /// </summary>
+        public void JumpToRoot()
+        {
+            using (AutoPause())
+            {
+                SetCurrentToRoot();
             }
         }
 
@@ -548,32 +559,28 @@ namespace CPvC
             return _history.DeleteBookmark(e);
         }
 
-        private void SetCurrentEvent(HistoryEvent historyEvent)
+        private void SetCurrentEvent(BookmarkHistoryEvent bookmarkHistoryEvent)
         {
-            if (historyEvent is BookmarkHistoryEvent bookmarkHistoryEvent)
-            {
-                Core core = Core.Create(Core.LatestVersion, bookmarkHistoryEvent.Bookmark.State.GetBytes());
-                SetCore(core);
+            Core core = Core.Create(Core.LatestVersion, bookmarkHistoryEvent.Bookmark.State.GetBytes());
+            SetCore(core);
 
-                Display.GetFromBookmark(bookmarkHistoryEvent.Bookmark);
+            Display.GetFromBookmark(bookmarkHistoryEvent.Bookmark);
 
-                Auditors?.Invoke(CoreAction.LoadCore(historyEvent.Ticks, bookmarkHistoryEvent.Bookmark.State));
-            }
-            else if (historyEvent is RootHistoryEvent rootHistoryEvent)
-            {
-                Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-                SetCore(core);
+            Auditors?.Invoke(CoreAction.LoadCore(bookmarkHistoryEvent.Ticks, bookmarkHistoryEvent.Bookmark.State));
 
-                Display.GetFromBookmark(null);
+            _history.CurrentEvent = bookmarkHistoryEvent;
+        }
 
-                Auditors?.Invoke(CoreAction.Reset(rootHistoryEvent.Ticks));
-            }
-            else
-            {
-                throw new Exception("Can't set current event to an event that isn't the root or doesn't have a bookmark.");
-            }
+        private void SetCurrentToRoot()
+        {
+            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            SetCore(core);
 
-            _history.CurrentEvent = historyEvent;
+            Display.GetFromBookmark(null);
+
+            Auditors?.Invoke(CoreAction.Reset(_history.RootEvent.Ticks));
+
+            _history.CurrentEvent = _history.RootEvent;
         }
 
         public void Reverse()
@@ -675,7 +682,14 @@ namespace CPvC
                 File = file;
 
                 BookmarkHistoryEvent historyEvent = _history.CurrentEvent.MostRecent<BookmarkHistoryEvent>();
-                SetCurrentEvent(historyEvent ?? _history.RootEvent);
+                if (historyEvent != null)
+                {
+                    SetCurrentEvent(historyEvent);
+                }
+                else
+                {
+                    SetCurrentToRoot();
+                }
 
                 // Should probably be monitoring the IsOpen property, I think...
                 Display.EnableGreyscale(false);
@@ -701,13 +715,10 @@ namespace CPvC
             }
 
             LocalMachine machine = New(info.Name, info.History, filepath);
-            if (machine.History != null)
-            {
-                HistoryEvent historyEvent = machine.History.CurrentEvent.MostRecent<BookmarkHistoryEvent>(); ;
+            HistoryEvent historyEvent = machine.History.CurrentEvent.MostRecent<BookmarkHistoryEvent>(); ;
 
-                machine.Display.GetFromBookmark((historyEvent as BookmarkHistoryEvent)?.Bookmark);
-                machine.Display.EnableGreyscale(true);
-            }
+            machine.Display.GetFromBookmark((historyEvent as BookmarkHistoryEvent)?.Bookmark);
+            machine.Display.EnableGreyscale(true);
 
             return machine;
         }

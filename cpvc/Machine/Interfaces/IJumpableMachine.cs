@@ -3,6 +3,7 @@
     public interface IJumpableMachine
     {
         void JumpToMostRecentBookmark();
-        void JumpToBookmark(HistoryEvent bookmarkEvent);
+        void JumpToBookmark(BookmarkHistoryEvent bookmarkEvent);
+        void JumpToRoot();
     }
 }
