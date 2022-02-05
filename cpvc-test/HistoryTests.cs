@@ -65,6 +65,16 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void CreateDate()
+        {
+            // Setup
+            HistoryEvent historyEvent = _history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+
+            // Verify - historyEvent's CreateDate should be very close to now.
+            Assert.Less((DateTime.Now - historyEvent.CreateDate).TotalSeconds, 5);
+        }
+
+        [Test]
         public void AddEvent()
         {
             // Setup

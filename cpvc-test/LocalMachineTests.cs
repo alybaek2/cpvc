@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
@@ -241,6 +242,45 @@ namespace CPvC.Test
                 Assert.AreEqual(bookmarkHistoryEvent, machine.History.CurrentEvent);
 
                 _mockAuditor.Verify(a => a(It.Is<CoreAction>(c => c.Type == CoreRequest.Types.LoadCore)), Times.Once);
+            }
+        }
+
+        [Test]
+        public void CreateBookmarkOnClose()
+        {
+            // Setup
+            Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
+            MockTextFile mockTextFile = new MockTextFile();
+            mockFileSystem.Setup(fs => fs.OpenTextFile("test.cpvc")).Returns(mockTextFile);
+            using (LocalMachine machine = LocalMachine.OpenFromFile(mockFileSystem.Object, "test.cpvc"))
+            {
+                RunForAWhile(machine);
+
+                // Act
+                machine.Close();
+
+                // Verify
+                Assert.True(mockTextFile.Lines[mockTextFile.Lines.Count - 1].StartsWith("bookmark:"));
+            }
+        }
+
+        [Test]
+        public void SkipBookmarkCreationOnClose()
+        {
+            // Setup
+            Mock<IFileSystem> mockFileSystem = new Mock<IFileSystem>(MockBehavior.Strict);
+            MockTextFile mockTextFile = new MockTextFile();
+            mockFileSystem.Setup(fs => fs.OpenTextFile("test.cpvc")).Returns(mockTextFile);
+            using (LocalMachine machine = LocalMachine.OpenFromFile(mockFileSystem.Object, "test.cpvc"))
+            {
+                RunForAWhile(machine);
+                machine.AddBookmark(true);
+
+                // Act
+                machine.Close();
+
+                // Verify
+                Assert.AreEqual(1, mockTextFile.Lines.Count(line => line.StartsWith("bookmark:")));
             }
         }
 
@@ -593,7 +633,7 @@ namespace CPvC.Test
         [Test]
         public void SetSameCore()
         {
-            // Act and Verify - note that if CoreMachine.Core_set didn't do a check for reference
+            // Act and Verify - note that if Machine.Core_set didn't do a check for reference
             //                  equality between the new core and current core, an exception would
             //                  later be thrown due to Dispose() being called.
             Assert.DoesNotThrow(() =>
