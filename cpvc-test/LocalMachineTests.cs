@@ -778,6 +778,28 @@ namespace CPvC.Test
             Assert.Less(_machine.Ticks, ticksAfter);
         }
 
+        [Test]
+        public void ReverseFillsBuffer()
+        {
+            // Setup
+
+            // Run for long enough to generate one snapshot, so that we can enter reverse mode.
+            RunForAWhile(_machine, 1000000, 60000);
+            UInt64 ticksAfter = _machine.Ticks;
+            int samplesRequested = 2500;
+
+            // Act
+            _machine.Reverse();
+
+            byte[] buffer = new byte[samplesRequested * 4];
+            int samplesWritten = _machine.ReadAudio(buffer, 0, samplesRequested);
+
+            // Verify - this test is incomplete. Need checks for reversal of audio
+            //          samples. Probably easier to do this once the Core class is
+            //          hidden behind an interface and can be mocked.
+            Assert.AreEqual(samplesRequested, samplesWritten);
+        }
+
         /// <summary>
         /// Test to ensure that multiple Reverse calls only require a single ReverseStop
         /// call to get back to the original running state.

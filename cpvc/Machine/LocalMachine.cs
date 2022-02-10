@@ -201,7 +201,7 @@ namespace CPvC
 
                 Status = null;
 
-                Display?.EnableGreyscale(true);
+                Display.EnableGreyscale(true);
             }
         }
 
