@@ -52,6 +52,8 @@ namespace CPvC
 
                 if (_core != null)
                 {
+                    _core.PropertyChanged -= CorePropertyChanged;
+                    _core.BeginVSync -= BeginVSync;
                     _core.Dispose();
                 }
 
@@ -65,6 +67,7 @@ namespace CPvC
 
                     if (_core != null)
                     {
+                        // Should probably remove all auditors from _core...
                         value.Auditors += _core.Auditors;
                     }
 

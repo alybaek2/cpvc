@@ -79,6 +79,11 @@ namespace CPvC
         {
             _remote.Dispose();
             _core?.Stop();
+            if (_core != null)
+            {
+                _core.Auditors -= RequestProcessed;
+            }
+
             Core = null;
         }
 

@@ -9,7 +9,7 @@ env:
 jobs:
   builddebug:
     name: Build debug
-    runs-on: windows-latest
+    runs-on: windows-2019
 
     steps:
     - name: Checkout files
