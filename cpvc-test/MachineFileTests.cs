@@ -356,5 +356,27 @@ namespace CPvC.Test
             // Verify
             Assert.True(TestHelpers.HistoriesEqual(expectedHistory, _fileInfo.History));
         }
+
+        [Test]
+        public void ReadAddBookmarkInvalidId()
+        {
+            // Setup
+            _mockFile.WriteLine("key:0,100,42,True");
+            _mockFile.WriteLine("bookmark:0,100,True,1,123456789,0102,0304");
+
+            // Act and Verify
+            Assert.Throws<InvalidOperationException>(() => _fileInfo = MachineFile.Read(_mockFile));
+        }
+
+        [Test]
+        public void ReadAddCoreActionInvalidId()
+        {
+            // Setup
+            _mockFile.WriteLine("key:0,100,42,True");
+            _mockFile.WriteLine("key:0,100,42,True");
+
+            // Act and Verify
+            Assert.Throws<InvalidOperationException>(() => _fileInfo = MachineFile.Read(_mockFile));
+        }
     }
 }
