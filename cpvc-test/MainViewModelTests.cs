@@ -430,10 +430,9 @@ namespace CPvC.Test
             MainViewModel viewModel = SetupViewModel(1);
             _machine.OpenFromFile(_mockFileSystem.Object);
 
-            HistoryEvent historyEvent = _machine.History.RootEvent;
             viewModel.PromptForBookmark += (sender, args) =>
             {
-                args.SelectedBookmark = historyEvent;
+                args.SelectedBookmark = _machine.History.RootEvent;
             };
 
             TestHelpers.Run(_machine, 1000);
@@ -442,7 +441,7 @@ namespace CPvC.Test
             viewModel.BrowseBookmarksCommand.Execute(_machine);
 
             // Verify
-            Assert.AreEqual(historyEvent, _machine.History.CurrentEvent);
+            Assert.AreEqual(_machine.History.RootEvent, _machine.History.CurrentEvent);
         }
 
         [Test]
@@ -453,8 +452,10 @@ namespace CPvC.Test
             _machine.OpenFromFile(_mockFileSystem.Object);
 
             TestHelpers.Run(_machine, 1000);
+            _machine.Key(42, true);
             HistoryEvent historyEvent1 = _machine.History.CurrentEvent;
             TestHelpers.Run(_machine, 1000);
+            _machine.Key(42, false);
             HistoryEvent historyEvent2 = _machine.History.CurrentEvent;
 
             viewModel.PromptForBookmark += (sender, args) =>
