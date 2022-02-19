@@ -423,6 +423,54 @@ namespace CPvC.Test
             }
         }
 
+        [Test]
+        public void SelectRoot()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1);
+            _machine.OpenFromFile(_mockFileSystem.Object);
+
+            HistoryEvent historyEvent = _machine.History.RootEvent;
+            viewModel.PromptForBookmark += (sender, args) =>
+            {
+                args.SelectedBookmark = historyEvent;
+            };
+
+            TestHelpers.Run(_machine, 1000);
+
+            // Act
+            viewModel.BrowseBookmarksCommand.Execute(_machine);
+
+            // Verify
+            Assert.AreEqual(historyEvent, _machine.History.CurrentEvent);
+        }
+
+        [Test]
+        public void SelectNonJumpable()
+        {
+            // Setup
+            MainViewModel viewModel = SetupViewModel(1);
+            _machine.OpenFromFile(_mockFileSystem.Object);
+
+            TestHelpers.Run(_machine, 1000);
+            HistoryEvent historyEvent1 = _machine.History.CurrentEvent;
+            TestHelpers.Run(_machine, 1000);
+            HistoryEvent historyEvent2 = _machine.History.CurrentEvent;
+
+            viewModel.PromptForBookmark += (sender, args) =>
+            {
+                args.SelectedBookmark = historyEvent1;
+            };
+
+            // Act
+            viewModel.BrowseBookmarksCommand.Execute(_machine);
+
+            // Verify
+            Assert.AreEqual(historyEvent2, _machine.History.CurrentEvent);
+        }
+
+
+
         [TestCase(false)]
         [TestCase(true)]
         public void ReadAudio(bool active)
