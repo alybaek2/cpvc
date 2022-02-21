@@ -1080,5 +1080,19 @@ namespace CPvC.Test
             Assert.Zero(createSnapshotCount);
             Assert.Zero(deleteSnapshotCount);
         }
+
+        [Test]
+        public void RunAfterClose()
+        {
+            // Setup
+            LocalMachine machine = LocalMachine.New("Test", null);
+            machine.Close();
+
+            // Act
+            machine.Start();
+
+            // Verify
+            Assert.False(machine.IsOpen);
+        }
     }
 }
