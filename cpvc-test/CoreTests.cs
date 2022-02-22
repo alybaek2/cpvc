@@ -292,7 +292,7 @@ namespace CPvC.Test
                 core.Start();
 
                 // Act
-                CoreAction action = TestHelpers.ProcessOneRequest(core, CoreRequest.RevertToSnapshot(42, null), 2000);
+                CoreAction action = TestHelpers.ProcessOneRequest(core, CoreRequest.RevertToSnapshot(42), 2000);
                 core.Stop();
 
                 // Verify

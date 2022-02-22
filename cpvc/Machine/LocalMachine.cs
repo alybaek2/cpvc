@@ -46,6 +46,7 @@ namespace CPvC
         private int _snapshotLimit = 3000;
         private int _lastTakenSnapshotId = -1;
         private List<SnapshotInfo> _snapshots;
+        private List<SnapshotInfo> _revertedSnapshots;
 
         private MachineFile _file;
 
@@ -106,6 +107,7 @@ namespace CPvC
             _previousRunningState = RunningState.Paused;
 
             _snapshots = new List<SnapshotInfo>();
+            _revertedSnapshots = new List<SnapshotInfo>();
 
             _history = history;
         }
@@ -251,9 +253,10 @@ namespace CPvC
                     int samplesWritten = currentSnapshot.AudioBuffer.Render16BitStereo(Volume, buffer, offset, currentSamplesRequested, true);
                     if (samplesWritten == 0)
                     {
-                        _core.PushRequest(CoreRequest.RevertToSnapshot(currentSnapshot.Id, currentSnapshot));
+                        _core.PushRequest(CoreRequest.RevertToSnapshot(currentSnapshot.Id));
                         _core.PushRequest(CoreRequest.DeleteSnapshot(currentSnapshot.Id));
                         _snapshots.RemoveAt(_snapshots.Count - 1);
+                        _revertedSnapshots.Add(currentSnapshot);
                         currentSnapshot = _snapshots.LastOrDefault();
                     }
 
@@ -322,7 +325,10 @@ namespace CPvC
                     }
                     else if (action.Type == CoreAction.Types.RevertToSnapshot)
                     {
-                        HistoryEvent historyEvent = ((SnapshotInfo)request.UserData).HistoryEvent;
+                        SnapshotInfo snapshot = _revertedSnapshots.FirstOrDefault(s => s.Id == action.SnapshotId);
+                        _revertedSnapshots.Remove(snapshot);
+
+                        HistoryEvent historyEvent = snapshot.HistoryEvent;
                         if (_history.CurrentEvent != historyEvent)
                         {
                             _history.CurrentEvent = historyEvent;

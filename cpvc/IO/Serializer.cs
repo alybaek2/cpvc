@@ -307,7 +307,7 @@ namespace CPvC
                     {
                         Int32 snapshotId = stream.ReadInt32();
 
-                        return CoreRequest.RevertToSnapshot(snapshotId, null);
+                        return CoreRequest.RevertToSnapshot(snapshotId);
                     }
                 default:
                     throw new Exception(String.Format("Unknown CoreRequest type {0}!", type));

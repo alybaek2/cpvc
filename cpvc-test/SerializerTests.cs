@@ -28,7 +28,7 @@ namespace CPvC.Test
             new object[] { CoreRequest.CoreVersion(257), new byte[] { 0x07, 0x01, 0x01, 0x00, 0x00 } , false },
             new object[] { CoreRequest.CreateSnapshot(42), new byte[] { 0x08, 0x2a, 0x00, 0x00, 0x00 }, false },
             new object[] { CoreRequest.DeleteSnapshot(42), new byte[] { 0x09, 0x2a, 0x00, 0x00, 0x00 }, false },
-            new object[] { CoreRequest.RevertToSnapshot(42, null), new byte[] { 0x0a, 0x2a, 0x00, 0x00, 0x00 }, false },
+            new object[] { CoreRequest.RevertToSnapshot(42), new byte[] { 0x0a, 0x2a, 0x00, 0x00, 0x00 }, false },
             new object[] { new CoreRequest((CoreRequest.Types) 99), new byte[] { 99 }, true }
         };
 
