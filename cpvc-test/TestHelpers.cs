@@ -291,7 +291,7 @@ namespace CPvC.Test
         {
             // Insert a request that will effectively do nothing and wait for it
             // to be processed.
-            ProcessOneRequest(core, CoreRequest.RunUntil(0), 1000);
+            ProcessOneRequest(core, CoreRequest.RunUntil(0), 10000);
         }
 
         static public void ProcessRemoteRequest(RemoteMachine machine, ReceiveCoreActionDelegate receive, CoreAction action)

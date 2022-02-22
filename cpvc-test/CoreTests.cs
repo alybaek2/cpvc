@@ -337,7 +337,7 @@ namespace CPvC.Test
                 core.Start();
 
                 // Act
-                TestHelpers.WaitForQueueToProcess(core); // WaitForNextRequestProcessed(core);
+                TestHelpers.WaitForQueueToProcess(core);
 
                 // Verify
                 Assert.Greater(core.Ticks, 0);
@@ -395,7 +395,7 @@ namespace CPvC.Test
             {
                 core.IdleRequest = () => CoreRequest.RunUntil(core.Ticks + 1000);
                 core.Start();
-                if (!RunUntilAudioOverrun(core, 1000))
+                if (!RunUntilAudioOverrun(core, 10000))
                 {
                     Assert.Fail("Failed to wait for audio overrun");
                 }
