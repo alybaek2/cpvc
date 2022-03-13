@@ -120,12 +120,12 @@ namespace CPvC
 
         public void Close()
         {
+            _quitThread = true;
+            _coreThread?.Join();
+            _coreThread = null;
+
             lock (_lockObject)
             {
-                _quitThread = true;
-                _coreThread?.Join();
-                _coreThread = null;
-
                 _coreCLR?.Dispose();
                 _coreCLR = null;
             }
