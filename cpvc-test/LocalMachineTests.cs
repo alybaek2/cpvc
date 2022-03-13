@@ -13,6 +13,7 @@ namespace CPvC.Test
     {
         private Mock<IFileSystem> _mockFileSystem;
         private Mock<MachineAuditorDelegate> _mockAuditor;
+        private Mock<CoreEventHandler> _mockEventHanlder;
 
         private string _filename = "test.cpvc";
 
@@ -56,6 +57,8 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fs => fs.OpenTextFile(_filename)).Callback(() => _mockTextFile.SeekToStart()).Returns(_mockTextFile);
 
             _mockAuditor = new Mock<MachineAuditorDelegate>();
+
+            _mockEventHanlder = new Mock<CoreEventHandler>();
 
             _machine = CreateMachine();
         }
@@ -630,18 +633,6 @@ namespace CPvC.Test
             Assert.DoesNotThrow(() => _machine.ReadAudio(null, 0, 1));
         }
 
-        [Test]
-        public void SetSameCore()
-        {
-            // Act and Verify - note that if Machine.Core_set didn't do a check for reference
-            //                  equality between the new core and current core, an exception would
-            //                  later be thrown due to Dispose() being called.
-            Assert.DoesNotThrow(() =>
-            {
-                _machine.Core = _machine.Core;
-            });
-        }
-
         //[Test]
         //public void SetCurrentEvent()
         //{
@@ -770,6 +761,7 @@ namespace CPvC.Test
 
             byte[] buffer = new byte[48000];
             _machine.ReadAudio(buffer, 0, buffer.Length / 4);
+            TestHelpers.WaitForQueueToProcess(_machine.Core);
 
             // Verify - this test is incomplete. Need checks for reversal of audio
             //          samples. Probably easier to do this once the Core class is

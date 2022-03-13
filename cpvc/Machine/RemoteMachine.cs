@@ -32,12 +32,10 @@ namespace CPvC
 
         public RemoteMachine(IRemote remote)
         {
-            Display = new Display();
             Display.GetFromBookmark(null);
 
-            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-            Core = core;
-            core.Auditors += RequestProcessed;
+            _core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            _core.OnCoreAction += HandleCoreAction;
 
             Start();
 
@@ -78,13 +76,13 @@ namespace CPvC
         public void Close()
         {
             _remote.Dispose();
-            _core?.Stop();
             if (_core != null)
             {
-                _core.Auditors -= RequestProcessed;
-            }
+                _core.Stop();
+                _core.OnCoreAction -= HandleCoreAction;
 
-            Core = null;
+                _core = null;
+            }
         }
 
         public bool CanClose
@@ -115,15 +113,17 @@ namespace CPvC
             _remote.SendCoreRequest(CoreRequest.Reset());
         }
 
-        private void RequestProcessed(Core core, CoreRequest request, CoreAction action)
+        private void HandleCoreAction(object sender, CoreEventArgs args)
         {
-            if (core == _core && action != null)
+            if (!ReferenceEquals(_core, sender) || args.Action == null)
             {
-                if (action.Type == CoreAction.Types.RevertToSnapshot)
-                {
-                    // Ensure to update the display.
-                    Display.CopyScreenAsync();
-                }
+                return;
+            }
+
+            if (args.Action.Type == CoreAction.Types.RevertToSnapshot)
+            {
+                // Ensure to update the display.
+                Display.CopyScreenAsync();
             }
         }
     }

@@ -29,7 +29,7 @@ namespace CPvC.Test
 
             for (int i = 0; i < _mockMachines.Length; i++)
             {
-                Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+                Core core = new Core(Core.LatestVersion, Core.Type.CPC6128);
 
                 _cores.Add(core);
 
@@ -38,7 +38,8 @@ namespace CPvC.Test
                 _mockMachines[i].SetupGet(m => m.Name).Returns(String.Format("Machine{0}", i));
                 _mockMachines[i].SetupGet(m => m.Core).Returns(core);
                 _mockMachines[i].SetupGet(m => m.Ticks).Returns(() => core.Ticks);
-                _mockMachines[i].SetupSet(m => m.Auditors = It.IsAny<MachineAuditorDelegate>()).Callback<MachineAuditorDelegate>(callback => core.Auditors += (Core c, CoreRequest r, CoreAction a) => callback(a));
+                _mockMachines[i].SetupSet(m => m.Auditors = It.IsAny<MachineAuditorDelegate>())
+                                .Callback<MachineAuditorDelegate>(callback => core.OnCoreAction += (sender, args) => callback(args.Action));
             }
 
             _machines = _mockMachines.Select(m => m.Object).ToList();

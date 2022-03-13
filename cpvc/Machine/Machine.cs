@@ -34,6 +34,17 @@ namespace CPvC
             _runningState = RunningState.Paused;
             _runningStateLock = new object();
             _volume = 80;
+
+            _core = new Core(Core.LatestVersion, Core.Type.CPC6128);
+            _core.OnBeginVSync += (sender, args) =>
+            {
+                BeginVSync(sender as Core);
+            };
+
+            Display = new Display();
+            Display.Core = _core;
+
+            _core.PropertyChanged += CorePropertyChanged;
         }
 
         public Core Core
@@ -41,47 +52,6 @@ namespace CPvC
             get
             {
                 return _core;
-            }
-
-            set
-            {
-                if (_core == value)
-                {
-                    return;
-                }
-
-                if (_core != null)
-                {
-                    _core.PropertyChanged -= CorePropertyChanged;
-                    _core.BeginVSync -= BeginVSync;
-                    _core.Dispose();
-                }
-
-                if (value != null)
-                {
-                    value.SetScreen();
-                    if (Display != null)
-                    {
-                        Display.Core = value;
-                    }
-
-                    if (_core != null)
-                    {
-                        // Should probably remove all auditors from _core...
-                        value.Auditors += _core.Auditors;
-                    }
-
-                    value.BeginVSync += BeginVSync;
-
-                    value.PropertyChanged += CorePropertyChanged;
-                }
-
-                _core = value;
-
-                OnPropertyChanged("Core");
-                OnPropertyChanged("Ticks");
-                OnPropertyChanged("RunningState");
-                OnPropertyChanged("Volume");
             }
         }
 
@@ -173,7 +143,7 @@ namespace CPvC
             // Ensure that while we're reading audio, the running state of the machine can't be changed.
             lock (_runningStateLock)
             {
-                if (_core?.AudioBuffer == null)
+                if (_core?.AudioBuffer == null || !_core.IsOpen)
                 {
                     return 0;
                 }

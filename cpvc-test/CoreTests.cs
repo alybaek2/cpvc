@@ -9,12 +9,12 @@ namespace CPvC.Test
 {
     public class CoreTests
     {
-        private Mock<RequestProcessedDelegate> _mockRequestProcessed;
+        private Mock<CoreEventHandler> _mockEventHanlder;
 
         [SetUp]
         public void Setup()
         {
-            _mockRequestProcessed = new Mock<RequestProcessedDelegate>();
+            _mockEventHanlder = new Mock<CoreEventHandler>();
         }
 
         static private Mock<IFileSystem> GetFileSystem(int size)
@@ -32,7 +32,7 @@ namespace CPvC.Test
             Mock<IFileSystem> mock = GetFileSystem(0x4000);
 
             // Act and Verify
-            Assert.Throws<ArgumentException>(() => Core.Create(Core.LatestVersion, (Core.Type)99));
+            Assert.Throws<ArgumentException>(() => new Core(Core.LatestVersion, (Core.Type)99));
 
             mock.VerifyNoOtherCalls();
         }
@@ -42,9 +42,11 @@ namespace CPvC.Test
         {
             // Setup
             Mock<RequestProcessedDelegate> mockRequestProcessed = new Mock<RequestProcessedDelegate>();
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            Mock<CoreEventHandler> mockEventHanlder = new Mock<CoreEventHandler>();
+
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
-                core.Auditors += mockRequestProcessed.Object;
+                core.OnCoreAction += mockEventHanlder.Object;
                 core.Start();
 
                 // Act
@@ -53,8 +55,8 @@ namespace CPvC.Test
                 WaitForQueueToProcess(core);
 
                 // Verify
-                mockRequestProcessed.Verify(x => x(core, KeyRequest(Keys.Space, true), KeyAction(Keys.Space, true)), Times.Once);
-                mockRequestProcessed.Verify(x => x(core, KeyRequest(Keys.Space, true), null), Times.Once);
+                mockEventHanlder.Verify(x => x(core, It.Is<CoreEventArgs>(args => IsKeyRequest(args.Request, Keys.Space, true) && IsKeyRequest(args.Action, Keys.Space, true))), Times.Once);
+                mockEventHanlder.Verify(x => x(core, It.Is<CoreEventArgs>(args => IsKeyRequest(args.Request, Keys.Space, true) && args.Action == null)), Times.Once);
             }
         }
 
@@ -62,10 +64,10 @@ namespace CPvC.Test
         public void ProcessesReset()
         {
             // Setup
-            Mock<RequestProcessedDelegate> mockRequestProcessed = new Mock<RequestProcessedDelegate>();
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            Mock<CoreEventHandler> mockEventHanlder = new Mock<CoreEventHandler>();
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
-                core.Auditors += mockRequestProcessed.Object;
+                core.OnCoreAction += mockEventHanlder.Object;
                 core.Start();
 
                 // Act
@@ -73,7 +75,7 @@ namespace CPvC.Test
                 WaitForQueueToProcess(core);
 
                 // Verify
-                mockRequestProcessed.Verify(x => x(core, ResetRequest(), ResetAction()), Times.Once);
+                mockEventHanlder.Verify(x => x(core, It.Is<CoreEventArgs>(args => IsResetRequest(args.Request) && IsResetRequest(args.Action))), Times.Once);
             }
         }
 
@@ -81,11 +83,11 @@ namespace CPvC.Test
         public void VSyncDelegateCalled()
         {
             // Setup
-            Mock<BeginVSyncDelegate> mockVSync = new Mock<BeginVSyncDelegate>();
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            Mock<EventHandler> mockBeginVSync = new Mock<EventHandler>();
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.IdleRequest = () => CoreRequest.RunUntil(core.Ticks + 1000);
-                core.BeginVSync += mockVSync.Object;
+                core.OnBeginVSync += mockBeginVSync.Object;
 
                 // Act - run for at least as long as two VSync's (one VSync would be about 4000000 / 50, or 80000 ticks).
                 core.Start();
@@ -98,8 +100,8 @@ namespace CPvC.Test
                 core.Stop();
 
                 // Verify
-                mockVSync.Verify(beginVSync => beginVSync(core), Times.AtLeastOnce);
-                mockVSync.VerifyNoOtherCalls();
+                mockBeginVSync.Verify(beginVSync => beginVSync(core, null), Times.AtLeastOnce);
+                mockBeginVSync.VerifyNoOtherCalls();
             }
         }
 
@@ -107,15 +109,15 @@ namespace CPvC.Test
         public void ProcessesRequestsInCorrectOrder()
         {
             // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
-                core.Auditors += _mockRequestProcessed.Object;
+                core.OnCoreAction += _mockEventHanlder.Object;
 
                 MockSequence sequence = new MockSequence();
-                _mockRequestProcessed.InSequence(sequence).Setup(x => x(core, KeyRequest(Keys.Space, true), KeyAction(Keys.Space, true))).Verifiable();
-                _mockRequestProcessed.InSequence(sequence).Setup(x => x(core, TapeRequest(), TapeAction())).Verifiable();
-                _mockRequestProcessed.InSequence(sequence).Setup(x => x(core, DiscRequest(), DiscAction())).Verifiable();
-                _mockRequestProcessed.InSequence(sequence).Setup(x => x(core, ResetRequest(), ResetAction())).Verifiable();
+                _mockEventHanlder.InSequence(sequence).Setup(x => x(core, It.Is<CoreEventArgs>(args => args.Action.Type == CoreRequest.Types.KeyPress && args.Request.Type == CoreRequest.Types.KeyPress))).Verifiable();
+                _mockEventHanlder.InSequence(sequence).Setup(x => x(core, It.Is<CoreEventArgs>(args => args.Action.Type == CoreRequest.Types.LoadTape && args.Request.Type == CoreRequest.Types.LoadTape))).Verifiable();
+                _mockEventHanlder.InSequence(sequence).Setup(x => x(core, It.Is<CoreEventArgs>(args => args.Action.Type == CoreRequest.Types.LoadDisc && args.Request.Type == CoreRequest.Types.LoadDisc))).Verifiable();
+                _mockEventHanlder.InSequence(sequence).Setup(x => x(core, It.Is<CoreEventArgs>(args => args.Action.Type == CoreRequest.Types.Reset && args.Request.Type == CoreRequest.Types.Reset))).Verifiable();
 
                 // Act
                 core.Start();
@@ -125,7 +127,7 @@ namespace CPvC.Test
                 core.Reset();
 
                 // Verify
-                _mockRequestProcessed.Verify();
+                _mockEventHanlder.VerifyAll();
             }
         }
 
@@ -139,7 +141,7 @@ namespace CPvC.Test
         {
             // Setup
             byte[] rom = new byte[size];
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
                 TestDelegate action = lower ?
                     (TestDelegate)(() => core.SetLowerROM(rom)) :
@@ -161,7 +163,7 @@ namespace CPvC.Test
         public void DisposeTwice()
         {
             // Setup
-            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            Core core = new Core(Core.LatestVersion, Core.Type.CPC6128);
 
             // Act
             core.Dispose();
@@ -174,7 +176,7 @@ namespace CPvC.Test
         public void RunForVSync()
         {
             // Setup
-            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            Core core = new Core(Core.LatestVersion, Core.Type.CPC6128);
 
             // Act
             core.RunForVSync(2);
@@ -189,9 +191,9 @@ namespace CPvC.Test
         public void RunForVSyncWithHandler()
         {
             // Setup
-            Mock<BeginVSyncDelegate> mock = new Mock<BeginVSyncDelegate>();
-            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-            core.BeginVSync += mock.Object;
+            Mock<EventHandler> mockBeginVSync = new Mock<EventHandler>();
+            Core core = new Core(Core.LatestVersion, Core.Type.CPC6128);
+            core.OnBeginVSync += mockBeginVSync.Object;
             core.Start();
 
             // Act
@@ -199,14 +201,14 @@ namespace CPvC.Test
 
             // Verify
             Assert.GreaterOrEqual(core.Ticks, 100000);
-            mock.Verify(v => v(core), Times.Once);
+            mockBeginVSync.Verify(v => v(core, null), Times.Once);
         }
 
         [Test]
         public void CoreVersion()
         {
             // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.Start();
 
@@ -225,25 +227,25 @@ namespace CPvC.Test
         public void CreateInvalidVersion()
         {
             // Setup and Verify
-            Assert.Throws<ArgumentException>(() => Core.Create(2, Core.Type.CPC6128));
+            Assert.Throws<ArgumentException>(() => new Core(2, Core.Type.CPC6128));
         }
 
         [Test]
         public void ProcessInvalidRequest()
         {
             // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
                 CoreRequest request = new CoreRequest((CoreRequest.Types)999);
-                Mock<RequestProcessedDelegate> mockAuditor = new Mock<RequestProcessedDelegate>();
-                core.Auditors += mockAuditor.Object;
+                Mock<CoreEventHandler> mockEventHanlder = new Mock<CoreEventHandler>();
+                core.OnCoreAction += mockEventHanlder.Object;
                 core.Start();
 
                 // Act
                 TestHelpers.ProcessOneRequest(core, request);
 
                 // Verify
-                mockAuditor.Verify(a => a(core, request, null));
+                mockEventHanlder.Verify(x => x(core, It.Is<CoreEventArgs>(args => args.Request == request && args.Action == null)), Times.Once);
             }
         }
 
@@ -251,7 +253,7 @@ namespace CPvC.Test
         public void StartTwice()
         {
             // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.Start();
 
@@ -267,7 +269,7 @@ namespace CPvC.Test
         public void TicksNotifyLimit()
         {
             // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
                 Mock<PropertyChangedEventHandler> mockPropChanged = new Mock<PropertyChangedEventHandler>();
                 core.PropertyChanged += mockPropChanged.Object;
@@ -287,7 +289,7 @@ namespace CPvC.Test
         public void RevertToInvalidSnapshot()
         {
             // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.Start();
 
@@ -304,7 +306,7 @@ namespace CPvC.Test
         public void LoadCore()
         {
             // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.Start();
 
@@ -331,7 +333,7 @@ namespace CPvC.Test
         public void IdleRequest()
         {
             // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.IdleRequest = () => CoreRequest.RunUntil(core.Ticks + 1000);
                 core.Start();
@@ -351,14 +353,9 @@ namespace CPvC.Test
         public void NullIdleRequest()
         {
             // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
-                bool requestProcessed = false;
-                core.Auditors += (c, r, a) =>
-                {
-                    requestProcessed = true;
-                };
-
+                core.OnCoreAction += _mockEventHanlder.Object;
                 core.IdleRequest = null;
 
                 // Act
@@ -366,7 +363,7 @@ namespace CPvC.Test
                 System.Threading.Thread.Sleep(50);
 
                 // Verify
-                Assert.False(requestProcessed);
+                _mockEventHanlder.VerifyNoOtherCalls();
             }
         }
 
@@ -374,7 +371,7 @@ namespace CPvC.Test
         public void StopOnAudioOverrun()
         {
             // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.IdleRequest = () => CoreRequest.RunUntil(core.Ticks + 1000);
 
@@ -391,7 +388,7 @@ namespace CPvC.Test
         public void ResumeAfterAudioOverrun()
         {
             // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.IdleRequest = () => CoreRequest.RunUntil(core.Ticks + 1000);
                 core.Start();
@@ -415,7 +412,7 @@ namespace CPvC.Test
         public void CopyScreenNull()
         {
             // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
                 // Act and Verify
                 Assert.DoesNotThrow(() => core.CopyScreen(IntPtr.Zero, 0));
@@ -426,7 +423,7 @@ namespace CPvC.Test
         public void CopyScreenDisposed()
         {
             // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.Dispose();
                 IntPtr buffer = Marshal.AllocHGlobal(100);
@@ -441,7 +438,7 @@ namespace CPvC.Test
         public void TicksDisposed()
         {
             // Setup
-            using (Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128))
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.Dispose();
 

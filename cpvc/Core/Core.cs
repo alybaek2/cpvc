@@ -47,8 +47,8 @@ namespace CPvC
         private bool _quitThread;
         private Thread _coreThread;
 
-        public RequestProcessedDelegate Auditors { get; set; }
-        public BeginVSyncDelegate BeginVSync { get; set; }
+        public event CoreEventHandler OnCoreAction;
+        public event EventHandler OnBeginVSync;
         public IdleRequestDelegate IdleRequest { get; set; }
 
         public AudioBuffer AudioBuffer
@@ -74,19 +74,13 @@ namespace CPvC
             }
         }
 
-        private Core(int version)
+        public Core(int version, Type type)
         {
-            _version = version;
-            _coreCLR = CreateVersionedCore(version);
             _requests = new Queue<CoreRequest>();
             _lockObject = new object();
 
             _quitThread = false;
             _coreThread = null;
-
-            BeginVSync = null;
-
-            SetScreen();
 
             _audioReady = new AutoResetEvent(true);
             _requestQueueNonEmpty = new AutoResetEvent(false);
@@ -95,8 +89,7 @@ namespace CPvC
 
             _audioBuffer = new AudioBuffer(48000);
 
-            _coreThread = new Thread(CoreThread);
-            _coreThread.Start();
+            Create(version, type);
         }
 
         static private ICore CreateVersionedCore(int version)
@@ -117,6 +110,27 @@ namespace CPvC
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
+        public bool IsOpen
+        {
+            get
+            {
+                return _coreCLR != null;
+            }
+        }
+
+        public void Close()
+        {
+            lock (_lockObject)
+            {
+                _quitThread = true;
+                _coreThread?.Join();
+                _coreThread = null;
+
+                _coreCLR?.Dispose();
+                _coreCLR = null;
+            }
+        }
+
         public void Dispose()
         {
             Stop();
@@ -124,9 +138,6 @@ namespace CPvC
             _quitThread = true;
             _coreThread?.Join();
             _coreThread = null;
-
-            Auditors = null;
-            BeginVSync = null;
 
             _coreCLR?.Dispose();
             _coreCLR = null;
@@ -282,41 +293,42 @@ namespace CPvC
             }
         }
 
-        /// <summary>
-        /// Creates a core based on the result of a previous <c>GetState</c> call.
-        /// </summary>
-        /// <param name="version">Version of the core to create.</param>
-        /// <param name="state">A byte array created by <c>GetState</c>.</param>
-        /// <returns>The newly created core.</returns>
-        static public Core Create(int version, byte[] state)
+        public void CreateFromBookmark(int version, byte[] state)
         {
-            Core core = new Core(version);
-            core.LoadState(state);
+            lock (_lockObject)
+            {
+                Create(version, Type.CPC6128);
 
-            return core;
+                _coreCLR.LoadState(state);
+
+                _requests.Clear();
+            }
         }
 
-        /// <summary>
-        /// Creates a new core.
-        /// </summary>
-        /// <param name="type">The model of CPC the core should emulate.</param>
-        /// <returns>A core of the specified type.</returns>
-        static public Core Create(int version, Type type)
+        public void Create(int version, Type type)
         {
-            switch (type)
+            lock (_lockObject)
             {
-                case Type.CPC6128:
-                    {
-                        Core core = new Core(version);
+                switch (type)
+                {
+                    case Type.CPC6128:
+                        {
+                            _version = version;
+                            _coreCLR = CreateVersionedCore(version);
+                            _requests.Clear();
 
-                        core.SetLowerROM(Resources.OS6128);
-                        core.SetUpperROM(0, Resources.Basic6128);
-                        core.SetUpperROM(7, Resources.Amsdos6128);
+                            SetScreen();
 
-                        return core;
-                    }
-                default:
-                    throw new ArgumentException(String.Format("Unknown core type {0}", type));
+                            SetLowerROM(Resources.OS6128);
+                            SetUpperROM(0, Resources.Basic6128);
+                            SetUpperROM(7, Resources.Amsdos6128);
+
+                            StartThread();
+                        }
+                        break;
+                    default:
+                        throw new ArgumentException(String.Format("Unknown core type {0}", type));
+                }
             }
         }
 
@@ -545,9 +557,21 @@ namespace CPvC
                 RemoveFirstRequest();
             }
 
-            Auditors?.Invoke(this, request, action);
+            OnCoreAction?.Invoke(this, new CoreEventArgs(request, action));
 
             return;
+        }
+
+        private void StartThread()
+        {
+            lock (_lockObject)
+            {
+                if (_coreThread == null)
+                {
+                    _coreThread = new Thread(CoreThread);
+                    _coreThread.Start();
+                }
+            }
         }
 
         private CoreAction CreateSnapshot(int id)
@@ -605,7 +629,7 @@ namespace CPvC
             if ((stopReason & StopReasons.VSync) != 0)
             {
                 OnPropertyChanged("Ticks");
-                BeginVSync?.Invoke(this);
+                OnBeginVSync?.Invoke(this, null);
             }
 
             return CoreAction.RunUntil(ticks, Ticks, audioSamples);

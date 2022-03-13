@@ -27,8 +27,6 @@ namespace CPvC
 
         public ReplayMachine(HistoryEvent historyEvent)
         {
-            Display = new Display();
-
             _endTicks = historyEvent.Ticks;
             OnPropertyChanged("EndTicks");
 
@@ -57,6 +55,9 @@ namespace CPvC
                 }
             }
 
+            _core.OnCoreAction += HandleCoreAction;
+            _core.IdleRequest += IdleRequest;
+
             SeekToBookmark(-1);
         }
 
@@ -83,7 +84,13 @@ namespace CPvC
 
         public void Close()
         {
-            Core = null;
+            if (_core != null)
+            {
+                _core.OnCoreAction -= HandleCoreAction;
+                _core.Dispose();
+
+                _core = null;
+            }
         }
 
         public bool CanClose
@@ -105,20 +112,19 @@ namespace CPvC
 
         private void SeekToBookmark(int bookmarkEventIndex)
         {
-            Core core;
-
             int startIndex = 0;
 
             // First find the bookmark.
             if (bookmarkEventIndex == -1)
             {
-                core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+                _core.Create(Core.LatestVersion, Core.Type.CPC6128);
                 Display.GetFromBookmark(null);
             }
             else
             {
                 Bookmark bookmark = (_historyEvents[bookmarkEventIndex] as BookmarkHistoryEvent).Bookmark;
-                core = Core.Create(bookmark.Version, bookmark.State.GetBytes());
+                _core.CreateFromBookmark(bookmark.Version, bookmark.State.GetBytes());
+
                 Display.GetFromBookmark(bookmark);
                 startIndex = bookmarkEventIndex;
             }
@@ -128,16 +134,12 @@ namespace CPvC
                 HistoryEvent historyEvent = _historyEvents[i];
                 if (historyEvent is CoreActionHistoryEvent coreActionHistoryEvent)
                 {
-                    core.PushRequest(CoreRequest.RunUntil(coreActionHistoryEvent.Ticks));
-                    core.PushRequest(coreActionHistoryEvent.CoreAction);
+                    _core.PushRequest(CoreRequest.RunUntil(coreActionHistoryEvent.Ticks));
+                    _core.PushRequest(coreActionHistoryEvent.CoreAction);
                 }
             }
 
-            core.PushRequest(CoreRequest.RunUntil(_endTicks));
-
-            Core = core;
-            Core.Auditors = RequestProcessed;
-            Core.IdleRequest += IdleRequest;
+            _core.PushRequest(CoreRequest.RunUntil(_endTicks));
 
             SetCoreRunning();
         }
@@ -162,15 +164,9 @@ namespace CPvC
             }
         }
 
-        /// <summary>
-        /// Delegate for logging core actions.
-        /// </summary>
-        /// <param name="core">The core the request was made for.</param>
-        /// <param name="request">The original request.</param>
-        /// <param name="action">The action taken.</param>
-        private void RequestProcessed(Core core, CoreRequest request, CoreAction action)
+        private void HandleCoreAction(object sender, CoreEventArgs args)
         {
-            Auditors?.Invoke(action);
+            Auditors?.Invoke(args.Action);
         }
 
         private CoreRequest IdleRequest()

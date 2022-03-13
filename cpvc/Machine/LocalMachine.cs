@@ -102,14 +102,15 @@ namespace CPvC
         {
             _name = name;
 
-            Display = new Display();
-
             _previousRunningState = RunningState.Paused;
 
             _snapshots = new List<SnapshotInfo>();
             _revertedSnapshots = new List<SnapshotInfo>();
 
             _history = history;
+
+            _core.OnCoreAction += HandleCoreAction;
+            _core.IdleRequest = IdleRequest;
         }
 
         public void Dispose()
@@ -157,8 +158,7 @@ namespace CPvC
         static private LocalMachine New(string name, History history, string persistentFilepath)
         {
             LocalMachine machine = new LocalMachine(name, history);
-            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-            machine.SetCore(core);
+            machine.Core.Create(Core.LatestVersion, Core.Type.CPC6128);
 
             machine.PersistantFilepath = persistentFilepath;
 
@@ -191,7 +191,10 @@ namespace CPvC
                     }
                 }
 
-                SetCore(null);
+                if (_core != null)
+                {
+                    _core.Close();
+                }
 
                 if (File != null)
                 {
@@ -278,107 +281,86 @@ namespace CPvC
             }
         }
 
-        /// <summary>
-        /// Delegate for logging core actions.
-        /// </summary>
-        /// <param name="core">The core the request was made for.</param>
-        /// <param name="request">The original request.</param>
-        /// <param name="action">The action taken.</param>
-        private void RequestProcessed(Core core, CoreRequest request, CoreAction action)
+        private void HandleCoreAction(object sender, CoreEventArgs args)
         {
-            if (core == _core)
-            {
-                if (action != null)
-                {
-                    Auditors?.Invoke(action);
-
-                    if (action.Type != CoreAction.Types.CreateSnapshot &&
-                        action.Type != CoreAction.Types.DeleteSnapshot &&
-                        action.Type != CoreAction.Types.RevertToSnapshot)
-                    {
-                        HistoryEvent e = _history.AddCoreAction(action);
-
-                        switch (action.Type)
-                        {
-                            case CoreRequest.Types.LoadDisc:
-                                Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded disc" : "Ejected disc";
-                                break;
-                            case CoreRequest.Types.LoadTape:
-                                Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded tape" : "Ejected tape";
-                                break;
-                            case CoreRequest.Types.Reset:
-                                Status = "Reset";
-                                break;
-                        }
-                    }
-
-                    if (action.Type == CoreAction.Types.RunUntil)
-                    {
-                        lock (_snapshots)
-                        {
-                            SnapshotInfo newSnapshot = _snapshots.LastOrDefault();
-                            if (newSnapshot != null && action.AudioSamples != null)
-                            {
-                                newSnapshot.AudioBuffer.Write(action.AudioSamples);
-                            }
-                        }
-                    }
-                    else if (action.Type == CoreAction.Types.RevertToSnapshot)
-                    {
-                        SnapshotInfo snapshot = _revertedSnapshots.FirstOrDefault(s => s.Id == action.SnapshotId);
-                        _revertedSnapshots.Remove(snapshot);
-
-                        HistoryEvent historyEvent = snapshot.HistoryEvent;
-                        if (_history.CurrentEvent != historyEvent)
-                        {
-                            _history.CurrentEvent = historyEvent;
-                        }
-
-                        Display.CopyScreenAsync();
-                    }
-                    else if (action.Type == CoreAction.Types.CreateSnapshot)
-                    {
-                        lock (_snapshots)
-                        {
-                            // Figure out what history event should be set as current if we revert to this snapshot.
-                            // If the current event is a RunUntil, it may not be "finalized" yet (i.e. it may still
-                            // be updated), so go with its parent.
-                            HistoryEvent historyEvent = _history.MostRecentClosedEvent(_history.CurrentEvent);
-
-                            SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId, historyEvent);
-                            _snapshots.Add(newSnapshot);
-
-                            while (_snapshots.Count > _snapshotLimit)
-                            {
-                                SnapshotInfo snapshot = _snapshots[0];
-                                _snapshots.RemoveAt(0);
-                                _core.PushRequest(CoreRequest.DeleteSnapshot(snapshot.Id));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        public void SetCore(Core core)
-        {
-            if (Core == core)
+            if (!ReferenceEquals(_core, sender))
             {
                 return;
             }
 
-            if (Core != null)
+            CoreAction action = args.Action;
+            if (action == null)
             {
-                Core.Auditors -= RequestProcessed;
-                Core.IdleRequest = null;
+                return;
             }
 
-            Core = core;
+            CoreRequest request = args.Request;
 
-            if (Core != null)
+            Auditors?.Invoke(action);
+
+            if (action.Type != CoreAction.Types.CreateSnapshot &&
+                action.Type != CoreAction.Types.DeleteSnapshot &&
+                action.Type != CoreAction.Types.RevertToSnapshot)
             {
-                Core.Auditors += RequestProcessed;
-                Core.IdleRequest = IdleRequest;
+                HistoryEvent e = _history.AddCoreAction(action);
+
+                switch (action.Type)
+                {
+                    case CoreRequest.Types.LoadDisc:
+                        Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded disc" : "Ejected disc";
+                        break;
+                    case CoreRequest.Types.LoadTape:
+                        Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded tape" : "Ejected tape";
+                        break;
+                    case CoreRequest.Types.Reset:
+                        Status = "Reset";
+                        break;
+                }
+            }
+
+            if (action.Type == CoreAction.Types.RunUntil)
+            {
+                lock (_snapshots)
+                {
+                    SnapshotInfo newSnapshot = _snapshots.LastOrDefault();
+                    if (newSnapshot != null && action.AudioSamples != null)
+                    {
+                        newSnapshot.AudioBuffer.Write(action.AudioSamples);
+                    }
+                }
+            }
+            else if (action.Type == CoreAction.Types.RevertToSnapshot)
+            {
+                SnapshotInfo snapshot = _revertedSnapshots.FirstOrDefault(s => s.Id == action.SnapshotId);
+                _revertedSnapshots.Remove(snapshot);
+
+                HistoryEvent historyEvent = snapshot.HistoryEvent;
+                if (_history.CurrentEvent != historyEvent)
+                {
+                    _history.CurrentEvent = historyEvent;
+                }
+
+                Display.CopyScreenAsync();
+            }
+            else if (action.Type == CoreAction.Types.CreateSnapshot)
+            {
+                lock (_snapshots)
+                {
+                    // Figure out what history event should be set as current if we revert to this snapshot.
+                    // If the current event is a RunUntil, it may not be "finalized" yet (i.e. it may still
+                    // be updated), so go with its parent.
+                    HistoryEvent historyEvent = _history.MostRecentClosedEvent(_history.CurrentEvent);
+
+                    SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId, historyEvent);
+                    _snapshots.Add(newSnapshot);
+
+                    while (_snapshots.Count > _snapshotLimit)
+                    {
+                        SnapshotInfo snapshot = _snapshots[0];
+                        _snapshots.RemoveAt(0);
+                        _core.PushRequest(CoreRequest.DeleteSnapshot(snapshot.Id));
+                    }
+                }
             }
         }
 
@@ -567,8 +549,7 @@ namespace CPvC
 
         private void SetCurrentEvent(BookmarkHistoryEvent bookmarkHistoryEvent)
         {
-            Core core = Core.Create(Core.LatestVersion, bookmarkHistoryEvent.Bookmark.State.GetBytes());
-            SetCore(core);
+            _core.CreateFromBookmark(Core.LatestVersion, bookmarkHistoryEvent.Bookmark.State.GetBytes());
 
             Display.GetFromBookmark(bookmarkHistoryEvent.Bookmark);
 
@@ -579,8 +560,7 @@ namespace CPvC
 
         private void SetCurrentToRoot()
         {
-            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
-            SetCore(core);
+            _core.Create(Core.LatestVersion, Core.Type.CPC6128);
 
             Display.GetFromBookmark(null);
 
@@ -733,7 +713,7 @@ namespace CPvC
         {
             get
             {
-                return (PersistantFilepath == null || File != null) && (Core != null);
+                return (PersistantFilepath == null || File != null) && (Core.IsOpen);
             }
         }
 

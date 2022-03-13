@@ -33,7 +33,7 @@ namespace CPvC.Test
             Mock<IAsyncResult> mockResult = new Mock<IAsyncResult>();
             mockResult.SetupGet(r => r.AsyncWaitHandle).Returns(e);
 
-            Core core = Core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            Core core = new Core(Core.LatestVersion, Core.Type.CPC6128);
             Mock<IMachine> mockMachine = new Mock<IMachine>();
             mockMachine.SetupGet(m => m.Core).Returns(core);
 

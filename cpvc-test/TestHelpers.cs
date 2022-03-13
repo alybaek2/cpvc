@@ -23,14 +23,19 @@ namespace CPvC.Test
             return It.IsAny<string>();
         }
 
+        static public bool IsKeyRequest(CoreRequest request, byte keycode, bool down)
+        {
+            return request != null && request.Type == CoreRequest.Types.KeyPress && request.KeyCode == keycode && request.KeyDown == down;
+        }
+
         static public CoreRequest KeyRequest(byte keycode, bool down)
         {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreRequest.Types.KeyPress && r.KeyCode == keycode && r.KeyDown == down);
+            return It.Is<CoreRequest>(r => IsKeyRequest(r, keycode, down));
         }
 
         static public CoreAction KeyAction(byte keycode, bool down)
         {
-            return It.Is<CoreAction>(r => r != null && r.Type == CoreRequest.Types.KeyPress && r.KeyCode == keycode && r.KeyDown == down);
+            return It.Is<CoreAction>(r => IsKeyRequest(r, keycode, down));
         }
 
         static public CoreRequest DiscRequest()
@@ -56,6 +61,11 @@ namespace CPvC.Test
         static public CoreAction RunUntilActionForce()
         {
             return It.Is<CoreAction>(r => r == null || r.Type == CoreRequest.Types.RunUntil);
+        }
+
+        static public bool IsResetRequest(CoreRequest request)
+        {
+            return request != null && request.Type == CoreRequest.Types.Reset;
         }
 
         static public CoreRequest ResetRequest()
@@ -249,32 +259,31 @@ namespace CPvC.Test
 
             CoreAction action = null;
             ManualResetEvent e = new ManualResetEvent(false);
-            RequestProcessedDelegate processed = (c, r, a) =>
+
+            core.OnCoreAction += (sender, args) =>
             {
                 // Advance the audio playback so RunUntil requests don't stall.
                 core.AdvancePlayback(100000);
 
-                if (c == core)
+                if (ReferenceEquals(sender, core))
                 {
-                    if (r == nextRequest)
+                    if (args.Request == nextRequest)
                     {
                         e.Set();
                     }
-                    else if (r == request)
+                    else if (args.Request == request)
                     {
-                        action = a;
+                        action = args.Action;
                     }
                 }
-            };
 
-            core.Auditors += processed;
+            };
 
             core.PushRequest(request);
             core.PushRequest(nextRequest);
 
             // Wait for at most one second.
             bool result = e.WaitOne(timeout);
-            core.Auditors -= processed;
             if (!result)
             {
                 throw new TimeoutException("Timeout while waiting for request to process.");
@@ -297,15 +306,13 @@ namespace CPvC.Test
         static public void ProcessRemoteRequest(RemoteMachine machine, ReceiveCoreActionDelegate receive, CoreAction action)
         {
             ManualResetEvent e = new ManualResetEvent(false);
-            RequestProcessedDelegate processed = (c, r, a) =>
+            machine.Core.OnCoreAction += (sender, args) =>
             {
-                if (c == machine.Core && (r == null || r == action))
+                if (ReferenceEquals(sender, machine.Core) && (args.Request == null || args.Request == action))
                 {
                     e.Set();
                 }
             };
-
-            machine.Core.Auditors += processed;
 
             receive(action);
             machine.Start();
@@ -316,8 +323,6 @@ namespace CPvC.Test
                 result = e.WaitOne(100);
                 machine.AdvancePlayback(100000);
             }
-
-            machine.Core.Auditors -= processed;
 
             machine.Stop();
 

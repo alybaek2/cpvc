@@ -158,7 +158,6 @@
                         </Style>
                     </ItemsControl.ItemContainerStyle>
                 </MenuItem>
-
             </MenuItem>
         </Menu>
         <ToolBarTray Margin="0" VerticalAlignment="Top" Grid.Row="1" Background="#FFF0F0F0">
