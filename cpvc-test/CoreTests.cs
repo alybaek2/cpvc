@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Threading;
 using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
@@ -336,10 +337,15 @@ namespace CPvC.Test
             using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.IdleRequest = () => CoreRequest.RunUntil(core.Ticks + 1000);
+                ManualResetEvent processed = new ManualResetEvent(false);
+                core.OnCoreAction += (sender, args) =>
+                {
+                    processed.Set();
+                };
                 core.Start();
 
                 // Act
-                TestHelpers.WaitForQueueToProcess(core);
+                processed.WaitOne(2000);
 
                 // Verify
                 Assert.Greater(core.Ticks, 0);

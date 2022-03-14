@@ -63,6 +63,7 @@ namespace CPvC
         private AutoResetEvent _requestQueueNonEmpty;
 
         private ManualResetEvent _runningEvent;
+        private ManualResetEvent _pausedEvent;
 
         private AudioBuffer _audioBuffer;
 
@@ -86,6 +87,7 @@ namespace CPvC
             _requestQueueNonEmpty = new AutoResetEvent(false);
 
             _runningEvent = new ManualResetEvent(false);
+            _pausedEvent = new ManualResetEvent(false);
 
             _audioBuffer = new AudioBuffer(48000);
 
@@ -263,6 +265,7 @@ namespace CPvC
                 else
                 {
                     _runningEvent.Reset();
+                    _pausedEvent.WaitOne();
                 }
 
                 OnPropertyChanged();
@@ -396,9 +399,11 @@ namespace CPvC
             {
                 if (!_runningEvent.WaitOne(20))
                 {
+                    _pausedEvent.Set();
                     continue;
                 }
 
+                _pausedEvent.Reset();
                 ProcessNextRequest();
             }
 
