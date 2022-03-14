@@ -56,7 +56,7 @@ namespace CPvC
             }
 
             _core.OnCoreAction += HandleCoreAction;
-            _core.IdleRequest += IdleRequest;
+            _core.OnIdle += IdleHandler;
 
             SeekToBookmark(-1);
         }
@@ -169,13 +169,18 @@ namespace CPvC
             Auditors?.Invoke(args.Action);
         }
 
-        private CoreRequest IdleRequest()
+        private void IdleHandler(object sender, CoreIdleEventArgs args)
         {
+            if (args.Handled)
+            {
+                return;
+            }
+
+            args.Handled = true;
+
             Stop();
-
-            return null;
+            args.Request = null;
         }
-
         protected override void OnPropertyChanged(string name)
         {
             if (name == nameof(RunningState))

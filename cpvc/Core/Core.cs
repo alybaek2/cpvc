@@ -7,25 +7,6 @@ using System.Threading;
 namespace CPvC
 {
     /// <summary>
-    /// Delegate for auditing the actions taken by a Core.
-    /// </summary>
-    /// <param name="request">The original request.</param>
-    /// <param name="action">The action taken.</param>
-    public delegate void RequestProcessedDelegate(Core core, CoreRequest request, CoreAction action);
-
-    /// <summary>
-    /// Delegate to be called whenever the VSync signal goes from low to high.
-    /// </summary>
-    /// <param name="core">The Core whose VSync has gone high.</param>
-    public delegate void BeginVSyncDelegate(Core core);
-
-    /// <summary>
-    /// Delegate to be called by the core thread to get a request when none exists in the request queue.
-    /// </summary>
-    /// <returns>The CoreRequest that is to be processed.</returns>
-    public delegate CoreRequest IdleRequestDelegate();
-
-    /// <summary>
     /// Class that wraps the CoreCLR class and provides callbacks for auditors and vsync events. Also runs the core in a background thread.
     /// </summary>
     public sealed class Core : INotifyPropertyChanged, IDisposable
@@ -49,7 +30,7 @@ namespace CPvC
 
         public event CoreEventHandler OnCoreAction;
         public event EventHandler OnBeginVSync;
-        public IdleRequestDelegate IdleRequest { get; set; }
+        public event CoreIdleEventHandler OnIdle;
 
         public AudioBuffer AudioBuffer
         {
@@ -137,12 +118,7 @@ namespace CPvC
         {
             Stop();
 
-            _quitThread = true;
-            _coreThread?.Join();
-            _coreThread = null;
-
-            _coreCLR?.Dispose();
-            _coreCLR = null;
+            Close();
 
             _audioReady?.Dispose();
             _audioReady = null;
@@ -458,10 +434,9 @@ namespace CPvC
             {
                 removeFirst = false;
 
-                if (IdleRequest != null)
-                {
-                    request = IdleRequest();
-                }
+                CoreIdleEventArgs args = new CoreIdleEventArgs();
+                OnIdle?.Invoke(this, args);
+                request = args.Request;
 
                 if (request == null)
                 {

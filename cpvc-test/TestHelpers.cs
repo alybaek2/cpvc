@@ -204,10 +204,11 @@ namespace CPvC.Test
             UInt64 beforeTicks = machine.Core.Ticks;
 
             ManualResetEvent e = new ManualResetEvent(false);
-            machine.Core.IdleRequest = () =>
+            machine.Core.OnIdle += (sender, args) =>
             {
+                args.Handled = true;
                 e.Set();
-                return null;
+                args.Request = null;
             };
 
             machine.Core.PushRequest(CoreRequest.RunUntil(machine.Ticks + ticks));
@@ -219,7 +220,6 @@ namespace CPvC.Test
             }
 
             machine.Core.Stop();
-            machine.Core.IdleRequest = null;
 
             return machine.Core.Ticks - beforeTicks;
         }
@@ -367,7 +367,11 @@ namespace CPvC.Test
             machine.Core.SetUpperROM(0, zeroROM);
             machine.Core.SetUpperROM(7, zeroROM);
 
-            machine.Core.IdleRequest = () => CoreRequest.RunUntil(machine.Core.Ticks + 1000);
+            machine.Core.OnIdle += (sender, args) =>
+            {
+                args.Handled = true;
+                args.Request = CoreRequest.RunUntil(machine.Core.Ticks + 1000);
+            };
 
             RunForAWhile(machine);
             machine.Key(Keys.A, true);

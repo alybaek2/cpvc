@@ -114,6 +114,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Events\CoreEvent.cs" />
+    <Compile Include="Events\CoreIdleEvent.cs" />
     <Compile Include="Events\PromptForNameEvent.cs" />
     <Compile Include="Events\ConfirmCloseEvent.cs" />
     <Compile Include="Events\SelectRemoteMachineEvent.cs" />

@@ -42,7 +42,6 @@ namespace CPvC.Test
         public void ProcessesKeyTwice()
         {
             // Setup
-            Mock<RequestProcessedDelegate> mockRequestProcessed = new Mock<RequestProcessedDelegate>();
             Mock<CoreEventHandler> mockEventHanlder = new Mock<CoreEventHandler>();
 
             using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
@@ -81,13 +80,17 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void VSyncDelegateCalled()
+        public void OnBeginVSyncEventRaised()
         {
             // Setup
             Mock<EventHandler> mockBeginVSync = new Mock<EventHandler>();
             using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
-                core.IdleRequest = () => CoreRequest.RunUntil(core.Ticks + 1000);
+                core.OnIdle += (sender, args) =>
+                {
+                    args.Handled = true;
+                    args.Request = CoreRequest.RunUntil(core.Ticks + 1000);
+                };
                 core.OnBeginVSync += mockBeginVSync.Object;
 
                 // Act - run for at least as long as two VSync's (one VSync would be about 4000000 / 50, or 80000 ticks).
@@ -328,15 +331,19 @@ namespace CPvC.Test
         }
 
         /// <summary>
-        /// Ensures that a core calls its IdleRequest delegate when the request queue is empty.
+        /// Ensures that a core raises an OnIdle event when the request queue is empty.
         /// </summary>
         [Test]
-        public void IdleRequest()
+        public void OnIdleHandler()
         {
             // Setup
             using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
-                core.IdleRequest = () => CoreRequest.RunUntil(core.Ticks + 1000);
+                core.OnIdle += (sender, args) =>
+                {
+                    args.Handled = true;
+                    args.Request = CoreRequest.RunUntil(core.Ticks + 1000);
+                };
                 ManualResetEvent processed = new ManualResetEvent(false);
                 core.OnCoreAction += (sender, args) =>
                 {
@@ -353,16 +360,15 @@ namespace CPvC.Test
         }
 
         /// <summary>
-        /// Ensures that a core doesn't process any requests if it has no IdleRequest delegate.
+        /// Ensures that a core doesn't process any requests if it has no OnIdle handler.
         /// </summary>
         [Test]
-        public void NullIdleRequest()
+        public void NoIdleHandler()
         {
             // Setup
             using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
                 core.OnCoreAction += _mockEventHanlder.Object;
-                core.IdleRequest = null;
 
                 // Act
                 core.Start();
@@ -379,7 +385,11 @@ namespace CPvC.Test
             // Setup
             using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
-                core.IdleRequest = () => CoreRequest.RunUntil(core.Ticks + 1000);
+                core.OnIdle += (sender, args) =>
+                {
+                    args.Handled = true;
+                    args.Request = CoreRequest.RunUntil(core.Ticks + 1000);
+                };
 
                 // Act
                 core.Start();
@@ -396,7 +406,11 @@ namespace CPvC.Test
             // Setup
             using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
-                core.IdleRequest = () => CoreRequest.RunUntil(core.Ticks + 1000);
+                core.OnIdle += (sender, args) =>
+                {
+                    args.Handled = true;
+                    args.Request = CoreRequest.RunUntil(core.Ticks + 1000);
+                };
                 core.Start();
                 if (!RunUntilAudioOverrun(core, 10000))
                 {

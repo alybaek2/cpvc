@@ -32,9 +32,10 @@ namespace CPvC.Test
             machine.Core.SetUpperROM(0, zeroROM);
             machine.Core.SetUpperROM(7, zeroROM);
 
-            machine.Core.IdleRequest = () =>
+            machine.Core.OnIdle += (sender, args) =>
             {
-                return (machine.RunningState == RunningState.Running) ? CoreRequest.RunUntil(machine.Core.Ticks + 10) : null;
+                args.Handled = true;
+                args.Request = (machine.RunningState == RunningState.Running) ? CoreRequest.RunUntil(machine.Core.Ticks + 10) : null;
             };
 
             return machine;
@@ -111,7 +112,11 @@ namespace CPvC.Test
             // Setup
             using (LocalMachine machine = LocalMachine.New("test", null))
             {
-                machine.Core.IdleRequest = () => CoreRequest.RunUntil(machine.Core.Ticks + 1000);
+                machine.Core.OnIdle += (sender, args) =>
+                {
+                    args.Handled = true;
+                    args.Request = CoreRequest.RunUntil(machine.Core.Ticks + 1000);
+                };
                 machine.Auditors += _mockAuditor.Object;
 
                 if (createBookmark)
@@ -839,7 +844,7 @@ namespace CPvC.Test
         /// running a machine and ensuring the Ticks property increases.
         /// </summary>
         [Test]
-        public void NewMachineHasIdleRequestHandler()
+        public void NewMachineHasIdleHandler()
         {
             // Setup
             using (LocalMachine machine = LocalMachine.New("test", null))

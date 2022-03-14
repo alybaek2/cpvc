@@ -110,7 +110,7 @@ namespace CPvC
             _history = history;
 
             _core.OnCoreAction += HandleCoreAction;
-            _core.IdleRequest = IdleRequest;
+            _core.OnIdle += IdleHandler;
         }
 
         public void Dispose()
@@ -537,9 +537,15 @@ namespace CPvC
             }
         }
 
-        public CoreRequest IdleRequest()
+        public void IdleHandler(object sender, CoreIdleEventArgs args)
         {
-            return (RunningState == RunningState.Running) ? CoreRequest.RunUntil(Ticks + 1000) : null;
+            if (args.Handled)
+            {
+                return;
+            }
+
+            args.Handled = true;
+            args.Request = (RunningState == RunningState.Running) ? CoreRequest.RunUntil(Ticks + 1000) : null;
         }
 
         public bool DeleteBookmark(HistoryEvent e)
