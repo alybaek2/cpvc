@@ -167,47 +167,44 @@ namespace CPvC
 
         public void Close()
         {
-            lock (_runningStateLock)
+            if (IsOpen)
             {
-                if (IsOpen)
-                {
-                    Stop();
+                Stop();
 
-                    try
+                try
+                {
+                    // Create a system bookmark so the machine can resume from where it left off the next time it's loaded, but don't
+                    // create one if we already have a system bookmark at the current event, or we're at the root event.
+                    BookmarkHistoryEvent currentBookmarkEvent = _history.CurrentEvent as BookmarkHistoryEvent;
+                    if (currentBookmarkEvent == null ||
+                        (currentBookmarkEvent.Ticks != Ticks) ||
+                        (currentBookmarkEvent.Bookmark == null) ||
+                        (currentBookmarkEvent.Bookmark != null && !currentBookmarkEvent.Bookmark.System))
                     {
-                        // Create a system bookmark so the machine can resume from where it left off the next time it's loaded, but don't
-                        // create one if we already have a system bookmark at the current event, or we're at the root event.
-                        BookmarkHistoryEvent currentBookmarkEvent = _history.CurrentEvent as BookmarkHistoryEvent;
-                        if (currentBookmarkEvent == null ||
-                            (currentBookmarkEvent.Ticks != Ticks) ||
-                            (currentBookmarkEvent.Bookmark == null) ||
-                            (currentBookmarkEvent.Bookmark != null && !currentBookmarkEvent.Bookmark.System))
-                        {
-                            AddBookmark(true);
-                        }
-                    }
-                    finally
-                    {
+                        AddBookmark(true);
                     }
                 }
-
-                if (_core != null)
+                finally
                 {
-                    _core.Close();
                 }
-
-                if (File != null)
-                {
-                    File.Dispose();
-                    File = null;
-                }
-
-                _history = new History();
-
-                Status = null;
-
-                Display.EnableGreyscale(true);
             }
+
+            if (_core != null)
+            {
+                _core.Close();
+            }
+
+            if (File != null)
+            {
+                File.Dispose();
+                File = null;
+            }
+
+            _history = new History();
+
+            Status = null;
+
+            Display.EnableGreyscale(true);
         }
 
         public bool CanClose
@@ -231,16 +228,13 @@ namespace CPvC
 
         public override int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
-            lock (_runningStateLock)
+            // Drive Reverse mode from here...
+            if (RunningState == RunningState.Reverse)
             {
-                // Drive Reverse mode from here...
-                if (RunningState == RunningState.Reverse)
-                {
-                    return ReverseReadAudio(buffer, offset, samplesRequested);
-                }
-
-                return base.ReadAudio(buffer, offset, samplesRequested);
+                return ReverseReadAudio(buffer, offset, samplesRequested);
             }
+
+            return base.ReadAudio(buffer, offset, samplesRequested);
         }
 
         private int ReverseReadAudio(byte[] buffer, int offset, int samplesRequested)
@@ -259,7 +253,12 @@ namespace CPvC
                         _core.PushRequest(CoreRequest.RevertToSnapshot(currentSnapshot.Id));
                         _core.PushRequest(CoreRequest.DeleteSnapshot(currentSnapshot.Id));
                         _snapshots.RemoveAt(_snapshots.Count - 1);
-                        _revertedSnapshots.Add(currentSnapshot);
+
+                        lock (_revertedSnapshots)
+                        {
+                            _revertedSnapshots.Add(currentSnapshot);
+                        }
+
                         currentSnapshot = _snapshots.LastOrDefault();
                     }
 
@@ -331,8 +330,12 @@ namespace CPvC
             }
             else if (action.Type == CoreAction.Types.RevertToSnapshot)
             {
-                SnapshotInfo snapshot = _revertedSnapshots.FirstOrDefault(s => s.Id == action.SnapshotId);
-                _revertedSnapshots.Remove(snapshot);
+                SnapshotInfo snapshot;
+                lock (_revertedSnapshots)
+                {
+                    snapshot = _revertedSnapshots.FirstOrDefault(s => s.Id == action.SnapshotId);
+                    _revertedSnapshots.Remove(snapshot);
+                }
 
                 HistoryEvent historyEvent = snapshot.HistoryEvent;
                 if (_history.CurrentEvent != historyEvent)
@@ -585,22 +588,16 @@ namespace CPvC
                 }
             }
 
-            lock (_runningStateLock)
-            {
-                _previousRunningState = SetRunningState(RunningState.Reverse);
-            }
+            _previousRunningState = SetRunningState(RunningState.Reverse);
 
             Status = "Reversing";
         }
 
         public void ReverseStop()
         {
-            lock (_runningStateLock)
-            {
-                SetRunningState(_previousRunningState);
+            SetRunningState(_previousRunningState);
 
-                _core.AllKeysUp();
-            }
+            _core.AllKeysUp();
         }
 
         public void ToggleReversibilityEnabled()

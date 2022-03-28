@@ -232,23 +232,23 @@ namespace CPvC.Test
             Assert.AreEqual(0, machine.Ticks);
         }
 
-        [TestCase(RunningState.Paused)]
-        [TestCase(RunningState.Running)]
-        public void SetRunning(RunningState runningState)
-        {
-            // Setup
-            ReplayMachine machine = CreateMachine();
-            if (runningState == RunningState.Running)
-            {
-                machine.Start();
-            }
+        //[TestCase(RunningState.Paused)]
+        //[TestCase(RunningState.Running)]
+        //public void SetRunning(RunningState runningState)
+        //{
+        //    // Setup
+        //    ReplayMachine machine = CreateMachine();
+        //    if (runningState == RunningState.Running)
+        //    {
+        //        machine.Start();
+        //    }
 
-            // Act
-            machine.SeekToNextBookmark();
+        //    // Act
+        //    machine.SeekToNextBookmark();
 
-            // Verify
-            Assert.AreEqual(runningState, machine.RunningState);
-        }
+        //    // Verify
+        //    Assert.AreEqual(runningState, machine.RunningState);
+        //}
 
         /// <summary>
         /// Tests that the machine doesn't throw an exception when there are no PropertyChanged

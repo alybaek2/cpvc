@@ -23,7 +23,6 @@ namespace CPvC
         private ICore _coreCLR;
         private int _version;
         private readonly Queue<CoreRequest> _requests;
-        private object _lockObject;
 
         private bool _quitThread;
         private Thread _coreThread;
@@ -59,7 +58,6 @@ namespace CPvC
         public Core(int version, Type type)
         {
             _requests = new Queue<CoreRequest>();
-            _lockObject = new object();
 
             _quitThread = false;
             _coreThread = null;
@@ -68,7 +66,7 @@ namespace CPvC
             _requestQueueNonEmpty = new AutoResetEvent(false);
 
             _runningEvent = new ManualResetEvent(false);
-            _pausedEvent = new ManualResetEvent(false);
+            _pausedEvent = new ManualResetEvent(true);
 
             _audioBuffer = new AudioBuffer(48000);
 
@@ -107,11 +105,8 @@ namespace CPvC
             _coreThread?.Join();
             _coreThread = null;
 
-            lock (_lockObject)
-            {
-                _coreCLR?.Dispose();
-                _coreCLR = null;
-            }
+            _coreCLR?.Dispose();
+            _coreCLR = null;
         }
 
         public void Dispose()
@@ -192,18 +187,12 @@ namespace CPvC
         /// </summary>
         public void SetScreen()
         {
-            lock (_lockObject)
-            {
-                _coreCLR.SetScreen(Display.Pitch, Display.Height, Display.Width);
-            }
+            _coreCLR.SetScreen(Display.Pitch, Display.Height, Display.Width);
         }
 
         public void CopyScreen(IntPtr screenBuffer, UInt64 size)
         {
-            lock (_lockObject)
-            {
-                _coreCLR?.CopyScreen(screenBuffer, size);
-            }
+            _coreCLR?.CopyScreen(screenBuffer, size);
         }
 
         /// <summary>
@@ -213,10 +202,7 @@ namespace CPvC
         {
             get
             {
-                lock (_lockObject)
-                {
-                    return _coreCLR?.Ticks() ?? 0;
-                }
+                return _coreCLR?.Ticks() ?? 0;
             }
         }
 
@@ -241,7 +227,12 @@ namespace CPvC
                 else
                 {
                     _runningEvent.Reset();
-                    _pausedEvent.WaitOne();
+
+                    // Temporary fix for now, but really need to allow a caller to wait for the stop, or just request the stop and return immediately.
+                    if (_coreThread != Thread.CurrentThread)
+                    {
+                        _pausedEvent.WaitOne();
+                    }
                 }
 
                 OnPropertyChanged();
@@ -254,10 +245,7 @@ namespace CPvC
         /// <returns>A byte array containing the serialized core.</returns>
         public byte[] GetState()
         {
-            lock (_lockObject)
-            {
-                return _coreCLR.GetState();
-            }
+            return _coreCLR.GetState();
         }
 
         /// <summary>
@@ -266,48 +254,41 @@ namespace CPvC
         /// <param name="state">A byte array created by <c>GetState</c>.</param>
         public void LoadState(byte[] state)
         {
-            lock (_lockObject)
-            {
-                _coreCLR.LoadState(state);
-            }
+            _coreCLR.LoadState(state);
         }
 
         public void CreateFromBookmark(int version, byte[] state)
         {
-            lock (_lockObject)
-            {
-                Create(version, Type.CPC6128);
+            Create(version, Type.CPC6128);
 
-                _coreCLR.LoadState(state);
+            _coreCLR.LoadState(state);
 
-                _requests.Clear();
-            }
+            _requests.Clear();
         }
 
         public void Create(int version, Type type)
         {
-            lock (_lockObject)
+            switch (type)
             {
-                switch (type)
-                {
-                    case Type.CPC6128:
-                        {
-                            _version = version;
-                            _coreCLR = CreateVersionedCore(version);
-                            _requests.Clear();
+                case Type.CPC6128:
+                    {
+                        _version = version;
+                        _coreCLR = CreateVersionedCore(version);
+                        _requests.Clear();
 
-                            SetScreen();
+                        SetScreen();
 
-                            SetLowerROM(Resources.OS6128);
-                            SetUpperROM(0, Resources.Basic6128);
-                            SetUpperROM(7, Resources.Amsdos6128);
+                        SetLowerROM(Resources.OS6128);
+                        SetUpperROM(0, Resources.Basic6128);
+                        SetUpperROM(7, Resources.Amsdos6128);
 
-                            StartThread();
-                        }
-                        break;
-                    default:
-                        throw new ArgumentException(String.Format("Unknown core type {0}", type));
-                }
+                        StartThread();
+
+                        OnPropertyChanged(nameof(Ticks));
+                    }
+                    break;
+                default:
+                    throw new ArgumentException(String.Format("Unknown core type {0}", type));
             }
         }
 
@@ -339,10 +320,7 @@ namespace CPvC
         /// <returns>A bitmask specifying why the execution stopped. See <c>StopReasons</c> for a list of values.</returns>
         public byte RunUntil(UInt64 ticks, byte stopReason, List<UInt16> audioSamples)
         {
-            lock (_lockObject)
-            {
-                return _coreCLR.RunUntil(ticks, stopReason, audioSamples);
-            }
+            return _coreCLR.RunUntil(ticks, stopReason, audioSamples);
         }
 
         /// <summary>
@@ -380,6 +358,7 @@ namespace CPvC
                 }
 
                 _pausedEvent.Reset();
+
                 ProcessNextRequest();
             }
 
@@ -408,11 +387,14 @@ namespace CPvC
             }
         }
 
-        private void RemoveFirstRequest()
+        private void RemoveFirstRequest(CoreRequest request)
         {
             lock (_requests)
             {
-                _requests.Dequeue();
+                if (_requests.Count > 0 && _requests.Peek() == request)
+                {
+                    _requests.Dequeue();
+                }
 
                 if (_requests.Count > 0)
                 {
@@ -449,83 +431,53 @@ namespace CPvC
             switch (request.Type)
             {
                 case CoreRequest.Types.KeyPress:
-                    lock (_lockObject)
+                    if (_coreCLR.KeyPress(request.KeyCode, request.KeyDown))
                     {
-                        if (_coreCLR.KeyPress(request.KeyCode, request.KeyDown))
-                        {
-                            action = CoreAction.KeyPress(ticks, request.KeyCode, request.KeyDown);
-                        }
+                        action = CoreAction.KeyPress(ticks, request.KeyCode, request.KeyDown);
                     }
                     break;
                 case CoreRequest.Types.Reset:
-                    lock (_lockObject)
-                    {
-                        _coreCLR.Reset();
-                    }
+                    _coreCLR.Reset();
                     action = CoreAction.Reset(ticks);
                     break;
                 case CoreRequest.Types.LoadDisc:
-                    lock (_lockObject)
-                    {
-                        _coreCLR.LoadDisc(request.Drive, request.MediaBuffer.GetBytes());
-                    }
+                    _coreCLR.LoadDisc(request.Drive, request.MediaBuffer.GetBytes());
                     action = CoreAction.LoadDisc(ticks, request.Drive, request.MediaBuffer);
                     break;
                 case CoreRequest.Types.LoadTape:
-                    lock (_lockObject)
-                    {
-                        _coreCLR.LoadTape(request.MediaBuffer.GetBytes());
-                    }
+                    _coreCLR.LoadTape(request.MediaBuffer.GetBytes());
                     action = CoreAction.LoadTape(ticks, request.MediaBuffer);
                     break;
                 case CoreRequest.Types.RunUntil:
-                    {
-                        action = RunForAWhile(request.StopTicks);
+                    action = RunForAWhile(request.StopTicks);
 
-                        success = (request.StopTicks <= Ticks);
-                    }
+                    success = request.StopTicks <= Ticks;
+
                     break;
                 case CoreRequest.Types.CoreVersion:
-                    lock (_lockObject)
-                    {
-                        byte[] state = GetState();
+                    byte[] state = GetState();
 
-                        ICore newCore = Core.CreateVersionedCore(request.Version);
-                        newCore.LoadState(state);
-                        newCore.SetScreen(Display.Pitch, Display.Height, Display.Width);
+                    ICore newCore = Core.CreateVersionedCore(request.Version);
+                    newCore.LoadState(state);
+                    newCore.SetScreen(Display.Pitch, Display.Height, Display.Width);
 
-                        _coreCLR.Dispose();
-                        _coreCLR = newCore;
-                    }
+                    ICore oldCore = _coreCLR;
+                    _coreCLR = newCore;
+                    oldCore.Dispose();
+
                     break;
                 case CoreRequest.Types.LoadCore:
-                    lock (_lockObject)
-                    {
-                        _coreCLR.LoadState(request.CoreState.GetBytes());
-                    }
-
+                    _coreCLR.LoadState(request.CoreState.GetBytes());
                     action = CoreAction.LoadCore(ticks, request.CoreState);
                     break;
                 case CoreRequest.Types.CreateSnapshot:
-                    lock (_lockObject)
-                    {
-                        action = CreateSnapshot(request.SnapshotId);
-                    }
-
+                    action = CreateSnapshot(request.SnapshotId);
                     break;
                 case CoreRequest.Types.DeleteSnapshot:
-                    lock (_lockObject)
-                    {
-                        action = DeleteSnapshot(request.SnapshotId);
-                    }
-
+                    action = DeleteSnapshot(request.SnapshotId);
                     break;
                 case CoreRequest.Types.RevertToSnapshot:
-                    lock (_lockObject)
-                    {
-                        action = RevertToSnapshot(request.SnapshotId);
-                    }
-
+                    action = RevertToSnapshot(request.SnapshotId);
                     break;
                 default:
                     Diagnostics.Trace("Unknown core request type {0}. Ignoring request.", request.Type);
@@ -534,7 +486,7 @@ namespace CPvC
 
             if (removeFirst && success)
             {
-                RemoveFirstRequest();
+                RemoveFirstRequest(request);
             }
 
             OnCoreAction?.Invoke(this, new CoreEventArgs(request, action));
@@ -544,13 +496,10 @@ namespace CPvC
 
         private void StartThread()
         {
-            lock (_lockObject)
+            if (_coreThread == null)
             {
-                if (_coreThread == null)
-                {
-                    _coreThread = new Thread(CoreThread);
-                    _coreThread.Start();
-                }
+                _coreThread = new Thread(CoreThread);
+                _coreThread.Start();
             }
         }
 

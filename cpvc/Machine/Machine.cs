@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace CPvC
 {
@@ -17,7 +18,6 @@ namespace CPvC
         private string _status;
 
         protected RunningState _runningState;
-        protected object _runningStateLock;
 
         protected int _autoPauseCount;
 
@@ -32,7 +32,6 @@ namespace CPvC
         {
             _autoPauseCount = 0;
             _runningState = RunningState.Paused;
-            _runningStateLock = new object();
             _volume = 80;
 
             _core = new Core(Core.LatestVersion, Core.Type.CPC6128);
@@ -141,27 +140,21 @@ namespace CPvC
         public virtual int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
             // Ensure that while we're reading audio, the running state of the machine can't be changed.
-            lock (_runningStateLock)
+            if (_core?.AudioBuffer == null || !_core.IsOpen)
             {
-                if (_core?.AudioBuffer == null || !_core.IsOpen)
-                {
-                    return 0;
-                }
-
-                // We need to make sure that our overrun threshold is enough so that we can fully satisfy at
-                // least the next callback from NAudio. Without this, CPvC playback can become "stuttery."
-                _core.AudioBuffer.OverrunThreshold = samplesRequested * 2;
-
-                return _core.AudioBuffer.Render16BitStereo(Volume, buffer, offset, samplesRequested, false);
+                return 0;
             }
+
+            // We need to make sure that our overrun threshold is enough so that we can fully satisfy at
+            // least the next callback from NAudio. Without this, CPvC playback can become "stuttery."
+            _core.AudioBuffer.OverrunThreshold = samplesRequested * 2;
+
+            return _core.AudioBuffer.Render16BitStereo(Volume, buffer, offset, samplesRequested, false);
         }
 
         public void AdvancePlayback(int samples)
         {
-            lock (_runningStateLock)
-            {
-                Core?.AdvancePlayback(samples);
-            }
+            Core?.AdvancePlayback(samples);
         }
 
         /// <summary>
@@ -174,20 +167,13 @@ namespace CPvC
                 return;
             }
 
-            if (_autoPauseCount > 0)
+            if (_autoPauseCount > 0 || _runningState == RunningState.Paused)
             {
                 _core.Stop();
             }
             else
             {
-                if (_runningState != RunningState.Paused)
-                {
-                    _core.Start();
-                }
-                else
-                {
-                    _core.Stop();
-                }
+                _core.Start();
             }
 
             OnPropertyChanged("RunningState");
@@ -247,34 +233,25 @@ namespace CPvC
 
         private void IncrementAutoPause()
         {
-            lock (_runningStateLock)
-            {
-                _autoPauseCount++;
-                SetCoreRunning();
-            }
+            Interlocked.Increment(ref _autoPauseCount);
+            SetCoreRunning();
         }
 
         private void DecrementAutoPause()
         {
-            lock (_runningStateLock)
-            {
-                _autoPauseCount--;
-                SetCoreRunning();
-            }
+            Interlocked.Decrement(ref _autoPauseCount);
+            SetCoreRunning();
         }
 
         public RunningState SetRunningState(RunningState runningState)
         {
-            lock (_runningStateLock)
-            {
-                RunningState previousRunningState = _runningState;
-                _runningState = runningState;
-                SetCoreRunning();
+            RunningState previousRunningState = _runningState;
+            _runningState = runningState;
+            SetCoreRunning();
 
-                OnPropertyChanged("RunningState");
+            OnPropertyChanged("RunningState");
 
-                return previousRunningState;
-            }
+            return previousRunningState;
         }
 
         protected void CorePropertyChanged(object sender, PropertyChangedEventArgs e)
