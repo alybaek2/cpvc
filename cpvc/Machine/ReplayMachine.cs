@@ -141,7 +141,7 @@ namespace CPvC
 
             _core.PushRequest(CoreRequest.RunUntil(_endTicks));
 
-            SetCoreRunning();
+            SetCoreRunning(false);
         }
 
         public void SeekToStart()
@@ -178,9 +178,10 @@ namespace CPvC
 
             args.Handled = true;
 
-            Stop();
+            RequestStop();
             args.Request = null;
         }
+
         protected override void OnPropertyChanged(string name)
         {
             if (name == nameof(RunningState))

@@ -18,6 +18,8 @@ namespace CPvC
         private string _status;
 
         protected RunningState _runningState;
+        protected RunningState _requestedState;
+        protected bool _runningDirection;
 
         protected int _autoPauseCount;
 
@@ -32,6 +34,8 @@ namespace CPvC
         {
             _autoPauseCount = 0;
             _runningState = RunningState.Paused;
+            _requestedState = RunningState.Paused;
+            _runningDirection = true; // Forward!
             _volume = 80;
 
             _core = new Core(Core.LatestVersion, Core.Type.CPC6128);
@@ -160,16 +164,23 @@ namespace CPvC
         /// <summary>
         /// Sets the core to the appropriate running state, given the <c>_running</c> and <c>_autoPauseCount</c> members.
         /// </summary>
-        protected void SetCoreRunning()
+        protected void SetCoreRunning(bool request)
         {
             if (_core == null)
             {
                 return;
             }
 
-            if (_autoPauseCount > 0 || _runningState == RunningState.Paused)
+            if (_autoPauseCount > 0 || _requestedState == RunningState.Paused)
             {
-                _core.Stop();
+                if (request)
+                {
+                    _core.RequestStop();
+                }
+                else
+                {
+                    _core.Stop();
+                }
             }
             else
             {
@@ -181,19 +192,26 @@ namespace CPvC
 
         public void Start()
         {
-            SetRunningState(RunningState.Running);
+            SetRequestedState(RunningState.Running);
             Status = "Resumed";
+        }
+
+        public void RequestStop()
+        {
+            _requestedState = RunningState.Paused;
+            SetCoreRunning(true);
         }
 
         public void Stop()
         {
-            SetRunningState(RunningState.Paused);
+            SetRequestedState(RunningState.Paused);
+
             Status = "Paused";
         }
 
         public void ToggleRunning()
         {
-            if (_runningState == RunningState.Running)
+            if (_requestedState == RunningState.Running)
             {
                 Stop();
             }
@@ -234,28 +252,43 @@ namespace CPvC
         private void IncrementAutoPause()
         {
             Interlocked.Increment(ref _autoPauseCount);
-            SetCoreRunning();
+            SetCoreRunning(false);
         }
 
         private void DecrementAutoPause()
         {
             Interlocked.Decrement(ref _autoPauseCount);
-            SetCoreRunning();
+            SetCoreRunning(false);
         }
 
-        public RunningState SetRunningState(RunningState runningState)
+        public void SetRequestedState(RunningState runningState)
         {
-            RunningState previousRunningState = _runningState;
-            _runningState = runningState;
-            SetCoreRunning();
+            _requestedState = runningState;
+            SetCoreRunning(false);
+        }
+
+        protected void UpdateRunningState()
+        {
+            if (!_core.Running)
+            {
+                _runningState = RunningState.Paused;
+            }
+            else
+            {
+                _runningState = _runningDirection ? RunningState.Running : RunningState.Reverse;
+            }
 
             OnPropertyChanged("RunningState");
 
-            return previousRunningState;
         }
 
         protected void CorePropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == nameof(Core.Running))
+            {
+                UpdateRunningState();
+            }
+
             OnPropertyChanged(e.PropertyName);
         }
 

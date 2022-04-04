@@ -582,20 +582,23 @@ namespace CPvC
         {
             lock (_snapshots)
             {
-                if (_runningState == RunningState.Reverse || _snapshots.LastOrDefault() == null)
+                if ((!_runningDirection && _requestedState == RunningState.Running) || _snapshots.LastOrDefault() == null)
                 {
                     return;
                 }
             }
 
-            _previousRunningState = SetRunningState(RunningState.Reverse);
+            _previousRunningState = _requestedState;
+            _runningDirection = false;
+            SetRequestedState(RunningState.Reverse);
 
             Status = "Reversing";
         }
 
         public void ReverseStop()
         {
-            SetRunningState(_previousRunningState);
+            _runningDirection = true;
+            SetRequestedState(_previousRunningState);
 
             _core.AllKeysUp();
         }

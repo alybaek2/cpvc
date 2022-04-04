@@ -809,7 +809,7 @@ namespace CPvC.Test
             // Run for long enough to generate one snapshot, so that we can enter reverse mode.
             RunForAWhile(_machine, 1000000, 60000);
 
-            _machine.SetRunningState(RunningState.Running);
+            _machine.SetRequestedState(RunningState.Running);
             _machine.Reverse();
             _machine.Reverse();
 
@@ -829,11 +829,14 @@ namespace CPvC.Test
             // Run for long enough to generate one snapshot, so that we can enter reverse mode.
             RunForAWhile(_machine, 100000, 6000);
 
-            _machine.SetRunningState(runningState);
+            _machine.SetRequestedState(runningState);
+            System.Threading.Thread.Sleep(100);
             _machine.Reverse();
+            System.Threading.Thread.Sleep(100);
 
             // Act
             _machine.ReverseStop();
+            System.Threading.Thread.Sleep(100);
 
             // Verify
             Assert.AreEqual(runningState, _machine.RunningState);

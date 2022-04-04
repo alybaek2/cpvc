@@ -212,31 +212,14 @@ namespace CPvC
             {
                 return _runningEvent.WaitOne(0);
             }
+        }
 
-            set
-            {
-                if (value == Running)
-                {
-                    return;
-                }
+        public void RequestStop()
+        {
+            _runningEvent.Reset();
 
-                if (value)
-                {
-                    _runningEvent.Set();
-                }
-                else
-                {
-                    _runningEvent.Reset();
+            OnPropertyChanged(nameof(Running));
 
-                    // Temporary fix for now, but really need to allow a caller to wait for the stop, or just request the stop and return immediately.
-                    if (_coreThread != Thread.CurrentThread)
-                    {
-                        _pausedEvent.WaitOne();
-                    }
-                }
-
-                OnPropertyChanged();
-            }
         }
 
         /// <summary>
@@ -294,12 +277,19 @@ namespace CPvC
 
         public void Start()
         {
-            Running = true;
+            _runningEvent.Set();
+
+            // Shouldn't raise this event here! Do it once we get a notification from Core that the core is actually running.
+            OnPropertyChanged(nameof(Running));
         }
 
         public void Stop()
         {
-            Running = false;
+            RequestStop();
+            _pausedEvent.WaitOne();
+
+            // Shouldn't raise this event here! Do it once we get a notification from Core that the core is actually running.
+            OnPropertyChanged(nameof(Running));
         }
 
         public void SetLowerROM(byte[] lowerROM)
