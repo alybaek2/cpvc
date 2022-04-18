@@ -199,29 +199,30 @@ namespace CPvC.Test
         /// <param name="machine">The machine whose core should be run.</param>
         /// <param name="ticks">The number of ticks to run the machine for.</param>
         /// <returns>The total number of ticks that the machine ran for. Note this may be slightly larger than <c>ticks</c>, since Z80 instructions take at least 4 ticks.</returns>
-        static public UInt64 Run(IMachine machine, UInt64 ticks)
+        static public UInt64 Run(IPausableMachine machine, UInt64 ticks)
         {
-            UInt64 beforeTicks = machine.Core.Ticks;
+            UInt64 beforeTicks = machine.Ticks;
+            UInt64 afterTicks = beforeTicks + ticks;
 
             ManualResetEvent e = new ManualResetEvent(false);
-            machine.Core.OnIdle += (sender, args) =>
-            {
-                args.Handled = true;
-                e.Set();
-                args.Request = null;
-            };
+            //machine.Core.OnIdle += (sender, args) =>
+            //{
+            //    args.Handled = true;
+            //    e.Set();
+            //    args.Request = null;
+            //};
+            machine.PushRequest(CoreRequest.RunUntil(machine.Ticks + ticks));
+            machine.Start();
 
-            machine.Core.PushRequest(CoreRequest.RunUntil(machine.Ticks + ticks));
-            machine.Core.Start();
-
-            while (!e.WaitOne(10))
+            while (machine.Ticks < afterTicks)
             {
                 machine.AdvancePlayback(48000);
+                Thread.Sleep(10);
             }
 
-            machine.Core.Stop();
+            machine.Stop();
 
-            return machine.Core.Ticks - beforeTicks;
+            return machine.Ticks - beforeTicks;
         }
 
         /// <summary>
@@ -251,6 +252,7 @@ namespace CPvC.Test
             }
 
             machine.Stop();
+            
         }
 
         static public CoreAction ProcessOneRequest(Core core, CoreRequest request, int timeout = 1000)
@@ -260,27 +262,28 @@ namespace CPvC.Test
             CoreAction action = null;
             ManualResetEvent e = new ManualResetEvent(false);
 
-            core.OnCoreAction += (sender, args) =>
-            {
-                // Advance the audio playback so RunUntil requests don't stall.
-                core.AdvancePlayback(100000);
+            //core.OnCoreAction += (sender, args) =>
+            //{
+            //    // Advance the audio playback so RunUntil requests don't stall.
+            //    core.AdvancePlayback(100000);
 
-                if (ReferenceEquals(sender, core))
-                {
-                    if (args.Request == nextRequest)
-                    {
-                        e.Set();
-                    }
-                    else if (args.Request == request)
-                    {
-                        action = args.Action;
-                    }
-                }
+            //    if (ReferenceEquals(sender, core))
+            //    {
+            //        if (args.Request == nextRequest)
+            //        {
+            //            e.Set();
+            //        }
+            //        else if (args.Request == request)
+            //        {
+            //            action = args.Action;
+            //        }
+            //    }
 
-            };
+            //};
 
-            core.PushRequest(request);
-            core.PushRequest(nextRequest);
+            throw new Exception("Fix me!");
+            //core.PushRequest(request);
+            //core.PushRequest(nextRequest);
 
             // Wait for at most one second.
             bool result = e.WaitOne(timeout);
@@ -306,25 +309,29 @@ namespace CPvC.Test
         static public void ProcessRemoteRequest(RemoteMachine machine, ReceiveCoreActionDelegate receive, CoreAction action)
         {
             ManualResetEvent e = new ManualResetEvent(false);
-            machine.Core.OnCoreAction += (sender, args) =>
-            {
-                if (ReferenceEquals(sender, machine.Core) && (args.Request == null || args.Request == action))
-                {
-                    e.Set();
-                }
-            };
+            //machine.Core.OnCoreAction += (sender, args) =>
+            //{
+            //    if (ReferenceEquals(sender, machine.Core) && (args.Request == null || args.Request == action))
+            //    {
+            //        e.Set();
+            //    }
+            //};
 
             receive(action);
             machine.Start();
 
-            bool result = false;
-            while (!result)
-            {
-                result = e.WaitOne(100);
-                machine.AdvancePlayback(100000);
-            }
+            //bool result = false;
+            //while (!result)
+            //{
+            //    result = e.WaitOne(100);
+            //    machine.AdvancePlayback(100000);
+            //}
+
+            bool result = action.Wait(10000);
 
             machine.Stop();
+            machine.WaitForRequestedToMatchRunning();
+            //machine.RequestStopAndWait();
 
             if (!result)
             {
@@ -332,17 +339,17 @@ namespace CPvC.Test
             }
         }
 
-        static public bool RunUntilAudioOverrun(Core core, int timeout)
-        {
-            int elapsed = 0;
-            while ((elapsed < timeout) && core.AudioBuffer.WaitForUnderrun(0))
-            {
-                Thread.Sleep(10);
-                elapsed += 10;
-            }
+        //static public bool RunUntilAudioOverrun(Core core, int timeout)
+        //{
+        //    int elapsed = 0;
+        //    while ((elapsed < timeout) && core.AudioBuffer.WaitForUnderrun(0))
+        //    {
+        //        Thread.Sleep(10);
+        //        elapsed += 10;
+        //    }
 
-            return (elapsed < timeout);
-        }
+        //    return (elapsed < timeout);
+        //}
 
         static public string GetTempFilepath(string filename)
         {
@@ -362,30 +369,31 @@ namespace CPvC.Test
             LocalMachine machine = LocalMachine.New("test", null);
 
             // For consistency with automated builds, use all zero ROMs.
-            byte[] zeroROM = new byte[0x4000];
-            machine.Core.SetLowerROM(zeroROM);
-            machine.Core.SetUpperROM(0, zeroROM);
-            machine.Core.SetUpperROM(7, zeroROM);
+            //byte[] zeroROM = new byte[0x4000];
+            //machine.Core.SetLowerROM(zeroROM);
+            //machine.Core.SetUpperROM(0, zeroROM);
+            //machine.Core.SetUpperROM(7, zeroROM);
 
-            machine.Core.OnIdle += (sender, args) =>
-            {
-                args.Handled = true;
-                args.Request = CoreRequest.RunUntil(machine.Core.Ticks + 1000);
-            };
+            //machine.Core.OnIdle += (sender, args) =>
+            //{
+            //    args.Handled = true;
+            //    args.Request = CoreRequest.RunUntil(machine.Core.Ticks + 1000);
+            //};
 
-            RunForAWhile(machine);
+            machine.RunUntil(machine.Ticks + 1000);
             machine.Key(Keys.A, true);
-            RunForAWhile(machine);
+            machine.RunUntil(machine.Ticks + 1000);
             machine.Key(Keys.A, false);
-            RunForAWhile(machine);
+            machine.RunUntil(machine.Ticks + 1000);
             machine.LoadDisc(0, null);
-            RunForAWhile(machine);
+            machine.RunUntil(machine.Ticks + 1000);
             machine.LoadTape(null);
-            RunForAWhile(machine);
+            machine.RunUntil(machine.Ticks + 1000);
             machine.AddBookmark(false);
-            RunForAWhile(machine);
+            machine.RunUntil(machine.Ticks + 1000);
             machine.AddBookmark(false);
-            RunForAWhile(machine);
+            CoreRequest request = machine.RunUntil(machine.Ticks + 1000);
+            request.Wait(2000);
 
             return machine;
         }

@@ -207,6 +207,19 @@ namespace CPvC.Test
             mockMachine.Verify(expr, Times.Once());
         }
 
+        static private void TestInterfacePassthroughIInteractiveMachine(ICommand command, Expression<Func<IInteractiveMachine, CoreRequest>> expr, CoreRequest request)
+        {
+            // Setup
+            Mock<IInteractiveMachine> mockMachine = new Mock<IInteractiveMachine>(MockBehavior.Strict);
+            mockMachine.Setup(expr).Returns(request);
+
+            // Act
+            command.Execute(mockMachine.Object);
+
+            // Verify
+            mockMachine.Verify(expr, Times.Once());
+        }
+
         private void TestNoInterfacePassthrough<T>(ICommand command, bool canExecute) where T : class
         {
             // Setup
@@ -325,6 +338,8 @@ namespace CPvC.Test
             viewModel.NewMachineCommand.Execute(_mockFileSystem.Object);
 
             // Verify
+            LocalMachine machine = viewModel.Machines[0] as LocalMachine;
+            machine.WaitForRequestedToMatchRunning();
             Assert.AreEqual(1, viewModel.Machines.Count);
             Assert.AreEqual(viewModel.Machines[0], viewModel.ActiveMachine);
             Assert.AreEqual(RunningState.Running, viewModel.Machines[0].RunningState);
@@ -451,11 +466,29 @@ namespace CPvC.Test
             MainViewModel viewModel = SetupViewModel(1);
             _machine.OpenFromFile(_mockFileSystem.Object);
 
-            TestHelpers.Run(_machine, 1000);
-            _machine.Key(42, true);
+            CoreRequest request = _machine.RunUntil(1000);
+            request = _machine.Key(42, true);
+
+            _machine.Start();
+            //_machine.WaitForRequestedToMatchRunning()
+            request.Wait(10000);
+            _machine.Stop();
+            _machine.WaitForRequestedToMatchRunning();
+
+            //TestHelpers.Run(_machine, 1000);
+            //_machine.Key(42, true);
+
             HistoryEvent historyEvent1 = _machine.History.CurrentEvent;
-            TestHelpers.Run(_machine, 1000);
-            _machine.Key(42, false);
+
+            _machine.RunUntil(_machine.Ticks + 1000);
+            request = _machine.Key(42, false);
+            _machine.Start();
+            request.Wait(10000);
+            _machine.Stop();
+            _machine.WaitForRequestedToMatchRunning();
+
+            //TestHelpers.Run(_machine, 1000);
+            //_machine.Key(42, false);
             HistoryEvent historyEvent2 = _machine.History.CurrentEvent;
 
             viewModel.PromptForBookmark += (sender, args) =>
@@ -647,7 +680,8 @@ namespace CPvC.Test
         [Test]
         public void Reset()
         {
-            TestInterfacePassthrough<IInteractiveMachine>(_mainViewModel.ResetCommand, m => m.Reset());
+            TestInterfacePassthroughIInteractiveMachine(_mainViewModel.ResetCommand, m => m.Reset(), CoreRequest.Reset());
+            //TestInterfacePassthrough<IInteractiveMachine>(_mainViewModel.ResetCommand, m => m.Reset());
         }
 
         [Test]
@@ -659,7 +693,7 @@ namespace CPvC.Test
         [Test]
         public void DriveAEject()
         {
-            TestInterfacePassthrough<IInteractiveMachine>(_mainViewModel.DriveAEjectCommand, m => m.LoadDisc(0, null));
+            TestInterfacePassthroughIInteractiveMachine(_mainViewModel.DriveAEjectCommand, m => m.LoadDisc(0, null), CoreRequest.LoadDisc(0, null));
         }
 
         [Test]
@@ -671,7 +705,8 @@ namespace CPvC.Test
         [Test]
         public void DriveBEject()
         {
-            TestInterfacePassthrough<IInteractiveMachine>(_mainViewModel.DriveBEjectCommand, m => m.LoadDisc(1, null));
+            TestInterfacePassthroughIInteractiveMachine(_mainViewModel.DriveBEjectCommand, m => m.LoadDisc(1, null), CoreRequest.LoadDisc(1, null));
+            //TestInterfacePassthrough<IInteractiveMachine>(_mainViewModel.DriveBEjectCommand, m => m.LoadDisc(1, null));
         }
 
         [Test]
@@ -683,7 +718,8 @@ namespace CPvC.Test
         [Test]
         public void TapeEject()
         {
-            TestInterfacePassthrough<IInteractiveMachine>(_mainViewModel.TapeEjectCommand, m => m.LoadTape(null));
+            //TestInterfacePassthrough<IInteractiveMachine>(_mainViewModel.TapeEjectCommand, m => m.LoadTape(null));
+            TestInterfacePassthroughIInteractiveMachine(_mainViewModel.TapeEjectCommand, m => m.LoadTape(null), CoreRequest.LoadTape(null));
         }
 
         [Test]
@@ -846,6 +882,7 @@ namespace CPvC.Test
         {
             // Setup
             LocalMachine machine = LocalMachine.New("Test", "test.cpvc");
+            machine.Close();
 
             // Verify
             Assert.True(_mainViewModel.CompactCommand.CanExecute(machine));

@@ -55,9 +55,6 @@ namespace CPvC
                 }
             }
 
-            _core.OnCoreAction += HandleCoreAction;
-            _core.OnIdle += IdleHandler;
-
             SeekToBookmark(-1);
         }
 
@@ -79,17 +76,6 @@ namespace CPvC
             get
             {
                 return RunningState == RunningState.Running;
-            }
-        }
-
-        public void Close()
-        {
-            if (_core != null)
-            {
-                _core.OnCoreAction -= HandleCoreAction;
-                _core.Dispose();
-
-                _core = null;
             }
         }
 
@@ -134,14 +120,16 @@ namespace CPvC
                 HistoryEvent historyEvent = _historyEvents[i];
                 if (historyEvent is CoreActionHistoryEvent coreActionHistoryEvent)
                 {
-                    _core.PushRequest(CoreRequest.RunUntil(coreActionHistoryEvent.Ticks));
-                    _core.PushRequest(coreActionHistoryEvent.CoreAction);
+                    PushRequest(CoreRequest.RunUntil(coreActionHistoryEvent.Ticks));
+                    PushRequest(coreActionHistoryEvent.CoreAction);
                 }
             }
 
-            _core.PushRequest(CoreRequest.RunUntil(_endTicks));
+            PushRequest(CoreRequest.RunUntil(_endTicks));
 
-            SetCoreRunning(false);
+            Stop();
+            //Stop();
+            //SetRunning();
         }
 
         public void SeekToStart()
@@ -163,24 +151,35 @@ namespace CPvC
                 SeekToBookmark(bookmarkIndex);
             }
         }
-
-        private void HandleCoreAction(object sender, CoreEventArgs args)
+        protected override CoreRequest GetNextRequest(int timeout)
         {
-            Auditors?.Invoke(args.Action);
-        }
-
-        private void IdleHandler(object sender, CoreIdleEventArgs args)
-        {
-            if (args.Handled)
+            CoreRequest request = base.GetNextRequest(timeout);
+            if (request == null)
             {
-                return;
+                Stop();
             }
 
-            args.Handled = true;
-
-            RequestStop();
-            args.Request = null;
+            return request;
         }
+
+        protected override void CoreActionDone(CoreRequest request, CoreAction action)
+        {
+            Auditors?.Invoke(action);
+        }
+
+        //private void IdleHandler(object sender, CoreIdleEventArgs args)
+        //{
+        //    if (args.Handled)
+        //    {
+        //        return;
+        //    }
+
+        //    args.Handled = true;
+
+        //    Stop();
+        //    //RequestStop();
+        //    args.Request = null;
+        //}
 
         protected override void OnPropertyChanged(string name)
         {
@@ -191,6 +190,11 @@ namespace CPvC
             }
 
             base.OnPropertyChanged(name);
+        }
+
+        public byte[] GetState()
+        {
+            return _core.GetState();
         }
     }
 }

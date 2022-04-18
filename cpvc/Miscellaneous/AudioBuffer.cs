@@ -19,7 +19,34 @@ namespace CPvC
 
         private readonly int _maxSize;
 
-        public int OverrunThreshold { get; set; }
+        private int _overrunThreshold;
+
+        public int OverrunThreshold
+        {
+            get
+            {
+                return _overrunThreshold;
+            }
+
+            set
+            {
+                if (_overrunThreshold == value)
+                {
+                    return;
+                }
+
+                _overrunThreshold = value;
+
+                if (Overrun())
+                {
+                    _underrunEvent.Reset();
+                }
+                else
+                {
+                    _underrunEvent.Set();
+                }
+            }
+        }
         public byte ReadSpeed { get; set; }
 
         public AudioBuffer(int maxSize)
@@ -33,8 +60,8 @@ namespace CPvC
 
             _maxSize = maxSize;
 
-            OverrunThreshold = 2000;
             ReadSpeed = 1;
+            OverrunThreshold = 2000;
         }
 
         /// <summary>

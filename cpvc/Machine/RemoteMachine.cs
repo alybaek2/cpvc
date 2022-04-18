@@ -35,7 +35,7 @@ namespace CPvC
             Display.GetFromBookmark(null);
 
             _core.Create(Core.LatestVersion, Core.Type.CPC6128);
-            _core.OnCoreAction += HandleCoreAction;
+            //_core.OnCoreAction += HandleCoreAction;
 
             Start();
 
@@ -60,7 +60,7 @@ namespace CPvC
 
             Auditors?.Invoke(coreAction);
 
-            _core.PushRequest(coreAction);
+            PushRequest(coreAction);
         }
 
         public void ReceiveName(string machineName)
@@ -73,16 +73,10 @@ namespace CPvC
             Close();
         }
 
-        public void Close()
+        public override void Close()
         {
+            base.Close();
             _remote.Dispose();
-            if (_core != null)
-            {
-                _core.Stop();
-                _core.OnCoreAction -= HandleCoreAction;
-
-                _core = null;
-            }
         }
 
         public bool CanClose
@@ -93,38 +87,48 @@ namespace CPvC
             }
         }
 
-        public void Key(byte keycode, bool down)
+        public CoreRequest Key(byte keycode, bool down)
         {
-            _remote.SendCoreRequest(CoreRequest.KeyPress(keycode, down));
+            CoreRequest request = CoreRequest.KeyPress(keycode, down);
+            _remote.SendCoreRequest(request);
+
+            return request;
         }
 
-        public void LoadDisc(byte drive, byte[] diskBuffer)
+        public CoreRequest LoadDisc(byte drive, byte[] diskBuffer)
         {
-            _remote.SendCoreRequest(CoreRequest.LoadDisc(drive, diskBuffer));
+            CoreRequest request = CoreRequest.LoadDisc(drive, diskBuffer);
+            _remote.SendCoreRequest(request);
+
+            return request;
         }
 
-        public void LoadTape(byte[] tapeBuffer)
+        public CoreRequest LoadTape(byte[] tapeBuffer)
         {
-            _remote.SendCoreRequest(CoreRequest.LoadTape(tapeBuffer));
+            CoreRequest request = CoreRequest.LoadTape(tapeBuffer);
+            _remote.SendCoreRequest(request);
+            return request;
         }
 
-        public void Reset()
+        public CoreRequest Reset()
         {
-            _remote.SendCoreRequest(CoreRequest.Reset());
+            CoreRequest request = CoreRequest.Reset();
+            _remote.SendCoreRequest(request);
+
+            return request;
         }
 
-        private void HandleCoreAction(object sender, CoreEventArgs args)
+        protected override void CoreActionDone(CoreRequest request, CoreAction action)
         {
-            if (!ReferenceEquals(_core, sender) || args.Action == null)
-            {
-                return;
-            }
-
-            if (args.Action.Type == CoreAction.Types.RevertToSnapshot)
+            if (action.Type == CoreAction.Types.RevertToSnapshot)
             {
                 // Ensure to update the display.
                 Display.CopyScreenAsync();
             }
+        }
+        public byte[] GetState()
+        {
+            return _core.GetState();
         }
     }
 }

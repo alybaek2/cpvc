@@ -88,7 +88,7 @@ namespace CPvC
 
             InitModel(new MainModel(settings, fileSystem));
 
-            _machineServer = new MachineServerListener(Machines.Where(m => m.Core != null));
+            _machineServer = new MachineServerListener(Machines);
 
             LoadRecentServersSetting();
 
