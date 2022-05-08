@@ -100,7 +100,7 @@ jobs:
         curl https://raw.githubusercontent.com/nunit/nunit-transforms/master/nunit3-junit/nunit3-junit.xslt --output nunit-junit.xslt
 
     - name: Run unit tests
-      run: ".\\NUnit.ConsoleRunner.3.11.1\\tools\\nunit3-console.exe bin\\cpvc-test.dll --result cpvc-test.xml --result cpvc-test-junit.xml`;transform=nunit3-junit.xslt"
+      run: '.\\NUnit.ConsoleRunner.3.11.1\\tools\\nunit3-console.exe bin\\cpvc-test.dll --result cpvc-test.xml --result cpvc-test-junit.xml;transform=nunit3-junit.xslt'
 
     - name: Annotate job with results
       uses: EnricoMi/publish-unit-test-result-action/composite@v1
