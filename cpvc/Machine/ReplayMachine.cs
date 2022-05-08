@@ -104,14 +104,16 @@ namespace CPvC
             if (bookmarkEventIndex == -1)
             {
                 _core.Create(Core.LatestVersion, Core.Type.CPC6128);
-                Display.GetFromBookmark(null);
+
+                BlankScreen();
             }
             else
             {
                 Bookmark bookmark = (_historyEvents[bookmarkEventIndex] as BookmarkHistoryEvent).Bookmark;
                 _core.CreateFromBookmark(bookmark.Version, bookmark.State.GetBytes());
 
-                Display.GetFromBookmark(bookmark);
+                SetScreen(bookmark.Screen.GetBytes());
+
                 startIndex = bookmarkEventIndex;
             }
 
@@ -128,8 +130,6 @@ namespace CPvC
             PushRequest(CoreRequest.RunUntil(_endTicks));
 
             Stop();
-            //Stop();
-            //SetRunning();
         }
 
         public void SeekToStart()
@@ -166,20 +166,6 @@ namespace CPvC
         {
             Auditors?.Invoke(action);
         }
-
-        //private void IdleHandler(object sender, CoreIdleEventArgs args)
-        //{
-        //    if (args.Handled)
-        //    {
-        //        return;
-        //    }
-
-        //    args.Handled = true;
-
-        //    Stop();
-        //    //RequestStop();
-        //    args.Request = null;
-        //}
 
         protected override void OnPropertyChanged(string name)
         {

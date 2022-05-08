@@ -32,10 +32,9 @@ namespace CPvC
 
         public RemoteMachine(IRemote remote)
         {
-            Display.GetFromBookmark(null);
+            BlankScreen();
 
             _core.Create(Core.LatestVersion, Core.Type.CPC6128);
-            //_core.OnCoreAction += HandleCoreAction;
 
             Start();
 
@@ -123,7 +122,7 @@ namespace CPvC
             if (action.Type == CoreAction.Types.RevertToSnapshot)
             {
                 // Ensure to update the display.
-                Display.CopyScreenAsync();
+                BeginVSync();
             }
         }
         public byte[] GetState()

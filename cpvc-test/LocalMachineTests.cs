@@ -13,7 +13,6 @@ namespace CPvC.Test
     {
         private Mock<IFileSystem> _mockFileSystem;
         private Mock<MachineAuditorDelegate> _mockAuditor;
-        //private Mock<CoreEventHandler> _mockEventHanlder;
 
         private string _filename = "test.cpvc";
 
@@ -26,18 +25,6 @@ namespace CPvC.Test
             LocalMachine machine = LocalMachine.New("test", null);
             machine.AudioBuffer.OverrunThreshold = int.MaxValue;
             machine.Auditors += _mockAuditor.Object;
-
-            // For consistency with automated builds, use all zero ROMs.
-            //byte[] zeroROM = new byte[0x4000];
-            //machine.Core.SetLowerROM(zeroROM);
-            //machine.Core.SetUpperROM(0, zeroROM);
-            //machine.Core.SetUpperROM(7, zeroROM);
-            //
-            //machine.Core.OnIdle += (sender, args) =>
-            //{
-            //    args.Handled = true;
-            //    args.Request = (machine.RunningState == RunningState.Running) ? CoreRequest.RunUntil(machine.Core.Ticks + 10) : null;
-            //};
 
             return machine;
         }
@@ -59,8 +46,6 @@ namespace CPvC.Test
             _mockFileSystem.Setup(fs => fs.OpenTextFile(_filename)).Callback(() => _mockTextFile.SeekToStart()).Returns(_mockTextFile);
 
             _mockAuditor = new Mock<MachineAuditorDelegate>();
-
-            //_mockEventHanlder = new Mock<CoreEventHandler>();
 
             _machine = CreateMachine();
         }
@@ -309,11 +294,9 @@ namespace CPvC.Test
             using (LocalMachine machine = LocalMachine.OpenFromFile(mockFileSystem.Object, "test.cpvc"))
             {
                 machine.AudioBuffer.OverrunThreshold = int.MaxValue;
-                //RunForAWhile(machine);
 
                 CoreRequest request = machine.RunUntil(machine.Ticks + 1000);
                 machine.Start();
-                //machine.WaitForEmptyQueue();
                 request.Wait(10000);
                 machine.Stop();
                 machine.WaitForRequestedToMatchRunning();
@@ -858,13 +841,11 @@ namespace CPvC.Test
             // Setup
 
             // Run for long enough to generate one snapshot, so that we can enter reverse mode.
-            //RunForAWhile(_machine, 1000000, 60000);
             CoreRequest request = _machine.RunUntil(1000000);
             _machine.Start();
             request.Wait(10000);
             request = _machine.RunUntil(_machine.Ticks);
             request.Wait(1000);
-            CPvC.Diagnostics.Trace("After waiting, ticks = {0}", _machine.Ticks);
             _machine.WaitForRequestedToMatchRunning();
             _machine.Reverse();
             _machine.WaitForRequestedToMatchRunning();
@@ -921,11 +902,11 @@ namespace CPvC.Test
         }
 
         /// <summary>
-        /// Ensures that a newly-created machine has an IdleRequest handler. This is checked indirectly by
-        /// running a machine and ensuring the Ticks property increases.
+        /// Ensures that a newly-created machine will execute RunUntil requests if its internal request queue is empty.
+        /// This is checked indirectly by running a machine and ensuring the Ticks property increases.
         /// </summary>
         [Test]
-        public void NewMachineHasIdleHandler()
+        public void NewMachineRunsWithoutRequests()
         {
             // Setup
             using (LocalMachine machine = LocalMachine.New("test", null))
@@ -933,11 +914,12 @@ namespace CPvC.Test
                 machine.AudioBuffer.OverrunThreshold = int.MaxValue;
 
                 // Act
-                //RunForAWhile(machine);
                 machine.Start();
-                machine.WaitForRequestedToMatchRunning();
-                System.Threading.Thread.Sleep(1000);
-                machine.Stop();
+                while (machine.Ticks == 0)
+                {
+                    // Probably better to add an auditor and wait for a RunUntil.
+                    System.Threading.Thread.Sleep(10);
+                }
 
                 // Verify
                 Assert.Greater(machine.Ticks, 0);

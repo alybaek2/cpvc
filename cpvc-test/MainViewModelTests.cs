@@ -233,14 +233,6 @@ namespace CPvC.Test
             Assert.False(command.CanExecute(mockMachine));
         }
 
-        //static private Mock<MainViewModel.PromptForFileDelegate> SetupPrompt(FileTypes fileType, bool existing, string filepath)
-        //{
-        //    Mock<MainViewModel.PromptForFileDelegate> mockPrompt = new Mock<MainViewModel.PromptForFileDelegate>();
-        //    mockPrompt.Setup(x => x(fileType, existing)).Returns(filepath);
-
-        //    return mockPrompt;
-        //}
-
         [Test]
         public void OpenNull()
         {
@@ -470,13 +462,9 @@ namespace CPvC.Test
             request = _machine.Key(42, true);
 
             _machine.Start();
-            //_machine.WaitForRequestedToMatchRunning()
             request.Wait(10000);
             _machine.Stop();
             _machine.WaitForRequestedToMatchRunning();
-
-            //TestHelpers.Run(_machine, 1000);
-            //_machine.Key(42, true);
 
             HistoryEvent historyEvent1 = _machine.History.CurrentEvent;
 
@@ -487,8 +475,6 @@ namespace CPvC.Test
             _machine.Stop();
             _machine.WaitForRequestedToMatchRunning();
 
-            //TestHelpers.Run(_machine, 1000);
-            //_machine.Key(42, false);
             HistoryEvent historyEvent2 = _machine.History.CurrentEvent;
 
             viewModel.PromptForBookmark += (sender, args) =>

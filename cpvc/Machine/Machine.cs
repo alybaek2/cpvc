@@ -26,6 +26,8 @@ namespace CPvC
 
         public event PropertyChangedEventHandler PropertyChanged;
 
+        public event EventHandler DisplayUpdated;
+
         private readonly Queue<CoreRequest> _requests;
 
         private AudioBuffer _audioBuffer;
@@ -47,9 +49,6 @@ namespace CPvC
 
             _core = new Core(Core.LatestVersion, Core.Type.CPC6128);
 
-            Display = new Display();
-            Display.Core = _core;
-
             _requests = new Queue<CoreRequest>();
 
             _runningStateChanged = new AutoResetEvent(false);
@@ -59,6 +58,7 @@ namespace CPvC
             _machineThread = new Thread(MachineThread);
             _machineThread.Start();
         }
+
         public abstract string Name { get; set; }
 
         public UInt64 Ticks
@@ -158,20 +158,6 @@ namespace CPvC
         // This really should be an event, so multiple subscribers can be supported. Or is this already supprted? Test this!
         public MachineAuditorDelegate Auditors { get; set; }
 
-        public Display Display { get; protected set; }
-
-        /// <summary>
-        /// Delegate for VSync events.
-        /// </summary>
-        /// <param name="core">Core whose VSync signal went from low to high.</param>
-        //protected virtual void BeginVSync(Core core)
-        //{
-        //    Display.CopyScreenAsync();
-
-        //    OnPropertyChanged(nameof(Ticks));
-        //}
-
-
         public virtual int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
             if (_audioBuffer == null)
@@ -191,35 +177,6 @@ namespace CPvC
             _audioBuffer.Advance(samples);
         }
 
-        /// <summary>
-        /// Sets the core to the appropriate running state, given the <c>_running</c> and <c>_autoPauseCount</c> members.
-        /// </summary>
-        //protected void SetCoreRunning(bool request)
-        //{
-        //    if (_core == null)
-        //    {
-        //        return;
-        //    }
-
-        //    if (_autoPauseCount > 0 || _requestedState == RunningState.Paused)
-        //    {
-        //        if (request)
-        //        {
-        //            _core.RequestStop();
-        //        }
-        //        else
-        //        {
-        //            _core.Stop();
-        //        }
-        //    }
-        //    else
-        //    {
-        //        _core.Start();
-        //    }
-
-        //    OnPropertyChanged("RunningState");
-        //}
-
         public void Start()
         {
             SetRequestedState(RunningState.Running);
@@ -229,7 +186,6 @@ namespace CPvC
         public void RequestStop()
         {
             _requestedState = RunningState.Paused;
-            //SetCoreRunning(true);
             Stop();
         }
 
@@ -393,7 +349,7 @@ namespace CPvC
                     {
                         action = CoreAction.RevertToSnapshot(Ticks, request.SnapshotId);
 
-                        Display.CopyScreenAsync();
+                        DisplayUpdated?.Invoke(this, null);
 
                         OnPropertyChanged("Ticks");
                     }
@@ -459,7 +415,70 @@ namespace CPvC
 
         protected virtual void BeginVSync()
         {
-            Display.CopyScreenAsync();
+            DisplayUpdated?.Invoke(this, null);
+        }
+
+        public void GetScreen(IntPtr buffer, UInt64 size)
+        {
+            _core?.GetScreen(buffer, size);
+        }
+
+        public byte[] GetScreen()
+        {
+            return _core?.GetScreen();
+        }
+
+        public void SetScreen(byte[] screen)
+        {
+            _core?.SetScreen(screen);
+            RaiseDisplayUpdated();
+        }
+
+        protected void GreyscaleScreen()
+        {
+            byte[] screen = GetScreen();
+            if (screen == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < screen.Length; i++)
+            {
+                screen[i] |= 0x20;
+            }
+
+            SetScreen(screen);
+
+            DisplayUpdated?.Invoke(this, null);
+        }
+
+        protected void ColourScreen()
+        {
+            byte[] screen = GetScreen();
+            if (screen == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < screen.Length; i++)
+            {
+                screen[i] &= 0x1f;
+            }
+
+            SetScreen(screen);
+
+            DisplayUpdated?.Invoke(this, null);
+        }
+
+        protected void RaiseDisplayUpdated()
+        {
+            DisplayUpdated?.Invoke(this, null);
+        }
+
+        protected void BlankScreen()
+        {
+            byte[] screen = new byte[Display.Pitch * Display.Height];
+            SetScreen(screen);
         }
 
         protected virtual CoreRequest GetNextRequest(int timeout)

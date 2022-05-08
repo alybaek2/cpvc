@@ -2,8 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace CPvC.UI.Forms
 {
@@ -19,6 +23,9 @@ namespace CPvC.UI.Forms
         private readonly ISettings _settings;
 
         private readonly MainViewModel _mainViewModel;
+
+        private readonly ConditionalWeakTable<Machine, WriteableBitmap> _bitmaps;
+        static private Int32Rect _drawRect = new Int32Rect(0, 0, Display.Width, Display.Height);
 
         private IWavePlayer _wavePlayer;
 
@@ -52,6 +59,9 @@ namespace CPvC.UI.Forms
                 DeviceNumber = -1,
                 DesiredLatency = 70
             };
+
+            // Create a bitmap table
+            _bitmaps = new ConditionalWeakTable<Machine, WriteableBitmap>();
 
             waveOut.Init(_audio);
             _wavePlayer = waveOut;
@@ -510,6 +520,82 @@ namespace CPvC.UI.Forms
             _mainViewModel.PersistCommand.InvokeCanExecuteChanged(sender, args);
             _mainViewModel.RemoveCommand.InvokeCanExecuteChanged(sender, args);
             _mainViewModel.CompactCommand.InvokeCanExecuteChanged(sender, args);
+        }
+
+        private void Image_Loaded(object sender, RoutedEventArgs e)
+        {
+            Image image = (Image)sender;
+            Machine machine = (Machine)image.DataContext;
+
+            UpdateImage(image, machine);
+        }
+
+        private void UpdateImage(Image image, Machine machine)
+        {
+            if (!_bitmaps.TryGetValue(machine, out WriteableBitmap bitmap))
+            {
+                bitmap = new WriteableBitmap(768, 288, 0, 0, PixelFormats.Indexed8, Display.Palette);
+                _bitmaps.Add(machine, bitmap);
+            }
+
+            image.Source = bitmap;
+            CopyScreenAsync(machine, bitmap, false);
+
+            machine.DisplayUpdated += Display_Updated;
+
+        }
+
+        private void Display_Updated(object sender, EventArgs e)
+        {
+            Machine machine = (Machine)sender;
+
+            if (_bitmaps.TryGetValue(machine, out WriteableBitmap bitmap))
+            {
+                // Setting this to wait is probably a bit much... should probably allow whoever fires this event
+                // to specify a parameter in the Args to specify whether to wait or not.
+                CopyScreenAsync(machine, bitmap, true);
+            }
+        }
+
+        private void Preview_Image_Loaded(object sender, RoutedEventArgs e)
+        {
+            Image image = (Image)sender;
+            Machine machine = (Machine)image.DataContext;
+
+            UpdateImage(image, machine);
+        }
+
+        public void CopyScreenAsync(Machine machine, WriteableBitmap bitmap, bool wait)
+        {
+            Action action = new Action(() => CopyScreen(machine, bitmap));
+            if (wait)
+            {
+                bitmap.Dispatcher.Invoke(action, null);
+            }
+            else
+            {
+                bitmap.Dispatcher.BeginInvoke(action, null);
+            }
+        }
+
+        static public void CopyScreen(Machine machine, WriteableBitmap bitmap)
+        {
+            bitmap.Lock();
+
+            machine.GetScreen(bitmap.BackBuffer, (UInt64)(bitmap.BackBufferStride * bitmap.PixelHeight));
+            bitmap.AddDirtyRect(_drawRect);
+
+            bitmap.Unlock();
+        }
+
+        static public void CopyScreen(byte[] screen, WriteableBitmap bitmap)
+        {
+            bitmap.Lock();
+
+            bitmap.WritePixels(_drawRect, screen, Display.Pitch, 0);
+            bitmap.AddDirtyRect(_drawRect);
+
+            bitmap.Unlock();
         }
     }
 }

@@ -17,14 +17,15 @@ namespace CPvC.Test
         public void Setup()
         {
             _bookmarkTicks = new List<UInt64>();
-            LocalMachineTests machineTests = new LocalMachineTests();
-            machineTests.Setup();
-            using (LocalMachine machine = machineTests.CreateMachine())
+            using (LocalMachine machine = LocalMachine.New("test", null))
             {
+                machine.AudioBuffer.OverrunThreshold = int.MaxValue;
+
                 machine.Key(Keys.A, true);
                 machine.Key(Keys.A, false);
                 machine.LoadDisc(0, null);
-                CoreRequest request = machine.LoadTape(null);
+                machine.LoadTape(null);
+                CoreRequest request = machine.RunUntil(machine.Ticks + 1000);
 
                 machine.Start();
                 request.Wait(10000);
@@ -43,20 +44,22 @@ namespace CPvC.Test
                 machine.AddBookmark(false);
                 _bookmarkTicks.Add(machine.Ticks);
 
-                request = machine.RunUntil(machine.Ticks + 4000000);
-                machine.Start();
-                request.Wait(10000);
-                machine.Stop();
-                machine.WaitForRequestedToMatchRunning();
+                History history = machine.History;
+                history.AddCoreAction(CoreAction.RunUntil(machine.Ticks, 10003016, null));
 
-                _finalHistoryEvent = machine.History.CurrentEvent;
+                _finalHistoryEvent = history.CurrentEvent;
             }
+        }
+
+        [TearDown]
+        public void Teardown()
+        {
         }
 
         private ReplayMachine CreateMachine()
         {
             ReplayMachine replayMachine = new ReplayMachine(_finalHistoryEvent);
-            replayMachine.AudioBuffer.OverrunThreshold = int.MaxValue;
+            //replayMachine.AudioBuffer.OverrunThreshold = int.MaxValue;
 
             return replayMachine;
         }
@@ -198,8 +201,11 @@ namespace CPvC.Test
         [Test]
         public void StartAtEnd()
         {
+            CPvC.Diagnostics.Trace("StartAtEnd START");
+
             // Setup
             ReplayMachine machine = CreateMachine();
+
             machine.SeekToNextBookmark();
             machine.SeekToNextBookmark();
 
@@ -256,24 +262,6 @@ namespace CPvC.Test
             Assert.AreEqual(0, machine.Ticks);
         }
 
-        //[TestCase(RunningState.Paused)]
-        //[TestCase(RunningState.Running)]
-        //public void SetRunning(RunningState runningState)
-        //{
-        //    // Setup
-        //    ReplayMachine machine = CreateMachine();
-        //    if (runningState == RunningState.Running)
-        //    {
-        //        machine.Start();
-        //    }
-
-        //    // Act
-        //    machine.SeekToNextBookmark();
-
-        //    // Verify
-        //    Assert.AreEqual(runningState, machine.RunningState);
-        //}
-
         /// <summary>
         /// Tests that the machine doesn't throw an exception when there are no PropertyChanged
         /// handlers registered and a property is changed.
@@ -309,18 +297,26 @@ namespace CPvC.Test
         {
             // Setup
             ReplayMachine replayMachine = CreateMachine();
-            Mock<MachineAuditorDelegate> auditor = new Mock<MachineAuditorDelegate>();
-            replayMachine.Auditors += auditor.Object;
+
+            List<CoreAction> actions = new List<CoreAction>();
+            replayMachine.Auditors += (action) =>
+            {
+                actions.Add(action);
+            };
 
             // Act
             replayMachine.Start();
             replayMachine.WaitForRequestedToMatchRunning();
-            Thread.Sleep(1000);
+            while (replayMachine.Ticks < 3000)
+            {
+                // Probably better to add an auditor and wait for a RunUntil.
+                System.Threading.Thread.Sleep(10);
+            }
             replayMachine.Stop();
             replayMachine.WaitForRequestedToMatchRunning();
 
             // Verify
-            auditor.Verify(a => a(It.Is<CoreAction>(coreAction => coreAction != null && coreAction.Type == CoreRequest.Types.RunUntil)), Times.AtLeastOnce());
+            Assert.NotZero(actions.Count);
         }
     }
 }

@@ -86,9 +86,19 @@ namespace CPvC
             _coreCLR.SetScreen(Display.Pitch, Display.Height, Display.Width);
         }
 
-        public void CopyScreen(IntPtr screenBuffer, UInt64 size)
+        public void SetScreen(byte[] screen)
         {
-            _coreCLR?.CopyScreen(screenBuffer, size);
+            _coreCLR?.SetScreen(screen);
+        }
+
+        public void GetScreen(IntPtr screenBuffer, UInt64 size)
+        {
+            _coreCLR?.GetScreen(screenBuffer, size);
+        }
+
+        public byte[] GetScreen()
+        {
+            return _coreCLR?.GetScreen();
         }
 
         /// <summary>

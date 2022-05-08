@@ -435,7 +435,7 @@ namespace CPvC.Test
             using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
             {
                 // Act and Verify
-                Assert.DoesNotThrow(() => core.CopyScreen(IntPtr.Zero, 0));
+                Assert.DoesNotThrow(() => core.GetScreen(IntPtr.Zero, 0));
             }
         }
 
@@ -449,7 +449,7 @@ namespace CPvC.Test
                 IntPtr buffer = Marshal.AllocHGlobal(100);
 
                 // Act and Verify
-                Assert.DoesNotThrow(() => core.CopyScreen(buffer, 100));
+                Assert.DoesNotThrow(() => core.GetScreen(buffer, 100));
                 Marshal.FreeHGlobal(buffer);
             }
         }

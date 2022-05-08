@@ -390,10 +390,19 @@ namespace CPvC.Test
             machine.LoadTape(null);
             machine.RunUntil(machine.Ticks + 1000);
             machine.AddBookmark(false);
-            machine.RunUntil(machine.Ticks + 1000);
-            machine.AddBookmark(false);
             CoreRequest request = machine.RunUntil(machine.Ticks + 1000);
+            machine.Start();
             request.Wait(2000);
+
+            machine.Stop();
+            machine.WaitForRequestedToMatchRunning();
+            machine.AddBookmark(false);
+            request = machine.RunUntil(machine.Ticks + 1000);
+            machine.Start();
+            request.Wait(2000);
+
+            machine.Stop();
+            machine.WaitForRequestedToMatchRunning();
 
             return machine;
         }

@@ -182,6 +182,8 @@ namespace CPvC
                 }
             }
 
+            GreyscaleScreen();
+
             if (_core != null)
             {
                 _core.Close();
@@ -196,8 +198,6 @@ namespace CPvC
             _history = new History();
 
             Status = null;
-
-            Display.EnableGreyscale(true);
 
             base.Close();
 
@@ -557,23 +557,12 @@ namespace CPvC
         {
             using (AutoPause())
             {
-                byte[] screen = Display.GetBitmapBytes();
+                byte[] screen = _core.GetScreen();
                 byte[] core = _core.GetState();
 
                 return new Bookmark(system, _core.Version, core, screen);
             }
         }
-
-        //public void IdleHandler(object sender, CoreIdleEventArgs args)
-        //{
-        //    if (args.Handled)
-        //    {
-        //        return;
-        //    }
-
-        //    args.Handled = true;
-        //    args.Request = (RunningState == RunningState.Running) ? CoreRequest.RunUntil(Ticks + 1000) : null;
-        //}
 
         public bool DeleteBookmark(HistoryEvent e)
         {
@@ -584,7 +573,7 @@ namespace CPvC
         {
             _core.CreateFromBookmark(Core.LatestVersion, bookmarkHistoryEvent.Bookmark.State.GetBytes());
 
-            Display.GetFromBookmark(bookmarkHistoryEvent.Bookmark);
+            SetScreen(bookmarkHistoryEvent.Bookmark.Screen.GetBytes());
 
             Auditors?.Invoke(CoreAction.LoadCore(bookmarkHistoryEvent.Ticks, bookmarkHistoryEvent.Bookmark.State));
 
@@ -595,7 +584,7 @@ namespace CPvC
         {
             _core.Create(Core.LatestVersion, Core.Type.CPC6128);
 
-            Display.GetFromBookmark(null);
+            BlankScreen();
 
             Auditors?.Invoke(CoreAction.Reset(_history.RootEvent.Ticks));
 
@@ -690,11 +679,9 @@ namespace CPvC
 
             if (_machineThread == null)
             {
-                _machineThread = new System.Threading.Thread(MachineThread); // () => MachineThread());
+                _machineThread = new System.Threading.Thread(MachineThread);
                 _machineThread.Start();
             }
-
-            Display.Core = _core;
 
             ITextFile textFile = null;
 
@@ -719,8 +706,7 @@ namespace CPvC
                     SetCurrentToRoot();
                 }
 
-                // Should probably be monitoring the IsOpen property, I think...
-                Display.EnableGreyscale(false);
+                ColourScreen();
             }
             catch (Exception ex)
             {
@@ -748,8 +734,8 @@ namespace CPvC
             HistoryEvent historyEvent = machine.History.CurrentEvent.MostRecent<BookmarkHistoryEvent>();
             machine.IsOpen = false;
 
-            machine.Display.GetFromBookmark((historyEvent as BookmarkHistoryEvent)?.Bookmark);
-            machine.Display.EnableGreyscale(true);
+            machine.SetScreen((historyEvent as BookmarkHistoryEvent)?.Bookmark.Screen.GetBytes());
+            machine.GreyscaleScreen();
 
             return machine;
         }
@@ -759,7 +745,6 @@ namespace CPvC
             get
             {
                 return _isOpen;
-                //return (PersistantFilepath == null || File != null) && (_core != null);
             }
 
             private set
@@ -787,7 +772,6 @@ namespace CPvC
                 {
                     _filepath = value;
                     OnPropertyChanged();
-                    //OnPropertyChanged(nameof(IsOpen));
                 }
             }
         }
