@@ -98,6 +98,20 @@ jobs:
     - name: Run unit tests
       run: ".\\NUnit.ConsoleRunner.3.11.1\\tools\\nunit3-console.exe bin\\cpvc-test.dll --result cpvc-test.xml"
 
+    - name: Annotate job with results
+      uses: EnricoMi/publish-unit-test-result-action/composite@v1
+      if: always()
+      with:
+        files: cpvc-test.xml
+ 
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: NUnit Tests
+        path: cpvc-test.xml
+        reporter: jest-junit
+ 
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       if: always()
