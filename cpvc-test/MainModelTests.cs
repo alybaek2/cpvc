@@ -90,10 +90,11 @@ namespace CPvC.Test
             _mainModel.AddMachine("test.cpvc", _mockFileSystem.Object, true);
 
             // Act
-            LocalMachine machine = _mainModel.AddMachine("test.cpvc", _mockFileSystem.Object, true);
-
-            // Verify
-            Assert.IsNull(machine);
+            using (LocalMachine machine = _mainModel.AddMachine("test.cpvc", _mockFileSystem.Object, true))
+            {
+                // Verify
+                Assert.IsNull(machine);
+            }
         }
     }
 }

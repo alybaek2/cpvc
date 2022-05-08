@@ -58,6 +58,9 @@ namespace CPvC.Test
         [TearDown]
         public void Teardown()
         {
+            _machine.Dispose();
+            _machine = null;
+
             _mockSettings = null;
             _mockFileSystem = null;
 
@@ -867,22 +870,26 @@ namespace CPvC.Test
         public void CanCompactClosedMachine()
         {
             // Setup
-            LocalMachine machine = LocalMachine.New("Test", "test.cpvc");
-            machine.Close();
+            using (LocalMachine machine = LocalMachine.New("Test", "test.cpvc"))
+            {
+                machine.Close();
 
-            // Verify
-            Assert.True(_mainViewModel.CompactCommand.CanExecute(machine));
+                // Verify
+                Assert.True(_mainViewModel.CompactCommand.CanExecute(machine));
+            }
         }
 
         [Test]
         public void CanCompactOpenMachine()
         {
             // Setup
-            LocalMachine machine = LocalMachine.New("Test", "test.cpvc");
-            machine.OpenFromFile(_mockFileSystem.Object);
+            using (LocalMachine machine = LocalMachine.New("Test", "test.cpvc"))
+            {
+                machine.OpenFromFile(_mockFileSystem.Object);
 
-            // Verify
-            Assert.False(_mainViewModel.CompactCommand.CanExecute(machine));
+                // Verify
+                Assert.False(_mainViewModel.CompactCommand.CanExecute(machine));
+            }
         }
 
         [Test]
@@ -1297,19 +1304,21 @@ namespace CPvC.Test
             // Setup
             MainViewModel viewModel = SetupViewModel(1);
             Mock<IRemote> mockRemote = new Mock<IRemote>();
-            RemoteMachine machine = new RemoteMachine(mockRemote.Object);
-            viewModel.SelectRemoteMachine += (sender, e) =>
+            using (RemoteMachine machine = new RemoteMachine(mockRemote.Object))
             {
-                e.SelectedMachine = machine;
-                viewModel.RecentServers.Add(new ServerInfo("localhost", 6128));
-            };
+                viewModel.SelectRemoteMachine += (sender, e) =>
+                {
+                    e.SelectedMachine = machine;
+                    viewModel.RecentServers.Add(new ServerInfo("localhost", 6128));
+                };
 
-            // Act
-            viewModel.ConnectCommand.Execute(null);
+                // Act
+                viewModel.ConnectCommand.Execute(null);
 
-            // Verify
-            Assert.AreEqual(machine, viewModel.ActiveMachine);
-            _mockSettings.VerifySet(s => s.RemoteServers = "localhost:6128");
+                // Verify
+                Assert.AreEqual(machine, viewModel.ActiveMachine);
+                _mockSettings.VerifySet(s => s.RemoteServers = "localhost:6128");
+            }
         }
 
         [Test]
@@ -1318,15 +1327,17 @@ namespace CPvC.Test
             // Setup
             MainViewModel viewModel = SetupViewModel(1);
             Mock<IRemote> mockRemote = new Mock<IRemote>();
-            RemoteMachine machine = new RemoteMachine(mockRemote.Object);
-            viewModel.SelectRemoteMachine += (sender, e) => { e.SelectedMachine = machine; };
+            using (RemoteMachine machine = new RemoteMachine(mockRemote.Object))
+            {
+                viewModel.SelectRemoteMachine += (sender, e) => { e.SelectedMachine = machine; };
 
-            // Act
-            viewModel.ConnectCommand.Execute(null);
+                // Act
+                viewModel.ConnectCommand.Execute(null);
 
-            // Verify
-            Assert.AreEqual(machine, viewModel.ActiveMachine);
-            _mockSettings.VerifySet(s => s.RemoteServers = "");
+                // Verify
+                Assert.AreEqual(machine, viewModel.ActiveMachine);
+                _mockSettings.VerifySet(s => s.RemoteServers = "");
+            }
         }
 
         [Test]

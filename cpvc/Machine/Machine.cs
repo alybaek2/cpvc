@@ -430,6 +430,11 @@ namespace CPvC
 
         public void SetScreen(byte[] screen)
         {
+            if (screen == null)
+            {
+                return;
+            }
+
             _core?.SetScreen(screen);
             RaiseDisplayUpdated();
         }

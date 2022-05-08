@@ -149,15 +149,17 @@ namespace CPvC.Test
         public void WriteAndReadName()
         {
             // Setup
-            LocalMachine machine = LocalMachine.New(String.Empty, null);
-            _file.Machine = machine;
+            using (LocalMachine machine = LocalMachine.New(String.Empty, null))
+            {
+                _file.Machine = machine;
 
-            // Act
-            machine.Name = "Test";
-            _fileInfo = MachineFile.Read(_mockFile);
+                // Act
+                machine.Name = "Test";
+                _fileInfo = MachineFile.Read(_mockFile);
 
-            // Verify
-            Assert.AreEqual(machine.Name, _fileInfo.Name);
+                // Verify
+                Assert.AreEqual(machine.Name, _fileInfo.Name);
+            }
         }
 
         [Test]
@@ -194,25 +196,27 @@ namespace CPvC.Test
         public void MachineUnsubscribe()
         {
             // Setup
-            LocalMachine machine1 = LocalMachine.New(null, null);
-            LocalMachine machine2 = LocalMachine.New(null, null);
-            _file.Machine = machine1;
-            _file.Machine = machine2;
+            using (LocalMachine machine1 = LocalMachine.New(null, null))
+            using (LocalMachine machine2 = LocalMachine.New(null, null))
+            {
+                _file.Machine = machine1;
+                _file.Machine = machine2;
 
-            // Act
-            machine1.Name = "Test1";
-            int len1 = _mockFile.LineCount();
-            machine2.Name = "Test2";
-            int len2 = _mockFile.LineCount();
-            _file.Machine = null;
-            machine1.Name = "Test3";
-            machine2.Name = "Test4";
-            int len3 = _mockFile.LineCount();
+                // Act
+                machine1.Name = "Test1";
+                int len1 = _mockFile.LineCount();
+                machine2.Name = "Test2";
+                int len2 = _mockFile.LineCount();
+                _file.Machine = null;
+                machine1.Name = "Test3";
+                machine2.Name = "Test4";
+                int len3 = _mockFile.LineCount();
 
-            // Verify
-            Assert.Zero(len1);
-            Assert.NotZero(len2);
-            Assert.AreEqual(len2, len3);
+                // Verify
+                Assert.Zero(len1);
+                Assert.NotZero(len2);
+                Assert.AreEqual(len2, len3);
+            }
         }
 
         [Test]

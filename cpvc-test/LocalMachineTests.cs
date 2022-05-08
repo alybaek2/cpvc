@@ -938,55 +938,61 @@ namespace CPvC.Test
         {
             // Setup
             string tmpFilename = String.Format("{0}.tmp", _filename);
-            LocalMachine machine = LocalMachine.OpenFromFile(_mockFileSystem.Object, _filename);
-            machine.Close();
-
-            MockTextFile mockNewTextFile = new MockTextFile();
-            _mockFileSystem.Setup(fs => fs.OpenTextFile(tmpFilename)).Returns(mockNewTextFile);
-
-            // Act
-            machine.Compact(_mockFileSystem.Object);
-
-            // Verify
-            int keyLineCount = 0;
-            string line;
-            while ((line = mockNewTextFile.ReadLine()) != null)
+            using (LocalMachine machine = LocalMachine.OpenFromFile(_mockFileSystem.Object, _filename))
             {
-                if (line.StartsWith("key:"))
-                {
-                    keyLineCount++;
-                }
-            }
+                machine.Close();
 
-            Assert.AreEqual(1, keyLineCount);
-            _mockFileSystem.Verify(fs => fs.ReplaceFile(_filename, tmpFilename), Times.Once());
+                MockTextFile mockNewTextFile = new MockTextFile();
+                _mockFileSystem.Setup(fs => fs.OpenTextFile(tmpFilename)).Returns(mockNewTextFile);
+
+                // Act
+                machine.Compact(_mockFileSystem.Object);
+
+                // Verify
+                int keyLineCount = 0;
+                string line;
+                while ((line = mockNewTextFile.ReadLine()) != null)
+                {
+                    if (line.StartsWith("key:"))
+                    {
+                        keyLineCount++;
+                    }
+                }
+
+                Assert.AreEqual(1, keyLineCount);
+                _mockFileSystem.Verify(fs => fs.ReplaceFile(_filename, tmpFilename), Times.Once());
+            }
         }
 
         [Test]
         public void SnapshotLimitPropertyChanged()
         {
             // Setup
-            LocalMachine machine = LocalMachine.OpenFromFile(_mockFileSystem.Object, _filename);
-            Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
-            machine.PropertyChanged += propChanged.Object;
+            using (LocalMachine machine = LocalMachine.OpenFromFile(_mockFileSystem.Object, _filename))
+            {
+                Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
+                machine.PropertyChanged += propChanged.Object;
 
-            // Act - note that setting the property to itself should not trigger the "property changed" event.
-            machine.SnapshotLimit = machine.SnapshotLimit;
-            machine.SnapshotLimit = machine.SnapshotLimit + 42;
+                // Act - note that setting the property to itself should not trigger the "property changed" event.
+                machine.SnapshotLimit = machine.SnapshotLimit;
+                machine.SnapshotLimit = machine.SnapshotLimit + 42;
 
-            // Verify
-            propChanged.Verify(p => p(machine, It.Is<PropertyChangedEventArgs>(e => e.PropertyName == nameof(machine.SnapshotLimit))), Times.Once());
+                // Verify
+                propChanged.Verify(p => p(machine, It.Is<PropertyChangedEventArgs>(e => e.PropertyName == nameof(machine.SnapshotLimit))), Times.Once());
+            }
         }
 
         [Test]
         public void NoPropertyChangedHandlers()
         {
             // Setup
-            LocalMachine machine = LocalMachine.New("Test", null);
-            machine.AudioBuffer.OverrunThreshold = int.MaxValue;
+            using (LocalMachine machine = LocalMachine.New("Test", null))
+            {
+                machine.AudioBuffer.OverrunThreshold = int.MaxValue;
 
-            // Act and Verify
-            Assert.DoesNotThrow(() => machine.SnapshotLimit = machine.SnapshotLimit + 42);
+                // Act and Verify
+                Assert.DoesNotThrow(() => machine.SnapshotLimit = machine.SnapshotLimit + 42);
+            }
         }
 
         [Test]
@@ -1081,21 +1087,24 @@ namespace CPvC.Test
         public void PersistAlreadyPersistedMachine()
         {
             // Setup
-            LocalMachine machine = LocalMachine.OpenFromFile(_mockFileSystem.Object, _filename);
-
-            // Act and Verify
-            Assert.Throws<InvalidOperationException>(() => machine.Persist(_mockFileSystem.Object, _filename));
+            using (LocalMachine machine = LocalMachine.OpenFromFile(_mockFileSystem.Object, _filename))
+            {
+                // Act and Verify
+                Assert.Throws<InvalidOperationException>(() => machine.Persist(_mockFileSystem.Object, _filename));
+            }
         }
 
         [Test]
         public void PersistToEmptyFilename()
         {
             // Setup
-            LocalMachine machine = LocalMachine.New("Test", null);
-            machine.AudioBuffer.OverrunThreshold = int.MaxValue;
+            using (LocalMachine machine = LocalMachine.New("Test", null))
+            {
+                machine.AudioBuffer.OverrunThreshold = int.MaxValue;
 
-            // Act and Verify
-            Assert.Throws<ArgumentException>(() => machine.Persist(_mockFileSystem.Object, ""));
+                // Act and Verify
+                Assert.Throws<ArgumentException>(() => machine.Persist(_mockFileSystem.Object, ""));
+            }
         }
 
         //[Test]
@@ -1126,44 +1135,48 @@ namespace CPvC.Test
         public void SnapshotLimitZero()
         {
             // Setup
-            LocalMachine machine = LocalMachine.New("Test", null);
-            machine.AudioBuffer.OverrunThreshold = int.MaxValue;
-            int deleteSnapshotCount = 0;
-            int createSnapshotCount = 0;
-            machine.SnapshotLimit = 0;
-            machine.Auditors += (a) =>
+            using (LocalMachine machine = LocalMachine.New("Test", null))
             {
-                switch (a.Type)
+                machine.AudioBuffer.OverrunThreshold = int.MaxValue;
+                int deleteSnapshotCount = 0;
+                int createSnapshotCount = 0;
+                machine.SnapshotLimit = 0;
+                machine.Auditors += (a) =>
                 {
-                    case CoreRequest.Types.CreateSnapshot:
-                        createSnapshotCount++;
-                        break;
-                    case CoreRequest.Types.DeleteSnapshot:
-                        deleteSnapshotCount++;
-                        break;
-                }
-            };
+                    switch (a.Type)
+                    {
+                        case CoreRequest.Types.CreateSnapshot:
+                            createSnapshotCount++;
+                            break;
+                        case CoreRequest.Types.DeleteSnapshot:
+                            deleteSnapshotCount++;
+                            break;
+                    }
+                };
 
-            // Act
-            TestHelpers.Run(machine, 400000);
+                // Act
+                TestHelpers.Run(machine, 400000);
 
-            // Verify
-            Assert.Zero(createSnapshotCount);
-            Assert.Zero(deleteSnapshotCount);
+                // Verify
+                Assert.Zero(createSnapshotCount);
+                Assert.Zero(deleteSnapshotCount);
+            }
         }
 
         [Test]
         public void RunAfterClose()
         {
             // Setup
-            LocalMachine machine = LocalMachine.New("Test", null);
-            machine.Close();
+            using (LocalMachine machine = LocalMachine.New("Test", null))
+            {
+                machine.Close();
 
-            // Act
-            machine.Start();
+                // Act
+                machine.Start();
 
-            // Verify
-            Assert.False(machine.IsOpen);
+                // Verify
+                Assert.False(machine.IsOpen);
+            }
         }
     }
 }

@@ -83,6 +83,7 @@ namespace CPvC.Test
             Assert.AreEqual(RunningState.Paused, runningState1);
             Assert.AreEqual(RunningState.Running, runningState2);
             Assert.AreEqual(RunningState.Paused, runningState3);
+            replayMachine.Close();
         }
 
         [Test]
@@ -94,6 +95,7 @@ namespace CPvC.Test
             // Verify
             Assert.True(replayMachine.CanStart);
             Assert.False(replayMachine.CanStop);
+            replayMachine.Close();
         }
 
         [Test]
@@ -109,6 +111,7 @@ namespace CPvC.Test
             // Verify
             Assert.False(replayMachine.CanStart);
             Assert.True(replayMachine.CanStop);
+            replayMachine.Close();
         }
 
         [Test]
@@ -119,6 +122,7 @@ namespace CPvC.Test
 
             // Verify
             Assert.AreEqual(_finalHistoryEvent.Ticks, replayMachine.EndTicks);
+            replayMachine.Close();
         }
 
         [Test]
@@ -141,6 +145,7 @@ namespace CPvC.Test
             Assert.AreEqual(RunningState.Running, runningState1);
             Assert.AreEqual(RunningState.Paused, runningState2);
             Assert.AreEqual(RunningState.Running, machine.RunningState);
+            machine.Close();
         }
 
         [Test]
@@ -154,6 +159,7 @@ namespace CPvC.Test
 
             // Verify
             Assert.AreEqual("Test", machine.Name);
+            machine.Close();
         }
 
         [Test]
@@ -164,6 +170,7 @@ namespace CPvC.Test
 
             // Verify
             Assert.True(machine.CanClose);
+            machine.Close();
         }
 
         [Test]
@@ -196,13 +203,12 @@ namespace CPvC.Test
 
             // Verify
             Assert.AreEqual(0, machine.Ticks);
+            machine.Close();
         }
 
         [Test]
         public void StartAtEnd()
         {
-            CPvC.Diagnostics.Trace("StartAtEnd START");
-
             // Setup
             ReplayMachine machine = CreateMachine();
 
@@ -231,6 +237,7 @@ namespace CPvC.Test
             auditor.VerifyNoOtherCalls();
             Assert.AreEqual(RunningState.Paused, machine.RunningState);
             Assert.AreEqual(machine.EndTicks, machine.Ticks);
+            machine.Close();
         }
 
         [Test]
@@ -260,6 +267,7 @@ namespace CPvC.Test
             Assert.AreEqual(0, machine.Ticks);
             machine.SeekToPreviousBookmark();
             Assert.AreEqual(0, machine.Ticks);
+            machine.Close();
         }
 
         /// <summary>
@@ -274,6 +282,7 @@ namespace CPvC.Test
 
             // Act and Verify
             Assert.DoesNotThrow(() => machine.Status = "Status");
+            machine.Close();
         }
 
         [Test]
@@ -290,6 +299,7 @@ namespace CPvC.Test
 
             // Verify
             propChanged.Verify(p => p(machine, It.Is<PropertyChangedEventArgs>(e => e.PropertyName == "Status")));
+            machine.Close();
         }
 
         [Test]
@@ -317,6 +327,8 @@ namespace CPvC.Test
 
             // Verify
             Assert.NotZero(actions.Count);
+
+            replayMachine.Close();
         }
     }
 }
