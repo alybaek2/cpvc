@@ -547,6 +547,8 @@ namespace CPvC
                 }
             }
 
+            RunningState = RunningState.Paused;
+
             _quitThread = false;
         }
 

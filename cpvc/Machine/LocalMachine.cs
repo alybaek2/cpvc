@@ -287,6 +287,8 @@ namespace CPvC
 
                     SnapshotInfo newSnapshot = new SnapshotInfo(snapshotId, historyEvent);
                     _snapshots.Add(newSnapshot);
+
+                    _core.CreateSnapshotSync(snapshotId);
                     
                     CoreAction action = CoreAction.CreateSnapshot(Ticks, snapshotId);
                     Auditors?.Invoke(action);
