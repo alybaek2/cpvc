@@ -95,23 +95,27 @@ jobs:
     - name: Install NUnit
       run: nuget install NUnit.ConsoleRunner -Version 3.11.1
 
+    - name: Fetch transform code
+      run: |
+        curl https://raw.githubusercontent.com/nunit/nunit-transforms/master/nunit3-junit/nunit3-junit.xslt --output nunit3-junit.xslt
+
     - name: Run unit tests
-      run: ".\\NUnit.ConsoleRunner.3.11.1\\tools\\nunit3-console.exe bin\\cpvc-test.dll --result cpvc-test.xml"
+      run: .\\NUnit.ConsoleRunner.3.11.1\\tools\\nunit3-console.exe bin\\cpvc-test.dll --result cpvc-test.xml --result "cpvc-test-junit.xml;transform=nunit3-junit.xslt"
 
     - name: Annotate job with results
       uses: EnricoMi/publish-unit-test-result-action/composite@v1
       if: always()
       with:
-        files: cpvc-test.xml
+        files: cpvc-test-junit.xml
  
     - name: Test Report
       uses: dorny/test-reporter@v1
       if: always()
       with:
         name: NUnit Tests
-        path: cpvc-test.xml
+        path: cpvc-test-junit.xml
         reporter: jest-junit
- 
+
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       if: always()
