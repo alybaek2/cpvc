@@ -334,10 +334,10 @@ namespace CPvC.Test
 
             // Verify
             LocalMachine machine = viewModel.Machines[0] as LocalMachine;
-            machine.WaitForRequestedToMatchRunning();
+            Wait(machine);
             Assert.AreEqual(1, viewModel.Machines.Count);
             Assert.AreEqual(viewModel.Machines[0], viewModel.ActiveMachine);
-            Assert.AreEqual(RunningState.Running, viewModel.Machines[0].RunningState);
+            Assert.AreEqual(RunningState.Running, viewModel.Machines[0].ActualRunningState);
         }
 
 
@@ -467,7 +467,7 @@ namespace CPvC.Test
             _machine.Start();
             request.Wait(10000);
             _machine.Stop();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
 
             HistoryEvent historyEvent1 = _machine.History.CurrentEvent;
 
@@ -476,7 +476,7 @@ namespace CPvC.Test
             _machine.Start();
             request.Wait(10000);
             _machine.Stop();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
 
             HistoryEvent historyEvent2 = _machine.History.CurrentEvent;
 

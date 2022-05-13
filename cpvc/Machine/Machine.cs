@@ -21,7 +21,9 @@ namespace CPvC
         protected RunningState _runningState;
         protected RunningState _requestedState;
         private AutoResetEvent _runningStateChanged;
-
+        private AutoResetEvent _requestedStateChanged;
+        private AutoResetEvent _autoPausedChanged;
+        
         protected int _autoPauseCount;
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -52,6 +54,8 @@ namespace CPvC
             _requests = new Queue<CoreRequest>();
 
             _runningStateChanged = new AutoResetEvent(false);
+            _requestedStateChanged = new AutoResetEvent(false);
+            _autoPausedChanged = new AutoResetEvent(false);
 
             _audioBuffer = new AudioBuffer(48000);
 
@@ -77,7 +81,7 @@ namespace CPvC
             }
         }
 
-        public RunningState RunningState
+        public RunningState ActualRunningState
         {
             get
             {
@@ -98,16 +102,20 @@ namespace CPvC
             }
         }
 
-        public RunningState RequestedState
+        public RunningState ExpectedRunningState
         {
             get
             {
-                if (_autoPauseCount > 0 || _requestedState == RunningState.Paused)
-                {
-                    return RunningState.Paused;
-                }
+                return _autoPauseCount > 0 ? RunningState.Paused : _requestedState;
+            }
+        }
 
-                return _requestedState;
+        public RunningState RequestedState
+        {
+            set
+            {
+                _requestedState = value;
+                _requestedStateChanged.Set();
             }
         }
 
@@ -179,19 +187,19 @@ namespace CPvC
 
         public void Start()
         {
-            SetRequestedState(RunningState.Running);
+            RequestedState = RunningState.Running;
             Status = "Resumed";
         }
 
         public void RequestStop()
         {
-            _requestedState = RunningState.Paused;
+            RequestedState = RunningState.Paused;
             Stop();
         }
 
         public void Stop()
         {
-            SetRequestedState(RunningState.Paused);
+            RequestedState = RunningState.Paused;
 
             Status = "Paused";
         }
@@ -200,12 +208,12 @@ namespace CPvC
         {
             Stop();
 
-            WaitForRequestedToMatchRunning();
+            WaitForExpectedRunningState();
         }
 
-        public void WaitForRequestedToMatchRunning()
+        public void WaitForExpectedRunningState()
         {
-            while (RequestedState != RunningState)
+            while (ExpectedRunningState != ActualRunningState)
             {
                 _runningStateChanged.WaitOne(20);
             }
@@ -254,26 +262,15 @@ namespace CPvC
         private void IncrementAutoPause()
         {
             Interlocked.Increment(ref _autoPauseCount);
+            _autoPausedChanged.Set();
 
-            _runningStateChanged.Set();
-            OnPropertyChanged(nameof(RunningState));
-
-            WaitForRequestedToMatchRunning();
+            WaitForExpectedRunningState();
         }
 
         private void DecrementAutoPause()
         {
             Interlocked.Decrement(ref _autoPauseCount);
-
-            _runningStateChanged.Set();
-            OnPropertyChanged(nameof(RunningState));
-
-            WaitForRequestedToMatchRunning();
-        }
-
-        public void SetRequestedState(RunningState runningState)
-        {
-            _requestedState = runningState;
+            _autoPausedChanged.Set();
         }
 
         protected virtual void OnPropertyChanged([CallerMemberName] string name = null)
@@ -406,7 +403,7 @@ namespace CPvC
 
             if ((stopReason & StopReasons.VSync) != 0)
             {
-                OnPropertyChanged("Ticks");
+                OnPropertyChanged(nameof(Ticks));
                 BeginVSync();
             }
 
@@ -505,18 +502,21 @@ namespace CPvC
         {
             CoreRequest request = null;
 
+            AutoResetEvent[] events = new AutoResetEvent[] { _autoPausedChanged, _requestedStateChanged };
+
             while (!_quitThread)
             {
                 // Are we running?
-                if (_autoPauseCount > 0 || _requestedState == RunningState.Paused)
+                if (ExpectedRunningState == RunningState.Paused)
                 {
-                    RunningState = RunningState.Paused;
+                    ActualRunningState = RunningState.Paused;
 
-                    _runningStateChanged.WaitOne(20);
+                    WaitHandle.WaitAny(events, 20);
+
                     continue;
                 }
 
-                RunningState = _requestedState;
+                ActualRunningState = _requestedState;
 
                 if (request == null)
                 {
@@ -547,7 +547,7 @@ namespace CPvC
                 }
             }
 
-            RunningState = RunningState.Paused;
+            ActualRunningState = RunningState.Paused;
 
             _quitThread = false;
         }

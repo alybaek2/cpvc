@@ -116,7 +116,7 @@ namespace CPvC
         {
             get
             {
-                return IsOpen && RunningState == RunningState.Paused;
+                return IsOpen && ActualRunningState == RunningState.Paused;
             }
         }
 
@@ -124,7 +124,7 @@ namespace CPvC
         {
             get
             {
-                return IsOpen && RunningState == RunningState.Running;
+                return IsOpen && ActualRunningState == RunningState.Running;
             }
         }
 
@@ -226,7 +226,7 @@ namespace CPvC
         public override int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
             // Drive Reverse mode from here...
-            if (RunningState == RunningState.Reverse)
+            if (ActualRunningState == RunningState.Reverse)
             {
                 return ReverseReadAudio(buffer, offset, samplesRequested);
             }
@@ -603,18 +603,18 @@ namespace CPvC
                 }
             }
 
-            SetRequestedState(RunningState.Reverse);
+            RequestedState = RunningState.Reverse;
 
-            OnPropertyChanged(nameof(RunningState));
+            OnPropertyChanged(nameof(ActualRunningState));
 
             Status = "Reversing";
         }
 
         public void ReverseStop()
         {
-            SetRequestedState(RunningState.Running);
+            RequestedState = RunningState.Running;
 
-            OnPropertyChanged(nameof(RunningState));
+            OnPropertyChanged(nameof(ActualRunningState));
 
             AllKeysUp();
         }
@@ -780,7 +780,7 @@ namespace CPvC
 
         protected override void OnPropertyChanged([CallerMemberName] string name = null)
         {
-            if (name == nameof(RunningState))
+            if (name == nameof(ActualRunningState))
             {
                 base.OnPropertyChanged(nameof(CanStart));
                 base.OnPropertyChanged(nameof(CanStop));

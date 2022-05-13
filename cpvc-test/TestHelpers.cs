@@ -241,7 +241,7 @@ namespace CPvC.Test
             {
                 if (timeWaited > timeout)
                 {
-                    throw new Exception(String.Format("Waited too long for Machine to run! {0} {1}", machine.Ticks, machine.RunningState));
+                    throw new Exception(String.Format("Waited too long for Machine to run! {0} {1}", machine.Ticks, machine.ActualRunningState));
                 }
 
                 System.Threading.Thread.Sleep(sleepTime);
@@ -330,7 +330,7 @@ namespace CPvC.Test
             bool result = action.Wait(10000);
 
             machine.Stop();
-            machine.WaitForRequestedToMatchRunning();
+            Wait(machine);
             //machine.RequestStopAndWait();
 
             if (!result)
@@ -395,14 +395,14 @@ namespace CPvC.Test
             request.Wait(2000);
 
             machine.Stop();
-            machine.WaitForRequestedToMatchRunning();
+            Wait(machine);
             machine.AddBookmark(false);
             request = machine.RunUntil(machine.Ticks + 1000);
             machine.Start();
             request.Wait(2000);
 
             machine.Stop();
-            machine.WaitForRequestedToMatchRunning();
+            Wait(machine);
 
             return machine;
         }
@@ -622,6 +622,34 @@ namespace CPvC.Test
             }
 
             return HistoryEventsEqual(history1.RootEvent, history2.RootEvent);
+        }
+
+        static public void Wait(Machine machine)
+        {
+            ManualResetEvent e = new ManualResetEvent(false);
+            PropertyChangedEventHandler handler = (sender, args) =>
+            {
+                if (machine.ActualRunningState == machine.ExpectedRunningState)
+                {
+                    e.Set();
+                }
+            };
+
+            try
+            {
+                machine.PropertyChanged += handler;
+                if (machine.ActualRunningState != machine.ExpectedRunningState)
+                {
+                    if (!e.WaitOne(30000))
+                    {
+                        throw new TimeoutException("Timeout while waiting for machine's expected running state to match its actual running state.");
+                    }
+                }
+            }
+            finally
+            {
+                machine.PropertyChanged -= handler;
+            }
         }
     }
 }

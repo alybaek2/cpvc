@@ -78,14 +78,6 @@ namespace CPvC
             _coreCLR.LoadTape(tapeImage);
         }
 
-        /// <summary>
-        /// Sets width, height, and pitch of the screen.
-        /// </summary>
-        public void SetScreen()
-        {
-            _coreCLR.SetScreen(Display.Pitch, Display.Height, Display.Width);
-        }
-
         public void SetScreen(byte[] screen)
         {
             _coreCLR?.SetScreen(screen);
@@ -141,7 +133,7 @@ namespace CPvC
         {
             byte[] state = GetState();
 
-            ICore newCore = Core.CreateVersionedCore(version);
+            ICore newCore = CreateVersionedCore(version);
             newCore.LoadState(state);
             newCore.SetScreen(Display.Pitch, Display.Height, Display.Width);
 
@@ -159,7 +151,7 @@ namespace CPvC
                         _version = version;
                         _coreCLR = CreateVersionedCore(version);
 
-                        SetScreen();
+                        _coreCLR.SetScreen(Display.Pitch, Display.Height, Display.Width);
 
                         SetLowerROM(Resources.OS6128);
                         SetUpperROM(0, Resources.Basic6128);

@@ -30,7 +30,7 @@ namespace CPvC.Test
                 machine.Start();
                 request.Wait(10000);
                 machine.Stop();
-                machine.WaitForRequestedToMatchRunning();
+                Wait(machine);
 
                 machine.AddBookmark(false);
                 _bookmarkTicks.Add(machine.Ticks);
@@ -39,7 +39,7 @@ namespace CPvC.Test
                 machine.Start();
                 request.Wait(10000);
                 machine.Stop();
-                machine.WaitForRequestedToMatchRunning();
+                Wait(machine);
 
                 machine.AddBookmark(false);
                 _bookmarkTicks.Add(machine.Ticks);
@@ -69,15 +69,15 @@ namespace CPvC.Test
         {
             // Setup
             ReplayMachine replayMachine = CreateMachine();
-            RunningState runningState1 = replayMachine.RunningState;
+            RunningState runningState1 = replayMachine.ActualRunningState;
 
             // Act
             replayMachine.Start();
-            replayMachine.WaitForRequestedToMatchRunning();
-            RunningState runningState2 = replayMachine.RunningState;
+            Wait(replayMachine);
+            RunningState runningState2 = replayMachine.ActualRunningState;
             replayMachine.Stop();
-            replayMachine.WaitForRequestedToMatchRunning();
-            RunningState runningState3 = replayMachine.RunningState;
+            Wait(replayMachine);
+            RunningState runningState3 = replayMachine.ActualRunningState;
 
             // Verify
             Assert.AreEqual(RunningState.Paused, runningState1);
@@ -106,7 +106,7 @@ namespace CPvC.Test
 
             // Act
             replayMachine.Start();
-            replayMachine.WaitForRequestedToMatchRunning();
+            Wait(replayMachine);
 
             // Verify
             Assert.False(replayMachine.CanStart);
@@ -131,20 +131,20 @@ namespace CPvC.Test
             // Setup
             ReplayMachine machine = CreateMachine();
             machine.Start();
-            machine.WaitForRequestedToMatchRunning();
+            Wait(machine);
 
             // Act
-            RunningState runningState1 = machine.RunningState;
+            RunningState runningState1 = machine.ActualRunningState;
             machine.ToggleRunning();
-            machine.WaitForRequestedToMatchRunning();
-            RunningState runningState2 = machine.RunningState;
+            Wait(machine);
+            RunningState runningState2 = machine.ActualRunningState;
             machine.ToggleRunning();
-            machine.WaitForRequestedToMatchRunning();
+            Wait(machine);
 
             // Verify
             Assert.AreEqual(RunningState.Running, runningState1);
             Assert.AreEqual(RunningState.Paused, runningState2);
-            Assert.AreEqual(RunningState.Running, machine.RunningState);
+            Assert.AreEqual(RunningState.Running, machine.ActualRunningState);
             machine.Close();
         }
 
@@ -196,7 +196,7 @@ namespace CPvC.Test
             while (machine.Ticks == 0);
 
             machine.Stop();
-            machine.WaitForRequestedToMatchRunning();
+            Wait(machine);
 
             // Act
             machine.SeekToStart();
@@ -226,7 +226,7 @@ namespace CPvC.Test
             Mock<MachineAuditorDelegate> auditor = new Mock<MachineAuditorDelegate>();
             machine.Auditors += auditor.Object;
             machine.Start();
-            machine.WaitForRequestedToMatchRunning();
+            Wait(machine);
             while (machine.Ticks < machine.EndTicks)
             {
                 machine.AdvancePlayback(100000);
@@ -235,7 +235,7 @@ namespace CPvC.Test
 
             // Verify
             auditor.VerifyNoOtherCalls();
-            Assert.AreEqual(RunningState.Paused, machine.RunningState);
+            Assert.AreEqual(RunningState.Paused, machine.ActualRunningState);
             Assert.AreEqual(machine.EndTicks, machine.Ticks);
             machine.Close();
         }
@@ -316,14 +316,14 @@ namespace CPvC.Test
 
             // Act
             replayMachine.Start();
-            replayMachine.WaitForRequestedToMatchRunning();
+            Wait(replayMachine);
             while (replayMachine.Ticks < 3000)
             {
                 // Probably better to add an auditor and wait for a RunUntil.
                 System.Threading.Thread.Sleep(10);
             }
             replayMachine.Stop();
-            replayMachine.WaitForRequestedToMatchRunning();
+            Wait(replayMachine);
 
             // Verify
             Assert.NotZero(actions.Count);

@@ -68,23 +68,27 @@ namespace CPvC.Test
         {
             // Act and Verify
             _machine.Start();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
 
-            Assert.AreEqual(RunningState.Running, _machine.RunningState);
+            Assert.AreEqual(RunningState.Running, _machine.ActualRunningState);
 
             using (_machine.AutoPause())
             {
-                Assert.AreEqual(RunningState.Paused, _machine.RunningState);
+                Assert.AreEqual(RunningState.Paused, _machine.ActualRunningState);
 
                 using (_machine.AutoPause())
                 {
-                    Assert.AreEqual(RunningState.Paused, _machine.RunningState);
+                    Assert.AreEqual(RunningState.Paused, _machine.ActualRunningState);
                 }
 
-                Assert.AreEqual(RunningState.Paused, _machine.RunningState);
+                Wait(_machine);
+
+                Assert.AreEqual(RunningState.Paused, _machine.ActualRunningState);
             }
 
-            Assert.AreEqual(RunningState.Running, _machine.RunningState);
+            Wait(_machine);
+
+            Assert.AreEqual(RunningState.Running, _machine.ActualRunningState);
         }
 
         /// <summary>
@@ -159,7 +163,7 @@ namespace CPvC.Test
             _machine.Start();
             request.Wait(10000);
             _machine.Stop();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
 
             _machine.AddBookmark(false);
             HistoryEvent bookmarkEvent = _machine.History.CurrentEvent;
@@ -168,7 +172,7 @@ namespace CPvC.Test
             _machine.Start();
             request.Wait(10000);
             _machine.Stop();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
 
             _machine.JumpToMostRecentBookmark();
 
@@ -178,7 +182,7 @@ namespace CPvC.Test
             _machine.Start();
             request.Wait(10000);
             _machine.Stop();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
 
             _machine.DeleteBookmark(bookmarkEvent);
             _machine.DeleteBranch(eventToDelete);
@@ -274,7 +278,7 @@ namespace CPvC.Test
                 machine.Start();
                 request.Wait(10000);
                 machine.Stop();
-                machine.WaitForRequestedToMatchRunning();
+                Wait(machine);
 
                 // Act
                 machine.Close();
@@ -299,7 +303,7 @@ namespace CPvC.Test
                 machine.Start();
                 request.Wait(10000);
                 machine.Stop();
-                machine.WaitForRequestedToMatchRunning();
+                Wait(machine);
 
                 machine.AddBookmark(true);
 
@@ -400,20 +404,20 @@ namespace CPvC.Test
         {
             // Setup
             _machine.Start();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
 
             // Act
-            RunningState state1 = _machine.RunningState;
+            RunningState state1 = _machine.ActualRunningState;
             _machine.ToggleRunning();
-            _machine.WaitForRequestedToMatchRunning();
-            RunningState state2 = _machine.RunningState;
+            Wait(_machine);
+            RunningState state2 = _machine.ActualRunningState;
             _machine.ToggleRunning();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
 
             // Verify
             Assert.AreEqual(RunningState.Running, state1);
             Assert.AreEqual(RunningState.Paused, state2);
-            Assert.AreEqual(RunningState.Running, _machine.RunningState);
+            Assert.AreEqual(RunningState.Running, _machine.ActualRunningState);
         }
 
         //[Test]
@@ -626,7 +630,7 @@ namespace CPvC.Test
             _machine.Close();
 
             // Verify
-            Assert.AreEqual(RunningState.Paused, _machine.RunningState);
+            Assert.AreEqual(RunningState.Paused, _machine.ActualRunningState);
         }
 
         [Test]
@@ -638,7 +642,7 @@ namespace CPvC.Test
             _machine.Start();
             request.Wait(1000);
             _machine.Stop();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
             UInt64 ticksAfterRunning = _machine.Ticks;
 
             _machine.Close();
@@ -738,7 +742,7 @@ namespace CPvC.Test
             // Setup
             _machine.Volume = volume1;
             _machine.Stop();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
 
             Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
             _machine.PropertyChanged += propChanged.Object;
@@ -819,7 +823,7 @@ namespace CPvC.Test
 
             // Act
             _machine.Reverse();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
 
             byte[] buffer = new byte[samplesRequested * 4];
             int samplesWritten = _machine.ReadAudio(buffer, 0, samplesRequested);
@@ -846,18 +850,18 @@ namespace CPvC.Test
             request.Wait(10000);
             request = _machine.RunUntil(_machine.Ticks);
             request.Wait(1000);
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
             _machine.Reverse();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
             _machine.Reverse();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
 
             // Act
             _machine.ReverseStop();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
 
             // Verify
-            Assert.AreEqual(RunningState.Running, _machine.RunningState);
+            Assert.AreEqual(RunningState.Running, _machine.ActualRunningState);
         }
 
         [Test]
@@ -868,14 +872,14 @@ namespace CPvC.Test
             _machine.Start();
             request.Wait(10000);
             _machine.Stop();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
 
             // Act
             _machine.Reverse();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
 
             // Verify
-            Assert.AreEqual(RunningState.Paused, _machine.RunningState);
+            Assert.AreEqual(RunningState.Paused, _machine.ActualRunningState);
         }
 
         [Test]
@@ -889,16 +893,16 @@ namespace CPvC.Test
             request.Wait(10000);
 
             _machine.Start();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
             _machine.Reverse();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
 
             // Act
             _machine.ReverseStop();
             System.Threading.Thread.Sleep(100);
 
             // Verify
-            Assert.AreEqual(RunningState.Running, _machine.RunningState);
+            Assert.AreEqual(RunningState.Running, _machine.ActualRunningState);
         }
 
         /// <summary>
@@ -1010,7 +1014,7 @@ namespace CPvC.Test
         {
             // Setup
             _machine.Start();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
 
             // Verify
             Assert.False(_machine.CanStart);
@@ -1051,7 +1055,7 @@ namespace CPvC.Test
         {
             // Setup
             _machine.Start();
-            _machine.WaitForRequestedToMatchRunning();
+            Wait(_machine);
 
             // Verify
             Assert.True(_machine.CanStop);
