@@ -1,6 +1,6 @@
 ﻿namespace CPvC
 {
-    public interface IInteractiveMachine
+    public interface IInteractiveMachine : IMachine
     {
         CoreRequest Reset();
         CoreRequest Key(byte keycode, bool down);

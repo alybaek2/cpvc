@@ -10,6 +10,5 @@ namespace CPvC
         bool CanStart { get; }
         bool CanStop { get; }
         void ToggleRunning();
-        IDisposable AutoPause();
     }
 }

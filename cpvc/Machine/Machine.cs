@@ -253,7 +253,7 @@ namespace CPvC
         /// <summary>
         /// Pauses the machine and returns an IDisposable which, when disposed of, causes the machine to resume (if it was running before).
         /// </summary>
-        /// <returns>A IDisposable interface.</returns>
+        /// <returns>An IDisposable interface.</returns>
         public IDisposable AutoPause()
         {
             return new AutoPauser(this);
@@ -491,7 +491,7 @@ namespace CPvC
             {
                 if (_requests.Count > 0)
                 {
-                    request = _requests.Peek();
+                    request = _requests.Dequeue();
                 }
             }
 
@@ -534,15 +534,6 @@ namespace CPvC
                 if (done)
                 {
                     request.Processed = true;
-
-                    lock (_requests)
-                    {
-                        if (_requests.Count > 0 && _requests.Peek() == request)
-                        {
-                            _requests.Dequeue();
-                        }
-                    }
-
                     request = null;
                 }
             }
