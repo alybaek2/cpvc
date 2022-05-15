@@ -150,15 +150,15 @@ namespace CPvC.Test
             // Setup
             _mockTextFile.Clear();
             _machine.Persist(_mockFileSystem.Object, _filename);
-            _machine.RunUntil(_machine.Ticks + 1000);
+            _machine.RunUntil(_machine.Ticks + 100);
             _machine.Key(Keys.A, true);
-            _machine.RunUntil(_machine.Ticks + 1000);
+            _machine.RunUntil(_machine.Ticks + 200);
             _machine.LoadDisc(0, null);
-            _machine.RunUntil(_machine.Ticks + 1000);
+            _machine.RunUntil(_machine.Ticks + 300);
             _machine.LoadTape(null);
-            _machine.RunUntil(_machine.Ticks + 1000);
+            _machine.RunUntil(_machine.Ticks + 400);
             _machine.Reset();
-            CoreRequest request = _machine.RunUntil(_machine.Ticks + 1000);
+            CoreRequest request = _machine.RunUntil(_machine.Ticks + 500);
 
             _machine.Start();
             request.Wait(10000);

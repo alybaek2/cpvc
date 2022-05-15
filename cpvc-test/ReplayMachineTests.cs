@@ -100,9 +100,21 @@ namespace CPvC.Test
         {
         }
 
-        private ReplayMachine CreateMachine()
+        private ReplayMachine CreateMachine(bool fast)
         {
             ReplayMachine replayMachine = new ReplayMachine(_finalHistoryEvent);
+            if (fast)
+            {
+                replayMachine.AudioBuffer.OverrunThreshold = int.MaxValue;
+            }
+            else
+            {
+                replayMachine.AudioBuffer.OverrunThreshold = 10;
+                replayMachine.Auditors += (action) =>
+                {
+                    replayMachine.AdvancePlayback(1);
+                };
+            }
 
             return replayMachine;
         }
@@ -111,7 +123,7 @@ namespace CPvC.Test
         public void StartAndStop()
         {
             // Setup
-            ReplayMachine replayMachine = CreateMachine();
+            ReplayMachine replayMachine = CreateMachine(false);
             RunningState runningState1 = replayMachine.ActualRunningState;
 
             // Act
@@ -133,7 +145,7 @@ namespace CPvC.Test
         public void CanStart()
         {
             // Setup
-            ReplayMachine replayMachine = CreateMachine();
+            ReplayMachine replayMachine = CreateMachine(true);
 
             // Verify
             Assert.True(replayMachine.CanStart);
@@ -145,7 +157,7 @@ namespace CPvC.Test
         public void CanStop()
         {
             // Setup
-            ReplayMachine replayMachine = CreateMachine();
+            ReplayMachine replayMachine = CreateMachine(true);
 
             // Act
             replayMachine.Start();
@@ -161,7 +173,7 @@ namespace CPvC.Test
         public void EndTicks()
         {
             // Setup
-            ReplayMachine replayMachine = CreateMachine();
+            ReplayMachine replayMachine = CreateMachine(true);
 
             // Verify
             Assert.AreEqual(_finalHistoryEvent.Ticks, replayMachine.EndTicks);
@@ -172,7 +184,8 @@ namespace CPvC.Test
         public void Toggle()
         {
             // Setup
-            ReplayMachine machine = CreateMachine();
+            ReplayMachine machine = CreateMachine(false);
+
             machine.Start();
             Wait(machine);
 
@@ -195,7 +208,7 @@ namespace CPvC.Test
         public void Name()
         {
             // Setup
-            ReplayMachine machine = CreateMachine();
+            ReplayMachine machine = CreateMachine(true);
 
             // Act
             machine.Name = "Test";
@@ -209,7 +222,7 @@ namespace CPvC.Test
         public void CanClose()
         {
             // Setup
-            ReplayMachine machine = CreateMachine();
+            ReplayMachine machine = CreateMachine(true);
 
             // Verify
             Assert.True(machine.CanClose);
@@ -220,7 +233,7 @@ namespace CPvC.Test
         public void CloseTwice()
         {
             // Setup
-            ReplayMachine machine = CreateMachine();
+            ReplayMachine machine = CreateMachine(true);
             machine.Close();
 
             // Act and Verify
@@ -234,7 +247,7 @@ namespace CPvC.Test
         public void SeekToStart()
         {
             // Setup
-            ReplayMachine machine = CreateMachine();
+            ReplayMachine machine = CreateMachine(true);
             machine.Start();
             while (machine.Ticks == 0);
 
@@ -253,7 +266,7 @@ namespace CPvC.Test
         public void StartAtEnd()
         {
             // Setup
-            ReplayMachine machine = CreateMachine();
+            ReplayMachine machine = CreateMachine(true);
 
             machine.SeekToNextBookmark();
             machine.SeekToNextBookmark();
@@ -277,7 +290,7 @@ namespace CPvC.Test
         public void SeekToPrevAndNextBookmark()
         {
             // Setup
-            ReplayMachine machine = CreateMachine();
+            ReplayMachine machine = CreateMachine(true);
 
             // Act and Verify
             foreach (UInt64 bookmarkTick in _bookmarkTicks)
@@ -311,7 +324,7 @@ namespace CPvC.Test
         public void NoPropertyChangedHandlers()
         {
             // Setup
-            ReplayMachine machine = CreateMachine();
+            ReplayMachine machine = CreateMachine(true);
 
             // Act and Verify
             Assert.DoesNotThrow(() => machine.Status = "Status");
@@ -322,7 +335,7 @@ namespace CPvC.Test
         public void StatusChanged()
         {
             // Setup
-            ReplayMachine machine = CreateMachine();
+            ReplayMachine machine = CreateMachine(true);
 
             Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
             machine.PropertyChanged += propChanged.Object;
@@ -339,7 +352,7 @@ namespace CPvC.Test
         public void Auditor()
         {
             // Setup
-            ReplayMachine replayMachine = CreateMachine();
+            ReplayMachine replayMachine = CreateMachine(true);
 
             List<CoreAction> actions = new List<CoreAction>();
             replayMachine.Auditors += (action) =>
