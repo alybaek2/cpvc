@@ -651,5 +651,33 @@ namespace CPvC.Test
                 machine.PropertyChanged -= handler;
             }
         }
+
+        static public void Wait(Machine machine, RunningState expectedRunningState)
+        {
+            ManualResetEvent e = new ManualResetEvent(false);
+            PropertyChangedEventHandler handler = (sender, args) =>
+            {
+                if (machine.ActualRunningState == expectedRunningState)
+                {
+                    e.Set();
+                }
+            };
+
+            try
+            {
+                machine.PropertyChanged += handler;
+                if (machine.ActualRunningState != expectedRunningState)
+                {
+                    if (!e.WaitOne(30000))
+                    {
+                        throw new TimeoutException("Timeout while waiting for machine's expected running state to match its actual running state.");
+                    }
+                }
+            }
+            finally
+            {
+                machine.PropertyChanged -= handler;
+            }
+        }
     }
 }

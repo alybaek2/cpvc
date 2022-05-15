@@ -393,6 +393,11 @@ namespace CPvC
             // Limit how long we can run for to reduce audio lag.
             stopTicks = Math.Min(stopTicks, Ticks + 1000);
 
+            if (stopTicks <= Ticks)
+            {
+                return null;
+            }
+
             List<UInt16> audioSamples = new List<UInt16>();
             byte stopReason = _core.RunUntil(stopTicks, StopReasons.VSync, audioSamples);
 

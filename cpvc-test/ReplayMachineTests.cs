@@ -8,12 +8,34 @@ using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
 {
-    public class ReplayMachineTests
+    [SetUpFixture]
+    public class ReplayMachineSetup
     {
-        private HistoryEvent _finalHistoryEvent;
-        private List<UInt64> _bookmarkTicks;
+        static private HistoryEvent _finalHistoryEvent;
+        static private List<UInt64> _bookmarkTicks;
 
-        [SetUp]
+        static public HistoryEvent FinalHistoryEvent
+        {
+            get
+            {
+                return _finalHistoryEvent;
+            }
+        }
+
+        static public List<UInt64> BookmarkTicks
+        {
+            get
+            {
+                return _bookmarkTicks;
+            }
+        }
+
+        public ReplayMachineSetup()
+        {
+
+        }
+
+        [OneTimeSetUp]
         public void Setup()
         {
             _bookmarkTicks = new List<UInt64>();
@@ -25,7 +47,7 @@ namespace CPvC.Test
                 machine.Key(Keys.A, false);
                 machine.LoadDisc(0, null);
                 machine.LoadTape(null);
-                CoreRequest request = machine.RunUntil(machine.Ticks + 1000);
+                CoreRequest request = machine.RunUntil(machine.Ticks + 100);
 
                 machine.Start();
                 request.Wait(10000);
@@ -35,7 +57,7 @@ namespace CPvC.Test
                 machine.AddBookmark(false);
                 _bookmarkTicks.Add(machine.Ticks);
 
-                request = machine.RunUntil(machine.Ticks + 1000);
+                request = machine.RunUntil(machine.Ticks + 100);
                 machine.Start();
                 request.Wait(10000);
                 machine.Stop();
@@ -44,11 +66,33 @@ namespace CPvC.Test
                 machine.AddBookmark(false);
                 _bookmarkTicks.Add(machine.Ticks);
 
-                History history = machine.History;
-                history.AddCoreAction(CoreAction.RunUntil(machine.Ticks, 10003016, null));
+                request = machine.RunUntil(machine.Ticks + 100);
+                machine.Start();
+                request.Wait(10000);
+                machine.Stop();
+                Wait(machine);
 
-                _finalHistoryEvent = history.CurrentEvent;
+                _finalHistoryEvent = machine.History.CurrentEvent;
             }
+        }
+
+        [OneTimeTearDown]
+        public void Teardown()
+        {
+
+        }
+    }
+
+    public class ReplayMachineTests
+    {
+        private HistoryEvent _finalHistoryEvent;
+        private List<UInt64> _bookmarkTicks;
+
+        [SetUp]
+        public void Setup()
+        {
+            _bookmarkTicks = ReplayMachineSetup.BookmarkTicks;
+            _finalHistoryEvent = ReplayMachineSetup.FinalHistoryEvent;
         }
 
         [TearDown]
@@ -59,7 +103,6 @@ namespace CPvC.Test
         private ReplayMachine CreateMachine()
         {
             ReplayMachine replayMachine = new ReplayMachine(_finalHistoryEvent);
-            //replayMachine.AudioBuffer.OverrunThreshold = int.MaxValue;
 
             return replayMachine;
         }
@@ -216,25 +259,15 @@ namespace CPvC.Test
             machine.SeekToNextBookmark();
 
             machine.Start();
-            while (machine.Ticks < machine.EndTicks)
-            {
-                machine.AdvancePlayback(100000);
-                Thread.Sleep(10);
-            }
+            Wait(machine, RunningState.Paused);
+
 
             // Act
-            Mock<MachineAuditorDelegate> auditor = new Mock<MachineAuditorDelegate>();
-            machine.Auditors += auditor.Object;
+            // Really need to check that the RunningState never changed to Running, and remains as Paused.
             machine.Start();
-            Wait(machine);
-            while (machine.Ticks < machine.EndTicks)
-            {
-                machine.AdvancePlayback(100000);
-                Thread.Sleep(10);
-            }
+            Wait(machine, RunningState.Paused);
 
             // Verify
-            auditor.VerifyNoOtherCalls();
             Assert.AreEqual(RunningState.Paused, machine.ActualRunningState);
             Assert.AreEqual(machine.EndTicks, machine.Ticks);
             machine.Close();

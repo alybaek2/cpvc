@@ -27,7 +27,8 @@ namespace CPvC
 
         public ReplayMachine(HistoryEvent historyEvent)
         {
-            _endTicks = historyEvent.Ticks;
+            _endTicks = (historyEvent as CoreActionHistoryEvent)?.CoreAction.StopTicks ?? historyEvent.Ticks;
+
             OnPropertyChanged("EndTicks");
 
             _history = new History();
