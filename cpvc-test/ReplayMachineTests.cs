@@ -100,9 +100,8 @@ namespace CPvC.Test
         {
         }
 
-        private ReplayMachine CreateMachine(bool fast)
+        private void ChangeSpeed(ReplayMachine replayMachine, bool fast)
         {
-            ReplayMachine replayMachine = new ReplayMachine(_finalHistoryEvent);
             if (fast)
             {
                 replayMachine.AudioBuffer.OverrunThreshold = int.MaxValue;
@@ -115,6 +114,12 @@ namespace CPvC.Test
                     replayMachine.AdvancePlayback(1);
                 };
             }
+        }
+
+        private ReplayMachine CreateMachine(bool fast)
+        {
+            ReplayMachine replayMachine = new ReplayMachine(_finalHistoryEvent);
+            ChangeSpeed(replayMachine, fast);
 
             return replayMachine;
         }
@@ -157,7 +162,7 @@ namespace CPvC.Test
         public void CanStop()
         {
             // Setup
-            ReplayMachine replayMachine = CreateMachine(true);
+            ReplayMachine replayMachine = CreateMachine(false);
 
             // Act
             replayMachine.Start();
@@ -274,7 +279,6 @@ namespace CPvC.Test
             machine.Start();
             Wait(machine, RunningState.Paused);
 
-
             // Act
             // Really need to check that the RunningState never changed to Running, and remains as Paused.
             machine.Start();
@@ -354,25 +358,20 @@ namespace CPvC.Test
             // Setup
             ReplayMachine replayMachine = CreateMachine(true);
 
-            List<CoreAction> actions = new List<CoreAction>();
+            ManualResetEvent e = new ManualResetEvent(false);
             replayMachine.Auditors += (action) =>
             {
-                actions.Add(action);
+                e.Set();
             };
 
             // Act
             replayMachine.Start();
-            Wait(replayMachine);
-            while (replayMachine.Ticks < 3000)
-            {
-                // Probably better to add an auditor and wait for a RunUntil.
-                System.Threading.Thread.Sleep(10);
-            }
+            bool auditorCalled = e.WaitOne(2000);
             replayMachine.Stop();
             Wait(replayMachine);
 
             // Verify
-            Assert.NotZero(actions.Count);
+            Assert.True(auditorCalled);
 
             replayMachine.Close();
         }
