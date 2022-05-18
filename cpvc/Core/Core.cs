@@ -122,6 +122,26 @@ namespace CPvC
             _requestQueueNonEmpty = null;
         }
 
+        public bool KeyPressSync(byte keycode, bool down)
+        {
+            return _coreCLR.KeyPress(keycode, down);
+        }
+
+        public void ResetSync()
+        {
+            _coreCLR.Reset();
+        }
+
+        public void LoadDiscSync(byte drive, byte[] discImage)
+        {
+            _coreCLR.LoadDisc(drive, discImage);
+        }
+
+        public void LoadTapeSync(byte[] tapeImage)
+        {
+            _coreCLR.LoadTape(tapeImage);
+        }
+
         /// <summary>
         /// Asynchronously updates the state of a key.
         /// </summary>
@@ -249,6 +269,19 @@ namespace CPvC
             _requests.Clear();
         }
 
+        public void ProcessCoreVersion(int version)
+        {
+            byte[] state = GetState();
+
+            ICore newCore = Core.CreateVersionedCore(version);
+            newCore.LoadState(state);
+            newCore.SetScreen(Display.Pitch, Display.Height, Display.Width);
+
+            ICore oldCore = _coreCLR;
+            _coreCLR = newCore;
+            oldCore.Dispose();
+        }
+
         public void Create(int version, Type type)
         {
             switch (type)
@@ -311,6 +344,21 @@ namespace CPvC
         public byte RunUntil(UInt64 ticks, byte stopReason, List<UInt16> audioSamples)
         {
             return _coreCLR.RunUntil(ticks, stopReason, audioSamples);
+        }
+
+        public void CreateSnapshotSync(int id)
+        {
+            _coreCLR.CreateSnapshot(id);
+        }
+
+        public bool DeleteSnapshotSync(int id)
+        {
+            return _coreCLR.DeleteSnapshot(id);
+        }
+
+        public bool RevertToSnapshotSync(int id)
+        {
+            return _coreCLR.RevertToSnapshot(id);
         }
 
         /// <summary>
