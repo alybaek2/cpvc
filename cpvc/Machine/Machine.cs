@@ -64,8 +64,8 @@ namespace CPvC
 
             _audioBuffer = new AudioBuffer(48000);
 
-            //_machineThread = new Thread(MachineThread);
-            //_machineThread.Start();
+            _machineThread = new Thread(MachineThread);
+            _machineThread.Start();
         }
 
         public Core Core
