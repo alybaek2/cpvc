@@ -23,6 +23,7 @@ namespace CPvC.Test
         private string _remoteServersSetting;
 
         private MainViewModel _mainViewModel;
+        private MainViewModel _mainViewModelNew;
         private LocalMachine _machine;
 
         static private Action<Action> _canExecuteChangedInvoker = action => action();
@@ -53,11 +54,20 @@ namespace CPvC.Test
             _machine = LocalMachine.New("test", null);
             _mainViewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem.Object, _canExecuteChangedInvoker);
             _mainViewModel.Model.AddMachine(_machine);
+
+            _mainViewModelNew = SetupViewModel(1);
         }
 
         [TearDown]
         public void Teardown()
         {
+            foreach (Machine machine in _mainViewModelNew.Machines)
+            {
+                machine.Close();
+            }
+
+            _mainViewModelNew = null;
+
             _machine.Dispose();
             _machine = null;
 
@@ -327,7 +337,8 @@ namespace CPvC.Test
         public void NewMachine()
         {
             // Setup
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object, _canExecuteChangedInvoker);
+            MainViewModel viewModel = _mainViewModelNew;
+            int countBefore = viewModel.Machines.Count;
 
             // Act
             viewModel.NewMachineCommand.Execute(_mockFileSystem.Object);
@@ -335,9 +346,9 @@ namespace CPvC.Test
             // Verify
             LocalMachine machine = viewModel.Machines[0] as LocalMachine;
             Wait(machine);
-            Assert.AreEqual(1, viewModel.Machines.Count);
-            Assert.AreEqual(viewModel.Machines[0], viewModel.ActiveMachine);
-            Assert.AreEqual(RunningState.Running, viewModel.Machines[0].ActualRunningState);
+            Assert.AreEqual(countBefore + 1, viewModel.Machines.Count);
+            Assert.AreEqual(viewModel.Machines[countBefore], viewModel.ActiveMachine);
+            Assert.AreEqual(RunningState.Running, viewModel.Machines[countBefore].ActualRunningState);
         }
 
 
@@ -349,7 +360,7 @@ namespace CPvC.Test
         {
             // Setup
             string filepath = "test.cpvc";
-            MainViewModel viewModel = new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object, _canExecuteChangedInvoker);
+            MainViewModel viewModel = _mainViewModelNew; // new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object, _canExecuteChangedInvoker);
             viewModel.PromptForFile += (sender, args) =>
             {
                 if (args.FileType == FileTypes.Machine && args.Existing)
@@ -358,15 +369,16 @@ namespace CPvC.Test
                 }
             };
 
-            MockTextFile mockTextFile = new MockTextFile();
-            _mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(filepath)).Returns(mockTextFile);
+            int countBefore = viewModel.Machines.Count;
+            //MockTextFile mockTextFile = new MockTextFile();
+            //_mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(filepath)).Returns(mockTextFile);
             viewModel.OpenMachineCommand.Execute(_mockFileSystem.Object);
 
             // Act
             viewModel.OpenMachineCommand.Execute(_mockFileSystem.Object);
 
             // Verify
-            Assert.AreEqual(1, viewModel.Machines.Count);
+            Assert.AreEqual(countBefore + 1, viewModel.Machines.Count);
         }
 
         [TestCase(false, null)]
@@ -375,7 +387,7 @@ namespace CPvC.Test
         public void RenameMachine(bool active, string newName)
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1);
+            MainViewModel viewModel = _mainViewModelNew;
             viewModel.PromptForName += (sender, args) =>
             {
                 args.SelectedName = newName;
@@ -405,7 +417,7 @@ namespace CPvC.Test
         {
             // Setup
             HistoryEvent historyEvent = null;
-            MainViewModel viewModel = SetupViewModel(1);
+            MainViewModel viewModel = _mainViewModelNew;
             _machine.OpenFromFile(_mockFileSystem.Object);
 
             _machine.AddBookmark(false);
@@ -437,7 +449,7 @@ namespace CPvC.Test
         public void SelectRoot()
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1);
+            MainViewModel viewModel = _mainViewModelNew;
             _machine.OpenFromFile(_mockFileSystem.Object);
 
             viewModel.PromptForBookmark += (sender, args) =>
@@ -458,7 +470,7 @@ namespace CPvC.Test
         public void SelectNonJumpable()
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1);
+            MainViewModel viewModel = _mainViewModelNew;
             _machine.OpenFromFile(_mockFileSystem.Object);
 
             CoreRequest request = _machine.RunUntil(1000);
@@ -531,7 +543,7 @@ namespace CPvC.Test
         {
             // Setup
             Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
-            MainViewModel viewModel = SetupViewModel(1);
+            MainViewModel viewModel = _mainViewModelNew;
             viewModel.PropertyChanged += propChanged.Object;
 
             // Act
@@ -757,7 +769,7 @@ namespace CPvC.Test
         public void KeyPress()
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1);
+            MainViewModel viewModel = _mainViewModelNew;
             Mock<IInteractiveMachine> mockMachine = new Mock<IInteractiveMachine>();
             mockMachine.Setup(m => m.Key(It.IsAny<byte>(), It.IsAny<bool>()));
 
@@ -772,7 +784,7 @@ namespace CPvC.Test
         public void EnableTurbo()
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1);
+            MainViewModel viewModel = _mainViewModelNew;
             Mock<ITurboableMachine> mockMachine = new Mock<ITurboableMachine>();
             mockMachine.Setup(m => m.EnableTurbo(It.IsAny<bool>()));
 
@@ -1242,7 +1254,7 @@ namespace CPvC.Test
         public void OpenReplayMachine()
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1);
+            MainViewModel viewModel = _mainViewModelNew;
 
             // Verify
             IEnumerable<ReplayMachine> replayMachines = viewModel.Machines.Where(m => m is ReplayMachine).Select(m => m as ReplayMachine);
@@ -1254,7 +1266,7 @@ namespace CPvC.Test
         public void StartServerSelectCancel()
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1);
+            MainViewModel viewModel = _mainViewModelNew;
             viewModel.SelectServerPort += (object o, SelectServerPortEventArgs args) => args.SelectedPort = null;
 
             // Act
@@ -1269,7 +1281,7 @@ namespace CPvC.Test
         public void StartServerSelectOk(int port)
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1);
+            MainViewModel viewModel = _mainViewModelNew;
             viewModel.SelectServerPort += (sender, args) => args.SelectedPort = (ushort)port;
             viewModel.CreateSocket += (sender, args) => args.CreatedSocket = _mockSocket.Object;
 
@@ -1286,7 +1298,7 @@ namespace CPvC.Test
         public void StopServer()
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1);
+            MainViewModel viewModel = _mainViewModelNew;
             viewModel.SelectServerPort += (sender, args) => args.SelectedPort = 6128;
             viewModel.CreateSocket += (sender, args) => args.CreatedSocket = _mockSocket.Object;
             viewModel.StartServerCommand.Execute(null);
@@ -1302,7 +1314,7 @@ namespace CPvC.Test
         public void Connect()
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1);
+            MainViewModel viewModel = _mainViewModelNew;
             Mock<IRemote> mockRemote = new Mock<IRemote>();
             using (RemoteMachine machine = new RemoteMachine(mockRemote.Object))
             {
@@ -1325,7 +1337,7 @@ namespace CPvC.Test
         public void EmptyRemoteServers()
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1);
+            MainViewModel viewModel = _mainViewModelNew;
             Mock<IRemote> mockRemote = new Mock<IRemote>();
             using (RemoteMachine machine = new RemoteMachine(mockRemote.Object))
             {
@@ -1344,7 +1356,7 @@ namespace CPvC.Test
         public void ConnectCancel()
         {
             // Setup
-            MainViewModel viewModel = SetupViewModel(1);
+            MainViewModel viewModel = _mainViewModelNew;
             Mock<IRemote> mockRemote = new Mock<IRemote>();
             viewModel.SelectRemoteMachine += (sender, e) => { e.SelectedMachine = null; };
 
@@ -1392,7 +1404,6 @@ namespace CPvC.Test
         public void LoadNullRemoteServers()
         {
             // Setup
-            Mock<ISocket> mockSocket = new Mock<ISocket>();
             _remoteServersSetting = null;
 
             // Act
