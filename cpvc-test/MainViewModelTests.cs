@@ -360,7 +360,7 @@ namespace CPvC.Test
         {
             // Setup
             string filepath = "test.cpvc";
-            MainViewModel viewModel = _mainViewModelNew; // new MainViewModel(_mockSettings.Object, _mockFileSystem?.Object, _canExecuteChangedInvoker);
+            MainViewModel viewModel = _mainViewModelNew;
             viewModel.PromptForFile += (sender, args) =>
             {
                 if (args.FileType == FileTypes.Machine && args.Existing)
@@ -370,8 +370,6 @@ namespace CPvC.Test
             };
 
             int countBefore = viewModel.Machines.Count;
-            //MockTextFile mockTextFile = new MockTextFile();
-            //_mockFileSystem.Setup(fileSystem => fileSystem.OpenTextFile(filepath)).Returns(mockTextFile);
             viewModel.OpenMachineCommand.Execute(_mockFileSystem.Object);
 
             // Act
