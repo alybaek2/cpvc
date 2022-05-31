@@ -31,6 +31,7 @@ namespace CPvC
         public event EventHandler DisplayUpdated;
 
         private readonly Queue<CoreRequest> _requests;
+        private ManualResetEvent _requestsAvailable;
 
         private AudioBuffer _audioBuffer;
 
@@ -52,6 +53,7 @@ namespace CPvC
             _core = new Core(Core.LatestVersion, Core.Type.CPC6128);
 
             _requests = new Queue<CoreRequest>();
+            _requestsAvailable = new ManualResetEvent(false);
 
             _runningStateChanged = new AutoResetEvent(false);
             _requestedStateChanged = new AutoResetEvent(false);
@@ -283,6 +285,7 @@ namespace CPvC
             lock (_requests)
             {
                 _requests.Enqueue(request);
+                _requestsAvailable.Set();
             }
         }
 
@@ -492,11 +495,17 @@ namespace CPvC
         {
             CoreRequest request = null;
 
+            _requestsAvailable.WaitOne(timeout);
+
             lock (_requests)
             {
                 if (_requests.Count > 0)
                 {
                     request = _requests.Dequeue();
+                    if (_requests.Count == 0)
+                    {
+                        _requestsAvailable.Reset();
+                    }
                 }
             }
 
