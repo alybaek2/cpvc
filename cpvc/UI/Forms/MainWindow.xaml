@@ -217,7 +217,7 @@
             <TabControl.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                        <Image Width="16" Height="16" Stretch="None" Source="{Binding RunningState, Converter={StaticResource runningIconConverter}, Mode=OneWay}"/>
+                        <Image Width="16" Height="16" Stretch="None" Source="{Binding ActualRunningState, Converter={StaticResource runningIconConverter}, Mode=OneWay}"/>
                         <TextBlock Text="{Binding Name, Mode=OneWay}"/>
                     </StackPanel>
                 </DataTemplate>
@@ -230,7 +230,7 @@
                                 <Style TargetType="Rectangle">
                                     <Setter Property="Visibility" Value="Hidden"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding RunningState}" Value="{x:Static cpvc:RunningState.Paused}">
+                                        <DataTrigger Binding="{Binding ActualRunningState}" Value="{x:Static cpvc:RunningState.Paused}">
                                             <Setter Property="Visibility" Value="Visible"/>
                                         </DataTrigger>
                                     </Style.Triggers>

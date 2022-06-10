@@ -305,6 +305,14 @@ namespace CPvC
 
         protected override void CoreActionDone(CoreRequest request, CoreAction action)
         {
+            lock (_requests)
+            {
+                if (_requests.Count == 0)
+                {
+                    PushRequest(CoreRequest.RunUntil(Ticks + 1000));
+                }
+            }
+
             if (action == null)
             {
                 return;

@@ -277,11 +277,16 @@ namespace CPvC.Test
             machine.SeekToNextBookmark();
 
             machine.Start();
+            while (machine.Ticks == 0)
+            {
+                Thread.Sleep(20);
+            }
             Wait(machine, RunningState.Paused);
 
             // Act
             // Really need to check that the RunningState never changed to Running, and remains as Paused.
             machine.Start();
+            Thread.Sleep(50);
             Wait(machine, RunningState.Paused);
 
             // Verify

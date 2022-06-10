@@ -344,11 +344,11 @@ namespace CPvC.Test
             viewModel.NewMachineCommand.Execute(_mockFileSystem.Object);
 
             // Verify
-            LocalMachine machine = viewModel.Machines[0] as LocalMachine;
+            LocalMachine machine = viewModel.Machines[countBefore] as LocalMachine;
             Wait(machine);
             Assert.AreEqual(countBefore + 1, viewModel.Machines.Count);
-            Assert.AreEqual(viewModel.Machines[countBefore], viewModel.ActiveMachine);
-            Assert.AreEqual(RunningState.Running, viewModel.Machines[countBefore].ActualRunningState);
+            Assert.AreEqual(machine, viewModel.ActiveMachine);
+            Assert.AreEqual(RunningState.Running, machine.ActualRunningState);
         }
 
 

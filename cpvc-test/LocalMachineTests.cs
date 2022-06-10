@@ -481,34 +481,34 @@ namespace CPvC.Test
         //    }
         //}
 
-        //[Test]
-        //public void EnableTurbo()
-        //{
-        //    // Act
-        //    _machine.EnableTurbo(true);
-        //    _machine.Start();
-        //    if (!RunUntilAudioOverrun(_machine.Core, 10000))
-        //    {
-        //        Assert.Fail("Failed to wait for audio overrun.");
-        //    }
+        [Test]
+        public void EnableTurbo()
+        {
+            // Act
+            _machine.EnableTurbo(true);
+            _machine.Start();
+            if (!RunUntilAudioOverrun(_machine, 10000))
+            {
+                Assert.Fail("Failed to wait for audio overrun.");
+            }
 
-        //    UInt64 turboDuration = _machine.Core.Ticks;
+            UInt64 turboDuration = _machine.Ticks;
 
-        //    // Empty out the audio buffer.
-        //    _machine.AdvancePlayback(1000000);
+            // Empty out the audio buffer.
+            _machine.AdvancePlayback(1000000);
 
-        //    _machine.EnableTurbo(false);
-        //    if (!RunUntilAudioOverrun(_machine.Core, 10000))
-        //    {
-        //        Assert.Fail("Failed to wait for audio overrun.");
-        //    }
+            _machine.EnableTurbo(false);
+            if (!RunUntilAudioOverrun(_machine, 10000))
+            {
+                Assert.Fail("Failed to wait for audio overrun.");
+            }
 
-        //    UInt64 normalDuration = _machine.Core.Ticks - turboDuration;
+            UInt64 normalDuration = _machine.Ticks - turboDuration;
 
-        //    // Verify - speed should be at least doubled.
-        //    double actualSpeedFactor = ((double)turboDuration) / ((double)normalDuration);
-        //    Assert.Greater(actualSpeedFactor, 2);
-        //}
+            // Verify - speed should be at least doubled.
+            double actualSpeedFactor = ((double)turboDuration) / ((double)normalDuration);
+            Assert.Greater(actualSpeedFactor, 2);
+        }
 
         //[Test]
         //public void CorruptCheckpointBookmark()

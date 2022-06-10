@@ -30,12 +30,12 @@ namespace CPvC
 
         public event EventHandler DisplayUpdated;
 
-        private readonly Queue<CoreRequest> _requests;
+        protected readonly Queue<CoreRequest> _requests;
         private ManualResetEvent _requestsAvailable;
 
         private AudioBuffer _audioBuffer;
 
-        private bool _quitThread;
+        private ManualResetEvent _quitThreadRequested;
         protected Thread _machineThread;
 
         /// <summary>
@@ -60,6 +60,8 @@ namespace CPvC
             _autoPausedChanged = new AutoResetEvent(false);
 
             _audioBuffer = new AudioBuffer(48000);
+
+            _quitThreadRequested = new ManualResetEvent(false);
 
             _machineThread = new Thread(MachineThread);
             _machineThread.Start();
@@ -516,21 +518,68 @@ namespace CPvC
         {
             CoreRequest request = null;
 
-            AutoResetEvent[] events = new AutoResetEvent[] { _autoPausedChanged, _requestedStateChanged };
-
-            while (!_quitThread)
+            EventWaitHandle[] allEvents = new EventWaitHandle[]
             {
-                // Are we running?
+                _quitThreadRequested,
+                _autoPausedChanged,
+                _requestedStateChanged,
+                _requestsAvailable,
+                // Should make sure no unit tests use infinite audio overrun threshold!
+                _audioBuffer.UnderrunEvent
+            };
+
+            EventWaitHandle[] allEventsAudioOverrun = new EventWaitHandle[]
+            {
+                _quitThreadRequested,
+                _autoPausedChanged,
+                _requestedStateChanged,
+                _audioBuffer.UnderrunEvent
+            };
+
+            EventWaitHandle[] allEventsAudioUnderrun = new EventWaitHandle[]
+            {
+                _quitThreadRequested,
+                _autoPausedChanged,
+                _requestedStateChanged,
+                _requestsAvailable
+            };
+
+            EventWaitHandle[] allEventsPaused = new EventWaitHandle[]
+            {
+                _quitThreadRequested,
+                _autoPausedChanged,
+                _requestedStateChanged
+            };
+
+            while (true)
+            {
+                if (_quitThreadRequested.WaitOne(0))
+                {
+                    break;
+                }
+
                 if (ExpectedRunningState == RunningState.Paused)
                 {
                     ActualRunningState = RunningState.Paused;
 
-                    WaitHandle.WaitAny(events, 20);
+                    WaitHandle.WaitAny(allEventsPaused);
 
                     continue;
                 }
 
                 ActualRunningState = _requestedState;
+
+                if (request == null)
+                {
+                    if (AudioBuffer.WaitForUnderrun(0))
+                    {
+                        WaitHandle.WaitAny(allEventsAudioUnderrun, 20);
+                    }
+                    else
+                    {
+                        WaitHandle.WaitAny(allEventsAudioOverrun, 20);
+                    }
+                }
 
                 if (request == null)
                 {
@@ -554,7 +603,7 @@ namespace CPvC
 
             ActualRunningState = RunningState.Paused;
 
-            _quitThread = false;
+            _quitThreadRequested.Reset();
         }
 
         protected virtual void CoreActionDone(CoreRequest request, CoreAction action)
@@ -564,7 +613,7 @@ namespace CPvC
 
         public virtual void Close()
         {
-            _quitThread = true;
+            _quitThreadRequested.Set();
 
             _machineThread?.Join();
             _machineThread = null;

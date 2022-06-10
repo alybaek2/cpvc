@@ -339,17 +339,17 @@ namespace CPvC.Test
             }
         }
 
-        //static public bool RunUntilAudioOverrun(Core core, int timeout)
-        //{
-        //    int elapsed = 0;
-        //    while ((elapsed < timeout) && core.AudioBuffer.WaitForUnderrun(0))
-        //    {
-        //        Thread.Sleep(10);
-        //        elapsed += 10;
-        //    }
+        static public bool RunUntilAudioOverrun(Machine machine, int timeout)
+        {
+            int elapsed = 0;
+            while ((elapsed < timeout) && machine.AudioBuffer.WaitForUnderrun(0))
+            {
+                Thread.Sleep(10);
+                elapsed += 10;
+            }
 
-        //    return (elapsed < timeout);
-        //}
+            return (elapsed < timeout);
+        }
 
         static public string GetTempFilepath(string filename)
         {
@@ -657,7 +657,7 @@ namespace CPvC.Test
             ManualResetEvent e = new ManualResetEvent(false);
             PropertyChangedEventHandler handler = (sender, args) =>
             {
-                if (machine.ActualRunningState == expectedRunningState)
+                if (args.PropertyName == nameof(Machine.ActualRunningState) && machine.ActualRunningState == expectedRunningState)
                 {
                     e.Set();
                 }

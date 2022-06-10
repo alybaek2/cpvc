@@ -47,6 +47,15 @@ namespace CPvC
                 }
             }
         }
+
+        public ManualResetEvent UnderrunEvent
+        {
+            get
+            {
+                return _underrunEvent;
+            }
+        }
+
         public byte ReadSpeed { get; set; }
 
         public AudioBuffer(int maxSize)
