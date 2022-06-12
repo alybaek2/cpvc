@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading;
 
 namespace CPvC
 {
@@ -22,6 +23,14 @@ namespace CPvC
             get
             {
                 return _endTicks;
+            }
+        }
+
+        public override WaitHandle CanProcessEvent
+        {
+            get
+            {
+                return AudioBuffer.UnderrunEvent;
             }
         }
 

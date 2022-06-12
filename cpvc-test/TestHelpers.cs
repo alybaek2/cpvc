@@ -319,6 +319,7 @@ namespace CPvC.Test
 
             receive(action);
             machine.Start();
+            Wait(machine);
 
             //bool result = false;
             //while (!result)
@@ -330,8 +331,6 @@ namespace CPvC.Test
             bool result = action.Wait(10000);
 
             machine.Stop();
-            Wait(machine);
-            //machine.RequestStopAndWait();
 
             if (!result)
             {

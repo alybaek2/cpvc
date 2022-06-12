@@ -123,6 +123,11 @@ namespace CPvC
             }
         }
 
+        public abstract WaitHandle CanProcessEvent
+        {
+            get;
+        }
+
         public byte Volume
         {
             get
@@ -518,37 +523,19 @@ namespace CPvC
         {
             CoreRequest request = null;
 
-            EventWaitHandle[] allEvents = new EventWaitHandle[]
-            {
-                _quitThreadRequested,
-                _autoPausedChanged,
-                _requestedStateChanged,
-                _requestsAvailable,
-                // Should make sure no unit tests use infinite audio overrun threshold!
-                _audioBuffer.UnderrunEvent
-            };
-
-            EventWaitHandle[] allEventsAudioOverrun = new EventWaitHandle[]
-            {
-                _quitThreadRequested,
-                _autoPausedChanged,
-                _requestedStateChanged,
-                _audioBuffer.UnderrunEvent
-            };
-
-            EventWaitHandle[] allEventsAudioUnderrun = new EventWaitHandle[]
-            {
-                _quitThreadRequested,
-                _autoPausedChanged,
-                _requestedStateChanged,
-                _requestsAvailable
-            };
-
             EventWaitHandle[] allEventsPaused = new EventWaitHandle[]
             {
                 _quitThreadRequested,
                 _autoPausedChanged,
                 _requestedStateChanged
+            };
+
+            WaitHandle[] allEvents = new WaitHandle[]
+            {
+                _quitThreadRequested,
+                _autoPausedChanged,
+                _requestedStateChanged,
+                CanProcessEvent
             };
 
             while (true)
@@ -562,23 +549,20 @@ namespace CPvC
                 {
                     ActualRunningState = RunningState.Paused;
 
-                    WaitHandle.WaitAny(allEventsPaused);
+                    WaitHandle.WaitAny(allEventsPaused, 20);
 
                     continue;
                 }
 
                 ActualRunningState = _requestedState;
 
-                if (request == null)
+                if (allEvents[3] == null)
                 {
-                    if (AudioBuffer.WaitForUnderrun(0))
-                    {
-                        WaitHandle.WaitAny(allEventsAudioUnderrun, 20);
-                    }
-                    else
-                    {
-                        WaitHandle.WaitAny(allEventsAudioOverrun, 20);
-                    }
+                    WaitHandle.WaitAny(allEventsPaused);
+                }
+                else
+                {
+                    WaitHandle.WaitAny(allEvents, 20);
                 }
 
                 if (request == null)
@@ -586,6 +570,7 @@ namespace CPvC
                     request = GetNextRequest(20);
                     if (request == null)
                     {
+                        // Should we wait here?
                         continue;
                     }
                 }

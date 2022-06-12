@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace CPvC
 {
@@ -110,6 +111,14 @@ namespace CPvC
         public void Dispose()
         {
             Close();
+        }
+
+        public override WaitHandle CanProcessEvent
+        {
+            get
+            {
+                return AudioBuffer.UnderrunEvent;
+            }
         }
 
         public bool CanStart

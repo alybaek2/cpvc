@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Threading;
 
 namespace CPvC
 {
@@ -27,6 +28,14 @@ namespace CPvC
                 _name = value;
 
                 OnPropertyChanged();
+            }
+        }
+
+        public override WaitHandle CanProcessEvent
+        {
+            get
+            {
+                return null;
             }
         }
 
