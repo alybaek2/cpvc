@@ -35,7 +35,7 @@ namespace CPvC
         {
             get
             {
-                return null;
+                return _requestsAvailable;
             }
         }
 

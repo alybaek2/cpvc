@@ -31,7 +31,7 @@ namespace CPvC
         public event EventHandler DisplayUpdated;
 
         protected readonly Queue<CoreRequest> _requests;
-        private ManualResetEvent _requestsAvailable;
+        protected ManualResetEvent _requestsAvailable;
 
         private AudioBuffer _audioBuffer;
 
