@@ -308,25 +308,9 @@ namespace CPvC.Test
 
         static public void ProcessRemoteRequest(RemoteMachine machine, ReceiveCoreActionDelegate receive, CoreAction action)
         {
-            ManualResetEvent e = new ManualResetEvent(false);
-            //machine.Core.OnCoreAction += (sender, args) =>
-            //{
-            //    if (ReferenceEquals(sender, machine.Core) && (args.Request == null || args.Request == action))
-            //    {
-            //        e.Set();
-            //    }
-            //};
-
             receive(action);
             machine.Start();
             Wait(machine);
-
-            //bool result = false;
-            //while (!result)
-            //{
-            //    result = e.WaitOne(100);
-            //    machine.AdvancePlayback(100000);
-            //}
 
             bool result = action.Wait(10000);
 

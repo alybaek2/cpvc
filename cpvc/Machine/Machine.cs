@@ -498,11 +498,9 @@ namespace CPvC
             SetScreen(screen);
         }
 
-        protected virtual CoreRequest GetNextRequest(int timeout)
+        protected virtual CoreRequest GetNextRequest()
         {
             CoreRequest request = null;
-
-            _requestsAvailable.WaitOne(timeout);
 
             lock (_requests)
             {
@@ -562,15 +560,14 @@ namespace CPvC
                 }
                 else
                 {
-                    WaitHandle.WaitAny(allEvents, 20);
+                    WaitHandle.WaitAny(allEvents);
                 }
 
                 if (request == null)
                 {
-                    request = GetNextRequest(20);
+                    request = GetNextRequest();
                     if (request == null)
                     {
-                        // Should we wait here?
                         continue;
                     }
                 }

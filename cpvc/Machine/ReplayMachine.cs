@@ -161,9 +161,9 @@ namespace CPvC
                 SeekToBookmark(bookmarkIndex);
             }
         }
-        protected override CoreRequest GetNextRequest(int timeout)
+        protected override CoreRequest GetNextRequest()
         {
-            CoreRequest request = base.GetNextRequest(timeout);
+            CoreRequest request = base.GetNextRequest();
             if (request == null)
             {
                 Stop();

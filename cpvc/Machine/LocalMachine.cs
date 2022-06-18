@@ -811,9 +811,9 @@ namespace CPvC
             return _core.GetState();
         }
 
-        protected override CoreRequest GetNextRequest(int timeout)
+        protected override CoreRequest GetNextRequest()
         {
-            CoreRequest request = base.GetNextRequest(timeout);
+            CoreRequest request = base.GetNextRequest();
             if (request == null && _requestedState == RunningState.Running)
             {
                 request = CoreRequest.RunUntil(Ticks + 1000);
