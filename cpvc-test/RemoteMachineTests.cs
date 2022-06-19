@@ -31,24 +31,19 @@ namespace CPvC.Test
             _mockRemote.SetupSet(r => r.CloseConnection = It.IsAny<CloseConnectionDelegate>()).Callback<CloseConnectionDelegate>(callback => _closeConnection = callback);
         }
 
-        //[Test]
-        //public void ReceiveCoreAction()
-        //{
-        //    // Setup
-        //    using (RemoteMachine machine = new RemoteMachine(_mockRemote.Object))
-        //    {
-        //        machine.Start();
+        [Test]
+        public void ReceiveCoreAction()
+        {
+            // Setup
+            using (RemoteMachine machine = new RemoteMachine(_mockRemote.Object))
+            {
+                // Act
+                TestHelpers.ProcessRemoteRequest(machine, _receiveCoreAction, CoreAction.RunUntil(0, 1, null));
 
-        //        // Act
-        //        CoreAction action = CoreAction.RunUntil(0, 1, null);
-        //        _receiveCoreAction(action);
-
-        //        TestHelpers.ProcessOneRequest(machine.Core, action);
-
-        //        // Verify
-        //        Assert.Greater(machine.Ticks, 0);
-        //    }
-        //}
+                // Verify
+                Assert.Greater(machine.Ticks, 0);
+            }
+        }
 
         [Test]
         public void ReceiveLoadSnapshot()
