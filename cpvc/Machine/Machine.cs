@@ -536,13 +536,8 @@ namespace CPvC
                 CanProcessEvent
             };
 
-            while (true)
+            while (!_quitThreadRequested.WaitOne(0))
             {
-                if (_quitThreadRequested.WaitOne(0))
-                {
-                    break;
-                }
-
                 if (ExpectedRunningState == RunningState.Paused)
                 {
                     ActualRunningState = RunningState.Paused;
@@ -578,7 +573,7 @@ namespace CPvC
 
                 if (done)
                 {
-                    request.Processed = true;
+                    request.SetProcessed();
                     request = null;
                 }
             }

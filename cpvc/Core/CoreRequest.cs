@@ -73,24 +73,9 @@ namespace CPvC
 
         private ManualResetEvent _processed;
 
-        public bool Processed
+        public void SetProcessed()
         {
-            get
-            {
-                return _processed.WaitOne(0);
-            }
-
-            set
-            {
-                if (value)
-                {
-                    _processed.Set();
-                }
-                else
-                {
-                    _processed.Reset();
-                }
-            }
+            _processed.Set();
         }
 
         public bool Wait(int timeout)
@@ -101,7 +86,7 @@ namespace CPvC
         public bool Wait()
         {
             return _processed.WaitOne();
-        }
+        }   
 
         static public CoreRequest Reset()
         {
