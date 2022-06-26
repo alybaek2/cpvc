@@ -161,9 +161,7 @@ namespace CPvC.Test
             _receiveSelectMachine(_machines[0].Name);
 
             // Act
-            //_cores[0].Start();
-            _auditorEvents[0](CoreAction.RunUntil(0, 1000, null)); //  CoreRequest.RunUntil(1000);
-            //TestHelpers.ProcessOneRequest(_cores[0], CoreRequest.RunUntil(_cores[0].Ticks + 1));
+            _auditorEvents[0](CoreAction.RunUntil(0, 1000, null));
 
             // Verify
             _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.RunUntil)));
