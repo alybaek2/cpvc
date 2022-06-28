@@ -176,6 +176,47 @@ namespace CPvC.Test
             Assert.DoesNotThrow(() => core.Dispose());
         }
 
+        [Test]
+        public void LoadState()
+        {
+            // Setup
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                byte[] state = core.GetState();
+                core.RunUntil(1000, StopReasons.None, null); // Need a better way to make the current state of the core different.
+
+                // Act
+                core.LoadState(state);
+
+                // Verify
+                byte[] afterState = core.GetState();
+                Assert.AreEqual(state, afterState);
+            }
+        }
+
+        [Test]
+        public void DeleteSnapshot()
+        {
+            // Setup
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                core.CreateSnapshotSync(42);
+                byte[] state = core.GetState();
+                core.RunUntil(1000, StopReasons.None, null); // Need a better way to make the current state of the core different.
+                byte[] afterState1 = core.GetState();
+
+                // Act
+                bool deleteResult = core.DeleteSnapshotSync(42);
+                bool revertResult = core.RevertToSnapshotSync(42);
+
+                // Verify
+                byte[] afterState2 = core.GetState();
+                Assert.AreEqual(afterState1, afterState2);
+                Assert.True(deleteResult);
+                Assert.False(revertResult);
+            }
+        }
+
         //[Test]
         //public void RunForVSync()
         //{
