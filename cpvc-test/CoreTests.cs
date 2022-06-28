@@ -208,24 +208,19 @@ namespace CPvC.Test
         //    mockBeginVSync.Verify(v => v(core, null), Times.Once);
         //}
 
-        //[Test]
-        //public void CoreVersion()
-        //{
-        //    // Setup
-        //    using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
-        //    {
-        //        core.Start();
+        [Test]
+        public void CoreVersion()
+        {
+            // Setup
+            using (Core core = new Core(Core.LatestVersion, Core.Type.CPC6128))
+            {
+                // Act
+                core.ProcessCoreVersion(Core.LatestVersion);
 
-        //        core.SetScreen();
-        //        TestHelpers.ProcessOneRequest(core, CoreRequest.RunUntil(core.Ticks + 1));
-
-        //        // Act
-        //        TestHelpers.ProcessOneRequest(core, CoreRequest.CoreVersion(1));
-        //        TestHelpers.ProcessOneRequest(core, CoreRequest.RunUntil(core.Ticks + 1));
-
-        //        // Verify - To do!
-        //    }
-        //}
+                // Verify - Need better verification. Can't really do much since there's only one version of the core available.
+                Assert.AreEqual(Core.LatestVersion, core.Version);
+            }
+        }
 
         [Test]
         public void CreateInvalidVersion()
