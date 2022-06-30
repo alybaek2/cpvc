@@ -549,14 +549,7 @@ namespace CPvC
 
                 ActualRunningState = _requestedState;
 
-                if (allEvents[3] == null)
-                {
-                    WaitHandle.WaitAny(allEventsPaused);
-                }
-                else
-                {
-                    WaitHandle.WaitAny(allEvents);
-                }
+                WaitHandle.WaitAny(allEvents);
 
                 if (request == null)
                 {
@@ -583,10 +576,7 @@ namespace CPvC
             _quitThreadRequested.Reset();
         }
 
-        protected virtual void CoreActionDone(CoreRequest request, CoreAction action)
-        {
-
-        }
+        protected abstract void CoreActionDone(CoreRequest request, CoreAction action);
 
         public virtual void Close()
         {
