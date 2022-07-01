@@ -158,5 +158,51 @@ namespace CPvC.Test
             // Verify
             Assert.AreEqual(expectedUnderrun, _audioBuffer.WaitForUnderrun(0));
         }
+
+        [Test]
+        public void CircularWrite()
+        {
+            // Setup
+            byte[] expectedBuffer = new byte[] {
+                0x35, 0x43, 0x75, 0x31,
+                0x8c, 0x09, 0xee, 0x05,
+                0x84, 0x1c, 0x41, 0x12
+            };
+            AudioBuffer audioBuffer = new AudioBuffer(3);
+
+            // Act
+            audioBuffer.Write(0x0123);
+            audioBuffer.Write(0x0456);
+            audioBuffer.Write(0x0789);
+            audioBuffer.Write(0x0abc);
+
+            // Verify
+            byte[] buffer = new byte[12];
+            audioBuffer.Render16BitStereo(255, buffer, 0, 3, false);
+            Assert.AreEqual(expectedBuffer, buffer);
+        }
+
+        [Test]
+        public void AppendWrite()
+        {
+            // Setup
+            byte[] expectedBuffer = new byte[] {
+                0x35, 0x43, 0x75, 0x31,
+                0x8c, 0x09, 0xee, 0x05,
+                0x84, 0x1c, 0x41, 0x12
+            };
+            AudioBuffer audioBuffer = new AudioBuffer(-1);
+
+            // Act
+            for (ushort i = 0; i < 50000; i++)
+            {
+                audioBuffer.Write(i);
+            }
+
+            // Verify
+            byte[] buffer = new byte[50000 * 4];
+            int samplesWritten = audioBuffer.Render16BitStereo(255, buffer, 0, 50000, false);
+            Assert.AreEqual(50000, samplesWritten);
+        }
     }
 }
