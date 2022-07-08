@@ -44,7 +44,9 @@ namespace CPvC
 
         private int _snapshotLimit = 3000;
         private int _lastTakenSnapshotId = -1;
-        private List<SnapshotInfo> _snapshots;
+        //private List<SnapshotInfo> _snapshots;
+        private List<int> _snapshots;
+        private Dictionary<int, SnapshotInfo> _allSnapshots;
 
         private bool _isOpen = false;
 
@@ -101,7 +103,8 @@ namespace CPvC
         {
             _name = name;
 
-            _snapshots = new List<SnapshotInfo>();
+            _snapshots = new List<int>();
+            _allSnapshots = new Dictionary<int, SnapshotInfo>();
             _history = history;
 
             _core.Create(Core.LatestVersion, Core.Type.CPC6128);
@@ -234,50 +237,7 @@ namespace CPvC
 
         public override int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
-            // Drive Reverse mode from here...
-            if (ActualRunningState == RunningState.Reverse)
-            {
-                return ReverseReadAudio(buffer, offset, samplesRequested);
-            }
-
             return base.ReadAudio(buffer, offset, samplesRequested);
-        }
-
-        private int ReverseReadAudio(byte[] buffer, int offset, int samplesRequested)
-        {
-            int totalSamplesWritten = 0;
-            int currentSamplesRequested = samplesRequested;
-
-            lock (_snapshots)
-            {
-                int snapshotIndex = _snapshots.Count - 1;
-                if (snapshotIndex >= 0)
-                {
-                    SnapshotInfo currentSnapshot = _snapshots[snapshotIndex];
-                    while (totalSamplesWritten < samplesRequested)
-                    {
-                        int samplesWritten = currentSnapshot.AudioBuffer.Render16BitStereo(Volume, buffer, offset, currentSamplesRequested, true);
-                        if (samplesWritten == 0)
-                        {
-                            PushRequest(CoreRequest.RevertToSnapshot(currentSnapshot.Id));
-
-                            snapshotIndex--;
-                            if (snapshotIndex < 0)
-                            {
-                                break;
-                            }
-
-                            currentSnapshot = _snapshots[snapshotIndex];
-                        }
-
-                        totalSamplesWritten += samplesWritten;
-                        currentSamplesRequested -= samplesWritten;
-                        offset += 4 * samplesWritten;
-                    }
-                }
-            }
-
-            return totalSamplesWritten;
         }
 
         private void TakeSnapshot()
@@ -295,18 +255,23 @@ namespace CPvC
                     HistoryEvent historyEvent = _history.MostRecentClosedEvent(_history.CurrentEvent);
 
                     SnapshotInfo newSnapshot = new SnapshotInfo(snapshotId, historyEvent);
-                    _snapshots.Add(newSnapshot);
+                    _snapshots.Add(newSnapshot.Id);
+                    _allSnapshots.Add(newSnapshot.Id, newSnapshot);
 
                     _core.CreateSnapshotSync(snapshotId);
-                    
+
                     CoreAction action = CoreAction.CreateSnapshot(Ticks, snapshotId);
                     Auditors?.Invoke(action);
 
                     while (_snapshots.Count > _snapshotLimit)
                     {
-                        SnapshotInfo snapshot = _snapshots[0];
+                        SnapshotInfo snapshot = _allSnapshots[_snapshots[0]];
+                        _allSnapshots.Remove(_snapshots[0]);
                         _snapshots.RemoveAt(0);
-                        CoreAction.DeleteSnapshot(Ticks, snapshot.Id);
+
+                        _core.DeleteSnapshotSync(snapshot.Id);
+                        action = CoreAction.DeleteSnapshot(Ticks, snapshot.Id);
+                        Auditors?.Invoke(action);
                     }
                 }
             }
@@ -314,14 +279,6 @@ namespace CPvC
 
         protected override void CoreActionDone(CoreRequest request, CoreAction action)
         {
-            lock (_requests)
-            {
-                if (_requests.Count == 0)
-                {
-                    PushRequest(CoreRequest.RunUntil(Ticks + 1000));
-                }
-            }
-
             if (action == null)
             {
                 return;
@@ -353,23 +310,26 @@ namespace CPvC
             {
                 lock (_snapshots)
                 {
-                    SnapshotInfo newSnapshot = _snapshots.LastOrDefault();
-                    if (newSnapshot != null && action.AudioSamples != null)
+                    if (_snapshots.Count > 0)
                     {
-                        newSnapshot.AudioBuffer.Write(action.AudioSamples);
+                        SnapshotInfo newSnapshot = _allSnapshots[_snapshots.Last()];
+                        if (newSnapshot != null && action.AudioSamples != null)
+                        {
+                            newSnapshot.AudioBuffer.Write(action.AudioSamples);
+                        }
                     }
                 }
             }
             else if (action.Type == CoreAction.Types.RevertToSnapshot)
             {
-                SnapshotInfo currentSnapshot = _snapshots.Find(snapshot => snapshot.Id == action.SnapshotId);
+                SnapshotInfo currentSnapshot = _allSnapshots[action.SnapshotId];
                 if (currentSnapshot != null)
                 {
                     _core.DeleteSnapshotSync(request.SnapshotId);
 
                     _history.CurrentEvent = currentSnapshot.HistoryEvent;
 
-                    _snapshots.RemoveAt(_snapshots.Count - 1);
+                    _allSnapshots.Remove(request.SnapshotId);
                 }
             }
             else if (action.Type == CoreAction.Types.CreateSnapshot)
@@ -382,13 +342,15 @@ namespace CPvC
                     HistoryEvent historyEvent = _history.MostRecentClosedEvent(_history.CurrentEvent);
 
                     SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId, historyEvent);
-                    _snapshots.Add(newSnapshot);
+                    _snapshots.Add(newSnapshot.Id);
+                    _allSnapshots.Add(newSnapshot.Id, newSnapshot);
 
                     while (_snapshots.Count > _snapshotLimit)
                     {
-                        SnapshotInfo snapshot = _snapshots[0];
+                        int snapshotId = _snapshots[0];
                         _snapshots.RemoveAt(0);
-                        PushRequest(CoreRequest.DeleteSnapshot(snapshot.Id));
+                        _allSnapshots.Remove(snapshotId);
+                        PushRequest(CoreRequest.DeleteSnapshot(snapshotId));
                     }
                 }
             }
@@ -418,7 +380,6 @@ namespace CPvC
         public CoreRequest Reset()
         {
             CoreRequest request = CoreRequest.Reset();
-            //_core.Reset();
             PushRequest(request);
             Status = "Reset";
 
@@ -429,7 +390,6 @@ namespace CPvC
         {
             CoreRequest request = CoreRequest.KeyPress(keycode, down);
             PushRequest(request);
-            //_core.KeyPress(keycode, down);
 
             return request;
         }
@@ -475,7 +435,6 @@ namespace CPvC
         {
             CoreRequest request = CoreRequest.LoadDisc(drive, diskBuffer);
             PushRequest(request);
-            //_core.LoadDisc(drive, diskBuffer);
 
             return request;
         }
@@ -484,7 +443,6 @@ namespace CPvC
         {
             CoreRequest request = CoreRequest.LoadTape(tapeBuffer);
             PushRequest(request);
-            //_core.LoadTape(tapeBuffer);
 
             return request;
         }
@@ -614,7 +572,7 @@ namespace CPvC
         {
             lock (_snapshots)
             {
-                if (_requestedState != RunningState.Running || _snapshots.LastOrDefault() == null)
+                if (_requestedState != RunningState.Running || _snapshots.Count == 0)
                 {
                     return;
                 }
@@ -814,12 +772,48 @@ namespace CPvC
         protected override CoreRequest GetNextRequest()
         {
             CoreRequest request = base.GetNextRequest();
-            if (request == null && _requestedState == RunningState.Running)
+            if (request == null)
             {
-                request = CoreRequest.RunUntil(Ticks + 1000);
+                if (_requestedState == RunningState.Running)
+                {
+                    request = CoreRequest.RunUntil(Ticks + 1000);
+                }
+                else if (_requestedState == RunningState.Reverse)
+                {
+                    lock (_snapshots)
+                    {
+                        if (_snapshots.Count > 0)
+                        {
+                            int snapshotId = _snapshots[_snapshots.Count - 1];
+                            _snapshots.RemoveAt(_snapshots.Count - 1);
+
+                            request = CoreRequest.RevertToSnapshot(snapshotId);
+                        }
+                    }
+                }
             }
 
             return request;
+        }
+
+        public override (bool, CoreAction) ProcessRevertToSnapshot(CoreRequest request)
+        {
+            // Play samples from the snapshot info until they run out, then actually revert to snapshot.
+            SnapshotInfo snapshotInfo = _allSnapshots[request.SnapshotId];
+            AudioBuffer.CopyFrom(snapshotInfo.AudioBuffer);
+
+            if (snapshotInfo.AudioBuffer.SampleCount == 0)
+            {
+                _core.RevertToSnapshotSync(request.SnapshotId);
+
+                RaiseDisplayUpdated();
+
+                OnPropertyChanged(nameof(Ticks));
+
+                return (true, CoreAction.RevertToSnapshot(request.StopTicks, request.SnapshotId));
+            }
+
+            return (false, null);
         }
     }
 }

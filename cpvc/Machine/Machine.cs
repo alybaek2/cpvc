@@ -352,13 +352,17 @@ namespace CPvC
 
                     break;
                 case CoreRequest.Types.RevertToSnapshot:
-                    if (_core.RevertToSnapshotSync(request.SnapshotId))
                     {
-                        action = CoreAction.RevertToSnapshot(Ticks, request.SnapshotId);
-
-                        DisplayUpdated?.Invoke(this, null);
-
-                        OnPropertyChanged("Ticks");
+                        (bool succeeded, CoreAction raction) = ProcessRevertToSnapshot(request);
+                        if (succeeded)
+                        {
+                            success = true;
+                            action = raction;
+                        }
+                        else
+                        {
+                            success = false;
+                        }
                     }
 
                     break;
@@ -367,6 +371,21 @@ namespace CPvC
             }
 
             return (success, action);
+        }
+
+        public virtual (bool, CoreAction) ProcessRevertToSnapshot(CoreRequest request)
+        {
+            CoreAction action = null;
+            if (_core.RevertToSnapshotSync(request.SnapshotId))
+            {
+                action = CoreAction.RevertToSnapshot(Ticks, request.SnapshotId);
+
+                DisplayUpdated?.Invoke(this, null);
+
+                OnPropertyChanged("Ticks");
+            }
+
+            return (true, action);
         }
 
         public CoreRequest RunUntil(UInt64 ticks)

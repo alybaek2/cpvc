@@ -187,6 +187,14 @@ namespace CPvC
             }
         }
 
+        public int SampleCount
+        {
+            get
+            {
+                return _writePosition - _readPosition;
+            }
+        }
+
         private bool Overrun()
         {
             return (_writePosition - _readPosition) >= (OverrunThreshold * ReadSpeed);
@@ -217,6 +225,28 @@ namespace CPvC
                     _underrunEvent.Reset();
                 }
             }
+        }
+
+        public int CopyFrom(AudioBuffer other)
+        {
+            int samplesCopied = 0;
+
+            lock (_buffer)
+            {
+                while (!Overrun())
+                {
+                    bool read = other.Read(true, out ushort sample);
+                    if (!read)
+                    {
+                        break;
+                    }
+
+                    Write(sample);
+                    samplesCopied++;
+                }
+            }
+
+            return samplesCopied;
         }
 
         public void Write(IEnumerable<UInt16> samples)
