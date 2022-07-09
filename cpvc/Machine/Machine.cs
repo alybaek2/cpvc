@@ -177,11 +177,6 @@ namespace CPvC
 
         public virtual int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
-            if (_audioBuffer == null)
-            {
-                return 0;
-            }
-
             // We need to make sure that our overrun threshold is enough so that we can fully satisfy at
             // least the next callback from NAudio. Without this, CPvC playback can become "stuttery."
             _audioBuffer.OverrunThreshold = samplesRequested * 2;
@@ -198,12 +193,6 @@ namespace CPvC
         {
             RequestedState = RunningState.Running;
             Status = "Resumed";
-        }
-
-        public void RequestStop()
-        {
-            RequestedState = RunningState.Paused;
-            Stop();
         }
 
         public void Stop()
