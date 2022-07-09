@@ -1192,6 +1192,7 @@ namespace CPvC.Test
             {
                 machine.SnapshotLimit = 1;
 
+                bool success = false;
                 int createSnapshotCount = 0;
                 int deleteSnapshotCount = 0;
                 ManualResetEvent e = new ManualResetEvent(false);
@@ -1204,7 +1205,11 @@ namespace CPvC.Test
                     if (action.Type == CoreRequest.Types.DeleteSnapshot)
                     {
                         deleteSnapshotCount++;
+                    }
 
+                    if (createSnapshotCount == 2 && deleteSnapshotCount == 1)
+                    {
+                        success = true;
                         e.Set();
                     }
                 };
@@ -1214,7 +1219,49 @@ namespace CPvC.Test
                 e.WaitOne(2000);
 
                 // Verify
-                Assert.AreEqual(1, createSnapshotCount - deleteSnapshotCount);
+                Assert.True(success);
+            }
+        }
+
+        [Test]
+        public void RequestCreateSnapshot()
+        {
+            // Setup
+            using (LocalMachine machine = LocalMachine.New("Test", null))
+            {
+                machine.SnapshotLimit = 1;
+
+                bool success = false;
+                int createSnapshotCount = 0;
+                int deleteSnapshotCount = 0;
+                ManualResetEvent e = new ManualResetEvent(false);
+                machine.Auditors += (action) =>
+                {
+                    if (action.Type == CoreRequest.Types.CreateSnapshot)
+                    {
+                        createSnapshotCount++;
+                    }
+                    if (action.Type == CoreRequest.Types.DeleteSnapshot)
+                    {
+                        deleteSnapshotCount++;
+                    }
+
+                    if (createSnapshotCount == 2 && deleteSnapshotCount == 1)
+                    {
+                        success = true;
+                        e.Set();
+                    }
+                };
+
+                machine.PushRequest(CoreRequest.CreateSnapshot(123456));
+                machine.PushRequest(CoreRequest.CreateSnapshot(123457));
+
+                // Act
+                machine.Start();
+                e.WaitOne(2000);
+
+                // Verify
+                Assert.True(success);
             }
         }
     }
