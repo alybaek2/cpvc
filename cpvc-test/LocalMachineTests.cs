@@ -1264,5 +1264,83 @@ namespace CPvC.Test
                 Assert.True(success);
             }
         }
+
+        [Test]
+        public void RequestDeleteSnapshot()
+        {
+            // Setup
+            using (LocalMachine machine = LocalMachine.New("Test", null))
+            {
+                List<int> createdSnapshots = new List<int>();
+                List<int> deletedSnapshots = new List<int>();
+                ManualResetEvent e = new ManualResetEvent(false);
+                machine.Auditors += (action) =>
+                {
+                    if (action.Type == CoreRequest.Types.CreateSnapshot && action.SnapshotId == 123456)
+                    {
+                        createdSnapshots.Add(action.SnapshotId);
+                    }
+                    if (action.Type == CoreRequest.Types.DeleteSnapshot && action.SnapshotId == 123456)
+                    {
+                        deletedSnapshots.Add(action.SnapshotId);
+                    }
+                };
+
+                machine.PushRequest(CoreRequest.CreateSnapshot(123456));
+                machine.PushRequest(CoreRequest.DeleteSnapshot(123457));
+                machine.PushRequest(CoreRequest.DeleteSnapshot(123456));
+
+                // Act
+                machine.Start();
+                e.WaitOne(2000);
+
+                // Verify
+                Assert.Contains(123456, createdSnapshots);
+                Assert.Contains(123456, deletedSnapshots);
+                Assert.False(deletedSnapshots.Contains(123457));
+            }
+        }
+
+        [Test]
+        public void RequestLoadCore()
+        {
+            // Setup
+            using (LocalMachine machine = LocalMachine.New("Test", null))
+            {
+                ManualResetEvent e = new ManualResetEvent(false);
+                machine.Auditors += (action) =>
+                {
+                    if (action.Type == CoreRequest.Types.LoadCore)
+                    {
+                        e.Set();
+                    }
+                };
+
+                CoreRequest request = CoreRequest.RunUntil(1000);
+                machine.PushRequest(request);
+                byte[] state = machine.GetState();
+
+                // Act
+                machine.Start();
+
+                if (request.Wait(2000))
+                {
+                    machine.Stop();
+
+                    byte[] newState = machine.GetState();
+
+                    request = CoreRequest.LoadCore(new MemoryBlob(state));
+                    machine.PushRequest(request);
+
+                    machine.Start();
+
+                    request = CoreRequest.RunUntil(1000);
+                    request.Wait(2000);
+                }
+
+                // Verify
+                Assert.True(e.WaitOne());
+            }
+        }
     }
 }
