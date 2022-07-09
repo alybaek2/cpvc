@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading;
 using static CPvC.Test.TestHelpers;
 
 namespace CPvC.Test
@@ -1180,6 +1181,40 @@ namespace CPvC.Test
 
                 // Verify
                 Assert.False(machine.IsOpen);
+            }
+        }
+
+        [Test]
+        public void SnapshotLimit()
+        {
+            // Setup
+            using (LocalMachine machine = LocalMachine.New("Test", null))
+            {
+                machine.SnapshotLimit = 1;
+
+                int createSnapshotCount = 0;
+                int deleteSnapshotCount = 0;
+                ManualResetEvent e = new ManualResetEvent(false);
+                machine.Auditors += (action) =>
+                {
+                    if (action.Type == CoreRequest.Types.CreateSnapshot)
+                    {
+                        createSnapshotCount++;
+                    }
+                    if (action.Type == CoreRequest.Types.DeleteSnapshot)
+                    {
+                        deleteSnapshotCount++;
+
+                        e.Set();
+                    }
+                };
+
+                // Act
+                machine.Start();
+                e.WaitOne(2000);
+
+                // Verify
+                Assert.AreEqual(1, createSnapshotCount - deleteSnapshotCount);
             }
         }
     }

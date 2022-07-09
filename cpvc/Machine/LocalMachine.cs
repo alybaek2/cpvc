@@ -263,7 +263,7 @@ namespace CPvC
                     CoreAction action = CoreAction.CreateSnapshot(Ticks, snapshotId);
                     Auditors?.Invoke(action);
 
-                    while (_snapshots.Count > _snapshotLimit)
+                    while (_snapshots.Count > SnapshotLimit)
                     {
                         SnapshotInfo snapshot = _allSnapshots[_snapshots[0]];
                         _allSnapshots.Remove(_snapshots[0]);
