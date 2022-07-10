@@ -459,42 +459,6 @@ namespace CPvC
             RaiseDisplayUpdated();
         }
 
-        protected void GreyscaleScreen()
-        {
-            byte[] screen = GetScreen();
-            if (screen == null)
-            {
-                return;
-            }
-
-            for (int i = 0; i < screen.Length; i++)
-            {
-                screen[i] |= 0x20;
-            }
-
-            SetScreen(screen);
-
-            DisplayUpdated?.Invoke(this, null);
-        }
-
-        protected void ColourScreen()
-        {
-            byte[] screen = GetScreen();
-            if (screen == null)
-            {
-                return;
-            }
-
-            for (int i = 0; i < screen.Length; i++)
-            {
-                screen[i] &= 0x1f;
-            }
-
-            SetScreen(screen);
-
-            DisplayUpdated?.Invoke(this, null);
-        }
-
         protected void RaiseDisplayUpdated()
         {
             DisplayUpdated?.Invoke(this, null);

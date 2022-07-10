@@ -194,8 +194,6 @@ namespace CPvC
                 }
             }
 
-            GreyscaleScreen();
-
             if (_core != null)
             {
                 _core.Close();
@@ -682,8 +680,6 @@ namespace CPvC
                 {
                     SetCurrentToRoot();
                 }
-
-                ColourScreen();
             }
             catch (Exception ex)
             {
@@ -712,7 +708,6 @@ namespace CPvC
             machine.IsOpen = false;
 
             machine.SetScreen((historyEvent as BookmarkHistoryEvent)?.Bookmark.Screen.GetBytes());
-            machine.GreyscaleScreen();
 
             return machine;
         }

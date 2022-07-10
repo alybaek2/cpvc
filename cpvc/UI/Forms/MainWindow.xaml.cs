@@ -1,8 +1,10 @@
 ﻿using NAudio.Wave;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -536,10 +538,22 @@ namespace CPvC.UI.Forms
             {
                 bitmap = new WriteableBitmap(768, 288, 0, 0, PixelFormats.Indexed8, Display.Palette);
                 _bitmaps.Add(machine, bitmap);
+
+                if (machine is LocalMachine)
+                {
+                    machine.PropertyChanged += Machine_PropertyChanged;
+                }
             }
 
             image.Source = bitmap;
+
             CopyScreenAsync(machine, bitmap, false);
+            bool open = (machine as LocalMachine)?.IsOpen ?? false;
+            UpdateColour(bitmap, !open);
+
+            bitmap.Lock();
+            bitmap.AddDirtyRect(_drawRect);
+            bitmap.Unlock();
 
             machine.DisplayUpdated += Display_Updated;
 
@@ -551,9 +565,7 @@ namespace CPvC.UI.Forms
 
             if (_bitmaps.TryGetValue(machine, out WriteableBitmap bitmap))
             {
-                // Setting this to wait is probably a bit much... should probably allow whoever fires this event
-                // to specify a parameter in the Args to specify whether to wait or not.
-                CopyScreenAsync(machine, bitmap, true);
+                CopyScreenAsync(machine, bitmap, false);
             }
         }
 
@@ -563,6 +575,46 @@ namespace CPvC.UI.Forms
             Machine machine = (Machine)image.DataContext;
 
             UpdateImage(image, machine);
+        }
+
+        private void Machine_PropertyChanged(object sender, PropertyChangedEventArgs args)
+        {
+            LocalMachine machine = (LocalMachine)sender;
+
+            if (args.PropertyName == nameof(LocalMachine.IsOpen))
+            {
+                if (_bitmaps.TryGetValue(machine, out WriteableBitmap bitmap))
+                {
+                    bool open = machine.IsOpen;
+
+                    UpdateColour(bitmap, !open);
+
+                    bitmap.Lock();
+                    bitmap.AddDirtyRect(_drawRect);
+                    bitmap.Unlock();
+                }
+            }
+        }
+
+        static private void UpdateColour(WriteableBitmap bitmap, bool grey)
+        {
+            IntPtr buffer = bitmap.BackBuffer;
+            int size = bitmap.BackBufferStride * bitmap.PixelHeight;
+
+            for (int i = 0; i < size; i++)
+            {
+                byte b = Marshal.ReadByte(buffer, i);
+                if (grey)
+                {
+                    b |= 0x20;
+                }
+                else
+                {
+                    b &= 0x1f;
+                }
+
+                Marshal.WriteByte(buffer, i, b);
+            }
         }
 
         public void CopyScreenAsync(Machine machine, WriteableBitmap bitmap, bool wait)
@@ -583,6 +635,15 @@ namespace CPvC.UI.Forms
             bitmap.Lock();
 
             machine.GetScreen(bitmap.BackBuffer, (UInt64)(bitmap.BackBufferStride * bitmap.PixelHeight));
+
+            if (machine is LocalMachine localMachine)
+            {
+                if (!localMachine.IsOpen)
+                {
+                    UpdateColour(bitmap, true);
+                }
+            }
+
             bitmap.AddDirtyRect(_drawRect);
 
             bitmap.Unlock();
