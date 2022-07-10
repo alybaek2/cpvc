@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using static CPvC.Test.TestHelpers;
 
@@ -1349,12 +1350,29 @@ namespace CPvC.Test
             // Setup
             using (LocalMachine machine = LocalMachine.New("Test", null))
             {
+                // Run for at least one frame so that the screen bytes are
+                // set to something non-zero.
+                CoreRequest request = CoreRequest.RunUntil(80000);
+                machine.PushRequest(request);
+                machine.Start();
+                request.Wait();
+                machine.Stop();
+
+                int screenSize = Display.Height * Display.Pitch;
+                IntPtr buffer = Marshal.AllocHGlobal(screenSize);
+
                 // Act
                 byte[] screen = machine.GetScreen();
+                machine.GetScreen(buffer, (ulong)screenSize);
 
                 // Verify - probably need some better checks here...
                 Assert.NotNull(screen);
                 Assert.AreEqual(Display.Height * Display.Pitch, screen.Length);
+                
+                for (int i = 0; i < screenSize; i++)
+                {
+                    Assert.AreEqual(Marshal.ReadByte(buffer, i), screen[i]);
+                }
             }
         }
     }
