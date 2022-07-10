@@ -459,6 +459,11 @@ namespace CPvC
             RaiseDisplayUpdated();
         }
 
+        public byte[] GetState()
+        {
+            return _core.GetState();
+        }
+
         protected void RaiseDisplayUpdated()
         {
             DisplayUpdated?.Invoke(this, null);

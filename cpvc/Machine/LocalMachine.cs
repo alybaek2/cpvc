@@ -759,11 +759,6 @@ namespace CPvC
             base.OnPropertyChanged(name);
         }
 
-        public byte[] GetState()
-        {
-            return _core.GetState();
-        }
-
         protected override CoreRequest GetNextRequest()
         {
             CoreRequest request = base.GetNextRequest();

@@ -134,9 +134,5 @@ namespace CPvC
                 BeginVSync();
             }
         }
-        public byte[] GetState()
-        {
-            return _core.GetState();
-        }
     }
 }

@@ -187,10 +187,5 @@ namespace CPvC
 
             base.OnPropertyChanged(name);
         }
-
-        public byte[] GetState()
-        {
-            return _core.GetState();
-        }
     }
 }
