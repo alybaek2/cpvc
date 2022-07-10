@@ -1342,5 +1342,20 @@ namespace CPvC.Test
                 Assert.True(e.WaitOne());
             }
         }
+
+        [Test]
+        public void GetScreen()
+        {
+            // Setup
+            using (LocalMachine machine = LocalMachine.New("Test", null))
+            {
+                // Act
+                byte[] screen = machine.GetScreen();
+
+                // Verify - probably need some better checks here...
+                Assert.NotNull(screen);
+                Assert.AreEqual(Display.Height * Display.Pitch, screen.Length);
+            }
+        }
     }
 }
