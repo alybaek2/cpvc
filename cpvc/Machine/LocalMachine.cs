@@ -44,7 +44,6 @@ namespace CPvC
 
         private int _snapshotLimit = 3000;
         private int _lastTakenSnapshotId = -1;
-        //private List<SnapshotInfo> _snapshots;
         private List<int> _snapshots;
         private Dictionary<int, SnapshotInfo> _allSnapshots;
 

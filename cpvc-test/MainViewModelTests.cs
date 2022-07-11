@@ -680,7 +680,6 @@ namespace CPvC.Test
         public void Reset()
         {
             TestInterfacePassthroughIInteractiveMachine(_mainViewModel.ResetCommand, m => m.Reset(), CoreRequest.Reset());
-            //TestInterfacePassthrough<IInteractiveMachine>(_mainViewModel.ResetCommand, m => m.Reset());
         }
 
         [Test]
@@ -705,7 +704,6 @@ namespace CPvC.Test
         public void DriveBEject()
         {
             TestInterfacePassthroughIInteractiveMachine(_mainViewModel.DriveBEjectCommand, m => m.LoadDisc(1, null), CoreRequest.LoadDisc(1, null));
-            //TestInterfacePassthrough<IInteractiveMachine>(_mainViewModel.DriveBEjectCommand, m => m.LoadDisc(1, null));
         }
 
         [Test]
@@ -717,7 +715,6 @@ namespace CPvC.Test
         [Test]
         public void TapeEject()
         {
-            //TestInterfacePassthrough<IInteractiveMachine>(_mainViewModel.TapeEjectCommand, m => m.LoadTape(null));
             TestInterfacePassthroughIInteractiveMachine(_mainViewModel.TapeEjectCommand, m => m.LoadTape(null), CoreRequest.LoadTape(null));
         }
 
