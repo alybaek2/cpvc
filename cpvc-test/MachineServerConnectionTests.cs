@@ -17,30 +17,36 @@ namespace CPvC.Test
         private MachineServerConnection _serverConnection;
 
         private List<IMachine> _machines;
-        private List<Core> _cores;
 
         private Mock<IMachine>[] _mockMachines;
+        private MachineAuditorDelegate[] _auditorEvents;
 
         [SetUp]
         public void Setup()
         {
-            _cores = new List<Core>();
+            //_cores = new List<Core>();
             _mockMachines = new Mock<IMachine>[2];
+            _auditorEvents = new MachineAuditorDelegate[2];
 
-            for (int i = 0; i < _mockMachines.Length; i++)
-            {
-                Core core = new Core(Core.LatestVersion, Core.Type.CPC6128);
+            _mockMachines[0] = new Mock<IMachine>();
 
-                _cores.Add(core);
+            _mockMachines[0].SetupGet(m => m.Name).Returns("Machine0");
+            _mockMachines[0].SetupGet(m => m.Ticks).Returns(() => 1);
+            _mockMachines[0].SetupSet(m => m.Auditors = It.IsAny<MachineAuditorDelegate>())
+                            .Callback<MachineAuditorDelegate>(callback =>
+                            {
+                                _auditorEvents[0] = callback;
+                            });
 
-                _mockMachines[i] = new Mock<IMachine>();
+            _mockMachines[1] = new Mock<IMachine>();
 
-                _mockMachines[i].SetupGet(m => m.Name).Returns(String.Format("Machine{0}", i));
-                _mockMachines[i].SetupGet(m => m.Core).Returns(core);
-                _mockMachines[i].SetupGet(m => m.Ticks).Returns(() => core.Ticks);
-                _mockMachines[i].SetupSet(m => m.Auditors = It.IsAny<MachineAuditorDelegate>())
-                                .Callback<MachineAuditorDelegate>(callback => core.OnCoreAction += (sender, args) => callback(args.Action));
-            }
+            _mockMachines[1].SetupGet(m => m.Name).Returns("Machine1");
+            _mockMachines[1].SetupGet(m => m.Ticks).Returns(() => 1);
+            _mockMachines[1].SetupSet(m => m.Auditors = It.IsAny<MachineAuditorDelegate>())
+                            .Callback<MachineAuditorDelegate>(callback =>
+                            {
+                                _auditorEvents[1] = callback;
+                            });
 
             _machines = _mockMachines.Select(m => m.Object).ToList();
 
@@ -140,12 +146,9 @@ namespace CPvC.Test
             // Act
             _receiveSelectMachine(_mockMachines[0].Object.Name);
             _receiveCoreAction(coreAction);
-
-            _cores[0].Start();
-            TestHelpers.ProcessOneRequest(_cores[0], coreAction);
+            _auditorEvents[0](coreAction);
 
             // Verify
-            Assert.AreEqual(1000, _machines[0].Ticks);
             _mockRemote.Verify(r => r.SendName(_mockMachines[0].Object.Name));
             _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.LoadCore)));
             _mockMachines[0].VerifySet(m => m.Auditors = It.IsAny<MachineAuditorDelegate>());
@@ -158,8 +161,7 @@ namespace CPvC.Test
             _receiveSelectMachine(_machines[0].Name);
 
             // Act
-            _cores[0].Start();
-            TestHelpers.ProcessOneRequest(_cores[0], CoreRequest.RunUntil(_cores[0].Ticks + 1));
+            _auditorEvents[0](CoreAction.RunUntil(0, 1000, null));
 
             // Verify
             _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.RunUntil)));

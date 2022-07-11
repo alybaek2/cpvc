@@ -217,7 +217,7 @@
             <TabControl.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                        <Image Width="16" Height="16" Stretch="None" Source="{Binding RunningState, Converter={StaticResource runningIconConverter}, Mode=OneWay}"/>
+                        <Image Width="16" Height="16" Stretch="None" Source="{Binding ActualRunningState, Converter={StaticResource runningIconConverter}, Mode=OneWay}"/>
                         <TextBlock Text="{Binding Name, Mode=OneWay}"/>
                     </StackPanel>
                 </DataTemplate>
@@ -230,14 +230,14 @@
                                 <Style TargetType="Rectangle">
                                     <Setter Property="Visibility" Value="Hidden"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding RunningState}" Value="{x:Static cpvc:RunningState.Paused}">
+                                        <DataTrigger Binding="{Binding ActualRunningState}" Value="{x:Static cpvc:RunningState.Paused}">
                                             <Setter Property="Visibility" Value="Visible"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Rectangle.Style>
                         </Rectangle>
-                        <Image Width="768" Height="576" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" Source="{Binding Display.Bitmap}" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill"/>
+                        <Image Width="768" Height="576" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill" Loaded="Image_Loaded"/>
                         <Grid Margin="0,0,20,20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Panel.ZIndex="2" Opacity="1.0">
                             <Rectangle HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.7" Panel.ZIndex="0" Fill="Black" RadiusX="8" RadiusY="8"/>
                             <Label Content="{Binding Status, NotifyOnTargetUpdated=True}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="24" Panel.ZIndex="1">
@@ -304,7 +304,7 @@
                                                                 </ContextMenu>
                                                             </Grid.ContextMenu>
                                                             <StackPanel Margin="5">
-                                                                <Image Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" Source="{Binding Display.Bitmap}" ToolTip="{Binding PersistentFilepath, Mode=OneWay}" Cursor="Hand"/>
+                                                                <Image Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" ToolTip="{Binding PersistentFilepath, Mode=OneWay}" Cursor="Hand" Loaded="Preview_Image_Loaded"/>
                                                                 <Label Content="{Binding Name}" HorizontalAlignment="Center"/>
                                                             </StackPanel>
                                                         </Grid>

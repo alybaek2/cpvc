@@ -13,7 +13,9 @@ namespace CPvC
         void LoadLowerROM(byte[] lowerRom);
         void LoadUpperROM(byte slotIndex, byte[] upperRom);
         void SetScreen(UInt16 pitch, UInt16 height, UInt16 width);
-        void CopyScreen(IntPtr screenBuffer, UInt64 size);
+        void SetScreen(byte[] screen);
+        void GetScreen(IntPtr screenBuffer, UInt64 size);
+        byte[] GetScreen();
         UInt64 Ticks();
         void AudioSampleFrequency(UInt32 frequency);
         byte[] GetState();

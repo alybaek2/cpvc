@@ -35,7 +35,6 @@ namespace CPvC.Test
 
             Core core = new Core(Core.LatestVersion, Core.Type.CPC6128);
             Mock<IMachine> mockMachine = new Mock<IMachine>();
-            mockMachine.SetupGet(m => m.Core).Returns(core);
 
             List<IMachine> machines = new List<IMachine> { mockMachine.Object };
 

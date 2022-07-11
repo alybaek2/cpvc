@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace CPvC.UI.Forms
@@ -11,7 +13,8 @@ namespace CPvC.UI.Forms
     {
         private readonly LocalMachine _machine;
         private BookmarksViewModel _viewModel;
-        private Display _display;
+        private WriteableBitmap _bitmap;
+        private Int32Rect _drawRect = new Int32Rect(0, 0, Display.Width, Display.Height);
 
         public HistoryEvent SelectedJumpEvent { get; private set; }
         public HistoryEvent SelectedReplayEvent { get; private set; }
@@ -31,7 +34,7 @@ namespace CPvC.UI.Forms
             };
 
             _viewModel = new BookmarksViewModel(_machine.History, canExecuteChangedInvoker);
-            _display = new Display();
+            _bitmap = new WriteableBitmap(768, 288, 0, 0, PixelFormats.Indexed8, Display.Palette);
 
             Owner = owner;
 
@@ -95,22 +98,17 @@ namespace CPvC.UI.Forms
                 // Set bitmap to currently focussed list item, if it happens to be a bookmark:
                 HistoryViewItem selectedItem = _historyListView.SelectedItems[0] as HistoryViewItem;
                 {
-                    WriteableBitmap bitmap = null;
                     HistoryEvent historyEvent = selectedItem.HistoryEvent;
 
                     // Even though the current event doesn't necessarily have a bookmark, we can still populate the display.
                     if (historyEvent == _machine.History.CurrentEvent)
                     {
-                        bitmap = _machine.Display.Bitmap;
+                        MainWindow.CopyScreen(_machine, _bitmap);
                     }
                     else if (historyEvent is BookmarkHistoryEvent bookmarkHistoryEvent)
                     {
-                        _display.GetFromBookmark(bookmarkHistoryEvent.Bookmark);
-
-                        bitmap = _display.Bitmap;
+                        MainWindow.CopyScreen(bookmarkHistoryEvent.Bookmark.Screen.GetBytes(), _bitmap);
                     }
-
-                    _fullScreenImage.Source = bitmap;
                 }
 
                 _fullScreenImage.Visibility = Visibility.Visible;
@@ -119,6 +117,13 @@ namespace CPvC.UI.Forms
             {
                 _fullScreenImage.Visibility = Visibility.Hidden;
             }
+        }
+
+        private void FullScreenImage_Loaded(object sender, RoutedEventArgs e)
+        {
+            Image image = (Image)sender;
+
+            image.Source = _bitmap;
         }
     }
 }

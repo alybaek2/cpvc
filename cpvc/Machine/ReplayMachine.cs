@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading;
 
 namespace CPvC
 {
@@ -25,9 +26,18 @@ namespace CPvC
             }
         }
 
+        public override WaitHandle CanProcessEvent
+        {
+            get
+            {
+                return AudioBuffer.UnderrunEvent;
+            }
+        }
+
         public ReplayMachine(HistoryEvent historyEvent)
         {
-            _endTicks = historyEvent.Ticks;
+            _endTicks = (historyEvent as CoreActionHistoryEvent)?.CoreAction.StopTicks ?? historyEvent.Ticks;
+
             OnPropertyChanged("EndTicks");
 
             _history = new History();
@@ -55,9 +65,6 @@ namespace CPvC
                 }
             }
 
-            _core.OnCoreAction += HandleCoreAction;
-            _core.OnIdle += IdleHandler;
-
             SeekToBookmark(-1);
         }
 
@@ -70,7 +77,7 @@ namespace CPvC
         {
             get
             {
-                return RunningState == RunningState.Paused && Ticks < EndTicks;
+                return ActualRunningState == RunningState.Paused && Ticks < EndTicks;
             }
         }
 
@@ -78,18 +85,7 @@ namespace CPvC
         {
             get
             {
-                return RunningState == RunningState.Running;
-            }
-        }
-
-        public void Close()
-        {
-            if (_core != null)
-            {
-                _core.OnCoreAction -= HandleCoreAction;
-                _core.Dispose();
-
-                _core = null;
+                return ActualRunningState == RunningState.Running;
             }
         }
 
@@ -118,14 +114,16 @@ namespace CPvC
             if (bookmarkEventIndex == -1)
             {
                 _core.Create(Core.LatestVersion, Core.Type.CPC6128);
-                Display.GetFromBookmark(null);
+
+                BlankScreen();
             }
             else
             {
                 Bookmark bookmark = (_historyEvents[bookmarkEventIndex] as BookmarkHistoryEvent).Bookmark;
                 _core.CreateFromBookmark(bookmark.Version, bookmark.State.GetBytes());
 
-                Display.GetFromBookmark(bookmark);
+                SetScreen(bookmark.Screen.GetBytes());
+
                 startIndex = bookmarkEventIndex;
             }
 
@@ -134,14 +132,14 @@ namespace CPvC
                 HistoryEvent historyEvent = _historyEvents[i];
                 if (historyEvent is CoreActionHistoryEvent coreActionHistoryEvent)
                 {
-                    _core.PushRequest(CoreRequest.RunUntil(coreActionHistoryEvent.Ticks));
-                    _core.PushRequest(coreActionHistoryEvent.CoreAction);
+                    PushRequest(CoreRequest.RunUntil(coreActionHistoryEvent.Ticks));
+                    PushRequest(coreActionHistoryEvent.CoreAction);
                 }
             }
 
-            _core.PushRequest(CoreRequest.RunUntil(_endTicks));
+            PushRequest(CoreRequest.RunUntil(_endTicks));
 
-            SetCoreRunning(false);
+            Stop();
         }
 
         public void SeekToStart()
@@ -163,28 +161,25 @@ namespace CPvC
                 SeekToBookmark(bookmarkIndex);
             }
         }
-
-        private void HandleCoreAction(object sender, CoreEventArgs args)
+        protected override CoreRequest GetNextRequest()
         {
-            Auditors?.Invoke(args.Action);
-        }
-
-        private void IdleHandler(object sender, CoreIdleEventArgs args)
-        {
-            if (args.Handled)
+            CoreRequest request = base.GetNextRequest();
+            if (request == null)
             {
-                return;
+                Stop();
             }
 
-            args.Handled = true;
+            return request;
+        }
 
-            RequestStop();
-            args.Request = null;
+        protected override void CoreActionDone(CoreRequest request, CoreAction action)
+        {
+            Auditors?.Invoke(action);
         }
 
         protected override void OnPropertyChanged(string name)
         {
-            if (name == nameof(RunningState))
+            if (name == nameof(ActualRunningState))
             {
                 base.OnPropertyChanged(nameof(CanStart));
                 base.OnPropertyChanged(nameof(CanStop));

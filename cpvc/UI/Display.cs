@@ -12,7 +12,7 @@ namespace CPvC
     /// <summary>
     /// Small class to deal with copying the screen buffer from a Core to a WriteableBitmap object.
     /// </summary>
-    public class Display : INotifyPropertyChanged
+    public class Display
     {
         /// <summary>
         /// Helper struct encapsulating information on the Amstrad CPC's colour palette.
@@ -103,125 +103,20 @@ namespace CPvC
             };
         }
 
-        static private readonly BitmapPalette _greyPalette = new BitmapPalette(CPCColour.Palette.Select(c => c.GetGreyscaleColor()).ToList());
-        static private readonly BitmapPalette _colourPalette = new BitmapPalette(CPCColour.Palette.Select(c => c.GetColor()).ToList());
-
-        private readonly Int32Rect _drawRect;
-
-        public event PropertyChangedEventHandler PropertyChanged;
+        static public readonly BitmapPalette Palette;
 
         public const ushort Width = 768;
         public const ushort Height = 288;
 
-        public Core Core { get; set; }
-
         // As Bitmap will use an 8-bit palette, each pixel will require one byte. Thus, Pitch will equal Width.
         public const ushort Pitch = Width;
 
-        private WriteableBitmap _bitmap;
-
-        public Display()
+        static Display()
         {
-            _drawRect = new Int32Rect(0, 0, Width, Height);
+            IEnumerable<Color> colors = CPCColour.Palette.Select(c => c.GetColor());
+            IEnumerable<Color> greys = CPCColour.Palette.Select(c => c.GetGreyscaleColor());
 
-            Bitmap = new WriteableBitmap(Width, Height, 0, 0, PixelFormats.Indexed8, _colourPalette);
-
-            CopyScreen();
-        }
-
-        public WriteableBitmap Bitmap
-        {
-            get
-            {
-                return _bitmap;
-            }
-
-            private set
-            {
-                // If we already have a bitmap, copy its contents over to the new one.
-                if (_bitmap != null)
-                {
-                    value.WritePixels(_drawRect, GetBitmapBytes(), Pitch, 0);
-                }
-
-                _bitmap = value;
-
-                OnPropertyChanged();
-            }
-        }
-
-        public byte[] GetBitmapBytes()
-        {
-            byte[] pixels = new byte[_bitmap.PixelWidth * _bitmap.PixelHeight];
-            _bitmap.CopyPixels(pixels, Pitch, 0);
-
-            return pixels;
-        }
-
-        /// <summary>
-        /// Enables or disables greyscale for the bitmap.
-        /// </summary>
-        /// <param name="enabled">Indicates if greyscale should be enabled or disabled.</param>
-        public void EnableGreyscale(bool enabled)
-        {
-            Bitmap = new WriteableBitmap(Width, Height, 0, 0, PixelFormats.Indexed8, enabled ? _greyPalette : _colourPalette);
-        }
-
-        /// <summary>
-        /// Asynchronously copies the display's internal screen buffer to Bitmap. This method ensures this is done on the same thread in which the Bitmap was created.
-        /// </summary>
-        public void CopyScreenAsync()
-        {
-            Bitmap.Dispatcher.BeginInvoke(new Action(() => CopyScreen()), null);
-        }
-
-        /// <summary>
-        /// Copies the display's internal screen buffer to Bitmap. Note this method should only be called on the same thread in which the Bitmap was created.
-        /// </summary>
-        public void CopyScreen()
-        {
-            Bitmap.Lock();
-
-            Core?.CopyScreen(Bitmap.BackBuffer, (UInt64)(Bitmap.BackBufferStride * Bitmap.PixelHeight));
-            Bitmap.AddDirtyRect(_drawRect);
-
-            Bitmap.Unlock();
-        }
-
-        /// <summary>
-        /// Populates the display from a bookmark.
-        /// </summary>
-        /// <param name="bookmark">Bookmark to populate the display from.</param>
-        public void GetFromBookmark(Bookmark bookmark)
-        {
-            if (bookmark?.Screen == null)
-            {
-                // Commenting this out so the code coverage doesn't take forever during a build.
-                // Need to find a simpler way of doing this!
-                /*
-                // Assume a blank screen if no bookmark provided.
-                Bitmap.Lock();
-
-                int size = Bitmap.BackBufferStride * Bitmap.PixelHeight;
-                for (int i = 0; i < size; i++)
-                {
-                    Marshal.WriteByte(Bitmap.BackBufferStride, i, CPCColour.Black._hwColourNumber);
-                }
-
-                Bitmap.Unlock();
-
-                CopyScreen();
-                */
-            }
-            else
-            {
-                Bitmap.WritePixels(_drawRect, bookmark.Screen.GetBytes(), Pitch, 0);
-            }
-        }
-
-        private void OnPropertyChanged([CallerMemberName] string name = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            Palette = new BitmapPalette(colors.Concat(greys).ToList());
         }
     }
 }

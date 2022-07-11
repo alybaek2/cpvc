@@ -1,10 +1,10 @@
 ﻿namespace CPvC
 {
-    public interface IInteractiveMachine
+    public interface IInteractiveMachine : IMachine
     {
-        void Reset();
-        void Key(byte keycode, bool down);
-        void LoadDisc(byte drive, byte[] diskBuffer);
-        void LoadTape(byte[] tapeBuffer);
+        CoreRequest Reset();
+        CoreRequest Key(byte keycode, bool down);
+        CoreRequest LoadDisc(byte drive, byte[] diskBuffer);
+        CoreRequest LoadTape(byte[] tapeBuffer);
     }
 }

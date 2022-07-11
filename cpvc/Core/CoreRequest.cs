@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace CPvC
 {
@@ -10,6 +11,7 @@ namespace CPvC
         public CoreRequest(Types type)
         {
             Type = type;
+            _processed = new ManualResetEvent(false);
         }
 
         public enum Types
@@ -68,6 +70,23 @@ namespace CPvC
         /// For a load or save snapshot action, this indicates the id of the snapshot.
         /// </summary>
         public int SnapshotId { get; protected set; }
+
+        private ManualResetEvent _processed;
+
+        public void SetProcessed()
+        {
+            _processed.Set();
+        }
+
+        public bool Wait(int timeout)
+        {
+            return _processed.WaitOne(timeout);
+        }
+
+        public bool Wait()
+        {
+            return _processed.WaitOne();
+        }   
 
         static public CoreRequest Reset()
         {

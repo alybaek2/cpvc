@@ -88,7 +88,7 @@ namespace CPvC
 
             InitModel(new MainModel(settings, fileSystem));
 
-            _machineServer = new MachineServerListener(Machines.Where(m => m.Core != null));
+            _machineServer = new MachineServerListener(Machines);
 
             LoadRecentServersSetting();
 
@@ -697,7 +697,7 @@ namespace CPvC
                 return;
             }
 
-            using ((machine as IPausableMachine)?.AutoPause())
+            using (machine.AutoPause())
             {
                 byte[] image = PromptForMedia(true);
                 if (image != null)
@@ -714,7 +714,7 @@ namespace CPvC
                 return;
             }
 
-            using ((machine as IPausableMachine)?.AutoPause())
+            using (machine.AutoPause())
             {
                 byte[] image = PromptForMedia(false);
                 if (image != null)
@@ -810,7 +810,7 @@ namespace CPvC
                 return;
             }
 
-            using ((jumpableMachine as IPausableMachine)?.AutoPause())
+            using (jumpableMachine.AutoPause())
             {
                 PromptForBookmarkEventArgs args = new PromptForBookmarkEventArgs();
                 PromptForBookmark?.Invoke(this, args);
@@ -845,7 +845,7 @@ namespace CPvC
                 return;
             }
 
-            using ((machine as IPausableMachine)?.AutoPause())
+            using (machine.AutoPause())
             {
                 PromptForNameEventArgs args = new PromptForNameEventArgs(machine.Name);
                 PromptForName?.Invoke(this, args);

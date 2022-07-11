@@ -45,9 +45,9 @@ namespace CPvC
             _machine = machine;
             if (_machine != null)
             {
-                using ((machine as IPausableMachine)?.AutoPause())
+                using (machine.AutoPause())
                 {
-                    byte[] state = _machine.Core.GetState();
+                    byte[] state = _machine.GetState();
 
                     CoreAction loadCoreAction = CoreAction.LoadCore(0, new MemoryBlob(state));
 
@@ -69,7 +69,7 @@ namespace CPvC
 
         private void ReceiveCoreRequest(CoreRequest request)
         {
-            _machine.Core.PushRequest(request);
+            _machine.PushRequest(request);
         }
 
         private void MachineAuditor(CoreAction coreAction)

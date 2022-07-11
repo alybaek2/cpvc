@@ -5,14 +5,11 @@ namespace CPvC
 {
     public interface IMachine : INotifyPropertyChanged
     {
-        Core Core { get; }
-
         void AdvancePlayback(int samples);
         int ReadAudio(byte[] buffer, int offset, int samplesRequested);
 
         UInt64 Ticks { get; }
-        RunningState RunningState { get; }
-        byte Volume { get; set; }
+        RunningState ActualRunningState { get; }
 
         string Status { get; set; }
 
@@ -20,6 +17,12 @@ namespace CPvC
 
         void Close();
         bool CanClose { get; }
+
+        void PushRequest(CoreRequest request);
+
+        byte[] GetState();
+
+        IDisposable AutoPause();
 
         MachineAuditorDelegate Auditors { get; set; }
     }

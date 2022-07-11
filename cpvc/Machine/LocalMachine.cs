@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace CPvC
 {
@@ -39,14 +40,14 @@ namespace CPvC
             }
         }
 
-        private RunningState _previousRunningState;
-
         private History _history;
 
         private int _snapshotLimit = 3000;
         private int _lastTakenSnapshotId = -1;
-        private List<SnapshotInfo> _snapshots;
-        private List<SnapshotInfo> _revertedSnapshots;
+        private List<int> _snapshots;
+        private Dictionary<int, SnapshotInfo> _allSnapshots;
+
+        private bool _isOpen = false;
 
         private MachineFile _file;
 
@@ -74,7 +75,6 @@ namespace CPvC
                     }
 
                     OnPropertyChanged();
-                    OnPropertyChanged(nameof(IsOpen));
                 }
             }
         }
@@ -102,15 +102,12 @@ namespace CPvC
         {
             _name = name;
 
-            _previousRunningState = RunningState.Paused;
-
-            _snapshots = new List<SnapshotInfo>();
-            _revertedSnapshots = new List<SnapshotInfo>();
-
+            _snapshots = new List<int>();
+            _allSnapshots = new Dictionary<int, SnapshotInfo>();
             _history = history;
 
-            _core.OnCoreAction += HandleCoreAction;
-            _core.OnIdle += IdleHandler;
+            _core.Create(Core.LatestVersion, Core.Type.CPC6128);
+            IsOpen = true;
         }
 
         public void Dispose()
@@ -118,11 +115,19 @@ namespace CPvC
             Close();
         }
 
+        public override WaitHandle CanProcessEvent
+        {
+            get
+            {
+                return AudioBuffer.UnderrunEvent;
+            }
+        }
+
         public bool CanStart
         {
             get
             {
-                return IsOpen && RunningState == RunningState.Paused;
+                return IsOpen && ActualRunningState == RunningState.Paused;
             }
         }
 
@@ -130,7 +135,7 @@ namespace CPvC
         {
             get
             {
-                return IsOpen && RunningState == RunningState.Running;
+                return IsOpen && ActualRunningState == RunningState.Running;
             }
         }
 
@@ -158,18 +163,17 @@ namespace CPvC
         static private LocalMachine New(string name, History history, string persistentFilepath)
         {
             LocalMachine machine = new LocalMachine(name, history);
-            machine.Core.Create(Core.LatestVersion, Core.Type.CPC6128);
 
             machine.PersistantFilepath = persistentFilepath;
 
             return machine;
         }
 
-        public void Close()
+        public override void Close()
         {
             if (IsOpen)
             {
-                Stop();
+                RequestStopAndWait();
 
                 try
                 {
@@ -204,7 +208,9 @@ namespace CPvC
 
             Status = null;
 
-            Display.EnableGreyscale(true);
+            base.Close();
+
+            IsOpen = false;
         }
 
         public bool CanClose
@@ -219,81 +225,61 @@ namespace CPvC
         /// Delegate for VSync events.
         /// </summary>
         /// <param name="core">Core whose VSync signal went from low to high.</param>
-        protected override void BeginVSync(Core core)
+        protected override void BeginVSync()
         {
             TakeSnapshot();
 
-            base.BeginVSync(core);
+            base.BeginVSync();
         }
 
         public override int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
-            // Drive Reverse mode from here...
-            if (RunningState == RunningState.Reverse)
-            {
-                return ReverseReadAudio(buffer, offset, samplesRequested);
-            }
-
             return base.ReadAudio(buffer, offset, samplesRequested);
-        }
-
-        private int ReverseReadAudio(byte[] buffer, int offset, int samplesRequested)
-        {
-            int totalSamplesWritten = 0;
-            int currentSamplesRequested = samplesRequested;
-
-            lock (_snapshots)
-            {
-                SnapshotInfo currentSnapshot = _snapshots.LastOrDefault();
-                while (totalSamplesWritten < samplesRequested && currentSnapshot != null)
-                {
-                    int samplesWritten = currentSnapshot.AudioBuffer.Render16BitStereo(Volume, buffer, offset, currentSamplesRequested, true);
-                    if (samplesWritten == 0)
-                    {
-                        _core.PushRequest(CoreRequest.RevertToSnapshot(currentSnapshot.Id));
-                        _core.PushRequest(CoreRequest.DeleteSnapshot(currentSnapshot.Id));
-                        _snapshots.RemoveAt(_snapshots.Count - 1);
-
-                        lock (_revertedSnapshots)
-                        {
-                            _revertedSnapshots.Add(currentSnapshot);
-                        }
-
-                        currentSnapshot = _snapshots.LastOrDefault();
-                    }
-
-                    totalSamplesWritten += samplesWritten;
-                    currentSamplesRequested -= samplesWritten;
-                    offset += 4 * samplesWritten;
-                }
-            }
-
-            return totalSamplesWritten;
         }
 
         private void TakeSnapshot()
         {
             if (SnapshotLimit > 0)
             {
+                // This doesn't necessarily have to go through the request queue.... can't just do it right away!
                 int snapshotId = ++_lastTakenSnapshotId;
-                _core.PushRequest(CoreRequest.CreateSnapshot(snapshotId));
+
+                lock (_snapshots)
+                {
+                    // Figure out what history event should be set as current if we revert to this snapshot.
+                    // If the current event is a RunUntil, it may not be "finalized" yet (i.e. it may still
+                    // be updated), so go with its parent.
+                    HistoryEvent historyEvent = _history.MostRecentClosedEvent(_history.CurrentEvent);
+
+                    SnapshotInfo newSnapshot = new SnapshotInfo(snapshotId, historyEvent);
+                    _snapshots.Add(newSnapshot.Id);
+                    _allSnapshots.Add(newSnapshot.Id, newSnapshot);
+
+                    _core.CreateSnapshotSync(snapshotId);
+
+                    CoreAction action = CoreAction.CreateSnapshot(Ticks, snapshotId);
+                    Auditors?.Invoke(action);
+
+                    while (_snapshots.Count > SnapshotLimit)
+                    {
+                        SnapshotInfo snapshot = _allSnapshots[_snapshots[0]];
+                        _allSnapshots.Remove(_snapshots[0]);
+                        _snapshots.RemoveAt(0);
+
+                        _core.DeleteSnapshotSync(snapshot.Id);
+                        action = CoreAction.DeleteSnapshot(Ticks, snapshot.Id);
+                        Auditors?.Invoke(action);
+                    }
+                }
             }
         }
 
-        private void HandleCoreAction(object sender, CoreEventArgs args)
+        protected override void CoreActionDone(CoreRequest request, CoreAction action)
         {
-            if (!ReferenceEquals(_core, sender))
-            {
-                return;
-            }
-
-            CoreAction action = args.Action;
             if (action == null)
             {
                 return;
             }
-
-            CoreRequest request = args.Request;
 
             Auditors?.Invoke(action);
 
@@ -321,29 +307,27 @@ namespace CPvC
             {
                 lock (_snapshots)
                 {
-                    SnapshotInfo newSnapshot = _snapshots.LastOrDefault();
-                    if (newSnapshot != null && action.AudioSamples != null)
+                    if (_snapshots.Count > 0)
                     {
-                        newSnapshot.AudioBuffer.Write(action.AudioSamples);
+                        SnapshotInfo newSnapshot = _allSnapshots[_snapshots.Last()];
+                        if (newSnapshot != null && action.AudioSamples != null)
+                        {
+                            newSnapshot.AudioBuffer.Write(action.AudioSamples);
+                        }
                     }
                 }
             }
             else if (action.Type == CoreAction.Types.RevertToSnapshot)
             {
-                SnapshotInfo snapshot;
-                lock (_revertedSnapshots)
+                SnapshotInfo currentSnapshot = _allSnapshots[action.SnapshotId];
+                if (currentSnapshot != null)
                 {
-                    snapshot = _revertedSnapshots.FirstOrDefault(s => s.Id == action.SnapshotId);
-                    _revertedSnapshots.Remove(snapshot);
-                }
+                    _core.DeleteSnapshotSync(request.SnapshotId);
 
-                HistoryEvent historyEvent = snapshot.HistoryEvent;
-                if (_history.CurrentEvent != historyEvent)
-                {
-                    _history.CurrentEvent = historyEvent;
-                }
+                    _history.CurrentEvent = currentSnapshot.HistoryEvent;
 
-                Display.CopyScreenAsync();
+                    _allSnapshots.Remove(request.SnapshotId);
+                }
             }
             else if (action.Type == CoreAction.Types.CreateSnapshot)
             {
@@ -355,13 +339,15 @@ namespace CPvC
                     HistoryEvent historyEvent = _history.MostRecentClosedEvent(_history.CurrentEvent);
 
                     SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId, historyEvent);
-                    _snapshots.Add(newSnapshot);
+                    _snapshots.Add(newSnapshot.Id);
+                    _allSnapshots.Add(newSnapshot.Id, newSnapshot);
 
                     while (_snapshots.Count > _snapshotLimit)
                     {
-                        SnapshotInfo snapshot = _snapshots[0];
+                        int snapshotId = _snapshots[0];
                         _snapshots.RemoveAt(0);
-                        _core.PushRequest(CoreRequest.DeleteSnapshot(snapshot.Id));
+                        _allSnapshots.Remove(snapshotId);
+                        PushRequest(CoreRequest.DeleteSnapshot(snapshotId));
                     }
                 }
             }
@@ -388,15 +374,21 @@ namespace CPvC
             }
         }
 
-        public void Reset()
+        public CoreRequest Reset()
         {
-            _core.Reset();
+            CoreRequest request = CoreRequest.Reset();
+            PushRequest(request);
             Status = "Reset";
+
+            return request;
         }
 
-        public void Key(byte keycode, bool down)
+        public CoreRequest Key(byte keycode, bool down)
         {
-            _core.KeyPress(keycode, down);
+            CoreRequest request = CoreRequest.KeyPress(keycode, down);
+            PushRequest(request);
+
+            return request;
         }
 
         public void AddBookmark(bool system)
@@ -407,7 +399,7 @@ namespace CPvC
                 HistoryEvent historyEvent = _history.AddBookmark(_core.Ticks, bookmark);
 
                 Diagnostics.Trace("Created bookmark at tick {0}", _core.Ticks);
-                Status = String.Format("Bookmark added at {0}", Helpers.GetTimeSpanFromTicks(Core.Ticks).ToString(@"hh\:mm\:ss"));
+                Status = String.Format("Bookmark added at {0}", Helpers.GetTimeSpanFromTicks(Ticks).ToString(@"hh\:mm\:ss"));
             }
         }
 
@@ -419,11 +411,11 @@ namespace CPvC
             HistoryEvent lastBookmarkEvent = _history.CurrentEvent;
             while (lastBookmarkEvent != null)
             {
-                if (lastBookmarkEvent is BookmarkHistoryEvent b && !b.Bookmark.System && b.Ticks != Core.Ticks)
+                if (lastBookmarkEvent is BookmarkHistoryEvent b && !b.Bookmark.System && b.Ticks != Ticks)
                 {
-                    TimeSpan before = Helpers.GetTimeSpanFromTicks(Core.Ticks);
+                    TimeSpan before = Helpers.GetTimeSpanFromTicks(Ticks);
                     JumpToBookmark(b);
-                    TimeSpan after = Helpers.GetTimeSpanFromTicks(Core.Ticks);
+                    TimeSpan after = Helpers.GetTimeSpanFromTicks(Ticks);
                     Status = String.Format("Rewound to {0} (-{1})", after.ToString(@"hh\:mm\:ss"), (after - before).ToString(@"hh\:mm\:ss"));
                     return;
                 }
@@ -436,14 +428,20 @@ namespace CPvC
             Status = "Rewound to start";
         }
 
-        public void LoadDisc(byte drive, byte[] diskBuffer)
+        public CoreRequest LoadDisc(byte drive, byte[] diskBuffer)
         {
-            _core.LoadDisc(drive, diskBuffer);
+            CoreRequest request = CoreRequest.LoadDisc(drive, diskBuffer);
+            PushRequest(request);
+
+            return request;
         }
 
-        public void LoadTape(byte[] tapeBuffer)
+        public CoreRequest LoadTape(byte[] tapeBuffer)
         {
-            _core.LoadTape(tapeBuffer);
+            CoreRequest request = CoreRequest.LoadTape(tapeBuffer);
+            PushRequest(request);
+
+            return request;
         }
 
         /// <summary>
@@ -533,22 +531,11 @@ namespace CPvC
         {
             using (AutoPause())
             {
-                byte[] screen = Display.GetBitmapBytes();
+                byte[] screen = _core.GetScreen();
                 byte[] core = _core.GetState();
 
                 return new Bookmark(system, _core.Version, core, screen);
             }
-        }
-
-        public void IdleHandler(object sender, CoreIdleEventArgs args)
-        {
-            if (args.Handled)
-            {
-                return;
-            }
-
-            args.Handled = true;
-            args.Request = (RunningState == RunningState.Running) ? CoreRequest.RunUntil(Ticks + 1000) : null;
         }
 
         public bool DeleteBookmark(HistoryEvent e)
@@ -560,7 +547,7 @@ namespace CPvC
         {
             _core.CreateFromBookmark(Core.LatestVersion, bookmarkHistoryEvent.Bookmark.State.GetBytes());
 
-            Display.GetFromBookmark(bookmarkHistoryEvent.Bookmark);
+            SetScreen(bookmarkHistoryEvent.Bookmark.Screen.GetBytes());
 
             Auditors?.Invoke(CoreAction.LoadCore(bookmarkHistoryEvent.Ticks, bookmarkHistoryEvent.Bookmark.State));
 
@@ -571,7 +558,7 @@ namespace CPvC
         {
             _core.Create(Core.LatestVersion, Core.Type.CPC6128);
 
-            Display.GetFromBookmark(null);
+            BlankScreen();
 
             Auditors?.Invoke(CoreAction.Reset(_history.RootEvent.Ticks));
 
@@ -582,25 +569,26 @@ namespace CPvC
         {
             lock (_snapshots)
             {
-                if ((!_runningDirection && _requestedState == RunningState.Running) || _snapshots.LastOrDefault() == null)
+                if (_requestedState != RunningState.Running || _snapshots.Count == 0)
                 {
                     return;
                 }
             }
 
-            _previousRunningState = _requestedState;
-            _runningDirection = false;
-            SetRequestedState(RunningState.Reverse);
+            RequestedState = RunningState.Reverse;
+
+            OnPropertyChanged(nameof(ActualRunningState));
 
             Status = "Reversing";
         }
 
         public void ReverseStop()
         {
-            _runningDirection = true;
-            SetRequestedState(_previousRunningState);
+            RequestedState = RunningState.Running;
 
-            _core.AllKeysUp();
+            OnPropertyChanged(nameof(ActualRunningState));
+
+            AllKeysUp();
         }
 
         public void ToggleReversibilityEnabled()
@@ -648,6 +636,7 @@ namespace CPvC
             LocalMachine machine = new LocalMachine(null, new History());
             machine.PersistantFilepath = filepath;
 
+            machine.IsOpen = false;
             machine.OpenFromFile(fileSystem);
 
             return machine;
@@ -658,6 +647,14 @@ namespace CPvC
             if (IsOpen)
             {
                 return;
+            }
+
+            _core = new Core(Core.LatestVersion, Core.Type.CPC6128);
+
+            if (_machineThread == null)
+            {
+                _machineThread = new System.Threading.Thread(MachineThread);
+                _machineThread.Start();
             }
 
             ITextFile textFile = null;
@@ -682,9 +679,6 @@ namespace CPvC
                 {
                     SetCurrentToRoot();
                 }
-
-                // Should probably be monitoring the IsOpen property, I think...
-                Display.EnableGreyscale(false);
             }
             catch (Exception ex)
             {
@@ -696,6 +690,8 @@ namespace CPvC
 
                 throw ex;
             }
+
+            IsOpen = true;
         }
 
         static public LocalMachine GetClosedMachine(IFileSystem fileSystem, string filepath)
@@ -707,10 +703,10 @@ namespace CPvC
             }
 
             LocalMachine machine = New(info.Name, info.History, filepath);
-            HistoryEvent historyEvent = machine.History.CurrentEvent.MostRecent<BookmarkHistoryEvent>(); ;
+            HistoryEvent historyEvent = machine.History.CurrentEvent.MostRecent<BookmarkHistoryEvent>();
+            machine.IsOpen = false;
 
-            machine.Display.GetFromBookmark((historyEvent as BookmarkHistoryEvent)?.Bookmark);
-            machine.Display.EnableGreyscale(true);
+            machine.SetScreen((historyEvent as BookmarkHistoryEvent)?.Bookmark.Screen.GetBytes());
 
             return machine;
         }
@@ -719,7 +715,18 @@ namespace CPvC
         {
             get
             {
-                return (PersistantFilepath == null || File != null) && (Core.IsOpen);
+                return _isOpen;
+            }
+
+            private set
+            {
+                if (value == _isOpen)
+                {
+                    return;
+                }
+
+                _isOpen = value;
+                OnPropertyChanged();
             }
         }
 
@@ -736,20 +743,66 @@ namespace CPvC
                 {
                     _filepath = value;
                     OnPropertyChanged();
-                    OnPropertyChanged(nameof(IsOpen));
                 }
             }
         }
 
         protected override void OnPropertyChanged([CallerMemberName] string name = null)
         {
-            if (name == nameof(RunningState))
+            if (name == nameof(ActualRunningState))
             {
                 base.OnPropertyChanged(nameof(CanStart));
                 base.OnPropertyChanged(nameof(CanStop));
             }
 
             base.OnPropertyChanged(name);
+        }
+
+        protected override CoreRequest GetNextRequest()
+        {
+            CoreRequest request = base.GetNextRequest();
+            if (request == null)
+            {
+                if (_requestedState == RunningState.Running)
+                {
+                    request = CoreRequest.RunUntil(Ticks + 1000);
+                }
+                else if (_requestedState == RunningState.Reverse)
+                {
+                    lock (_snapshots)
+                    {
+                        if (_snapshots.Count > 0)
+                        {
+                            int snapshotId = _snapshots[_snapshots.Count - 1];
+                            _snapshots.RemoveAt(_snapshots.Count - 1);
+
+                            request = CoreRequest.RevertToSnapshot(snapshotId);
+                        }
+                    }
+                }
+            }
+
+            return request;
+        }
+
+        public override (bool, CoreAction) ProcessRevertToSnapshot(CoreRequest request)
+        {
+            // Play samples from the snapshot info until they run out, then actually revert to snapshot.
+            SnapshotInfo snapshotInfo = _allSnapshots[request.SnapshotId];
+            AudioBuffer.CopyFrom(snapshotInfo.AudioBuffer);
+
+            if (snapshotInfo.AudioBuffer.SampleCount == 0)
+            {
+                _core.RevertToSnapshotSync(request.SnapshotId);
+
+                RaiseDisplayUpdated();
+
+                OnPropertyChanged(nameof(Ticks));
+
+                return (true, CoreAction.RevertToSnapshot(request.StopTicks, request.SnapshotId));
+            }
+
+            return (false, null);
         }
     }
 }
