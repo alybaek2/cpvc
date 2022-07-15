@@ -21,8 +21,7 @@ namespace CPvC
         protected RunningState _runningState;
         protected RunningState _requestedState;
         private AutoResetEvent _runningStateChanged;
-        private AutoResetEvent _requestedStateChanged;
-        private AutoResetEvent _autoPausedChanged;
+        private AutoResetEvent _checkRunningState;
         
         protected int _autoPauseCount;
 
@@ -35,8 +34,8 @@ namespace CPvC
 
         private AudioBuffer _audioBuffer;
 
-        private ManualResetEvent _quitThreadRequested;
         protected Thread _machineThread;
+        private bool _quitThread;
 
         /// <summary>
         /// Value indicating the relative volume level of rendered audio (0 = mute, 255 = loudest).
@@ -56,12 +55,11 @@ namespace CPvC
             _requestsAvailable = new ManualResetEvent(false);
 
             _runningStateChanged = new AutoResetEvent(false);
-            _requestedStateChanged = new AutoResetEvent(false);
-            _autoPausedChanged = new AutoResetEvent(false);
+            _checkRunningState = new AutoResetEvent(false);
 
             _audioBuffer = new AudioBuffer(48000);
 
-            _quitThreadRequested = new ManualResetEvent(false);
+            _quitThread = false;
 
             _machineThread = new Thread(MachineThread);
             _machineThread.Start();
@@ -119,7 +117,7 @@ namespace CPvC
             set
             {
                 _requestedState = value;
-                _requestedStateChanged.Set();
+                _checkRunningState.Set();
             }
         }
 
@@ -260,7 +258,7 @@ namespace CPvC
         private void IncrementAutoPause()
         {
             Interlocked.Increment(ref _autoPauseCount);
-            _autoPausedChanged.Set();
+            _checkRunningState.Set();
 
             WaitForExpectedRunningState();
         }
@@ -268,7 +266,7 @@ namespace CPvC
         private void DecrementAutoPause()
         {
             Interlocked.Decrement(ref _autoPauseCount);
-            _autoPausedChanged.Set();
+            _checkRunningState.Set();
         }
 
         protected virtual void OnPropertyChanged([CallerMemberName] string name = null)
@@ -498,28 +496,19 @@ namespace CPvC
         {
             CoreRequest request = null;
 
-            EventWaitHandle[] allEventsPaused = new EventWaitHandle[]
-            {
-                _quitThreadRequested,
-                _autoPausedChanged,
-                _requestedStateChanged
-            };
-
             WaitHandle[] allEvents = new WaitHandle[]
             {
-                _quitThreadRequested,
-                _autoPausedChanged,
-                _requestedStateChanged,
+                _checkRunningState,
                 CanProcessEvent
             };
 
-            while (!_quitThreadRequested.WaitOne(0))
+            while (!_quitThread)
             {
                 if (ExpectedRunningState == RunningState.Paused)
                 {
                     ActualRunningState = RunningState.Paused;
 
-                    WaitHandle.WaitAny(allEventsPaused, 20);
+                    _checkRunningState.WaitOne(20);
 
                     continue;
                 }
@@ -550,14 +539,16 @@ namespace CPvC
 
             ActualRunningState = RunningState.Paused;
 
-            _quitThreadRequested.Reset();
+            _checkRunningState.Set();
+            _quitThread = false;
         }
 
         protected abstract void CoreActionDone(CoreRequest request, CoreAction action);
 
         public virtual void Close()
         {
-            _quitThreadRequested.Set();
+            _checkRunningState.Set();
+            _quitThread = true;
 
             _machineThread?.Join();
             _machineThread = null;
