@@ -539,7 +539,6 @@ namespace CPvC
 
             ActualRunningState = RunningState.Paused;
 
-            _checkRunningState.Set();
             _quitThread = false;
         }
 
@@ -547,8 +546,8 @@ namespace CPvC
 
         public virtual void Close()
         {
-            _checkRunningState.Set();
             _quitThread = true;
+            _checkRunningState.Set();
 
             _machineThread?.Join();
             _machineThread = null;
