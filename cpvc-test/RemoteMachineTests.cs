@@ -14,13 +14,13 @@ namespace CPvC.Test
         private ReceiveNameDelegate _receiveName;
         private CloseConnectionDelegate _closeConnection;
         private Mock<IRemote> _mockRemote;
-        private Mock<MachineAuditorDelegate> _mockAuditor;
+        private Mock<MachineEventHandler> _mockHandler;
 
         [SetUp]
         public void Setup()
         {
             _mockRemote = new Mock<IRemote>();
-            _mockAuditor = new Mock<MachineAuditorDelegate>();
+            _mockHandler = new Mock<MachineEventHandler>();
 
             _receiveCoreAction = null;
             _mockRemote.SetupSet(r => r.ReceivePing = It.IsAny<ReceivePingDelegate>()).Callback<ReceivePingDelegate>(callback => _receivePing = callback);
@@ -75,7 +75,7 @@ namespace CPvC.Test
             // Setup
             using (RemoteMachine machine = new RemoteMachine(_mockRemote.Object))
             {
-                machine.Auditors += _mockAuditor.Object;
+                machine.Event += _mockHandler.Object;
 
                 if (closed)
                 {
@@ -86,7 +86,7 @@ namespace CPvC.Test
                 _receiveCoreAction(CoreAction.RunUntil(0, 1, null));
 
                 // Verify
-                _mockAuditor.Verify(a => a(It.Is<CoreAction>(action => action.Type == CoreRequest.Types.RunUntil)), Times.Exactly(closed ? 0 : 1));
+                _mockHandler.Verify(a => a(It.IsAny<object>(), It.Is<MachineEventArgs>(args => args.Action.Type == CoreRequest.Types.RunUntil)), Times.Exactly(closed ? 0 : 1));
             }
         }
 

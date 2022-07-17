@@ -38,7 +38,7 @@ namespace CPvC
             if (_machine != null)
             {
                 // Quit sending to the client.
-                _machine.Auditors -= MachineAuditor;
+                _machine.Event -= OnMachineEvent;
                 _machine = null;
             }
 
@@ -54,9 +54,14 @@ namespace CPvC
                     _remote.SendName(_machine.Name);
                     _remote.SendCoreAction(loadCoreAction);
 
-                    _machine.Auditors += MachineAuditor;
+                    _machine.Event += OnMachineEvent;
                 }
             }
+        }
+
+        private void OnMachineEvent(object sender, MachineEventArgs args)
+        {
+            MachineAuditor(args.Action);
         }
 
         private void ReceivePing(bool response, UInt64 id)

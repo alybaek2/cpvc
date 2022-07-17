@@ -109,7 +109,7 @@ namespace CPvC.Test
             else
             {
                 replayMachine.AudioBuffer.OverrunThreshold = 10;
-                replayMachine.Auditors += (action) =>
+                replayMachine.Event += (sender, args) =>
                 {
                     replayMachine.AdvancePlayback(1);
                 };
@@ -364,7 +364,7 @@ namespace CPvC.Test
             ReplayMachine replayMachine = CreateMachine(true);
 
             ManualResetEvent e = new ManualResetEvent(false);
-            replayMachine.Auditors += (action) =>
+            replayMachine.Event += (sender, args) =>
             {
                 e.Set();
             };

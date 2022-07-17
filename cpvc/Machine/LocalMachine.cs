@@ -7,9 +7,6 @@ using System.Threading;
 
 namespace CPvC
 {
-    // Should this also send the Machine, so the receiver can verify this event came from the right Machine?
-    public delegate void MachineAuditorDelegate(CoreAction action);
-
     /// <summary>
     /// Represents a persistent instance of a CPvC machine.
     /// </summary>
@@ -258,7 +255,7 @@ namespace CPvC
                     _core.CreateSnapshotSync(snapshotId);
 
                     CoreAction action = CoreAction.CreateSnapshot(Ticks, snapshotId);
-                    Auditors?.Invoke(action);
+                    RaiseEvent(action);
 
                     while (_snapshots.Count > SnapshotLimit)
                     {
@@ -268,7 +265,7 @@ namespace CPvC
 
                         _core.DeleteSnapshotSync(snapshot.Id);
                         action = CoreAction.DeleteSnapshot(Ticks, snapshot.Id);
-                        Auditors?.Invoke(action);
+                        RaiseEvent(action);
                     }
                 }
             }
@@ -281,7 +278,7 @@ namespace CPvC
                 return;
             }
 
-            Auditors?.Invoke(action);
+            RaiseEvent(action);
 
             if (action.Type != CoreAction.Types.CreateSnapshot &&
                 action.Type != CoreAction.Types.DeleteSnapshot &&
@@ -549,7 +546,8 @@ namespace CPvC
 
             SetScreen(bookmarkHistoryEvent.Bookmark.Screen.GetBytes());
 
-            Auditors?.Invoke(CoreAction.LoadCore(bookmarkHistoryEvent.Ticks, bookmarkHistoryEvent.Bookmark.State));
+            CoreAction action = CoreAction.LoadCore(bookmarkHistoryEvent.Ticks, bookmarkHistoryEvent.Bookmark.State);
+            RaiseEvent(action);
 
             _history.CurrentEvent = bookmarkHistoryEvent;
         }
@@ -560,7 +558,8 @@ namespace CPvC
 
             BlankScreen();
 
-            Auditors?.Invoke(CoreAction.Reset(_history.RootEvent.Ticks));
+            CoreAction action = CoreAction.Reset(_history.RootEvent.Ticks);
+            RaiseEvent(action);
 
             _history.CurrentEvent = _history.RootEvent;
         }

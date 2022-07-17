@@ -113,6 +113,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Events\MachineEvent.cs" />
     <Compile Include="Events\PromptForNameEvent.cs" />
     <Compile Include="Events\ConfirmCloseEvent.cs" />
     <Compile Include="Events\SelectRemoteMachineEvent.cs" />

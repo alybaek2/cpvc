@@ -174,7 +174,7 @@ namespace CPvC
 
         protected override void CoreActionDone(CoreRequest request, CoreAction action)
         {
-            Auditors?.Invoke(action);
+            RaiseEvent(action);
         }
 
         protected override void OnPropertyChanged(string name)

@@ -66,7 +66,7 @@ namespace CPvC
                 return;
             }
 
-            Auditors?.Invoke(coreAction);
+            RaiseEvent(coreAction);
 
             PushRequest(coreAction);
         }

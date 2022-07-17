@@ -170,8 +170,7 @@ namespace CPvC
             }
         }
 
-        // This really should be an event, so multiple subscribers can be supported. Or is this already supprted? Test this!
-        public MachineAuditorDelegate Auditors { get; set; }
+        public event MachineEventHandler Event;
 
         public virtual int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
@@ -367,7 +366,7 @@ namespace CPvC
             {
                 action = CoreAction.RevertToSnapshot(Ticks, request.SnapshotId);
 
-                DisplayUpdated?.Invoke(this, null);
+                RaiseDisplayUpdated();
 
                 OnPropertyChanged("Ticks");
             }
@@ -433,7 +432,7 @@ namespace CPvC
 
         protected virtual void BeginVSync()
         {
-            DisplayUpdated?.Invoke(this, null);
+            RaiseDisplayUpdated();
         }
 
         public void GetScreen(IntPtr buffer, UInt64 size)
@@ -554,6 +553,11 @@ namespace CPvC
 
             _core?.Dispose();
             _core = null;
+        }
+
+        protected void RaiseEvent(CoreAction action)
+        {
+            Event?.Invoke(this, new MachineEventArgs(action));
         }
     }
 }

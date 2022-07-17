@@ -24,6 +24,6 @@ namespace CPvC
 
         IDisposable AutoPause();
 
-        MachineAuditorDelegate Auditors { get; set; }
+        event MachineEventHandler Event;
     }
 }

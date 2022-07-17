@@ -14,7 +14,7 @@ namespace CPvC.Test
     public class LocalMachineTests
     {
         private Mock<IFileSystem> _mockFileSystem;
-        private Mock<MachineAuditorDelegate> _mockAuditor;
+        private Mock<MachineEventHandler> _mockHandler;
 
         private string _filename = "test.cpvc";
 
@@ -26,7 +26,7 @@ namespace CPvC.Test
         {
             LocalMachine machine = LocalMachine.New("test", null);
             machine.AudioBuffer.OverrunThreshold = int.MaxValue;
-            machine.Auditors += _mockAuditor.Object;
+            machine.Event += _mockHandler.Object;
 
             return machine;
         }
@@ -47,7 +47,7 @@ namespace CPvC.Test
             _mockTextFile.WriteLine("deletebranch:2");
             _mockFileSystem.Setup(fs => fs.OpenTextFile(_filename)).Callback(() => _mockTextFile.SeekToStart()).Returns(_mockTextFile);
 
-            _mockAuditor = new Mock<MachineAuditorDelegate>();
+            _mockHandler = new Mock<MachineEventHandler>();
 
             _machine = CreateMachine();
         }
@@ -261,7 +261,7 @@ namespace CPvC.Test
 
                 Assert.AreEqual(bookmarkHistoryEvent, machine.History.CurrentEvent);
 
-                _mockAuditor.Verify(a => a(It.Is<CoreAction>(c => c.Type == CoreRequest.Types.LoadCore)), Times.Once);
+                _mockHandler.Verify(a => a(It.IsAny<object>(), It.Is<MachineEventArgs>(args => args.Action.Type == CoreRequest.Types.LoadCore)), Times.Once());
             }
         }
 
@@ -755,8 +755,6 @@ namespace CPvC.Test
             // Verify
             Assert.AreEqual(_machine.Volume, volume2);
             propChanged.Verify(PropertyChanged(_machine, "Volume"), notified ? Times.Once() : Times.Never());
-
-            //propChanged.VerifyNoOtherCalls();
         }
 
         /// <summary>
@@ -1113,30 +1111,6 @@ namespace CPvC.Test
             }
         }
 
-        //[Test]
-        //public void SnapshotLimit()
-        //{
-        //    // Setup
-        //    LocalMachine machine = LocalMachine.New("Test", null);
-        //    machine.SnapshotLimit = 2;
-        //    machine.PushRequest(CoreRequest.CreateSnapshot(1000000));
-        //    machine.PushRequest(CoreRequest.CreateSnapshot(1000001));
-
-        //    // Act
-        //    TestHelpers.Run(machine, 400000);
-        //    machine.Start();
-
-        //    // Verify
-        //    CoreRequest request1 = CoreRequest.DeleteSnapshot(1000000);
-        //    CoreRequest request2 = CoreRequest.DeleteSnapshot(1000001);
-        //    CoreAction action1 = TestHelpers.ProcessOneRequest(machine.Core, request1, 2000);
-        //    CoreAction action2 = TestHelpers.ProcessOneRequest(machine.Core, request2, 2000);
-        //    machine.Stop();
-
-        //    Assert.Null(action1);
-        //    Assert.Null(action2);
-        //}
-
         [Test]
         public void SnapshotLimitZero()
         {
@@ -1147,9 +1121,9 @@ namespace CPvC.Test
                 int deleteSnapshotCount = 0;
                 int createSnapshotCount = 0;
                 machine.SnapshotLimit = 0;
-                machine.Auditors += (a) =>
+                machine.Event += (sender, args) =>
                 {
-                    switch (a.Type)
+                    switch (args.Action.Type)
                     {
                         case CoreRequest.Types.CreateSnapshot:
                             createSnapshotCount++;
@@ -1197,13 +1171,13 @@ namespace CPvC.Test
                 int createSnapshotCount = 0;
                 int deleteSnapshotCount = 0;
                 ManualResetEvent e = new ManualResetEvent(false);
-                machine.Auditors += (action) =>
+                machine.Event += (sender, args) =>
                 {
-                    if (action.Type == CoreRequest.Types.CreateSnapshot)
+                    if (args.Action.Type == CoreRequest.Types.CreateSnapshot)
                     {
                         createSnapshotCount++;
                     }
-                    if (action.Type == CoreRequest.Types.DeleteSnapshot)
+                    if (args.Action.Type == CoreRequest.Types.DeleteSnapshot)
                     {
                         deleteSnapshotCount++;
                     }
@@ -1236,13 +1210,13 @@ namespace CPvC.Test
                 int createSnapshotCount = 0;
                 int deleteSnapshotCount = 0;
                 ManualResetEvent e = new ManualResetEvent(false);
-                machine.Auditors += (action) =>
+                machine.Event += (sender, args) =>
                 {
-                    if (action.Type == CoreRequest.Types.CreateSnapshot)
+                    if (args.Action.Type == CoreRequest.Types.CreateSnapshot)
                     {
                         createSnapshotCount++;
                     }
-                    if (action.Type == CoreRequest.Types.DeleteSnapshot)
+                    if (args.Action.Type == CoreRequest.Types.DeleteSnapshot)
                     {
                         deleteSnapshotCount++;
                     }
@@ -1274,26 +1248,27 @@ namespace CPvC.Test
             {
                 List<int> createdSnapshots = new List<int>();
                 List<int> deletedSnapshots = new List<int>();
-                ManualResetEvent e = new ManualResetEvent(false);
-                machine.Auditors += (action) =>
+
+                machine.Event += (sender, args) =>
                 {
-                    if (action.Type == CoreRequest.Types.CreateSnapshot && action.SnapshotId == 123456)
+                    if (args.Action.Type == CoreRequest.Types.CreateSnapshot && args.Action.SnapshotId == 123456)
                     {
-                        createdSnapshots.Add(action.SnapshotId);
+                        createdSnapshots.Add(args.Action.SnapshotId);
                     }
-                    if (action.Type == CoreRequest.Types.DeleteSnapshot && action.SnapshotId == 123456)
+                    if (args.Action.Type == CoreRequest.Types.DeleteSnapshot && args.Action.SnapshotId == 123456)
                     {
-                        deletedSnapshots.Add(action.SnapshotId);
+                        deletedSnapshots.Add(args.Action.SnapshotId);
                     }
                 };
 
                 machine.PushRequest(CoreRequest.CreateSnapshot(123456));
                 machine.PushRequest(CoreRequest.DeleteSnapshot(123457));
-                machine.PushRequest(CoreRequest.DeleteSnapshot(123456));
+                CoreRequest request = CoreRequest.DeleteSnapshot(123456);
+                machine.PushRequest(request);
 
                 // Act
                 machine.Start();
-                e.WaitOne(2000);
+                request.Wait(2000);
 
                 // Verify
                 Assert.Contains(123456, createdSnapshots);
@@ -1309,9 +1284,9 @@ namespace CPvC.Test
             using (LocalMachine machine = LocalMachine.New("Test", null))
             {
                 ManualResetEvent e = new ManualResetEvent(false);
-                machine.Auditors += (action) =>
+                machine.Event += (sender, args) =>
                 {
-                    if (action.Type == CoreRequest.Types.LoadCore)
+                    if (args.Action.Type == CoreRequest.Types.LoadCore)
                     {
                         e.Set();
                     }
