@@ -13,6 +13,7 @@
         <converters:IsNotNull x:Key="isNotNullConverter" />
         <converters:RunningIcon x:Key="runningIconConverter" />
         <converters:BooleanInverter x:Key="booleanInverterConverter" />
+        <converters:MachineBitmap x:Key="machineBitmapConverter" />
         <Style x:Key="MachineButtonStyle" TargetType="{x:Type Button}">
             <Style.Resources>
                 <Style TargetType="{x:Type Image}">
@@ -237,7 +238,7 @@
                                 </Style>
                             </Rectangle.Style>
                         </Rectangle>
-                        <Image Width="768" Height="576" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill" Loaded="Image_Loaded"/>
+                        <Image Width="768" Height="576" Source="{Binding Path=., Converter={StaticResource machineBitmapConverter}}" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill"/>
                         <Grid Margin="0,0,20,20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Panel.ZIndex="2" Opacity="1.0">
                             <Rectangle HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.7" Panel.ZIndex="0" Fill="Black" RadiusX="8" RadiusY="8"/>
                             <Label Content="{Binding Status, NotifyOnTargetUpdated=True}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="24" Panel.ZIndex="1">
@@ -304,7 +305,7 @@
                                                                 </ContextMenu>
                                                             </Grid.ContextMenu>
                                                             <StackPanel Margin="5">
-                                                                <Image Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" ToolTip="{Binding PersistentFilepath, Mode=OneWay}" Cursor="Hand" Loaded="Preview_Image_Loaded"/>
+                                                                <Image Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Source="{Binding Path=., Converter={StaticResource machineBitmapConverter}}" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" ToolTip="{Binding PersistentFilepath, Mode=OneWay}" Cursor="Hand"/>
                                                                 <Label Content="{Binding Name}" HorizontalAlignment="Center"/>
                                                             </StackPanel>
                                                         </Grid>

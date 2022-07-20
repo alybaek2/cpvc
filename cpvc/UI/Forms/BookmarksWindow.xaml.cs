@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CPvC.UI.Converters;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -103,7 +104,7 @@ namespace CPvC.UI.Forms
                     // Even though the current event doesn't necessarily have a bookmark, we can still populate the display.
                     if (historyEvent == _machine.History.CurrentEvent)
                     {
-                        MainWindow.CopyScreen(_machine, _bitmap);
+                        MachineBitmap.CopyScreen(_machine, _bitmap);
                     }
                     else if (historyEvent is BookmarkHistoryEvent bookmarkHistoryEvent)
                     {

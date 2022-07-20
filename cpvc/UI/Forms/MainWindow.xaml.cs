@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -26,7 +27,6 @@ namespace CPvC.UI.Forms
 
         private readonly MainViewModel _mainViewModel;
 
-        private readonly ConditionalWeakTable<Machine, WriteableBitmap> _bitmaps;
         static private Int32Rect _drawRect = new Int32Rect(0, 0, Display.Width, Display.Height);
 
         private IWavePlayer _wavePlayer;
@@ -61,9 +61,6 @@ namespace CPvC.UI.Forms
                 DeviceNumber = -1,
                 DesiredLatency = 70
             };
-
-            // Create a bitmap table
-            _bitmaps = new ConditionalWeakTable<Machine, WriteableBitmap>();
 
             waveOut.Init(_audio);
             _wavePlayer = waveOut;
@@ -524,129 +521,11 @@ namespace CPvC.UI.Forms
             _mainViewModel.CompactCommand.InvokeCanExecuteChanged(sender, args);
         }
 
-        private void Image_Loaded(object sender, RoutedEventArgs e)
+        private WriteableBitmap GetBitmap(Machine machine)
         {
-            Image image = (Image)sender;
-            Machine machine = (Machine)image.DataContext;
+            Converters.MachineBitmap bitmapConverter = (Converters.MachineBitmap)FindResource("machineBitmapConverter");
 
-            UpdateImage(image, machine);
-        }
-
-        private void UpdateImage(Image image, Machine machine)
-        {
-            if (!_bitmaps.TryGetValue(machine, out WriteableBitmap bitmap))
-            {
-                bitmap = new WriteableBitmap(768, 288, 0, 0, PixelFormats.Indexed8, Display.Palette);
-                _bitmaps.Add(machine, bitmap);
-
-                if (machine is LocalMachine)
-                {
-                    machine.PropertyChanged += Machine_PropertyChanged;
-                }
-            }
-
-            image.Source = bitmap;
-
-            CopyScreenAsync(machine, bitmap, false);
-            bool open = (machine as LocalMachine)?.IsOpen ?? false;
-            UpdateColour(bitmap, !open);
-
-            bitmap.Lock();
-            bitmap.AddDirtyRect(_drawRect);
-            bitmap.Unlock();
-
-            machine.DisplayUpdated += Display_Updated;
-
-        }
-
-        private void Display_Updated(object sender, EventArgs e)
-        {
-            Machine machine = (Machine)sender;
-
-            if (_bitmaps.TryGetValue(machine, out WriteableBitmap bitmap))
-            {
-                CopyScreenAsync(machine, bitmap, false);
-            }
-        }
-
-        private void Preview_Image_Loaded(object sender, RoutedEventArgs e)
-        {
-            Image image = (Image)sender;
-            Machine machine = (Machine)image.DataContext;
-
-            UpdateImage(image, machine);
-        }
-
-        private void Machine_PropertyChanged(object sender, PropertyChangedEventArgs args)
-        {
-            LocalMachine machine = (LocalMachine)sender;
-
-            if (args.PropertyName == nameof(LocalMachine.IsOpen))
-            {
-                if (_bitmaps.TryGetValue(machine, out WriteableBitmap bitmap))
-                {
-                    bool open = machine.IsOpen;
-
-                    UpdateColour(bitmap, !open);
-
-                    bitmap.Lock();
-                    bitmap.AddDirtyRect(_drawRect);
-                    bitmap.Unlock();
-                }
-            }
-        }
-
-        static private void UpdateColour(WriteableBitmap bitmap, bool grey)
-        {
-            IntPtr buffer = bitmap.BackBuffer;
-            int size = bitmap.BackBufferStride * bitmap.PixelHeight;
-
-            for (int i = 0; i < size; i++)
-            {
-                byte b = Marshal.ReadByte(buffer, i);
-                if (grey)
-                {
-                    b |= 0x20;
-                }
-                else
-                {
-                    b &= 0x1f;
-                }
-
-                Marshal.WriteByte(buffer, i, b);
-            }
-        }
-
-        public void CopyScreenAsync(Machine machine, WriteableBitmap bitmap, bool wait)
-        {
-            Action action = new Action(() => CopyScreen(machine, bitmap));
-            if (wait)
-            {
-                bitmap.Dispatcher.Invoke(action, null);
-            }
-            else
-            {
-                bitmap.Dispatcher.BeginInvoke(action, null);
-            }
-        }
-
-        static public void CopyScreen(Machine machine, WriteableBitmap bitmap)
-        {
-            bitmap.Lock();
-
-            machine.GetScreen(bitmap.BackBuffer, (UInt64)(bitmap.BackBufferStride * bitmap.PixelHeight));
-
-            if (machine is LocalMachine localMachine)
-            {
-                if (!localMachine.IsOpen)
-                {
-                    UpdateColour(bitmap, true);
-                }
-            }
-
-            bitmap.AddDirtyRect(_drawRect);
-
-            bitmap.Unlock();
+            return (WriteableBitmap)bitmapConverter.Convert(machine, typeof(WriteableBitmap), null, null);
         }
 
         static public void CopyScreen(byte[] screen, WriteableBitmap bitmap)
