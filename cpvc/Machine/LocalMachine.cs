@@ -314,18 +314,6 @@ namespace CPvC
                     }
                 }
             }
-            else if (action.Type == CoreAction.Types.RevertToSnapshot)
-            {
-                SnapshotInfo currentSnapshot = _allSnapshots[action.SnapshotId];
-                if (currentSnapshot != null)
-                {
-                    _core.DeleteSnapshotSync(request.SnapshotId);
-
-                    _history.CurrentEvent = currentSnapshot.HistoryEvent;
-
-                    _allSnapshots.Remove(request.SnapshotId);
-                }
-            }
             else if (action.Type == CoreAction.Types.CreateSnapshot)
             {
                 lock (_snapshots)
@@ -796,7 +784,11 @@ namespace CPvC
 
                 RaiseDisplayUpdated();
 
-                OnPropertyChanged(nameof(Ticks));
+                _core.DeleteSnapshotSync(request.SnapshotId);
+
+                _history.CurrentEvent = snapshotInfo.HistoryEvent;
+
+                _allSnapshots.Remove(request.SnapshotId);
 
                 return (true, CoreAction.RevertToSnapshot(request.StopTicks, request.SnapshotId));
             }

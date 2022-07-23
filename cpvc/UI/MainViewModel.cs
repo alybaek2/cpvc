@@ -514,7 +514,7 @@ namespace CPvC
             {
                 _activeItem = value;
                 OnPropertyChanged();
-                OnPropertyChanged("ActiveMachine");
+                OnPropertyChanged(nameof(ActiveMachine));
 
                 UpdateCommands(this, null);
             }
@@ -532,7 +532,7 @@ namespace CPvC
                 _activeItem = value;
 
                 OnPropertyChanged();
-                OnPropertyChanged("ActiveItem");
+                OnPropertyChanged(nameof(ActiveItem));
 
                 UpdateCommands(this, null);
             }

@@ -119,8 +119,8 @@ namespace CPvC
             _enableLivePreview = enableLivePreview;
             _selectedMachineName = machineName;
 
-            OnPropertyChanged("SelectedMachineName");
-            OnPropertyChanged("LivePreviewEnabled");
+            OnPropertyChanged(nameof(SelectedMachineName));
+            OnPropertyChanged(nameof(LivePreviewEnabled));
         }
 
         protected void OnPropertyChanged(string name)

@@ -38,7 +38,7 @@ namespace CPvC
         {
             _endTicks = (historyEvent as CoreActionHistoryEvent)?.CoreAction.StopTicks ?? historyEvent.Ticks;
 
-            OnPropertyChanged("EndTicks");
+            OnPropertyChanged(nameof(EndTicks));
 
             _history = new History();
             List<HistoryEvent> historyEvents = new List<HistoryEvent>();

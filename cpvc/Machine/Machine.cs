@@ -367,8 +367,6 @@ namespace CPvC
                 action = CoreAction.RevertToSnapshot(Ticks, request.SnapshotId);
 
                 RaiseDisplayUpdated();
-
-                OnPropertyChanged("Ticks");
             }
 
             return (true, action);
@@ -423,7 +421,6 @@ namespace CPvC
 
             if ((stopReason & StopReasons.VSync) != 0)
             {
-                OnPropertyChanged(nameof(Ticks));
                 BeginVSync();
             }
 
@@ -464,6 +461,7 @@ namespace CPvC
         protected void RaiseDisplayUpdated()
         {
             DisplayUpdated?.Invoke(this, null);
+            OnPropertyChanged(nameof(Ticks));
         }
 
         protected void BlankScreen()
