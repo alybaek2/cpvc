@@ -128,6 +128,11 @@ namespace CPvC
 
         protected override void CoreActionDone(CoreRequest request, CoreAction action)
         {
+            if (action == null)
+            {
+                return;
+            }
+
             if (action.Type == CoreAction.Types.RevertToSnapshot)
             {
                 // Ensure to update the display.
