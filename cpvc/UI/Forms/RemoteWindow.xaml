@@ -3,9 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:converters="clr-namespace:CPvC.UI.Converters"
         xmlns:local="clr-namespace:CPvC.UI.Forms"
         mc:Ignorable="d"
         Title="Remote Connect" WindowStartupLocation="CenterOwner" Closing="Window_Closing" SizeToContent="WidthAndHeight" ResizeMode="NoResize">
+    <Window.Resources>
+        <converters:MachineBitmap x:Key="machineBitmapConverter" />
+    </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -28,7 +32,7 @@
                     <CheckBox Content="Live preview" IsChecked="{Binding LivePreviewEnabled}" />
                 </GroupBox.Header>
                 <Grid>
-                    <Image Width="192" Height="144" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="10" Source="{Binding Machine.Display.Bitmap}" ToolTip="{Binding Machine.Name}" Cursor="Hand"/>
+                    <Image Width="192" Height="144" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="10" Source="{Binding Path=Machine, Converter={StaticResource machineBitmapConverter}}" ToolTip="{Binding Machine.Name}" Cursor="Hand"/>
                 </Grid>
             </GroupBox>
         </Grid>

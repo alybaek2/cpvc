@@ -58,6 +58,7 @@ namespace CPvC
             _checkRunningState = new AutoResetEvent(false);
 
             _audioBuffer = new AudioBuffer(48000);
+            _audioBuffer.OverrunThreshold = int.MaxValue;
 
             _quitThread = false;
 
