@@ -43,7 +43,7 @@ namespace CPvC
                 historyEvent != CurrentEvent ||
                 historyEvent.Children.Count > 0 ||
                 !(historyEvent is CoreActionHistoryEvent coreActionHistoryEvent) ||
-                coreActionHistoryEvent.CoreAction.Type != CoreRequest.Types.RunUntil;
+                coreActionHistoryEvent.CoreAction.Type != MachineRequest.Types.RunUntil;
         }
 
         public HistoryEvent MostRecentClosedEvent(HistoryEvent historyEvent)
@@ -56,23 +56,23 @@ namespace CPvC
             return historyEvent;
         }
 
-        public CoreActionHistoryEvent AddCoreAction(CoreAction coreAction)
+        public CoreActionHistoryEvent AddCoreAction(MachineAction coreAction)
         {
             return AddCoreAction(coreAction, _nextId);
         }
 
-        public CoreActionHistoryEvent AddCoreAction(CoreAction coreAction, int id)
+        public CoreActionHistoryEvent AddCoreAction(MachineAction coreAction, int id)
         {
             // Instead of continually adding "RunUntil" actions, just keep updating the
             // current one if it's a RunUntil, and only notify once we've finished. That
             // happens either when we add a non-RunUntil node after a RunUntil node, or
             // when we change the current node and the current node is a RunUntil. See
             // SetCurrentNode for that case.
-            if (coreAction.Type == CoreRequest.Types.RunUntil)
+            if (coreAction.Type == MachineRequest.Types.RunUntil)
             {
                 if (_currentNode is CoreActionHistoryNode currentCoreActionNode &&
                     currentCoreActionNode.Children.Count == 0 &&
-                    currentCoreActionNode.CoreAction.Type == CoreRequest.Types.RunUntil)
+                    currentCoreActionNode.CoreAction.Type == MachineRequest.Types.RunUntil)
                 {
                     currentCoreActionNode.CoreAction.StopTicks = coreAction.StopTicks;
 
@@ -84,7 +84,7 @@ namespace CPvC
 
             _nextId = Math.Max(_nextId, id) + 1;
 
-            AddChildNode(historyNode, coreAction.Type != CoreRequest.Types.RunUntil);
+            AddChildNode(historyNode, coreAction.Type != MachineRequest.Types.RunUntil);
 
             return historyNode.HistoryEvent as CoreActionHistoryEvent;
         }
@@ -220,7 +220,7 @@ namespace CPvC
                 CoreActionHistoryNode currentCoreActionNode = _currentNode as CoreActionHistoryNode;
                 _currentNode = value.Node;
 
-                if (currentCoreActionNode != null && currentCoreActionNode.CoreAction.Type == CoreRequest.Types.RunUntil)
+                if (currentCoreActionNode != null && currentCoreActionNode.CoreAction.Type == MachineRequest.Types.RunUntil)
                 {
                     Notify(currentCoreActionNode.HistoryEvent, HistoryChangedAction.Add);
                 }

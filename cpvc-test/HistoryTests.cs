@@ -17,10 +17,10 @@ namespace CPvC.Test
         public void SetUp()
         {
             _history = new History();
-            _event0 = _history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
-            _event00 = _history.AddCoreAction(CoreAction.KeyPress(200, 12, true));
+            _event0 = _history.AddCoreAction(MachineAction.RunUntil(100, 200, null));
+            _event00 = _history.AddCoreAction(MachineAction.KeyPress(200, 12, true));
             _history.CurrentEvent = _event0;
-            _event01 = _history.AddCoreAction(CoreAction.Reset(300));
+            _event01 = _history.AddCoreAction(MachineAction.Reset(300));
             _event010 = _history.AddBookmark(400, new Bookmark(false, 1, new byte[] { 0x01, 0x02 }, new byte[] { 0x03, 0x04 }));
         }
 
@@ -38,7 +38,7 @@ namespace CPvC.Test
         public void EndTicksReset()
         {
             // Setup
-            HistoryEvent historyEvent = _history.AddCoreAction(CoreAction.Reset(100));
+            HistoryEvent historyEvent = _history.AddCoreAction(MachineAction.Reset(100));
 
             // Verify
             Assert.AreEqual(100, historyEvent.Ticks);
@@ -48,7 +48,7 @@ namespace CPvC.Test
         public void EndTicksKeyPress()
         {
             // Setup
-            HistoryEvent historyEvent = _history.AddCoreAction(CoreAction.KeyPress(100, 42, true));
+            HistoryEvent historyEvent = _history.AddCoreAction(MachineAction.KeyPress(100, 42, true));
 
             // Verify
             Assert.AreEqual(100, historyEvent.Ticks);
@@ -58,7 +58,7 @@ namespace CPvC.Test
         public void EndTicksRunUntil()
         {
             // Setup
-            HistoryEvent historyEvent = _history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+            HistoryEvent historyEvent = _history.AddCoreAction(MachineAction.RunUntil(100, 200, null));
 
             // Verify
             Assert.AreEqual(200, historyEvent.Ticks);
@@ -68,7 +68,7 @@ namespace CPvC.Test
         public void CreateDate()
         {
             // Setup
-            HistoryEvent historyEvent = _history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+            HistoryEvent historyEvent = _history.AddCoreAction(MachineAction.RunUntil(100, 200, null));
 
             // Verify - historyEvent's CreateDate should be very close to now.
             Assert.Less((DateTime.Now - historyEvent.CreateDate).TotalSeconds, 5);
@@ -81,8 +81,8 @@ namespace CPvC.Test
             History history = new History();
 
             // Act
-            HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
-            HistoryEvent event2 = history.AddCoreAction(CoreAction.KeyPress(200, 12, true));
+            HistoryEvent event1 = history.AddCoreAction(MachineAction.RunUntil(100, 200, null));
+            HistoryEvent event2 = history.AddCoreAction(MachineAction.KeyPress(200, 12, true));
 
             // Verify
             Assert.AreEqual(1, history.RootEvent.Children.Count);
@@ -99,15 +99,15 @@ namespace CPvC.Test
             History history = new History();
 
             // Act
-            CoreActionHistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
-            CoreActionHistoryEvent event2 = history.AddCoreAction(CoreAction.RunUntil(200, 300, null));
+            CoreActionHistoryEvent event1 = history.AddCoreAction(MachineAction.RunUntil(100, 200, null));
+            CoreActionHistoryEvent event2 = history.AddCoreAction(MachineAction.RunUntil(200, 300, null));
 
             // Verify
             Assert.AreEqual(1, history.RootEvent.Children.Count);
             Assert.AreEqual(event1, history.RootEvent.Children[0]);
             Assert.AreEqual(0, event1.Children.Count);
             Assert.AreEqual(event1, event2);
-            Assert.AreEqual(CoreAction.Types.RunUntil, event1.CoreAction.Type);
+            Assert.AreEqual(MachineAction.Types.RunUntil, event1.CoreAction.Type);
             Assert.AreEqual(100, event1.CoreAction.Ticks);
             Assert.AreEqual(300, event1.CoreAction.StopTicks);
         }
@@ -151,8 +151,8 @@ namespace CPvC.Test
         {
             // Setup
             History history = new History();
-            HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
-            HistoryEvent event2 = history.AddCoreAction(CoreAction.KeyPress(200, 12, true));
+            HistoryEvent event1 = history.AddCoreAction(MachineAction.RunUntil(100, 200, null));
+            HistoryEvent event2 = history.AddCoreAction(MachineAction.KeyPress(200, 12, true));
 
             // Act
             HistoryEvent event3 = history.AddBookmark(200, new Bookmark(false, Core.LatestVersion, new byte[] { }, new byte[] { }));
@@ -167,7 +167,7 @@ namespace CPvC.Test
         {
             // Setup
             History history = new History();
-            HistoryEvent event1 = history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+            HistoryEvent event1 = history.AddCoreAction(MachineAction.RunUntil(100, 200, null));
 
             // Act and Verify
             Assert.Throws<Exception>(() => history.AddBookmark(99, new Bookmark(false, Core.LatestVersion, new byte[] { }, new byte[] { })));

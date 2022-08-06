@@ -554,7 +554,7 @@ namespace CPvC
             _model.AddMachine(machine);
 
             ActiveMachine = machine;
-            machine.Start();
+            machine.Start().Wait();
         }
 
         private IMachine OpenMachine()
@@ -697,7 +697,7 @@ namespace CPvC
                 return;
             }
 
-            using (machine.AutoPause())
+            using (machine.Lock())
             {
                 byte[] image = PromptForMedia(true);
                 if (image != null)
@@ -714,7 +714,7 @@ namespace CPvC
                 return;
             }
 
-            using (machine.AutoPause())
+            using (machine.Lock())
             {
                 byte[] image = PromptForMedia(false);
                 if (image != null)
@@ -810,7 +810,7 @@ namespace CPvC
                 return;
             }
 
-            using (jumpableMachine.AutoPause())
+            using (jumpableMachine.Lock())
             {
                 PromptForBookmarkEventArgs args = new PromptForBookmarkEventArgs();
                 PromptForBookmark?.Invoke(this, args);
@@ -845,7 +845,7 @@ namespace CPvC
                 return;
             }
 
-            using (machine.AutoPause())
+            using (machine.Lock())
             {
                 PromptForNameEventArgs args = new PromptForNameEventArgs(machine.Name);
                 PromptForName?.Invoke(this, args);

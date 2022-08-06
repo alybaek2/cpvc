@@ -23,59 +23,59 @@ namespace CPvC.Test
             return It.IsAny<string>();
         }
 
-        static public bool IsKeyRequest(CoreRequest request, byte keycode, bool down)
+        static public bool IsKeyRequest(MachineRequest request, byte keycode, bool down)
         {
-            return request != null && request.Type == CoreRequest.Types.KeyPress && request.KeyCode == keycode && request.KeyDown == down;
+            return request != null && request.Type == MachineRequest.Types.KeyPress && request.KeyCode == keycode && request.KeyDown == down;
         }
 
-        static public CoreRequest KeyRequest(byte keycode, bool down)
+        static public MachineRequest KeyRequest(byte keycode, bool down)
         {
-            return It.Is<CoreRequest>(r => IsKeyRequest(r, keycode, down));
+            return It.Is<MachineRequest>(r => IsKeyRequest(r, keycode, down));
         }
 
-        static public CoreAction KeyAction(byte keycode, bool down)
+        static public MachineAction KeyAction(byte keycode, bool down)
         {
-            return It.Is<CoreAction>(r => IsKeyRequest(r, keycode, down));
+            return It.Is<MachineAction>(r => IsKeyRequest(r, keycode, down));
         }
 
-        static public CoreRequest DiscRequest()
+        static public MachineRequest DiscRequest()
         {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreRequest.Types.LoadDisc);
+            return It.Is<MachineRequest>(r => r != null && r.Type == MachineRequest.Types.LoadDisc);
         }
 
-        static public CoreAction DiscAction()
+        static public MachineAction DiscAction()
         {
-            return It.Is<CoreAction>(r => r != null && r.Type == CoreRequest.Types.LoadDisc);
+            return It.Is<MachineAction>(r => r != null && r.Type == MachineRequest.Types.LoadDisc);
         }
 
-        static public CoreRequest TapeRequest()
+        static public MachineRequest TapeRequest()
         {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreRequest.Types.LoadTape);
+            return It.Is<MachineRequest>(r => r != null && r.Type == MachineRequest.Types.LoadTape);
         }
 
-        static public CoreAction TapeAction()
+        static public MachineAction TapeAction()
         {
-            return It.Is<CoreAction>(r => r != null && r.Type == CoreRequest.Types.LoadTape);
+            return It.Is<MachineAction>(r => r != null && r.Type == MachineRequest.Types.LoadTape);
         }
 
-        static public CoreAction RunUntilActionForce()
+        static public MachineAction RunUntilActionForce()
         {
-            return It.Is<CoreAction>(r => r == null || r.Type == CoreRequest.Types.RunUntil);
+            return It.Is<MachineAction>(r => r == null || r.Type == MachineRequest.Types.RunUntil);
         }
 
-        static public bool IsResetRequest(CoreRequest request)
+        static public bool IsResetRequest(MachineRequest request)
         {
-            return request != null && request.Type == CoreRequest.Types.Reset;
+            return request != null && request.Type == MachineRequest.Types.Reset;
         }
 
-        static public CoreRequest ResetRequest()
+        static public MachineRequest ResetRequest()
         {
-            return It.Is<CoreRequest>(r => r != null && r.Type == CoreRequest.Types.Reset);
+            return It.Is<MachineRequest>(r => r != null && r.Type == MachineRequest.Types.Reset);
         }
 
-        static public CoreAction ResetAction()
+        static public MachineAction ResetAction()
         {
-            return It.Is<CoreAction>(r => r != null && r.Type == CoreRequest.Types.Reset);
+            return It.Is<MachineAction>(r => r != null && r.Type == MachineRequest.Types.Reset);
         }
 
         //static public HistoryEvent CoreActionEvent(int id, CoreRequest.Types type)
@@ -211,7 +211,7 @@ namespace CPvC.Test
             //    e.Set();
             //    args.Request = null;
             //};
-            machine.PushRequest(CoreRequest.RunUntil(machine.Ticks + ticks));
+            machine.PushRequest(MachineRequest.RunUntil(machine.Ticks + ticks));
             machine.Start();
 
             while (machine.Ticks < afterTicks)
@@ -255,11 +255,11 @@ namespace CPvC.Test
             
         }
 
-        static public CoreAction ProcessOneRequest(Core core, CoreRequest request, int timeout = 1000)
+        static public MachineAction ProcessOneRequest(Core core, MachineRequest request, int timeout = 1000)
         {
-            CoreRequest nextRequest = CoreRequest.RunUntil(0);
+            MachineRequest nextRequest = MachineRequest.RunUntil(0);
 
-            CoreAction action = null;
+            MachineAction action = null;
             ManualResetEvent e = new ManualResetEvent(false);
 
             //core.OnCoreAction += (sender, args) =>
@@ -303,14 +303,13 @@ namespace CPvC.Test
         {
             // Insert a request that will effectively do nothing and wait for it
             // to be processed.
-            ProcessOneRequest(core, CoreRequest.RunUntil(0), 10000);
+            ProcessOneRequest(core, MachineRequest.RunUntil(0), 10000);
         }
 
-        static public void ProcessRemoteRequest(RemoteMachine machine, ReceiveCoreActionDelegate receive, CoreAction action)
+        static public void ProcessRemoteRequest(RemoteMachine machine, ReceiveCoreActionDelegate receive, MachineAction action)
         {
             receive(action);
             machine.Start();
-            Wait(machine);
 
             bool result = action.Wait(10000);
 
@@ -373,19 +372,16 @@ namespace CPvC.Test
             machine.LoadTape(null);
             machine.RunUntil(machine.Ticks + 1000);
             machine.AddBookmark(false);
-            CoreRequest request = machine.RunUntil(machine.Ticks + 1000);
+            MachineRequest request = machine.RunUntil(machine.Ticks + 1000);
             machine.Start();
             request.Wait(2000);
 
-            machine.Stop();
-            Wait(machine);
+            machine.Stop().Wait();
             machine.AddBookmark(false);
             request = machine.RunUntil(machine.Ticks + 1000);
-            machine.Start();
-            request.Wait(2000);
+            machine.Start().Wait(2000);
 
-            machine.Stop();
-            Wait(machine);
+            machine.Stop().Wait();
 
             return machine;
         }
@@ -441,7 +437,7 @@ namespace CPvC.Test
 
         }
 
-        static public bool CoreRequestsEqual(CoreRequest request1, CoreRequest request2)
+        static public bool CoreRequestsEqual(MachineRequest request1, MachineRequest request2)
         {
             if (request1 == request2)
             {
@@ -460,30 +456,30 @@ namespace CPvC.Test
 
             switch (request1.Type)
             {
-                case CoreRequest.Types.CoreVersion:
+                case MachineRequest.Types.CoreVersion:
                     return request1.Version == request2.Version;
-                case CoreRequest.Types.KeyPress:
+                case MachineRequest.Types.KeyPress:
                     return request1.KeyCode == request2.KeyCode && request1.KeyDown == request2.KeyDown;
-                case CoreRequest.Types.LoadCore:
+                case MachineRequest.Types.LoadCore:
                     return request1.CoreState.GetBytes().SequenceEqual(request2.CoreState.GetBytes());
-                case CoreRequest.Types.LoadDisc:
+                case MachineRequest.Types.LoadDisc:
                     return request1.Drive == request2.Drive && request1.MediaBuffer.GetBytes().SequenceEqual(request2.MediaBuffer.GetBytes());
-                case CoreRequest.Types.LoadTape:
+                case MachineRequest.Types.LoadTape:
                     return request1.MediaBuffer.GetBytes().SequenceEqual(request2.MediaBuffer.GetBytes());
-                case CoreRequest.Types.Reset:
+                case MachineRequest.Types.Reset:
                     return true;
-                case CoreRequest.Types.RunUntil:
+                case MachineRequest.Types.RunUntil:
                     return request1.StopTicks == request2.StopTicks;
-                case CoreRequest.Types.CreateSnapshot:
-                case CoreRequest.Types.RevertToSnapshot:
-                case CoreRequest.Types.DeleteSnapshot:
+                case MachineRequest.Types.CreateSnapshot:
+                case MachineRequest.Types.RevertToSnapshot:
+                case MachineRequest.Types.DeleteSnapshot:
                     return request1.SnapshotId == request2.SnapshotId;
             }
 
             return false;
         }
 
-        static public bool CoreActionsEqual(CoreAction action1, CoreAction action2)
+        static public bool CoreActionsEqual(MachineAction action1, MachineAction action2)
         {
             if (!CoreRequestsEqual(action1, action2))
             {
@@ -607,12 +603,12 @@ namespace CPvC.Test
             return HistoryEventsEqual(history1.RootEvent, history2.RootEvent);
         }
 
-        static public void Wait(Machine machine)
+        static public void Wait(Machine machine, RunningState actualRunningState)
         {
             ManualResetEvent e = new ManualResetEvent(false);
             PropertyChangedEventHandler handler = (sender, args) =>
             {
-                if (machine.ActualRunningState == machine.ExpectedRunningState)
+                if (machine.ActualRunningState == actualRunningState)
                 {
                     e.Set();
                 }
@@ -621,39 +617,11 @@ namespace CPvC.Test
             try
             {
                 machine.PropertyChanged += handler;
-                if (machine.ActualRunningState != machine.ExpectedRunningState)
+                if (machine.ActualRunningState != actualRunningState)
                 {
                     if (!e.WaitOne(30000))
                     {
-                        throw new TimeoutException("Timeout while waiting for machine's expected running state to match its actual running state.");
-                    }
-                }
-            }
-            finally
-            {
-                machine.PropertyChanged -= handler;
-            }
-        }
-
-        static public void Wait(Machine machine, RunningState expectedRunningState)
-        {
-            ManualResetEvent e = new ManualResetEvent(false);
-            PropertyChangedEventHandler handler = (sender, args) =>
-            {
-                if (args.PropertyName == nameof(Machine.ActualRunningState) && machine.ActualRunningState == expectedRunningState)
-                {
-                    e.Set();
-                }
-            };
-
-            try
-            {
-                machine.PropertyChanged += handler;
-                if (machine.ActualRunningState != expectedRunningState)
-                {
-                    if (!e.WaitOne(30000))
-                    {
-                        throw new TimeoutException("Timeout while waiting for machine's expected running state to match its actual running state.");
+                        throw new TimeoutException(String.Format("Timeout while waiting for machine's expected running state '{0}' to match its actual running state '{1}'.", actualRunningState, machine.ActualRunningState));
                     }
                 }
             }

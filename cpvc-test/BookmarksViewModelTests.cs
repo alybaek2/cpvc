@@ -45,18 +45,18 @@ namespace CPvC.Test
             _history = new History();
 
             _bookmark1Event = _history.AddBookmark(100, new Bookmark(false, 0, null, null));
-            _history.AddCoreAction(CoreAction.RunUntil(100, 400, null));
-            _leaf1Event = _history.AddCoreAction(CoreAction.KeyPress(400, 42, true));
+            _history.AddCoreAction(MachineAction.RunUntil(100, 400, null));
+            _leaf1Event = _history.AddCoreAction(MachineAction.KeyPress(400, 42, true));
             _history.CurrentEvent = _bookmark1Event;
             _bookmark2Event = _history.AddBookmark(200, new Bookmark(false, 0, null, null));
-            _history.AddCoreAction(CoreAction.RunUntil(200, 300, null));
-            _leaf2Event = _history.AddCoreAction(CoreAction.KeyPress(300, 42, true));
+            _history.AddCoreAction(MachineAction.RunUntil(200, 300, null));
+            _leaf2Event = _history.AddCoreAction(MachineAction.KeyPress(300, 42, true));
             _history.CurrentEvent = _bookmark2Event;
-            _history.AddCoreAction(CoreAction.KeyPress(300, 42, true));
-            _history.AddCoreAction(CoreAction.KeyPress(400, 42, false));
+            _history.AddCoreAction(MachineAction.KeyPress(300, 42, true));
+            _history.AddCoreAction(MachineAction.KeyPress(400, 42, false));
             _bookmark3Event = _history.AddBookmark(500, new Bookmark(false, 0, null, null));
             _history.CurrentEvent = _history.RootEvent;
-            _leaf3Event = _history.AddCoreAction(CoreAction.KeyPress(50, 42, true));
+            _leaf3Event = _history.AddCoreAction(MachineAction.KeyPress(50, 42, true));
             _history.CurrentEvent = _bookmark3Event;
 
 

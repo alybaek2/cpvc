@@ -2,8 +2,8 @@
 {
     public interface IReversibleMachine
     {
-        void Reverse();
-        void ReverseStop();
+        MachineRequest Reverse();
+        MachineRequest ReverseStop();
 
         void ToggleReversibilityEnabled();
     }

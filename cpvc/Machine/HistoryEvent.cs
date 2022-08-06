@@ -176,17 +176,17 @@ namespace CPvC
         {
             switch (CoreAction.Type)
             {
-                case CoreRequest.Types.KeyPress:
+                case MachineRequest.Types.KeyPress:
                     return MachineFile.KeyCommand(Id, CoreAction.Ticks, CoreAction.KeyCode, CoreAction.KeyDown);
-                case CoreRequest.Types.Reset:
+                case MachineRequest.Types.Reset:
                     return MachineFile.ResetCommand(Id, CoreAction.Ticks);
-                case CoreRequest.Types.LoadDisc:
+                case MachineRequest.Types.LoadDisc:
                     return MachineFile.LoadDiscCommand(Id, CoreAction.Ticks, CoreAction.Drive, CoreAction.MediaBuffer.GetBytes());
-                case CoreRequest.Types.LoadTape:
+                case MachineRequest.Types.LoadTape:
                     return MachineFile.LoadTapeCommand(Id, CoreAction.Ticks, CoreAction.MediaBuffer.GetBytes());
-                case CoreRequest.Types.CoreVersion:
+                case MachineRequest.Types.CoreVersion:
                     return MachineFile.VersionCommand(Id, CoreAction.Ticks, CoreAction.Version);
-                case CoreRequest.Types.RunUntil:
+                case MachineRequest.Types.RunUntil:
                     return MachineFile.RunCommand(Id, CoreAction.Ticks, CoreAction.StopTicks);
                 default:
                     throw new ArgumentException(String.Format("Unrecognized core action type {0}.", CoreAction.Type), "type");
@@ -201,7 +201,7 @@ namespace CPvC
             }
         }
 
-        public CoreAction CoreAction
+        public MachineAction CoreAction
         {
             get
             {
@@ -213,7 +213,7 @@ namespace CPvC
         {
             get
             {
-                if (_node.CoreAction.Type == CoreRequest.Types.RunUntil)
+                if (_node.CoreAction.Type == MachineRequest.Types.RunUntil)
                 {
                     return _node.CoreAction.StopTicks;
                 }

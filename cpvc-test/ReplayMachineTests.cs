@@ -47,12 +47,11 @@ namespace CPvC.Test
                 machine.Key(Keys.A, false);
                 machine.LoadDisc(0, null);
                 machine.LoadTape(null);
-                CoreRequest request = machine.RunUntil(machine.Ticks + 100);
+                MachineRequest request = machine.RunUntil(machine.Ticks + 100);
 
                 machine.Start();
                 request.Wait(10000);
-                machine.Stop();
-                Wait(machine);
+                machine.Stop().Wait();
 
                 machine.AddBookmark(false);
                 _bookmarkTicks.Add(machine.Ticks);
@@ -60,8 +59,7 @@ namespace CPvC.Test
                 request = machine.RunUntil(machine.Ticks + 100);
                 machine.Start();
                 request.Wait(10000);
-                machine.Stop();
-                Wait(machine);
+                machine.Stop().Wait();
 
                 machine.AddBookmark(false);
                 _bookmarkTicks.Add(machine.Ticks);
@@ -69,8 +67,7 @@ namespace CPvC.Test
                 request = machine.RunUntil(machine.Ticks + 100);
                 machine.Start();
                 request.Wait(10000);
-                machine.Stop();
-                Wait(machine);
+                machine.Stop().Wait();
 
                 _finalHistoryEvent = machine.History.CurrentEvent;
             }
@@ -132,11 +129,9 @@ namespace CPvC.Test
             RunningState runningState1 = replayMachine.ActualRunningState;
 
             // Act
-            replayMachine.Start();
-            Wait(replayMachine);
+            replayMachine.Start().Wait();
             RunningState runningState2 = replayMachine.ActualRunningState;
-            replayMachine.Stop();
-            Wait(replayMachine);
+            replayMachine.Stop().Wait();
             RunningState runningState3 = replayMachine.ActualRunningState;
 
             // Verify
@@ -165,8 +160,7 @@ namespace CPvC.Test
             ReplayMachine replayMachine = CreateMachine(false);
 
             // Act
-            replayMachine.Start();
-            Wait(replayMachine);
+            replayMachine.Start().Wait();
 
             // Verify
             Assert.False(replayMachine.CanStart);
@@ -190,17 +184,13 @@ namespace CPvC.Test
         {
             // Setup
             ReplayMachine machine = CreateMachine(false);
-
-            machine.Start();
-            Wait(machine);
+            machine.Start()?.Wait();
 
             // Act
             RunningState runningState1 = machine.ActualRunningState;
-            machine.ToggleRunning();
-            Wait(machine);
+            machine.ToggleRunning().Wait();
             RunningState runningState2 = machine.ActualRunningState;
-            machine.ToggleRunning();
-            Wait(machine);
+            machine.ToggleRunning().Wait();
 
             // Verify
             Assert.AreEqual(RunningState.Running, runningState1);
@@ -256,8 +246,7 @@ namespace CPvC.Test
             machine.Start();
             while (machine.Ticks == 0);
 
-            machine.Stop();
-            Wait(machine);
+            machine.Stop().Wait();
 
             // Act
             machine.SeekToStart();
@@ -276,7 +265,7 @@ namespace CPvC.Test
             machine.SeekToNextBookmark();
             machine.SeekToNextBookmark();
 
-            machine.Start();
+            machine.Start().Wait();
             while (machine.Ticks == 0)
             {
                 Thread.Sleep(20);
@@ -286,7 +275,6 @@ namespace CPvC.Test
             // Act
             // Really need to check that the RunningState never changed to Running, and remains as Paused.
             machine.Start();
-            Thread.Sleep(50);
             Wait(machine, RunningState.Paused);
 
             // Verify
@@ -372,8 +360,7 @@ namespace CPvC.Test
             // Act
             replayMachine.Start();
             bool auditorCalled = e.WaitOne(2000);
-            replayMachine.Stop();
-            Wait(replayMachine);
+            replayMachine.Stop().Wait();
 
             // Verify
             Assert.True(auditorCalled);

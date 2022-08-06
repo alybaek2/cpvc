@@ -8,12 +8,12 @@ namespace CPvC
 {
     public class MachineEventArgs : EventArgs
     {
-        public MachineEventArgs(CoreAction action)
+        public MachineEventArgs(MachineAction action)
         {
             Action = action;
         }
 
-        public CoreAction Action { get; set; }
+        public MachineAction Action { get; set; }
     }
 
     public delegate void MachineEventHandler(object sender, MachineEventArgs e);

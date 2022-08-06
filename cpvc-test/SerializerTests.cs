@@ -19,36 +19,36 @@ namespace CPvC.Test
 
         static private object[] CoreRequestCases =
         {
-            new object[] { CoreRequest.KeyPress(Keys.A, true), new byte[] { 0x01, 58, 0xFF } , false },
-            new object[] { CoreRequest.Reset(), new byte[] { 0x02 } , false },
-            new object[] { CoreRequest.LoadDisc(1, new byte[] { 0x01, 0x02 }), new byte[] { 0x03, 0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
-            new object[] { CoreRequest.LoadTape(new byte[] { 0x01, 0x02 }), new byte[] { 0x04, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
-            new object[] { CoreRequest.RunUntil(0x0123456789abcdef ), new byte[] { 0x05, 0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01 } , false },
-            new object[] { CoreRequest.LoadCore(new MemoryBlob(new byte[] { 0x01, 0x02 })), new byte[] { 0x06, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
-            new object[] { CoreRequest.CoreVersion(257), new byte[] { 0x07, 0x01, 0x01, 0x00, 0x00 } , false },
-            new object[] { CoreRequest.CreateSnapshot(42), new byte[] { 0x08, 0x2a, 0x00, 0x00, 0x00 }, false },
-            new object[] { CoreRequest.DeleteSnapshot(42), new byte[] { 0x09, 0x2a, 0x00, 0x00, 0x00 }, false },
-            new object[] { CoreRequest.RevertToSnapshot(42), new byte[] { 0x0a, 0x2a, 0x00, 0x00, 0x00 }, false },
-            new object[] { new CoreRequest((CoreRequest.Types) 99), new byte[] { 99 }, true }
+            new object[] { MachineRequest.KeyPress(Keys.A, true), new byte[] { 0x01, 58, 0xFF } , false },
+            new object[] { MachineRequest.Reset(), new byte[] { 0x02 } , false },
+            new object[] { MachineRequest.LoadDisc(1, new byte[] { 0x01, 0x02 }), new byte[] { 0x03, 0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
+            new object[] { MachineRequest.LoadTape(new byte[] { 0x01, 0x02 }), new byte[] { 0x04, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
+            new object[] { MachineRequest.RunUntil(0x0123456789abcdef ), new byte[] { 0x05, 0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01 } , false },
+            new object[] { MachineRequest.LoadCore(new MemoryBlob(new byte[] { 0x01, 0x02 })), new byte[] { 0x06, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
+            new object[] { MachineRequest.CoreVersion(257), new byte[] { 0x07, 0x01, 0x01, 0x00, 0x00 } , false },
+            new object[] { MachineRequest.CreateSnapshot(42), new byte[] { 0x08, 0x2a, 0x00, 0x00, 0x00 }, false },
+            new object[] { MachineRequest.DeleteSnapshot(42), new byte[] { 0x09, 0x2a, 0x00, 0x00, 0x00 }, false },
+            new object[] { MachineRequest.RevertToSnapshot(42), new byte[] { 0x0a, 0x2a, 0x00, 0x00, 0x00 }, false },
+            new object[] { new MachineRequest((MachineRequest.Types) 99), new byte[] { 99 }, true }
         };
 
         static private object[] CoreActionCases =
         {
-            new object[] { CoreAction.KeyPress(0x01234567, Keys.A, true), new byte[] { 0x01, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 58, 0xFF } , false },
-            new object[] { CoreAction.Reset(0x01234567), new byte[] { 0x02, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00 } , false },
-            new object[] { CoreAction.LoadDisc(0x01234567, 1, new MemoryBlob(new byte[] { 0x01, 0x02 })), new byte[] { 0x03, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
-            new object[] { CoreAction.LoadTape(0x01234567, new MemoryBlob(new byte[] { 0x01, 0x02 })), new byte[] { 0x04, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
-            new object[] { CoreAction.RunUntil(0x01234567, 0x0123456789abcdef, null), new byte[] { 0x05, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01 } , false },
-            new object[] { CoreAction.LoadCore(0x01234567, new MemoryBlob(new byte[] { 0x01, 0x02 })), new byte[] { 0x06, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
-            new object[] { CoreAction.CoreVersion(0x01234567, 257), new byte[] { 0x07, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00 } , false },
-            new object[] { CoreAction.CreateSnapshot(0x01234567, 42), new byte[] { 0x08, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2a, 0x00, 0x00, 0x00 }, false },
-            new object[] { CoreAction.DeleteSnapshot(0x01234567, 42), new byte[] { 0x09, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2a, 0x00, 0x00, 0x00 }, false },
-            new object[] { CoreAction.RevertToSnapshot(0x01234567, 42), new byte[] { 0x0a, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2a, 0x00, 0x00, 0x00 }, false },
-            new object[] { new CoreAction((CoreRequest.Types) 99, 0x01234567), new byte[] { 99 }, true }
+            new object[] { MachineAction.KeyPress(0x01234567, Keys.A, true), new byte[] { 0x01, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 58, 0xFF } , false },
+            new object[] { MachineAction.Reset(0x01234567), new byte[] { 0x02, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00 } , false },
+            new object[] { MachineAction.LoadDisc(0x01234567, 1, new MemoryBlob(new byte[] { 0x01, 0x02 })), new byte[] { 0x03, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
+            new object[] { MachineAction.LoadTape(0x01234567, new MemoryBlob(new byte[] { 0x01, 0x02 })), new byte[] { 0x04, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
+            new object[] { MachineAction.RunUntil(0x01234567, 0x0123456789abcdef, null), new byte[] { 0x05, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01 } , false },
+            new object[] { MachineAction.LoadCore(0x01234567, new MemoryBlob(new byte[] { 0x01, 0x02 })), new byte[] { 0x06, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x01, 0x02 } , false },
+            new object[] { MachineAction.CoreVersion(0x01234567, 257), new byte[] { 0x07, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00 } , false },
+            new object[] { MachineAction.CreateSnapshot(0x01234567, 42), new byte[] { 0x08, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2a, 0x00, 0x00, 0x00 }, false },
+            new object[] { MachineAction.DeleteSnapshot(0x01234567, 42), new byte[] { 0x09, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2a, 0x00, 0x00, 0x00 }, false },
+            new object[] { MachineAction.RevertToSnapshot(0x01234567, 42), new byte[] { 0x0a, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 0x2a, 0x00, 0x00, 0x00 }, false },
+            new object[] { new MachineAction((MachineRequest.Types) 99, 0x01234567), new byte[] { 99 }, true }
         };
 
         [TestCaseSource(nameof(CoreRequestCases))]
-        public void CoreRequestToBytes(CoreRequest coreRequest, byte[] expectedBytes, bool throws)
+        public void CoreRequestToBytes(MachineRequest coreRequest, byte[] expectedBytes, bool throws)
         {
             // Setup
             MemoryByteStream stream = new MemoryByteStream();
@@ -67,7 +67,7 @@ namespace CPvC.Test
         }
 
         [TestCaseSource(nameof(CoreRequestCases))]
-        public void CoreRequestFromBytes(CoreRequest expectedCoreRequest, byte[] expectedBytes, bool throws)
+        public void CoreRequestFromBytes(MachineRequest expectedCoreRequest, byte[] expectedBytes, bool throws)
         {
             // Setup
             MemoryByteStream stream = new MemoryByteStream(expectedBytes);
@@ -79,14 +79,14 @@ namespace CPvC.Test
             }
             else
             {
-                CoreRequest coreRequest = Serializer.CoreRequestFromBytes(stream);
+                MachineRequest coreRequest = Serializer.CoreRequestFromBytes(stream);
 
                 Assert.True(CoreRequestsEqual(expectedCoreRequest, coreRequest));
             }
         }
 
         [TestCaseSource(nameof(CoreActionCases))]
-        public void CoreActionToBytes(CoreAction coreAction, byte[] expectedBytes, bool throws)
+        public void CoreActionToBytes(MachineAction coreAction, byte[] expectedBytes, bool throws)
         {
             // Setup
             MemoryByteStream stream = new MemoryByteStream();
@@ -106,7 +106,7 @@ namespace CPvC.Test
         }
 
         [TestCaseSource(nameof(CoreActionCases))]
-        public void CoreActionFromBytes(CoreAction expectedCoreAction, byte[] bytes, bool throws)
+        public void CoreActionFromBytes(MachineAction expectedCoreAction, byte[] bytes, bool throws)
         {
             // Setup
             MemoryByteStream stream = new MemoryByteStream(bytes);
@@ -118,7 +118,7 @@ namespace CPvC.Test
             }
             else
             {
-                CoreAction coreAction = Serializer.CoreActionFromBytes(stream);
+                MachineAction coreAction = Serializer.CoreActionFromBytes(stream);
                 Assert.True(CoreActionsEqual(expectedCoreAction, coreAction));
             }
         }

@@ -53,48 +53,48 @@ namespace CPvC
             return availableMachines;
         }
 
-        static public void CoreRequestToBytes(MemoryByteStream stream, CoreRequest request)
+        static public void CoreRequestToBytes(MemoryByteStream stream, MachineRequest request)
         {
             switch (request.Type)
             {
-                case CoreRequest.Types.KeyPress:
+                case MachineRequest.Types.KeyPress:
                     stream.Write(_coreActionKeyPress);
                     stream.Write(request.KeyCode);
                     stream.Write(request.KeyDown);
                     break;
-                case CoreRequest.Types.Reset:
+                case MachineRequest.Types.Reset:
                     stream.Write(_coreActionReset);
                     break;
-                case CoreRequest.Types.LoadDisc:
+                case MachineRequest.Types.LoadDisc:
                     stream.Write(_coreActionLoadDisc);
                     stream.Write(request.Drive);
                     stream.WriteArray(request.MediaBuffer.GetBytes());
                     break;
-                case CoreRequest.Types.LoadTape:
+                case MachineRequest.Types.LoadTape:
                     stream.Write(_coreActionLoadTape);
                     stream.WriteArray(request.MediaBuffer.GetBytes());
                     break;
-                case CoreRequest.Types.RunUntil:
+                case MachineRequest.Types.RunUntil:
                     stream.Write(_coreActionRunUntil);
                     stream.Write(request.StopTicks);
                     break;
-                case CoreRequest.Types.LoadCore:
+                case MachineRequest.Types.LoadCore:
                     stream.Write(_coreActionLoadCore);
                     stream.WriteArray(request.CoreState.GetBytes());
                     break;
-                case CoreRequest.Types.CoreVersion:
+                case MachineRequest.Types.CoreVersion:
                     stream.Write(_coreActionCoreVersion);
                     stream.Write(request.Version);
                     break;
-                case CoreRequest.Types.CreateSnapshot:
+                case MachineRequest.Types.CreateSnapshot:
                     stream.Write(_coreActionCreateSnapshot);
                     stream.Write(request.SnapshotId);
                     break;
-                case CoreRequest.Types.DeleteSnapshot:
+                case MachineRequest.Types.DeleteSnapshot:
                     stream.Write(_coreActionDeleteSnapshot);
                     stream.Write(request.SnapshotId);
                     break;
-                case CoreRequest.Types.RevertToSnapshot:
+                case MachineRequest.Types.RevertToSnapshot:
                     stream.Write(_coreActionRevertToSnapshot);
                     stream.Write(request.SnapshotId);
                     break;
@@ -103,57 +103,57 @@ namespace CPvC
             }
         }
 
-        static public void CoreActionToBytes(MemoryByteStream stream, CoreAction action)
+        static public void CoreActionToBytes(MemoryByteStream stream, MachineAction action)
         {
             switch (action.Type)
             {
-                case CoreRequest.Types.KeyPress:
+                case MachineRequest.Types.KeyPress:
                     stream.Write(_coreActionKeyPress);
                     stream.Write(action.Ticks);
                     stream.Write(action.KeyCode);
                     stream.Write(action.KeyDown);
                     break;
-                case CoreRequest.Types.Reset:
+                case MachineRequest.Types.Reset:
                     stream.Write(_coreActionReset);
                     stream.Write(action.Ticks);
                     break;
-                case CoreRequest.Types.LoadDisc:
+                case MachineRequest.Types.LoadDisc:
                     stream.Write(_coreActionLoadDisc);
                     stream.Write(action.Ticks);
                     stream.Write(action.Drive);
                     stream.WriteArray(action.MediaBuffer.GetBytes());
                     break;
-                case CoreRequest.Types.LoadTape:
+                case MachineRequest.Types.LoadTape:
                     stream.Write(_coreActionLoadTape);
                     stream.Write(action.Ticks);
                     stream.WriteArray(action.MediaBuffer.GetBytes());
                     break;
-                case CoreRequest.Types.RunUntil:
+                case MachineRequest.Types.RunUntil:
                     stream.Write(_coreActionRunUntil);
                     stream.Write(action.Ticks);
                     stream.Write(action.StopTicks);
                     break;
-                case CoreRequest.Types.LoadCore:
+                case MachineRequest.Types.LoadCore:
                     stream.Write(_coreActionLoadCore);
                     stream.Write(action.Ticks);
                     stream.WriteArray(action.CoreState.GetBytes());
                     break;
-                case CoreRequest.Types.CoreVersion:
+                case MachineRequest.Types.CoreVersion:
                     stream.Write(_coreActionCoreVersion);
                     stream.Write(action.Ticks);
                     stream.Write(action.Version);
                     break;
-                case CoreRequest.Types.CreateSnapshot:
+                case MachineRequest.Types.CreateSnapshot:
                     stream.Write(_coreActionCreateSnapshot);
                     stream.Write(action.Ticks);
                     stream.Write(action.SnapshotId);
                     break;
-                case CoreRequest.Types.DeleteSnapshot:
+                case MachineRequest.Types.DeleteSnapshot:
                     stream.Write(_coreActionDeleteSnapshot);
                     stream.Write(action.Ticks);
                     stream.Write(action.SnapshotId);
                     break;
-                case CoreRequest.Types.RevertToSnapshot:
+                case MachineRequest.Types.RevertToSnapshot:
                     stream.Write(_coreActionRevertToSnapshot);
                     stream.Write(action.Ticks);
                     stream.Write(action.SnapshotId);
@@ -163,7 +163,7 @@ namespace CPvC
             }
         }
 
-        static public CoreAction CoreActionFromBytes(MemoryByteStream stream)
+        static public MachineAction CoreActionFromBytes(MemoryByteStream stream)
         {
             byte type = stream.ReadByte();
             switch (type)
@@ -174,13 +174,13 @@ namespace CPvC
                         byte keyCode = stream.ReadByte();
                         bool keyDown = stream.ReadBool();
 
-                        return CoreAction.KeyPress(ticks, keyCode, keyDown);
+                        return MachineAction.KeyPress(ticks, keyCode, keyDown);
                     }
                 case _coreActionReset:
                     {
                         UInt64 ticks = stream.ReadUInt64();
 
-                        return CoreAction.Reset(ticks);
+                        return MachineAction.Reset(ticks);
                     }
                 case _coreActionLoadDisc:
                     {
@@ -188,63 +188,63 @@ namespace CPvC
                         byte drive = stream.ReadByte();
                         byte[] media = stream.ReadArray();
 
-                        return CoreAction.LoadDisc(ticks, drive, new MemoryBlob(media));
+                        return MachineAction.LoadDisc(ticks, drive, new MemoryBlob(media));
                     }
                 case _coreActionLoadTape:
                     {
                         UInt64 ticks = stream.ReadUInt64();
                         byte[] media = stream.ReadArray();
 
-                        return CoreAction.LoadTape(ticks, new MemoryBlob(media));
+                        return MachineAction.LoadTape(ticks, new MemoryBlob(media));
                     }
                 case _coreActionRunUntil:
                     {
                         UInt64 ticks = stream.ReadUInt64();
                         UInt64 stopTicks = stream.ReadUInt64();
 
-                        return CoreAction.RunUntil(ticks, stopTicks, null);
+                        return MachineAction.RunUntil(ticks, stopTicks, null);
                     }
                 case _coreActionLoadCore:
                     {
                         UInt64 ticks = stream.ReadUInt64();
                         byte[] state = stream.ReadArray();
 
-                        return CoreAction.LoadCore(ticks, new MemoryBlob(state));
+                        return MachineAction.LoadCore(ticks, new MemoryBlob(state));
                     }
                 case _coreActionCoreVersion:
                     {
                         UInt64 ticks = stream.ReadUInt64();
                         Int32 version = stream.ReadInt32();
 
-                        return CoreAction.CoreVersion(ticks, version);
+                        return MachineAction.CoreVersion(ticks, version);
                     }
                 case _coreActionCreateSnapshot:
                     {
                         UInt64 ticks = stream.ReadUInt64();
                         Int32 snapshotId = stream.ReadInt32();
 
-                        return CoreAction.CreateSnapshot(ticks, snapshotId);
+                        return MachineAction.CreateSnapshot(ticks, snapshotId);
                     }
                 case _coreActionDeleteSnapshot:
                     {
                         UInt64 ticks = stream.ReadUInt64();
                         Int32 snapshotId = stream.ReadInt32();
 
-                        return CoreAction.DeleteSnapshot(ticks, snapshotId);
+                        return MachineAction.DeleteSnapshot(ticks, snapshotId);
                     }
                 case _coreActionRevertToSnapshot:
                     {
                         UInt64 ticks = stream.ReadUInt64();
                         Int32 snapshotId = stream.ReadInt32();
 
-                        return CoreAction.RevertToSnapshot(ticks, snapshotId);
+                        return MachineAction.RevertToSnapshot(ticks, snapshotId);
                     }
             }
 
             throw new Exception(String.Format("Unknown CoreAction type {0}!", type));
         }
 
-        static public CoreRequest CoreRequestFromBytes(MemoryByteStream stream)
+        static public MachineRequest CoreRequestFromBytes(MemoryByteStream stream)
         {
             byte type = stream.ReadByte();
             switch (type)
@@ -254,60 +254,60 @@ namespace CPvC
                         byte keyCode = stream.ReadByte();
                         bool keyDown = stream.ReadBool();
 
-                        return CoreRequest.KeyPress(keyCode, keyDown);
+                        return MachineRequest.KeyPress(keyCode, keyDown);
                     }
                 case _coreActionReset:
                     {
-                        return CoreRequest.Reset();
+                        return MachineRequest.Reset();
                     }
                 case _coreActionLoadDisc:
                     {
                         byte drive = stream.ReadByte();
                         byte[] media = stream.ReadArray();
 
-                        return CoreRequest.LoadDisc(drive, media);
+                        return MachineRequest.LoadDisc(drive, media);
                     }
                 case _coreActionLoadTape:
                     {
                         byte[] media = stream.ReadArray();
 
-                        return CoreRequest.LoadTape(media);
+                        return MachineRequest.LoadTape(media);
                     }
                 case _coreActionRunUntil:
                     {
                         UInt64 stopTicks = stream.ReadUInt64();
 
-                        return CoreRequest.RunUntil(stopTicks);
+                        return MachineRequest.RunUntil(stopTicks);
                     }
                 case _coreActionLoadCore:
                     {
                         byte[] state = stream.ReadArray();
 
-                        return CoreRequest.LoadCore(new MemoryBlob(state));
+                        return MachineRequest.LoadCore(new MemoryBlob(state));
                     }
                 case _coreActionCoreVersion:
                     {
                         Int32 version = stream.ReadInt32();
 
-                        return CoreRequest.CoreVersion(version);
+                        return MachineRequest.CoreVersion(version);
                     }
                 case _coreActionCreateSnapshot:
                     {
                         Int32 snapshotId = stream.ReadInt32();
 
-                        return CoreRequest.CreateSnapshot(snapshotId);
+                        return MachineRequest.CreateSnapshot(snapshotId);
                     }
                 case _coreActionDeleteSnapshot:
                     {
                         Int32 snapshotId = stream.ReadInt32();
 
-                        return CoreRequest.DeleteSnapshot(snapshotId);
+                        return MachineRequest.DeleteSnapshot(snapshotId);
                     }
                 case _coreActionRevertToSnapshot:
                     {
                         Int32 snapshotId = stream.ReadInt32();
 
-                        return CoreRequest.RevertToSnapshot(snapshotId);
+                        return MachineRequest.RevertToSnapshot(snapshotId);
                     }
                 default:
                     throw new Exception(String.Format("Unknown CoreRequest type {0}!", type));

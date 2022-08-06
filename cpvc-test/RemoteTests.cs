@@ -39,10 +39,10 @@ namespace CPvC.Test
                 0x03, 0x00, 0x00, 0x00, 0x44, 0x45, 0x46
             };
 
-        private CoreAction _coreAction = CoreAction.KeyPress(0x01234567, Keys.A, true);
+        private MachineAction _coreAction = MachineAction.KeyPress(0x01234567, Keys.A, true);
         private byte[] _coreActionMsg = new byte[] { 0x03, 0x01, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 58, 0xFF };
 
-        private CoreRequest _coreRequest = CoreRequest.KeyPress(Keys.A, true);
+        private MachineRequest _coreRequest = MachineRequest.KeyPress(Keys.A, true);
         private byte[] _coreRequestMsg = new byte[] { 0x07, 0x01, 58, 0xFF };
 
         private byte[] _requestAvailableMachinesMsg = new byte[] { 0x05 };
@@ -58,10 +58,10 @@ namespace CPvC.Test
             _mockName.Setup(p => p(It.IsAny<string>()));
 
             _mockCoreAction = new Mock<ReceiveCoreActionDelegate>();
-            _mockCoreAction.Setup(c => c(It.IsAny<CoreAction>()));
+            _mockCoreAction.Setup(c => c(It.IsAny<MachineAction>()));
 
             _mockCoreRequest = new Mock<ReceiveCoreRequestDelegate>();
-            _mockCoreRequest.Setup(c => c(It.IsAny<CoreRequest>()));
+            _mockCoreRequest.Setup(c => c(It.IsAny<MachineRequest>()));
 
             _mockPing = new Mock<ReceivePingDelegate>();
             _mockPing.Setup(p => p(It.IsAny<bool>(), It.IsAny<UInt64>()));
@@ -285,7 +285,7 @@ namespace CPvC.Test
             // Verify
             if (handler)
             {
-                _mockCoreAction.Verify(p => p(It.Is<CoreAction>(a => CoreActionsEqual(a, _coreAction))));
+                _mockCoreAction.Verify(p => p(It.Is<MachineAction>(a => CoreActionsEqual(a, _coreAction))));
             }
             else
             {
@@ -308,7 +308,7 @@ namespace CPvC.Test
             // Verify
             if (handler)
             {
-                _mockCoreRequest.Verify(p => p(It.Is<CoreRequest>(r => CoreRequestsEqual(r, _coreRequest))));
+                _mockCoreRequest.Verify(p => p(It.Is<MachineRequest>(r => CoreRequestsEqual(r, _coreRequest))));
             }
             else
             {

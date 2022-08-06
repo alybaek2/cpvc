@@ -97,13 +97,15 @@ namespace CPvC
             }
         }
 
-        public new void Start()
+        public new MachineRequest Start()
         {
             // Would a better test be to see if the core has outstanding requests?
             if (Ticks < _endTicks)
             {
-                base.Start();
+                return base.Start();
             }
+
+            return null;
         }
 
         private void SeekToBookmark(int bookmarkEventIndex)
@@ -132,14 +134,12 @@ namespace CPvC
                 HistoryEvent historyEvent = _historyEvents[i];
                 if (historyEvent is CoreActionHistoryEvent coreActionHistoryEvent)
                 {
-                    PushRequest(CoreRequest.RunUntil(coreActionHistoryEvent.Ticks));
+                    PushRequest(MachineRequest.RunUntil(coreActionHistoryEvent.Ticks));
                     PushRequest(coreActionHistoryEvent.CoreAction);
                 }
             }
 
-            PushRequest(CoreRequest.RunUntil(_endTicks));
-
-            Stop();
+            PushRequest(MachineRequest.RunUntil(_endTicks));
         }
 
         public void SeekToStart()
@@ -161,9 +161,9 @@ namespace CPvC
                 SeekToBookmark(bookmarkIndex);
             }
         }
-        protected override CoreRequest GetNextRequest()
+        protected override MachineRequest GetNextCoreRequest()
         {
-            CoreRequest request = base.GetNextRequest();
+            MachineRequest request = base.GetNextCoreRequest();
             if (request == null)
             {
                 Stop();
@@ -172,7 +172,7 @@ namespace CPvC
             return request;
         }
 
-        protected override void CoreActionDone(CoreRequest request, CoreAction action)
+        protected override void CoreActionDone(MachineRequest request, MachineAction action)
         {
             RaiseEvent(action);
         }

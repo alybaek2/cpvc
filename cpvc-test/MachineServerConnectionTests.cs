@@ -108,7 +108,7 @@ namespace CPvC.Test
 
             // Verify
             _mockRemote.Verify(r => r.SendName(_machines[0].Name), Times.Once());
-            _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.LoadCore)), Times.Once());
+            _mockRemote.Verify(r => r.SendCoreAction(It.Is<MachineAction>(a => a.Type == MachineRequest.Types.LoadCore)), Times.Once());
             _mockMachines[0].VerifyAdd(m => m.Event += It.Is<MachineEventHandler>(e => e != null), Times.Once());
         }
 
@@ -118,7 +118,7 @@ namespace CPvC.Test
             // Setup
             _mockRemote.SetupSet(r => r.ReceiveSelectMachine = It.IsAny<ReceiveSelectMachineDelegate>());
             _mockMachines[0].SetupAdd(m => m.Event += It.Is<MachineEventHandler>(e => e != null));
-            _mockRemote.Setup(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.LoadCore)));
+            _mockRemote.Setup(r => r.SendCoreAction(It.Is<MachineAction>(a => a.Type == MachineRequest.Types.LoadCore)));
             _mockRemote.Setup(r => r.SendName(_machines[1].Name));
             _mockRemote.Setup(r => r.SendName(_machines[0].Name));
 
@@ -130,7 +130,7 @@ namespace CPvC.Test
             // Verify - Todo: verify the sequence of these calls.
             _mockRemote.Verify(r => r.SendName(_machines[0].Name), Times.Once());
             _mockRemote.Verify(r => r.SendName(_machines[1].Name), Times.Once());
-            _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.LoadCore)), Times.Exactly(2));
+            _mockRemote.Verify(r => r.SendCoreAction(It.Is<MachineAction>(a => a.Type == MachineRequest.Types.LoadCore)), Times.Exactly(2));
             _mockMachines[0].VerifyAdd(m => m.Event += It.Is<MachineEventHandler>(e => e != null), Times.Once());
             _mockMachines[0].VerifyRemove(m => m.Event -= It.Is<MachineEventHandler>(e => e != null), Times.Once());
             _mockMachines[1].VerifyAdd(m => m.Event += It.Is<MachineEventHandler>(e => e != null), Times.Once());
@@ -141,7 +141,7 @@ namespace CPvC.Test
         public void ReceiveCoreAction()
         {
             // Setup
-            CoreAction coreAction = CoreAction.RunUntil(0, 1000, null);
+            MachineAction coreAction = MachineAction.RunUntil(0, 1000, null);
 
             // Act
             _receiveSelectMachine(_mockMachines[0].Object.Name);
@@ -150,7 +150,7 @@ namespace CPvC.Test
 
             // Verify
             _mockRemote.Verify(r => r.SendName(_mockMachines[0].Object.Name));
-            _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.LoadCore)));
+            _mockRemote.Verify(r => r.SendCoreAction(It.Is<MachineAction>(a => a.Type == MachineRequest.Types.LoadCore)));
             _mockMachines[0].VerifyAdd(m => m.Event += It.IsAny<MachineEventHandler>());
         }
 
@@ -161,10 +161,10 @@ namespace CPvC.Test
             _receiveSelectMachine(_machines[0].Name);
 
             // Act
-            _handlers[0](_mockMachines[0].Object, new MachineEventArgs(CoreAction.RunUntil(0, 1000, null)));
+            _handlers[0](_mockMachines[0].Object, new MachineEventArgs(MachineAction.RunUntil(0, 1000, null)));
 
             // Verify
-            _mockRemote.Verify(r => r.SendCoreAction(It.Is<CoreAction>(a => a.Type == CoreRequest.Types.RunUntil)));
+            _mockRemote.Verify(r => r.SendCoreAction(It.Is<MachineAction>(a => a.Type == MachineRequest.Types.RunUntil)));
         }
     }
 }

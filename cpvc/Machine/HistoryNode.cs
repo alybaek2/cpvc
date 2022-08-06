@@ -5,7 +5,7 @@ namespace CPvC
 {
     internal class HistoryNode
     {
-        protected HistoryNode(int id, UInt64 ticks, CoreAction action, Bookmark bookmark, HistoryNode parent, DateTime createDate)
+        protected HistoryNode(int id, UInt64 ticks, MachineAction action, Bookmark bookmark, HistoryNode parent, DateTime createDate)
         {
             Id = id;
             Ticks = ticks;
@@ -61,9 +61,9 @@ namespace CPvC
 
     internal class CoreActionHistoryNode : HistoryNode
     {
-        public CoreAction CoreAction { get; }
+        public MachineAction CoreAction { get; }
 
-        internal CoreActionHistoryNode(int id, UInt64 ticks, CoreAction action, HistoryNode parent, DateTime createDate) : base(id, ticks, action, null, parent, createDate)
+        internal CoreActionHistoryNode(int id, UInt64 ticks, MachineAction action, HistoryNode parent, DateTime createDate) : base(id, ticks, action, null, parent, createDate)
         {
             CoreAction = action;
 

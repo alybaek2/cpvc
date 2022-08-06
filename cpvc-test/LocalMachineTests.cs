@@ -69,26 +69,21 @@ namespace CPvC.Test
         public void AutoPause()
         {
             // Act and Verify
-            _machine.Start();
-            Wait(_machine);
+            _machine.Start().Wait();
 
             Assert.AreEqual(RunningState.Running, _machine.ActualRunningState);
 
-            using (_machine.AutoPause())
+            using (_machine.Lock())
             {
                 Assert.AreEqual(RunningState.Paused, _machine.ActualRunningState);
 
-                using (_machine.AutoPause())
+                using (_machine.Lock())
                 {
                     Assert.AreEqual(RunningState.Paused, _machine.ActualRunningState);
                 }
 
-                Wait(_machine);
-
                 Assert.AreEqual(RunningState.Paused, _machine.ActualRunningState);
             }
-
-            Wait(_machine);
 
             Assert.AreEqual(RunningState.Running, _machine.ActualRunningState);
         }
@@ -160,12 +155,11 @@ namespace CPvC.Test
             _machine.LoadTape(null);
             _machine.RunUntil(_machine.Ticks + 400);
             _machine.Reset();
-            CoreRequest request = _machine.RunUntil(_machine.Ticks + 500);
+            MachineRequest request = _machine.RunUntil(_machine.Ticks + 500);
 
             _machine.Start();
             request.Wait(10000);
-            _machine.Stop();
-            Wait(_machine);
+            _machine.Stop().Wait();
 
             _machine.AddBookmark(false);
             HistoryEvent bookmarkEvent = _machine.History.CurrentEvent;
@@ -173,8 +167,7 @@ namespace CPvC.Test
             request = _machine.RunUntil(_machine.Ticks + 1000);
             _machine.Start();
             request.Wait(10000);
-            _machine.Stop();
-            Wait(_machine);
+            _machine.Stop().Wait();
 
             _machine.JumpToMostRecentBookmark();
 
@@ -183,8 +176,7 @@ namespace CPvC.Test
             request = _machine.RunUntil(_machine.Ticks + 1000);
             _machine.Start();
             request.Wait(10000);
-            _machine.Stop();
-            Wait(_machine);
+            _machine.Stop().Wait();
 
             _machine.DeleteBookmark(bookmarkEvent);
             _machine.DeleteBranch(eventToDelete);
@@ -202,47 +194,47 @@ namespace CPvC.Test
 
                 CoreActionHistoryEvent coreActionHistoryEvent = machine.History.RootEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(CoreRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
+                Assert.AreEqual(MachineRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(CoreRequest.Types.KeyPress, coreActionHistoryEvent.CoreAction.Type);
+                Assert.AreEqual(MachineRequest.Types.KeyPress, coreActionHistoryEvent.CoreAction.Type);
                 Assert.AreEqual(Keys.A, coreActionHistoryEvent.CoreAction.KeyCode);
                 Assert.IsTrue(coreActionHistoryEvent.CoreAction.KeyDown);
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(CoreRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
+                Assert.AreEqual(MachineRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(CoreRequest.Types.LoadDisc, coreActionHistoryEvent.CoreAction.Type);
+                Assert.AreEqual(MachineRequest.Types.LoadDisc, coreActionHistoryEvent.CoreAction.Type);
                 Assert.AreEqual(0, coreActionHistoryEvent.CoreAction.Drive);
                 Assert.IsNull(coreActionHistoryEvent.CoreAction.MediaBuffer.GetBytes());
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(CoreRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
+                Assert.AreEqual(MachineRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(CoreRequest.Types.LoadTape, coreActionHistoryEvent.CoreAction.Type);
+                Assert.AreEqual(MachineRequest.Types.LoadTape, coreActionHistoryEvent.CoreAction.Type);
                 Assert.IsNull(coreActionHistoryEvent.CoreAction.MediaBuffer.GetBytes());
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(CoreRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
+                Assert.AreEqual(MachineRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(CoreRequest.Types.Reset, coreActionHistoryEvent.CoreAction.Type);
+                Assert.AreEqual(MachineRequest.Types.Reset, coreActionHistoryEvent.CoreAction.Type);
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
@@ -254,14 +246,14 @@ namespace CPvC.Test
 
                 coreActionHistoryEvent = bookmarkHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(CoreRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
+                Assert.AreEqual(MachineRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
 
                 bookmarkHistoryEvent = coreActionHistoryEvent.Children[0] as BookmarkHistoryEvent;
                 Assert.IsNotNull(bookmarkHistoryEvent);
 
                 Assert.AreEqual(bookmarkHistoryEvent, machine.History.CurrentEvent);
 
-                _mockHandler.Verify(a => a(It.IsAny<object>(), It.Is<MachineEventArgs>(args => args.Action.Type == CoreRequest.Types.LoadCore)), Times.Once());
+                _mockHandler.Verify(a => a(It.IsAny<object>(), It.Is<MachineEventArgs>(args => args.Action.Type == MachineRequest.Types.LoadCore)), Times.Once());
             }
         }
 
@@ -276,11 +268,10 @@ namespace CPvC.Test
             {
                 machine.AudioBuffer.OverrunThreshold = int.MaxValue;
 
-                CoreRequest request = machine.RunUntil(machine.Ticks + 1000);
+                MachineRequest request = machine.RunUntil(machine.Ticks + 1000);
                 machine.Start();
                 request.Wait(10000);
-                machine.Stop();
-                Wait(machine);
+                machine.Stop().Wait();
 
                 // Act
                 machine.Close();
@@ -301,11 +292,10 @@ namespace CPvC.Test
             {
                 machine.AudioBuffer.OverrunThreshold = int.MaxValue;
 
-                CoreRequest request = machine.RunUntil(machine.Ticks + 1000);
+                MachineRequest request = machine.RunUntil(machine.Ticks + 1000);
                 machine.Start();
                 request.Wait(10000);
-                machine.Stop();
-                Wait(machine);
+                machine.Stop().Wait();
 
                 machine.AddBookmark(true);
 
@@ -405,16 +395,13 @@ namespace CPvC.Test
         public void Toggle()
         {
             // Setup
-            _machine.Start();
-            Wait(_machine);
+            _machine.Start().Wait();
 
             // Act
             RunningState state1 = _machine.ActualRunningState;
-            _machine.ToggleRunning();
-            Wait(_machine);
+            _machine.ToggleRunning().Wait();
             RunningState state2 = _machine.ActualRunningState;
-            _machine.ToggleRunning();
-            Wait(_machine);
+            _machine.ToggleRunning().Wait();
 
             // Verify
             Assert.AreEqual(RunningState.Running, state1);
@@ -640,11 +627,10 @@ namespace CPvC.Test
         {
             // Act
             //RunForAWhile(_machine);
-            CoreRequest request = _machine.RunUntil(_machine.Ticks + 1000);
+            MachineRequest request = _machine.RunUntil(_machine.Ticks + 1000);
             _machine.Start();
             request.Wait(1000);
-            _machine.Stop();
-            Wait(_machine);
+            _machine.Stop().Wait();
             UInt64 ticksAfterRunning = _machine.Ticks;
 
             _machine.Close();
@@ -743,8 +729,7 @@ namespace CPvC.Test
         {
             // Setup
             _machine.Volume = volume1;
-            _machine.Stop();
-            Wait(_machine);
+            _machine.Stop().Wait();
 
             Mock<PropertyChangedEventHandler> propChanged = new Mock<PropertyChangedEventHandler>();
             _machine.PropertyChanged += propChanged.Object;
@@ -815,15 +800,14 @@ namespace CPvC.Test
             // Setup
 
             // Run for long enough to generate one snapshot, so that we can enter reverse mode.
-            CoreRequest request = _machine.RunUntil(1000000);
+            MachineRequest request = _machine.RunUntil(1000000);
             _machine.Start();
             request.Wait(10000);
 
             int samplesRequested = 2500;
 
             // Act
-            _machine.Reverse();
-            Wait(_machine);
+            _machine.Reverse().Wait();
 
             byte[] buffer = new byte[samplesRequested * 4];
             int samplesWritten = _machine.ReadAudio(buffer, 0, samplesRequested);
@@ -845,20 +829,16 @@ namespace CPvC.Test
             // Setup
 
             // Run for long enough to generate one snapshot, so that we can enter reverse mode.
-            CoreRequest request = _machine.RunUntil(1000000);
+            MachineRequest request = _machine.RunUntil(1000000);
             _machine.Start();
             request.Wait(10000);
             request = _machine.RunUntil(_machine.Ticks);
             request.Wait(1000);
-            Wait(_machine);
-            _machine.Reverse();
-            Wait(_machine);
-            _machine.Reverse();
-            Wait(_machine);
+            _machine.Reverse()?.Wait();
+            _machine.Reverse()?.Wait();
 
             // Act
-            _machine.ReverseStop();
-            Wait(_machine);
+            _machine.ReverseStop().Wait();
 
             // Verify
             Assert.AreEqual(RunningState.Running, _machine.ActualRunningState);
@@ -868,15 +848,13 @@ namespace CPvC.Test
         public void ReversePaused()
         {
             // Setup
-            CoreRequest request = _machine.RunUntil(100000);
+            MachineRequest request = _machine.RunUntil(100000);
             _machine.Start();
             request.Wait(10000);
-            _machine.Stop();
-            Wait(_machine);
+            _machine.Stop().Wait();
 
             // Act
-            _machine.Reverse();
-            Wait(_machine);
+            _machine.Reverse()?.Wait();
 
             // Verify
             Assert.AreEqual(RunningState.Paused, _machine.ActualRunningState);
@@ -888,18 +866,16 @@ namespace CPvC.Test
             // Setup
 
             // Run for long enough to generate one snapshot, so that we can enter reverse mode.
-            CoreRequest request = _machine.RunUntil(100000);
+            MachineRequest request = _machine.RunUntil(100000);
             _machine.Start();
             request.Wait(10000);
 
-            _machine.Start();
-            Wait(_machine);
-            _machine.Reverse();
-            Wait(_machine);
+            _machine.Start().Wait();
+            _machine.Reverse().Wait();
 
             // Act
-            _machine.ReverseStop();
-            System.Threading.Thread.Sleep(100);
+            _machine.ReverseStop().Wait();
+            //System.Threading.Thread.Sleep(100);
 
             // Verify
             Assert.AreEqual(RunningState.Running, _machine.ActualRunningState);
@@ -1003,7 +979,7 @@ namespace CPvC.Test
         public void CanStart()
         {
             // Setup
-            _machine.RequestStopAndWait();
+            _machine.Stop().Wait(Timeout.Infinite);
 
             // Verify
             Assert.True(_machine.CanStart);
@@ -1013,8 +989,7 @@ namespace CPvC.Test
         public void CantStart()
         {
             // Setup
-            _machine.Start();
-            Wait(_machine);
+            _machine.Start().Wait();
 
             // Verify
             Assert.False(_machine.CanStart);
@@ -1044,7 +1019,7 @@ namespace CPvC.Test
         public void CantStopPausedMachine()
         {
             // Setup
-            _machine.RequestStopAndWait();
+            _machine.Stop().Wait(Timeout.Infinite);
 
             // Verify
             Assert.False(_machine.CanStop);
@@ -1054,8 +1029,7 @@ namespace CPvC.Test
         public void CanStopRunningMachine()
         {
             // Setup
-            _machine.Start();
-            Wait(_machine);
+            _machine.Start().Wait();
 
             // Verify
             Assert.True(_machine.CanStop);
@@ -1125,10 +1099,10 @@ namespace CPvC.Test
                 {
                     switch (args.Action.Type)
                     {
-                        case CoreRequest.Types.CreateSnapshot:
+                        case MachineRequest.Types.CreateSnapshot:
                             createSnapshotCount++;
                             break;
-                        case CoreRequest.Types.DeleteSnapshot:
+                        case MachineRequest.Types.DeleteSnapshot:
                             deleteSnapshotCount++;
                             break;
                     }
@@ -1173,11 +1147,11 @@ namespace CPvC.Test
                 ManualResetEvent e = new ManualResetEvent(false);
                 machine.Event += (sender, args) =>
                 {
-                    if (args.Action.Type == CoreRequest.Types.CreateSnapshot)
+                    if (args.Action.Type == MachineRequest.Types.CreateSnapshot)
                     {
                         createSnapshotCount++;
                     }
-                    if (args.Action.Type == CoreRequest.Types.DeleteSnapshot)
+                    if (args.Action.Type == MachineRequest.Types.DeleteSnapshot)
                     {
                         deleteSnapshotCount++;
                     }
@@ -1212,11 +1186,11 @@ namespace CPvC.Test
                 ManualResetEvent e = new ManualResetEvent(false);
                 machine.Event += (sender, args) =>
                 {
-                    if (args.Action.Type == CoreRequest.Types.CreateSnapshot)
+                    if (args.Action.Type == MachineRequest.Types.CreateSnapshot)
                     {
                         createSnapshotCount++;
                     }
-                    if (args.Action.Type == CoreRequest.Types.DeleteSnapshot)
+                    if (args.Action.Type == MachineRequest.Types.DeleteSnapshot)
                     {
                         deleteSnapshotCount++;
                     }
@@ -1228,8 +1202,8 @@ namespace CPvC.Test
                     }
                 };
 
-                machine.PushRequest(CoreRequest.CreateSnapshot(123456));
-                machine.PushRequest(CoreRequest.CreateSnapshot(123457));
+                machine.PushRequest(MachineRequest.CreateSnapshot(123456));
+                machine.PushRequest(MachineRequest.CreateSnapshot(123457));
 
                 // Act
                 machine.Start();
@@ -1251,19 +1225,19 @@ namespace CPvC.Test
 
                 machine.Event += (sender, args) =>
                 {
-                    if (args.Action.Type == CoreRequest.Types.CreateSnapshot && args.Action.SnapshotId == 123456)
+                    if (args.Action.Type == MachineRequest.Types.CreateSnapshot && args.Action.SnapshotId == 123456)
                     {
                         createdSnapshots.Add(args.Action.SnapshotId);
                     }
-                    if (args.Action.Type == CoreRequest.Types.DeleteSnapshot && args.Action.SnapshotId == 123456)
+                    if (args.Action.Type == MachineRequest.Types.DeleteSnapshot && args.Action.SnapshotId == 123456)
                     {
                         deletedSnapshots.Add(args.Action.SnapshotId);
                     }
                 };
 
-                machine.PushRequest(CoreRequest.CreateSnapshot(123456));
-                machine.PushRequest(CoreRequest.DeleteSnapshot(123457));
-                CoreRequest request = CoreRequest.DeleteSnapshot(123456);
+                machine.PushRequest(MachineRequest.CreateSnapshot(123456));
+                machine.PushRequest(MachineRequest.DeleteSnapshot(123457));
+                MachineRequest request = MachineRequest.DeleteSnapshot(123456);
                 machine.PushRequest(request);
 
                 // Act
@@ -1286,13 +1260,13 @@ namespace CPvC.Test
                 ManualResetEvent e = new ManualResetEvent(false);
                 machine.Event += (sender, args) =>
                 {
-                    if (args.Action.Type == CoreRequest.Types.LoadCore)
+                    if (args.Action.Type == MachineRequest.Types.LoadCore)
                     {
                         e.Set();
                     }
                 };
 
-                CoreRequest request = CoreRequest.RunUntil(1000);
+                MachineRequest request = MachineRequest.RunUntil(1000);
                 machine.PushRequest(request);
                 byte[] state = machine.GetState();
 
@@ -1305,12 +1279,12 @@ namespace CPvC.Test
 
                     byte[] newState = machine.GetState();
 
-                    request = CoreRequest.LoadCore(new MemoryBlob(state));
+                    request = MachineRequest.LoadCore(new MemoryBlob(state));
                     machine.PushRequest(request);
 
                     machine.Start();
 
-                    request = CoreRequest.RunUntil(1000);
+                    request = MachineRequest.RunUntil(1000);
                     request.Wait(2000);
                 }
 
@@ -1327,7 +1301,7 @@ namespace CPvC.Test
             {
                 // Run for at least one frame so that the screen bytes are
                 // set to something non-zero.
-                CoreRequest request = CoreRequest.RunUntil(80000);
+                MachineRequest request = MachineRequest.RunUntil(80000);
                 machine.PushRequest(request);
                 machine.Start();
                 request.Wait();

@@ -168,7 +168,7 @@
     </Compile>
     <Compile Include="UI\Audio.cs" />
     <Compile Include="Machine\Bookmark.cs" />
-    <Compile Include="Core\CoreAction.cs" />
+    <Compile Include="Core\MachineAction.cs" />
     <Compile Include="Miscellaneous\Diagnostics.cs" />
     <Compile Include="UI\BookmarksViewModel.cs" />
     <Compile Include="UI\Converters\BooleanInverter.cs" />
@@ -221,7 +221,7 @@
     </Compile>
     <Compile Include="Miscellaneous\Helpers.cs" />
     <Compile Include="Machine\LocalMachine.cs" />
-    <Compile Include="Core\CoreRequest.cs" />
+    <Compile Include="Core\MachineRequest.cs" />
     <Compile Include="UI\Forms\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

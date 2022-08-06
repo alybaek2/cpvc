@@ -18,11 +18,11 @@ namespace CPvC
         void Close();
         bool CanClose { get; }
 
-        void PushRequest(CoreRequest request);
+        void PushRequest(MachineRequest request);
 
         byte[] GetState();
 
-        IDisposable AutoPause();
+        IDisposable Lock();
 
         event MachineEventHandler Event;
     }

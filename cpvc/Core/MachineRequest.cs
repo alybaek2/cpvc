@@ -6,9 +6,9 @@ namespace CPvC
     /// <summary>
     /// Represents a request to the core thread.
     /// </summary>
-    public class CoreRequest
+    public class MachineRequest
     {
-        public CoreRequest(Types type)
+        public MachineRequest(Types type)
         {
             Type = type;
             _processed = new ManualResetEvent(false);
@@ -26,7 +26,13 @@ namespace CPvC
             CreateSnapshot,
             DeleteSnapshot,
             RevertToSnapshot,
-            Quit
+            Quit,
+            Pause,
+            Resume,
+            Reverse,
+            Lock,
+            Unlock
+
         }
 
         public Types Type { get; protected set; }
@@ -88,14 +94,14 @@ namespace CPvC
             return _processed.WaitOne();
         }   
 
-        static public CoreRequest Reset()
+        static public MachineRequest Reset()
         {
-            return new CoreRequest(Types.Reset);
+            return new MachineRequest(Types.Reset);
         }
 
-        static public CoreRequest KeyPress(byte keycode, bool down)
+        static public MachineRequest KeyPress(byte keycode, bool down)
         {
-            CoreRequest request = new CoreRequest(Types.KeyPress)
+            MachineRequest request = new MachineRequest(Types.KeyPress)
             {
                 KeyCode = keycode,
                 KeyDown = down
@@ -104,9 +110,9 @@ namespace CPvC
             return request;
         }
 
-        static public CoreRequest RunUntil(UInt64 stopTicks)
+        static public MachineRequest RunUntil(UInt64 stopTicks)
         {
-            CoreRequest request = new CoreRequest(Types.RunUntil)
+            MachineRequest request = new MachineRequest(Types.RunUntil)
             {
                 StopTicks = stopTicks
             };
@@ -114,9 +120,9 @@ namespace CPvC
             return request;
         }
 
-        static public CoreRequest LoadDisc(byte drive, byte[] buffer)
+        static public MachineRequest LoadDisc(byte drive, byte[] buffer)
         {
-            CoreRequest request = new CoreRequest(Types.LoadDisc)
+            MachineRequest request = new MachineRequest(Types.LoadDisc)
             {
                 Drive = drive,
                 MediaBuffer = new MemoryBlob((byte[])buffer?.Clone())
@@ -125,9 +131,9 @@ namespace CPvC
             return request;
         }
 
-        static public CoreRequest LoadTape(byte[] buffer)
+        static public MachineRequest LoadTape(byte[] buffer)
         {
-            CoreRequest request = new CoreRequest(Types.LoadTape)
+            MachineRequest request = new MachineRequest(Types.LoadTape)
             {
                 MediaBuffer = new MemoryBlob((byte[])buffer?.Clone())
             };
@@ -135,9 +141,9 @@ namespace CPvC
             return request;
         }
 
-        static public CoreRequest CoreVersion(int version)
+        static public MachineRequest CoreVersion(int version)
         {
-            CoreRequest request = new CoreRequest(Types.CoreVersion)
+            MachineRequest request = new MachineRequest(Types.CoreVersion)
             {
                 Version = version
             };
@@ -145,9 +151,9 @@ namespace CPvC
             return request;
         }
 
-        static public CoreRequest LoadCore(IBlob state)
+        static public MachineRequest LoadCore(IBlob state)
         {
-            CoreRequest request = new CoreRequest(Types.LoadCore)
+            MachineRequest request = new MachineRequest(Types.LoadCore)
             {
                 CoreState = state
             };
@@ -155,9 +161,9 @@ namespace CPvC
             return request;
         }
 
-        static public CoreRequest CreateSnapshot(Int32 parentSnapshotId)
+        static public MachineRequest CreateSnapshot(Int32 parentSnapshotId)
         {
-            CoreRequest request = new CoreRequest(Types.CreateSnapshot)
+            MachineRequest request = new MachineRequest(Types.CreateSnapshot)
             {
                 SnapshotId = parentSnapshotId
             };
@@ -165,9 +171,9 @@ namespace CPvC
             return request;
         }
 
-        static public CoreRequest RevertToSnapshot(Int32 snapshotId)
+        static public MachineRequest RevertToSnapshot(Int32 snapshotId)
         {
-            CoreRequest request = new CoreRequest(Types.RevertToSnapshot)
+            MachineRequest request = new MachineRequest(Types.RevertToSnapshot)
             {
                 SnapshotId = snapshotId
             };
@@ -175,12 +181,47 @@ namespace CPvC
             return request;
         }
 
-        static public CoreRequest DeleteSnapshot(Int32 snapshotId)
+        static public MachineRequest DeleteSnapshot(Int32 snapshotId)
         {
-            CoreRequest request = new CoreRequest(Types.DeleteSnapshot)
+            MachineRequest request = new MachineRequest(Types.DeleteSnapshot)
             {
                 SnapshotId = snapshotId
             };
+
+            return request;
+        }
+
+        static public MachineRequest Pause()
+        {
+            MachineRequest request = new MachineRequest(Types.Pause);
+
+            return request;
+        }
+
+        static public MachineRequest Resume()
+        {
+            MachineRequest request = new MachineRequest(Types.Resume);
+
+            return request;
+        }
+
+        static public MachineRequest Reverse()
+        {
+            MachineRequest request = new MachineRequest(Types.Reverse);
+
+            return request;
+        }
+
+        static public MachineRequest Lock()
+        {
+            MachineRequest request = new MachineRequest(Types.Lock);
+
+            return request;
+        }
+
+        static public MachineRequest Unlock()
+        {
+            MachineRequest request = new MachineRequest(Types.Unlock);
 
             return request;
         }

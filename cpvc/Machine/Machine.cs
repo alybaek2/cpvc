@@ -20,22 +20,22 @@ namespace CPvC
 
         protected RunningState _runningState;
         protected RunningState _requestedState;
-        private AutoResetEvent _runningStateChanged;
-        private AutoResetEvent _checkRunningState;
+        protected RunningState _actualState;
         
-        protected int _autoPauseCount;
+        protected int _lockCount;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         public event EventHandler DisplayUpdated;
 
-        protected readonly Queue<CoreRequest> _requests;
-        protected ManualResetEvent _requestsAvailable;
+        protected readonly Queue<MachineRequest> _machineRequests;
+        protected ManualResetEvent _machineRequestsAvailable;
+        protected readonly Queue<MachineRequest> _coreRequests;
+        protected ManualResetEvent _coreRequestsAvailable;
 
         private AudioBuffer _audioBuffer;
 
         protected Thread _machineThread;
-        private bool _quitThread;
 
         /// <summary>
         /// Value indicating the relative volume level of rendered audio (0 = mute, 255 = loudest).
@@ -44,23 +44,22 @@ namespace CPvC
 
         public Machine()
         {
-            _autoPauseCount = 0;
+            _lockCount = 0;
             _runningState = RunningState.Paused;
             _requestedState = RunningState.Paused;
+            _actualState = RunningState.Paused;
             _volume = 80;
 
             _core = new Core(Core.LatestVersion, Core.Type.CPC6128);
 
-            _requests = new Queue<CoreRequest>();
-            _requestsAvailable = new ManualResetEvent(false);
+            _coreRequests = new Queue<MachineRequest>();
+            _coreRequestsAvailable = new ManualResetEvent(false);
 
-            _runningStateChanged = new AutoResetEvent(false);
-            _checkRunningState = new AutoResetEvent(false);
+            _machineRequests = new Queue<MachineRequest>();
+            _machineRequestsAvailable = new ManualResetEvent(false);
 
             _audioBuffer = new AudioBuffer(48000);
             _audioBuffer.OverrunThreshold = int.MaxValue;
-
-            _quitThread = false;
 
             _machineThread = new Thread(MachineThread);
             _machineThread.Start();
@@ -88,37 +87,19 @@ namespace CPvC
         {
             get
             {
-                return _runningState;
+                return _actualState;
             }
 
             private set
             {
-                if (_runningState == value)
+                if (_actualState == value)
                 {
                     return;
                 }
 
-                _runningState = value;
-                _runningStateChanged.Set();
+                _actualState = value;
 
                 OnPropertyChanged();
-            }
-        }
-
-        public RunningState ExpectedRunningState
-        {
-            get
-            {
-                return _autoPauseCount > 0 ? RunningState.Paused : _requestedState;
-            }
-        }
-
-        public RunningState RequestedState
-        {
-            set
-            {
-                _requestedState = value;
-                _checkRunningState.Set();
             }
         }
 
@@ -187,62 +168,56 @@ namespace CPvC
             _audioBuffer.Advance(samples);
         }
 
-        public void Start()
+        public MachineRequest Start()
         {
-            RequestedState = RunningState.Running;
-            Status = "Resumed";
+            MachineRequest request = MachineRequest.Resume();
+            PushRequest(request);
+
+            return request;
         }
 
-        public void Stop()
+        public MachineRequest Stop()
         {
-            RequestedState = RunningState.Paused;
+            MachineRequest request = MachineRequest.Pause();
+            PushRequest(request);
 
-            Status = "Paused";
+            return request;
         }
 
-        public void RequestStopAndWait()
-        {
-            Stop();
 
-            WaitForExpectedRunningState();
-        }
-
-        public void WaitForExpectedRunningState()
+        public MachineRequest ToggleRunning()
         {
-            while (ExpectedRunningState != ActualRunningState)
+            if (ActualRunningState == RunningState.Running)
             {
-                _runningStateChanged.WaitOne(20);
-            }
-        }
-
-        public void ToggleRunning()
-        {
-            if (_requestedState == RunningState.Running)
-            {
-                Stop();
+                return Stop();
             }
             else
             {
-                Start();
+                return Start();
             }
         }
 
         /// <summary>
         /// Helper class that pauses the machine on creation and resumes the machine when the object is disposed.
         /// </summary>
-        private class AutoPauser : IDisposable
+        private class AutoLocker : IDisposable
         {
             private readonly Machine _machine;
 
-            public AutoPauser(Machine machine)
+            public AutoLocker(Machine machine)
             {
                 _machine = machine;
-                _machine.IncrementAutoPause();
+
+                MachineRequest request = MachineRequest.Lock();
+                _machine.PushRequest(request);
+                request.Wait(Timeout.Infinite);
             }
 
             public void Dispose()
             {
-                _machine.DecrementAutoPause();
+                MachineRequest request = MachineRequest.Unlock();
+                _machine.PushRequest(request);
+                request.Wait(Timeout.Infinite);
             }
         }
 
@@ -250,23 +225,9 @@ namespace CPvC
         /// Pauses the machine and returns an IDisposable which, when disposed of, causes the machine to resume (if it was running before).
         /// </summary>
         /// <returns>An IDisposable interface.</returns>
-        public IDisposable AutoPause()
+        public IDisposable Lock()
         {
-            return new AutoPauser(this);
-        }
-
-        private void IncrementAutoPause()
-        {
-            Interlocked.Increment(ref _autoPauseCount);
-            _checkRunningState.Set();
-
-            WaitForExpectedRunningState();
-        }
-
-        private void DecrementAutoPause()
-        {
-            Interlocked.Decrement(ref _autoPauseCount);
-            _checkRunningState.Set();
+            return new AutoLocker(this);
         }
 
         protected virtual void OnPropertyChanged([CallerMemberName] string name = null)
@@ -274,73 +235,143 @@ namespace CPvC
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        public void PushRequest(CoreRequest request)
+        public void PushRequest(MachineRequest request)
         {
-            lock (_requests)
+            // Put core requests in their own queue, since while paused, core requests
+            // shouldn't be processed but non-core requests should be.
+            bool coreRequest = true;
+
+            switch (request.Type)
             {
-                _requests.Enqueue(request);
-                _requestsAvailable.Set();
+                case MachineRequest.Types.Quit:
+                case MachineRequest.Types.Pause:
+                case MachineRequest.Types.Resume:
+                case MachineRequest.Types.Reverse:
+                case MachineRequest.Types.Lock:
+                case MachineRequest.Types.Unlock:
+                    coreRequest = false;
+                    break;
+            }
+
+            if (coreRequest)
+            {
+                lock (_coreRequests)
+                {
+                    _coreRequests.Enqueue(request);
+                    _coreRequestsAvailable.Set();
+                }
+            }
+            else
+            {
+                lock (_machineRequests)
+                {
+                    _machineRequests.Enqueue(request);
+                    _machineRequestsAvailable.Set();
+                }
             }
         }
 
-        private (bool, CoreAction) ProcessRequest(CoreRequest request)
+        private void ProcessNextMachineRequest(MachineRequest request)
+        {
+            if (request != null)
+            {
+                switch (request.Type)
+                {
+                    case MachineRequest.Types.Pause:
+                        _requestedState = RunningState.Paused;
+                        Status = "Paused";
+                        break;
+                    case MachineRequest.Types.Resume:
+                        _requestedState = RunningState.Running;
+                        Status = "Resumed";
+                        break;
+                    case MachineRequest.Types.Reverse:
+                        _requestedState = RunningState.Reverse;
+                        Status = "Reversing";
+                        break;
+                    case MachineRequest.Types.Lock:
+                        Interlocked.Increment(ref _lockCount);
+                        break;
+                    case MachineRequest.Types.Unlock:
+                        Interlocked.Decrement(ref _lockCount);
+                        break;
+                    default:
+                        throw new Exception(String.Format("Unknown machine request type '{0}'.", request.Type));
+                }
+
+                // Make sure to set the ActualRunningState *before* marking this request as "processed".
+                if (_lockCount > 0)
+                {
+                    ActualRunningState = RunningState.Paused;
+                }
+                else
+                {
+                    ActualRunningState = _requestedState;
+                }
+
+                request.SetProcessed();
+            }
+
+        }
+
+        private (bool, MachineAction) ProcessRequest(MachineRequest request)
         {
             bool success = true;
 
-            CoreAction action = null;
+            MachineAction action = null;
 
             UInt64 ticks = Ticks;
             switch (request.Type)
             {
-                case CoreRequest.Types.KeyPress:
+                case MachineRequest.Types.KeyPress:
                     if (_core.KeyPressSync(request.KeyCode, request.KeyDown))
                     {
-                        action = CoreAction.KeyPress(ticks, request.KeyCode, request.KeyDown);
+                        action = MachineAction.KeyPress(ticks, request.KeyCode, request.KeyDown);
                     }
                     break;
-                case CoreRequest.Types.Reset:
+                case MachineRequest.Types.Reset:
                     _core.ResetSync();
-                    action = CoreAction.Reset(ticks);
+                    action = MachineAction.Reset(ticks);
                     break;
-                case CoreRequest.Types.LoadDisc:
+                case MachineRequest.Types.LoadDisc:
                     _core.LoadDiscSync(request.Drive, request.MediaBuffer.GetBytes());
-                    action = CoreAction.LoadDisc(ticks, request.Drive, request.MediaBuffer);
+                    action = MachineAction.LoadDisc(ticks, request.Drive, request.MediaBuffer);
                     break;
-                case CoreRequest.Types.LoadTape:
+                case MachineRequest.Types.LoadTape:
                     _core.LoadTapeSync(request.MediaBuffer.GetBytes());
-                    action = CoreAction.LoadTape(ticks, request.MediaBuffer);
+                    action = MachineAction.LoadTape(ticks, request.MediaBuffer);
                     break;
-                case CoreRequest.Types.RunUntil:
+                case MachineRequest.Types.RunUntil:
                     action = RunForAWhile(request.StopTicks);
 
                     success = request.StopTicks <= Ticks;
 
                     break;
-                case CoreRequest.Types.CoreVersion:
+                case MachineRequest.Types.CoreVersion:
                     _core.ProcessCoreVersion(request.Version);
 
-                    action = CoreAction.CoreVersion(Ticks, request.Version);
+                    action = MachineAction.CoreVersion(Ticks, request.Version);
 
                     break;
-                case CoreRequest.Types.LoadCore:
+                case MachineRequest.Types.LoadCore:
                     _core.LoadState(request.CoreState.GetBytes());
-                    action = CoreAction.LoadCore(ticks, request.CoreState);
+                    action = MachineAction.LoadCore(ticks, request.CoreState);
                     break;
-                case CoreRequest.Types.CreateSnapshot:
+                case MachineRequest.Types.CreateSnapshot:
                     _core.CreateSnapshotSync(request.SnapshotId);
-                    action = CoreAction.CreateSnapshot(Ticks, request.SnapshotId);
+                    action = MachineAction.CreateSnapshot(Ticks, request.SnapshotId);
 
                     break;
-                case CoreRequest.Types.DeleteSnapshot:
+                case MachineRequest.Types.DeleteSnapshot:
                     if (_core.DeleteSnapshotSync(request.SnapshotId))
                     {
-                        action = CoreAction.DeleteSnapshot(Ticks, request.SnapshotId);
+                        action = MachineAction.DeleteSnapshot(Ticks, request.SnapshotId);
                     }
 
                     break;
-                case CoreRequest.Types.RevertToSnapshot:
+                case MachineRequest.Types.RevertToSnapshot:
                     {
-                        (bool succeeded, CoreAction raction) = ProcessRevertToSnapshot(request);
+                        (bool succeeded, MachineAction raction) = ProcessRevertToSnapshot(request);
                         if (succeeded)
                         {
                             success = true;
@@ -360,12 +391,12 @@ namespace CPvC
             return (success, action);
         }
 
-        public virtual (bool, CoreAction) ProcessRevertToSnapshot(CoreRequest request)
+        public virtual (bool, MachineAction) ProcessRevertToSnapshot(MachineRequest request)
         {
-            CoreAction action = null;
+            MachineAction action = null;
             if (_core.RevertToSnapshotSync(request.SnapshotId))
             {
-                action = CoreAction.RevertToSnapshot(Ticks, request.SnapshotId);
+                action = MachineAction.RevertToSnapshot(Ticks, request.SnapshotId);
 
                 RaiseDisplayUpdated();
             }
@@ -373,9 +404,9 @@ namespace CPvC
             return (true, action);
         }
 
-        public CoreRequest RunUntil(UInt64 ticks)
+        public MachineRequest RunUntil(UInt64 ticks)
         {
-            CoreRequest request = CoreRequest.RunUntil(ticks);
+            MachineRequest request = MachineRequest.RunUntil(ticks);
             PushRequest(request);
 
             return request;
@@ -383,7 +414,7 @@ namespace CPvC
 
         public void KeyPress(byte keycode, bool down)
         {
-            PushRequest(CoreRequest.KeyPress(keycode, down));
+            PushRequest(MachineRequest.KeyPress(keycode, down));
         }
 
         public void AllKeysUp()
@@ -394,7 +425,7 @@ namespace CPvC
             }
         }
 
-        private CoreAction RunForAWhile(UInt64 stopTicks)
+        private MachineAction RunForAWhile(UInt64 stopTicks)
         {
             UInt64 ticks = Ticks;
 
@@ -425,7 +456,7 @@ namespace CPvC
                 BeginVSync();
             }
 
-            return CoreAction.RunUntil(ticks, Ticks, audioSamples);
+            return MachineAction.RunUntil(ticks, Ticks, audioSamples);
         }
 
         protected virtual void BeginVSync()
@@ -471,18 +502,18 @@ namespace CPvC
             SetScreen(screen);
         }
 
-        protected virtual CoreRequest GetNextRequest()
+        protected virtual MachineRequest GetNextCoreRequest()
         {
-            CoreRequest request = null;
+            MachineRequest request = null;
 
-            lock (_requests)
+            lock (_coreRequests)
             {
-                if (_requests.Count > 0)
+                if (_coreRequests.Count > 0)
                 {
-                    request = _requests.Dequeue();
-                    if (_requests.Count == 0)
+                    request = _coreRequests.Dequeue();
+                    if (_coreRequests.Count == 0)
                     {
-                        _requestsAvailable.Reset();
+                        _coreRequestsAvailable.Reset();
                     }
                 }
             }
@@ -492,60 +523,93 @@ namespace CPvC
 
         public void MachineThread()
         {
-            CoreRequest request = null;
+            bool quitThread = false;
+
+            MachineRequest coreRequest = null;
 
             WaitHandle[] allEvents = new WaitHandle[]
             {
-                _checkRunningState,
+                _machineRequestsAvailable,
                 CanProcessEvent
             };
 
-            while (!_quitThread)
+            WaitHandle[] allEventsPaused = new WaitHandle[]
             {
-                if (ExpectedRunningState == RunningState.Paused)
-                {
-                    ActualRunningState = RunningState.Paused;
+                _machineRequestsAvailable
+            };
 
-                    _checkRunningState.WaitOne(20);
+            while (true)
+            {
+                // Clear out non-core requests first.
+                while (true)
+                {
+                    MachineRequest request = null;
+                    lock (_machineRequests)
+                    {
+                        if (_machineRequests.Count > 0)
+                        {
+                            request = _machineRequests.Dequeue();
+                        }
+                        else
+                        {
+                            _machineRequestsAvailable.Reset();
+                            break;
+                        }
+                    }
+
+                    if (request != null)
+                    {
+                        if (request.Type == MachineRequest.Types.Quit)
+                        {
+                            quitThread = true;
+                            request.SetProcessed();
+                            break;
+                        }
+
+                        ProcessNextMachineRequest(request);
+                    }
+                }
+
+                if (quitThread)
+                {
+                    break;
+                }
+
+                if (_requestedState == RunningState.Paused || _lockCount > 0)
+                {
+                    _machineRequestsAvailable.WaitOne();
 
                     continue;
                 }
 
-                ActualRunningState = _requestedState;
-
                 WaitHandle.WaitAny(allEvents);
 
-                if (request == null)
+                if (coreRequest == null)
                 {
-                    request = GetNextRequest();
-                    if (request == null)
+                    coreRequest = GetNextCoreRequest();
+                    if (coreRequest == null)
                     {
                         continue;
                     }
                 }
 
-                (bool done, CoreAction action) = ProcessRequest(request);
+                (bool done, MachineAction action) = ProcessRequest(coreRequest);
 
-                CoreActionDone(request, action);
+                CoreActionDone(coreRequest, action);
 
                 if (done)
                 {
-                    request.SetProcessed();
-                    request = null;
+                    coreRequest.SetProcessed();
+                    coreRequest = null;
                 }
             }
-
-            ActualRunningState = RunningState.Paused;
-
-            _quitThread = false;
         }
 
-        protected abstract void CoreActionDone(CoreRequest request, CoreAction action);
+        protected abstract void CoreActionDone(MachineRequest request, MachineAction action);
 
         public virtual void Close()
         {
-            _quitThread = true;
-            _checkRunningState.Set();
+            PushRequest(new MachineRequest(MachineRequest.Types.Quit));
 
             _machineThread?.Join();
             _machineThread = null;
@@ -554,7 +618,7 @@ namespace CPvC
             _core = null;
         }
 
-        protected void RaiseEvent(CoreAction action)
+        protected void RaiseEvent(MachineAction action)
         {
             Event?.Invoke(this, new MachineEventArgs(action));
         }

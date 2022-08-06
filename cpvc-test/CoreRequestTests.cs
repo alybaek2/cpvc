@@ -12,10 +12,10 @@ namespace CPvC.Test
             byte[] bytes = new byte[] { 0x01, 0x02 };
 
             // Act
-            CoreRequest request = CoreRequest.LoadDisc(1, eject ? null : bytes);
+            MachineRequest request = MachineRequest.LoadDisc(1, eject ? null : bytes);
 
             // Verify
-            Assert.AreEqual(CoreRequest.Types.LoadDisc, request.Type);
+            Assert.AreEqual(MachineRequest.Types.LoadDisc, request.Type);
             Assert.AreEqual(1, request.Drive);
 
             if (eject)
@@ -36,10 +36,10 @@ namespace CPvC.Test
             byte[] bytes = new byte[] { 0x01, 0x02 };
 
             // Act
-            CoreRequest request = CoreRequest.LoadTape(eject ? null : bytes);
+            MachineRequest request = MachineRequest.LoadTape(eject ? null : bytes);
 
             // Verify
-            Assert.AreEqual(CoreRequest.Types.LoadTape, request.Type);
+            Assert.AreEqual(MachineRequest.Types.LoadTape, request.Type);
 
             if (eject)
             {

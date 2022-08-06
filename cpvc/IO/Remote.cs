@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace CPvC
 {
-    public delegate void ReceiveCoreActionDelegate(CoreAction action);
+    public delegate void ReceiveCoreActionDelegate(MachineAction action);
     public delegate void ReceiveSelectMachineDelegate(string machineName);
     public delegate void ReceiveRequestAvailableMachinesDelegate();
     public delegate void ReceiveAvailableMachinesDelegate(List<string> availableMachines);
     public delegate void ReceivePingDelegate(bool response, UInt64 id);
     public delegate void ReceiveNameDelegate(string name);
-    public delegate void ReceiveCoreRequestDelegate(CoreRequest request);
+    public delegate void ReceiveCoreRequestDelegate(MachineRequest request);
 
     public class Remote : IRemote, IDisposable
     {
@@ -58,7 +58,7 @@ namespace CPvC
             Close();
         }
 
-        public void SendCoreAction(CoreAction coreAction)
+        public void SendCoreAction(MachineAction coreAction)
         {
             MemoryByteStream bs = new MemoryByteStream();
             bs.Write(_idCoreAction);
@@ -111,7 +111,7 @@ namespace CPvC
             SendMessage(bs.AsBytes());
         }
 
-        public void SendCoreRequest(CoreRequest coreRequest)
+        public void SendCoreRequest(MachineRequest coreRequest)
         {
             MemoryByteStream bs = new MemoryByteStream();
             bs.Write(_idCoreRequest);
@@ -158,7 +158,7 @@ namespace CPvC
                     break;
                 case _idCoreAction:
                     {
-                        CoreAction coreAction = Serializer.CoreActionFromBytes(bs);
+                        MachineAction coreAction = Serializer.CoreActionFromBytes(bs);
                         ReceiveCoreAction?.Invoke(coreAction);
                     }
                     break;
@@ -182,7 +182,7 @@ namespace CPvC
                     break;
                 case _idCoreRequest:
                     {
-                        CoreRequest coreRequest = Serializer.CoreRequestFromBytes(bs);
+                        MachineRequest coreRequest = Serializer.CoreRequestFromBytes(bs);
                         ReceiveCoreRequest?.Invoke(coreRequest);
                     }
                     break;

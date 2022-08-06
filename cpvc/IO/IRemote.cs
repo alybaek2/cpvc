@@ -15,12 +15,12 @@ namespace CPvC
 
         CloseConnectionDelegate CloseConnection { get; set; }
 
-        void SendCoreAction(CoreAction coreAction);
+        void SendCoreAction(MachineAction coreAction);
         void SendSelectMachine(string machineName);
         void SendRequestAvailableMachines();
         void SendAvailableMachines(IEnumerable<string> availableMachines);
         void SendPing(bool response, UInt64 id);
         void SendName(string name);
-        void SendCoreRequest(CoreRequest coreRequest);
+        void SendCoreRequest(MachineRequest coreRequest);
     }
 }

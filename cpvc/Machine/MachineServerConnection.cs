@@ -45,11 +45,11 @@ namespace CPvC
             _machine = machine;
             if (_machine != null)
             {
-                using (machine.AutoPause())
+                using (machine.Lock())
                 {
                     byte[] state = _machine.GetState();
 
-                    CoreAction loadCoreAction = CoreAction.LoadCore(0, new MemoryBlob(state));
+                    MachineAction loadCoreAction = MachineAction.LoadCore(0, new MemoryBlob(state));
 
                     _remote.SendName(_machine.Name);
                     _remote.SendCoreAction(loadCoreAction);
@@ -72,12 +72,12 @@ namespace CPvC
             }
         }
 
-        private void ReceiveCoreRequest(CoreRequest request)
+        private void ReceiveCoreRequest(MachineRequest request)
         {
             _machine.PushRequest(request);
         }
 
-        private void MachineAuditor(CoreAction coreAction)
+        private void MachineAuditor(MachineAction coreAction)
         {
             _remote.SendCoreAction(coreAction);
         }

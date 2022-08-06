@@ -35,7 +35,7 @@ namespace CPvC
         {
             get
             {
-                return _requestsAvailable;
+                return _coreRequestsAvailable;
             }
         }
 
@@ -58,7 +58,7 @@ namespace CPvC
             Status = "Connection closed";
         }
 
-        public void ReceiveCoreAction(CoreAction coreAction)
+        public void ReceiveCoreAction(MachineAction coreAction)
         {
             if (_core == null)
             {
@@ -95,45 +95,45 @@ namespace CPvC
             }
         }
 
-        public CoreRequest Key(byte keycode, bool down)
+        public MachineRequest Key(byte keycode, bool down)
         {
-            CoreRequest request = CoreRequest.KeyPress(keycode, down);
+            MachineRequest request = MachineRequest.KeyPress(keycode, down);
             _remote.SendCoreRequest(request);
 
             return request;
         }
 
-        public CoreRequest LoadDisc(byte drive, byte[] diskBuffer)
+        public MachineRequest LoadDisc(byte drive, byte[] diskBuffer)
         {
-            CoreRequest request = CoreRequest.LoadDisc(drive, diskBuffer);
+            MachineRequest request = MachineRequest.LoadDisc(drive, diskBuffer);
             _remote.SendCoreRequest(request);
 
             return request;
         }
 
-        public CoreRequest LoadTape(byte[] tapeBuffer)
+        public MachineRequest LoadTape(byte[] tapeBuffer)
         {
-            CoreRequest request = CoreRequest.LoadTape(tapeBuffer);
+            MachineRequest request = MachineRequest.LoadTape(tapeBuffer);
             _remote.SendCoreRequest(request);
             return request;
         }
 
-        public CoreRequest Reset()
+        public MachineRequest Reset()
         {
-            CoreRequest request = CoreRequest.Reset();
+            MachineRequest request = MachineRequest.Reset();
             _remote.SendCoreRequest(request);
 
             return request;
         }
 
-        protected override void CoreActionDone(CoreRequest request, CoreAction action)
+        protected override void CoreActionDone(MachineRequest request, MachineAction action)
         {
             if (action == null)
             {
                 return;
             }
 
-            if (action.Type == CoreAction.Types.RevertToSnapshot)
+            if (action.Type == MachineAction.Types.RevertToSnapshot)
             {
                 // Ensure to update the display.
                 BeginVSync();

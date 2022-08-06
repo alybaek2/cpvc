@@ -9,11 +9,11 @@ namespace CPvC.Test
     {
         static private readonly object[] CoreActionCases =
         {
-            CoreAction.KeyPress(100, 42, true),
-            CoreAction.CoreVersion(100, 2),
-            CoreAction.LoadDisc(100, 1, new MemoryBlob(new byte[] { 0x01, 0x02 })),
-            CoreAction.LoadTape(100, new MemoryBlob(new byte[] { 0x01, 0x02 })),
-            CoreAction.Reset(100)
+            MachineAction.KeyPress(100, 42, true),
+            MachineAction.CoreVersion(100, 2),
+            MachineAction.LoadDisc(100, 1, new MemoryBlob(new byte[] { 0x01, 0x02 })),
+            MachineAction.LoadTape(100, new MemoryBlob(new byte[] { 0x01, 0x02 })),
+            MachineAction.Reset(100)
         };
 
         private MachineFileInfo _fileInfo;
@@ -41,7 +41,7 @@ namespace CPvC.Test
         }
 
         [TestCaseSource(nameof(CoreActionCases))]
-        public void WriteAndReadCoreAction(CoreAction coreAction)
+        public void WriteAndReadCoreAction(MachineAction coreAction)
         {
             // Act
             _history.AddCoreAction(coreAction, 123456);
@@ -69,7 +69,7 @@ namespace CPvC.Test
         public void WriteAndReadRunUntil()
         {
             // Act
-            _history.AddCoreAction(CoreAction.RunUntil(100, 200, null));
+            _history.AddCoreAction(MachineAction.RunUntil(100, 200, null));
             _history.CurrentEvent = _history.RootEvent;
             _fileInfo = MachineFile.Read(_mockFile);
 
@@ -166,7 +166,7 @@ namespace CPvC.Test
         public void WriteSetCurrentRoot()
         {
             // Setup
-            _history.AddCoreAction(CoreAction.KeyPress(100, 42, true));
+            _history.AddCoreAction(MachineAction.KeyPress(100, 42, true));
             _history.CurrentEvent = _history.RootEvent;
 
             // Act
@@ -180,8 +180,8 @@ namespace CPvC.Test
         public void WriteSetCurrentNonRoot()
         {
             // Setup
-            _history.AddCoreAction(CoreAction.KeyPress(100, 42, true));
-            HistoryEvent historyEvent = _history.AddCoreAction(CoreAction.KeyPress(100, 42, true));
+            _history.AddCoreAction(MachineAction.KeyPress(100, 42, true));
+            HistoryEvent historyEvent = _history.AddCoreAction(MachineAction.KeyPress(100, 42, true));
 
             // Act
             _history.CurrentEvent = historyEvent;
@@ -225,13 +225,13 @@ namespace CPvC.Test
             // Setup
             LocalMachine machine1 = LocalMachine.New(null, null);
             machine1.Name = "Test";
-            _history.AddCoreAction(CoreAction.Reset(100));
+            _history.AddCoreAction(MachineAction.Reset(100));
             int len1 = _mockFile.LineCount();
 
             // Act
             _file.Dispose();
             machine1.Name = "Test";
-            _history.AddCoreAction(CoreAction.Reset(100));
+            _history.AddCoreAction(MachineAction.Reset(100));
             int len2 = _mockFile.LineCount();
 
             // Verify
@@ -297,7 +297,7 @@ namespace CPvC.Test
         public void WriteUnknown()
         {
             // Setup
-            CoreAction coreAction = new CoreAction((CoreRequest.Types)42, 0);
+            MachineAction coreAction = new MachineAction((MachineRequest.Types)42, 0);
 
             // Act and Verify
             ArgumentException ex = Assert.Throws<ArgumentException>(() => _history.AddCoreAction(coreAction));
@@ -332,7 +332,7 @@ namespace CPvC.Test
         {
             // Setup
             History expectedHistory = new History();
-            expectedHistory.AddCoreAction(CoreAction.LoadTape(100, new MemoryBlob(new byte[] { 0x01, 0x02 })));
+            expectedHistory.AddCoreAction(MachineAction.LoadTape(100, new MemoryBlob(new byte[] { 0x01, 0x02 })));
             _mockFile.WriteLine(String.Format("arg:1,False,0102"));
             _mockFile.WriteLine("tape:0,100,$1");
 

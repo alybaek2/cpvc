@@ -295,7 +295,7 @@ namespace CPvC
                     lines.Add(CurrentCommand(currentEvent.Parent.Id));
                 }
 
-                if (History.IsClosedEvent(currentEvent) && !(currentEvent is CoreActionHistoryEvent coreActionHistoryEvent && coreActionHistoryEvent.CoreAction.Type == CoreRequest.Types.RunUntil && coreActionHistoryEvent.Children.Count == 1))
+                if (History.IsClosedEvent(currentEvent) && !(currentEvent is CoreActionHistoryEvent coreActionHistoryEvent && coreActionHistoryEvent.CoreAction.Type == MachineRequest.Types.RunUntil && coreActionHistoryEvent.Children.Count == 1))
                 {
                     GetLines(currentEvent, lines);
                 }
@@ -508,7 +508,7 @@ namespace CPvC
                 byte keyCode = Convert.ToByte(tokens[2]);
                 bool keyDown = Convert.ToBoolean(tokens[3]);
 
-                CoreAction action = CoreAction.KeyPress(ticks, keyCode, keyDown);
+                MachineAction action = MachineAction.KeyPress(ticks, keyCode, keyDown);
 
                 AddCoreAction(id, action);
             }
@@ -519,7 +519,7 @@ namespace CPvC
 
                 int id = Convert.ToInt32(tokens[0]);
                 UInt64 ticks = Convert.ToUInt64(tokens[1]);
-                CoreAction action = CoreAction.Reset(ticks);
+                MachineAction action = MachineAction.Reset(ticks);
 
                 AddCoreAction(id, action);
             }
@@ -533,7 +533,7 @@ namespace CPvC
                 byte drive = Convert.ToByte(tokens[2]);
                 IBlob mediaBlob = new MemoryBlob(Helpers.BytesFromStr(tokens[3]));
 
-                CoreAction action = CoreAction.LoadDisc(ticks, drive, mediaBlob);
+                MachineAction action = MachineAction.LoadDisc(ticks, drive, mediaBlob);
 
                 AddCoreAction(id, action);
             }
@@ -546,7 +546,7 @@ namespace CPvC
                 UInt64 ticks = Convert.ToUInt64(tokens[1]);
                 int version = Convert.ToInt32(tokens[2]);
 
-                CoreAction action = CoreAction.CoreVersion(ticks, version);
+                MachineAction action = MachineAction.CoreVersion(ticks, version);
 
                 AddCoreAction(id, action);
             }
@@ -559,7 +559,7 @@ namespace CPvC
                 UInt64 ticks = Convert.ToUInt64(tokens[1]);
                 UInt64 stopTicks = Convert.ToUInt64(tokens[2]);
 
-                CoreAction action = CoreAction.RunUntil(ticks, stopTicks, null);
+                MachineAction action = MachineAction.RunUntil(ticks, stopTicks, null);
 
                 AddCoreAction(id, action);
             }
@@ -572,12 +572,12 @@ namespace CPvC
                 UInt64 ticks = Convert.ToUInt64(tokens[1]);
                 IBlob mediaBlob = new MemoryBlob(Helpers.BytesFromStr(tokens[2]));
 
-                CoreAction action = CoreAction.LoadTape(ticks, mediaBlob);
+                MachineAction action = MachineAction.LoadTape(ticks, mediaBlob);
 
                 AddCoreAction(id, action);
             }
 
-            private HistoryEvent AddCoreAction(int id, CoreAction coreAction)
+            private HistoryEvent AddCoreAction(int id, MachineAction coreAction)
             {
                 if (_idToHistoryEvent.ContainsKey(id))
                 {

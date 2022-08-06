@@ -11,7 +11,7 @@ namespace CPvC
     /// Represents a persistent instance of a CPvC machine.
     /// </summary>
     /// <remarks>
-    /// The LocalMachine class, in addition to encapsulating a running Core object, also maintains a file which contains the state of the machine.
+    /// The LocalMachine class, in addition to encapsulating a Core object, also maintains a file which contains the state of the machine.
     /// This allows a machine to be closed, and then resumed where it left off the next time it's opened.
     /// </remarks>
     public sealed class LocalMachine : Machine,
@@ -170,7 +170,7 @@ namespace CPvC
         {
             if (IsOpen)
             {
-                RequestStopAndWait();
+                Stop().Wait(Timeout.Infinite);
 
                 try
                 {
@@ -254,7 +254,7 @@ namespace CPvC
 
                     _core.CreateSnapshotSync(snapshotId);
 
-                    CoreAction action = CoreAction.CreateSnapshot(Ticks, snapshotId);
+                    MachineAction action = MachineAction.CreateSnapshot(Ticks, snapshotId);
                     RaiseEvent(action);
 
                     while (_snapshots.Count > SnapshotLimit)
@@ -264,14 +264,14 @@ namespace CPvC
                         _snapshots.RemoveAt(0);
 
                         _core.DeleteSnapshotSync(snapshot.Id);
-                        action = CoreAction.DeleteSnapshot(Ticks, snapshot.Id);
+                        action = MachineAction.DeleteSnapshot(Ticks, snapshot.Id);
                         RaiseEvent(action);
                     }
                 }
             }
         }
 
-        protected override void CoreActionDone(CoreRequest request, CoreAction action)
+        protected override void CoreActionDone(MachineRequest request, MachineAction action)
         {
             if (action == null)
             {
@@ -280,27 +280,27 @@ namespace CPvC
 
             RaiseEvent(action);
 
-            if (action.Type != CoreAction.Types.CreateSnapshot &&
-                action.Type != CoreAction.Types.DeleteSnapshot &&
-                action.Type != CoreAction.Types.RevertToSnapshot)
+            if (action.Type != MachineAction.Types.CreateSnapshot &&
+                action.Type != MachineAction.Types.DeleteSnapshot &&
+                action.Type != MachineAction.Types.RevertToSnapshot)
             {
                 HistoryEvent e = _history.AddCoreAction(action);
 
                 switch (action.Type)
                 {
-                    case CoreRequest.Types.LoadDisc:
+                    case MachineRequest.Types.LoadDisc:
                         Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded disc" : "Ejected disc";
                         break;
-                    case CoreRequest.Types.LoadTape:
+                    case MachineRequest.Types.LoadTape:
                         Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded tape" : "Ejected tape";
                         break;
-                    case CoreRequest.Types.Reset:
+                    case MachineRequest.Types.Reset:
                         Status = "Reset";
                         break;
                 }
             }
 
-            if (action.Type == CoreAction.Types.RunUntil)
+            if (action.Type == MachineAction.Types.RunUntil)
             {
                 lock (_snapshots)
                 {
@@ -314,7 +314,7 @@ namespace CPvC
                     }
                 }
             }
-            else if (action.Type == CoreAction.Types.CreateSnapshot)
+            else if (action.Type == MachineAction.Types.CreateSnapshot)
             {
                 lock (_snapshots)
                 {
@@ -332,7 +332,7 @@ namespace CPvC
                         int snapshotId = _snapshots[0];
                         _snapshots.RemoveAt(0);
                         _allSnapshots.Remove(snapshotId);
-                        PushRequest(CoreRequest.DeleteSnapshot(snapshotId));
+                        PushRequest(MachineRequest.DeleteSnapshot(snapshotId));
                     }
                 }
             }
@@ -359,18 +359,18 @@ namespace CPvC
             }
         }
 
-        public CoreRequest Reset()
+        public MachineRequest Reset()
         {
-            CoreRequest request = CoreRequest.Reset();
+            MachineRequest request = MachineRequest.Reset();
             PushRequest(request);
             Status = "Reset";
 
             return request;
         }
 
-        public CoreRequest Key(byte keycode, bool down)
+        public MachineRequest Key(byte keycode, bool down)
         {
-            CoreRequest request = CoreRequest.KeyPress(keycode, down);
+            MachineRequest request = MachineRequest.KeyPress(keycode, down);
             PushRequest(request);
 
             return request;
@@ -378,7 +378,7 @@ namespace CPvC
 
         public void AddBookmark(bool system)
         {
-            using (AutoPause())
+            using (Lock())
             {
                 Bookmark bookmark = GetBookmark(system);
                 HistoryEvent historyEvent = _history.AddBookmark(_core.Ticks, bookmark);
@@ -413,17 +413,17 @@ namespace CPvC
             Status = "Rewound to start";
         }
 
-        public CoreRequest LoadDisc(byte drive, byte[] diskBuffer)
+        public MachineRequest LoadDisc(byte drive, byte[] diskBuffer)
         {
-            CoreRequest request = CoreRequest.LoadDisc(drive, diskBuffer);
+            MachineRequest request = MachineRequest.LoadDisc(drive, diskBuffer);
             PushRequest(request);
 
             return request;
         }
 
-        public CoreRequest LoadTape(byte[] tapeBuffer)
+        public MachineRequest LoadTape(byte[] tapeBuffer)
         {
-            CoreRequest request = CoreRequest.LoadTape(tapeBuffer);
+            MachineRequest request = MachineRequest.LoadTape(tapeBuffer);
             PushRequest(request);
 
             return request;
@@ -435,7 +435,7 @@ namespace CPvC
         /// <param name="bookmarkEvent">The event to become the current event in the timeline. This event must have a bookmark.</param>
         public void JumpToBookmark(BookmarkHistoryEvent bookmarkEvent)
         {
-            using (AutoPause())
+            using (Lock())
             {
                 SetCurrentEvent(bookmarkEvent);
             }
@@ -446,7 +446,7 @@ namespace CPvC
         /// </summary>
         public void JumpToRoot()
         {
-            using (AutoPause())
+            using (Lock())
             {
                 SetCurrentToRoot();
             }
@@ -458,7 +458,7 @@ namespace CPvC
         /// <param name="historyEvent">History event to be deleted, along with all its descendents.</param>
         public bool DeleteBranch(HistoryEvent historyEvent)
         {
-            using (AutoPause())
+            using (Lock())
             {
                 return _history.DeleteBranch(historyEvent);
             }
@@ -514,7 +514,7 @@ namespace CPvC
         /// <returns>A bookmark of the current state of the machine.</returns>
         private Bookmark GetBookmark(bool system)
         {
-            using (AutoPause())
+            using (Lock())
             {
                 byte[] screen = _core.GetScreen();
                 byte[] core = _core.GetState();
@@ -534,7 +534,7 @@ namespace CPvC
 
             SetScreen(bookmarkHistoryEvent.Bookmark.Screen.GetBytes());
 
-            CoreAction action = CoreAction.LoadCore(bookmarkHistoryEvent.Ticks, bookmarkHistoryEvent.Bookmark.State);
+            MachineAction action = MachineAction.LoadCore(bookmarkHistoryEvent.Ticks, bookmarkHistoryEvent.Bookmark.State);
             RaiseEvent(action);
 
             _history.CurrentEvent = bookmarkHistoryEvent;
@@ -546,36 +546,36 @@ namespace CPvC
 
             BlankScreen();
 
-            CoreAction action = CoreAction.Reset(_history.RootEvent.Ticks);
+            MachineAction action = MachineAction.Reset(_history.RootEvent.Ticks);
             RaiseEvent(action);
 
             _history.CurrentEvent = _history.RootEvent;
         }
 
-        public void Reverse()
+        public MachineRequest Reverse()
         {
             lock (_snapshots)
             {
                 if (_requestedState != RunningState.Running || _snapshots.Count == 0)
                 {
-                    return;
+                    return null;
                 }
             }
 
-            RequestedState = RunningState.Reverse;
+            MachineRequest request = MachineRequest.Reverse();
+            PushRequest(request);
 
-            OnPropertyChanged(nameof(ActualRunningState));
-
-            Status = "Reversing";
+            return request;
         }
 
-        public void ReverseStop()
+        public MachineRequest ReverseStop()
         {
-            RequestedState = RunningState.Running;
-
-            OnPropertyChanged(nameof(ActualRunningState));
+            MachineRequest request = MachineRequest.Resume();
+            PushRequest(request);
 
             AllKeysUp();
+
+            return request;
         }
 
         public void ToggleReversibilityEnabled()
@@ -592,7 +592,7 @@ namespace CPvC
 
         public bool Persist(IFileSystem fileSystem, string filepath)
         {
-            using (AutoPause())
+            using (Lock())
             {
                 if (File != null)
                 {
@@ -745,14 +745,14 @@ namespace CPvC
             base.OnPropertyChanged(name);
         }
 
-        protected override CoreRequest GetNextRequest()
+        protected override MachineRequest GetNextCoreRequest()
         {
-            CoreRequest request = base.GetNextRequest();
+            MachineRequest request = base.GetNextCoreRequest();
             if (request == null)
             {
                 if (_requestedState == RunningState.Running)
                 {
-                    request = CoreRequest.RunUntil(Ticks + 1000);
+                    request = MachineRequest.RunUntil(Ticks + 1000);
                 }
                 else if (_requestedState == RunningState.Reverse)
                 {
@@ -763,7 +763,7 @@ namespace CPvC
                             int snapshotId = _snapshots[_snapshots.Count - 1];
                             _snapshots.RemoveAt(_snapshots.Count - 1);
 
-                            request = CoreRequest.RevertToSnapshot(snapshotId);
+                            request = MachineRequest.RevertToSnapshot(snapshotId);
                         }
                     }
                 }
@@ -772,7 +772,7 @@ namespace CPvC
             return request;
         }
 
-        public override (bool, CoreAction) ProcessRevertToSnapshot(CoreRequest request)
+        public override (bool, MachineAction) ProcessRevertToSnapshot(MachineRequest request)
         {
             // Play samples from the snapshot info until they run out, then actually revert to snapshot.
             SnapshotInfo snapshotInfo = _allSnapshots[request.SnapshotId];
@@ -790,7 +790,7 @@ namespace CPvC
 
                 _allSnapshots.Remove(request.SnapshotId);
 
-                return (true, CoreAction.RevertToSnapshot(request.StopTicks, request.SnapshotId));
+                return (true, MachineAction.RevertToSnapshot(request.StopTicks, request.SnapshotId));
             }
 
             return (false, null);

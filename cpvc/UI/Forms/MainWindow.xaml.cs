@@ -307,7 +307,7 @@ namespace CPvC.UI.Forms
         {
             LocalMachine machine = _mainViewModel?.ActiveMachine as LocalMachine;
 
-            using (machine.AutoPause())
+            using (machine.Lock())
             {
                 BookmarkSelectWindow dialog = new BookmarkSelectWindow(this, machine);
                 bool? result = dialog.ShowDialog();
