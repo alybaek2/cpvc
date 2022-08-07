@@ -83,7 +83,7 @@ namespace CPvC
             }
         }
 
-        public RunningState ActualRunningState
+        public RunningState RunningState
         {
             get
             {
@@ -187,7 +187,7 @@ namespace CPvC
 
         public MachineRequest ToggleRunning()
         {
-            if (ActualRunningState == RunningState.Running)
+            if (RunningState == RunningState.Running)
             {
                 return Stop();
             }
@@ -302,11 +302,11 @@ namespace CPvC
                 // Make sure to set the ActualRunningState *before* marking this request as "processed".
                 if (_lockCount > 0)
                 {
-                    ActualRunningState = RunningState.Paused;
+                    RunningState = RunningState.Paused;
                 }
                 else
                 {
-                    ActualRunningState = _requestedRunningState;
+                    RunningState = _requestedRunningState;
                 }
 
                 request.SetProcessed();

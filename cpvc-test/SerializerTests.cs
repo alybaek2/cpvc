@@ -17,7 +17,7 @@ namespace CPvC.Test
                 0x03, 0x00, 0x00, 0x00, 0x44, 0x45, 0x46
             };
 
-        static private object[] CoreRequestCases =
+        static private object[] MachineRequestCases =
         {
             new object[] { MachineRequest.KeyPress(Keys.A, true), new byte[] { 0x01, 58, 0xFF } , false },
             new object[] { MachineRequest.Reset(), new byte[] { 0x02 } , false },
@@ -47,7 +47,7 @@ namespace CPvC.Test
             new object[] { new MachineAction((MachineRequest.Types) 99, 0x01234567), new byte[] { 99 }, true }
         };
 
-        [TestCaseSource(nameof(CoreRequestCases))]
+        [TestCaseSource(nameof(MachineRequestCases))]
         public void CoreRequestToBytes(MachineRequest coreRequest, byte[] expectedBytes, bool throws)
         {
             // Setup
@@ -66,7 +66,7 @@ namespace CPvC.Test
             }
         }
 
-        [TestCaseSource(nameof(CoreRequestCases))]
+        [TestCaseSource(nameof(MachineRequestCases))]
         public void CoreRequestFromBytes(MachineRequest expectedCoreRequest, byte[] expectedBytes, bool throws)
         {
             // Setup

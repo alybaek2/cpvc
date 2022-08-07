@@ -347,7 +347,7 @@ namespace CPvC.Test
             LocalMachine machine = viewModel.Machines[countBefore] as LocalMachine;
             Assert.AreEqual(countBefore + 1, viewModel.Machines.Count);
             Assert.AreEqual(machine, viewModel.ActiveMachine);
-            Assert.AreEqual(RunningState.Running, machine.ActualRunningState);
+            Assert.AreEqual(RunningState.Running, machine.RunningState);
         }
 
 

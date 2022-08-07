@@ -241,7 +241,7 @@ namespace CPvC.Test
             {
                 if (timeWaited > timeout)
                 {
-                    throw new Exception(String.Format("Waited too long for Machine to run! {0} {1}", machine.Ticks, machine.ActualRunningState));
+                    throw new Exception(String.Format("Waited too long for Machine to run! {0} {1}", machine.Ticks, machine.RunningState));
                 }
 
                 System.Threading.Thread.Sleep(sleepTime);
@@ -608,7 +608,7 @@ namespace CPvC.Test
             ManualResetEvent e = new ManualResetEvent(false);
             PropertyChangedEventHandler handler = (sender, args) =>
             {
-                if (machine.ActualRunningState == actualRunningState)
+                if (machine.RunningState == actualRunningState)
                 {
                     e.Set();
                 }
@@ -617,11 +617,11 @@ namespace CPvC.Test
             try
             {
                 machine.PropertyChanged += handler;
-                if (machine.ActualRunningState != actualRunningState)
+                if (machine.RunningState != actualRunningState)
                 {
                     if (!e.WaitOne(30000))
                     {
-                        throw new TimeoutException(String.Format("Timeout while waiting for machine's expected running state '{0}' to match its actual running state '{1}'.", actualRunningState, machine.ActualRunningState));
+                        throw new TimeoutException(String.Format("Timeout while waiting for machine's expected running state '{0}' to match its actual running state '{1}'.", actualRunningState, machine.RunningState));
                     }
                 }
             }

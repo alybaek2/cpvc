@@ -71,21 +71,21 @@ namespace CPvC.Test
             // Act and Verify
             _machine.Start().Wait();
 
-            Assert.AreEqual(RunningState.Running, _machine.ActualRunningState);
+            Assert.AreEqual(RunningState.Running, _machine.RunningState);
 
             using (_machine.Lock())
             {
-                Assert.AreEqual(RunningState.Paused, _machine.ActualRunningState);
+                Assert.AreEqual(RunningState.Paused, _machine.RunningState);
 
                 using (_machine.Lock())
                 {
-                    Assert.AreEqual(RunningState.Paused, _machine.ActualRunningState);
+                    Assert.AreEqual(RunningState.Paused, _machine.RunningState);
                 }
 
-                Assert.AreEqual(RunningState.Paused, _machine.ActualRunningState);
+                Assert.AreEqual(RunningState.Paused, _machine.RunningState);
             }
 
-            Assert.AreEqual(RunningState.Running, _machine.ActualRunningState);
+            Assert.AreEqual(RunningState.Running, _machine.RunningState);
         }
 
         /// <summary>
@@ -398,15 +398,15 @@ namespace CPvC.Test
             _machine.Start().Wait();
 
             // Act
-            RunningState state1 = _machine.ActualRunningState;
+            RunningState state1 = _machine.RunningState;
             _machine.ToggleRunning().Wait();
-            RunningState state2 = _machine.ActualRunningState;
+            RunningState state2 = _machine.RunningState;
             _machine.ToggleRunning().Wait();
 
             // Verify
             Assert.AreEqual(RunningState.Running, state1);
             Assert.AreEqual(RunningState.Paused, state2);
-            Assert.AreEqual(RunningState.Running, _machine.ActualRunningState);
+            Assert.AreEqual(RunningState.Running, _machine.RunningState);
         }
 
         //[Test]
@@ -619,7 +619,7 @@ namespace CPvC.Test
             _machine.Close();
 
             // Verify
-            Assert.AreEqual(RunningState.Paused, _machine.ActualRunningState);
+            Assert.AreEqual(RunningState.Paused, _machine.RunningState);
         }
 
         [Test]
@@ -841,7 +841,7 @@ namespace CPvC.Test
             _machine.ReverseStop().Wait();
 
             // Verify
-            Assert.AreEqual(RunningState.Running, _machine.ActualRunningState);
+            Assert.AreEqual(RunningState.Running, _machine.RunningState);
         }
 
         [Test]
@@ -857,7 +857,7 @@ namespace CPvC.Test
             _machine.Reverse()?.Wait();
 
             // Verify
-            Assert.AreEqual(RunningState.Paused, _machine.ActualRunningState);
+            Assert.AreEqual(RunningState.Paused, _machine.RunningState);
         }
 
         [Test]
@@ -878,7 +878,7 @@ namespace CPvC.Test
             //System.Threading.Thread.Sleep(100);
 
             // Verify
-            Assert.AreEqual(RunningState.Running, _machine.ActualRunningState);
+            Assert.AreEqual(RunningState.Running, _machine.RunningState);
         }
 
         /// <summary>

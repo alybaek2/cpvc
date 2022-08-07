@@ -77,7 +77,7 @@ namespace CPvC
         {
             get
             {
-                return ActualRunningState == RunningState.Paused && Ticks < EndTicks;
+                return RunningState == RunningState.Paused && Ticks < EndTicks;
             }
         }
 
@@ -85,7 +85,7 @@ namespace CPvC
         {
             get
             {
-                return ActualRunningState == RunningState.Running;
+                return RunningState == RunningState.Running;
             }
         }
 
@@ -179,7 +179,7 @@ namespace CPvC
 
         protected override void OnPropertyChanged(string name)
         {
-            if (name == nameof(ActualRunningState))
+            if (name == nameof(RunningState))
             {
                 base.OnPropertyChanged(nameof(CanStart));
                 base.OnPropertyChanged(nameof(CanStop));

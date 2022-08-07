@@ -126,13 +126,13 @@ namespace CPvC.Test
         {
             // Setup
             ReplayMachine replayMachine = CreateMachine(false);
-            RunningState runningState1 = replayMachine.ActualRunningState;
+            RunningState runningState1 = replayMachine.RunningState;
 
             // Act
             replayMachine.Start().Wait();
-            RunningState runningState2 = replayMachine.ActualRunningState;
+            RunningState runningState2 = replayMachine.RunningState;
             replayMachine.Stop().Wait();
-            RunningState runningState3 = replayMachine.ActualRunningState;
+            RunningState runningState3 = replayMachine.RunningState;
 
             // Verify
             Assert.AreEqual(RunningState.Paused, runningState1);
@@ -187,15 +187,15 @@ namespace CPvC.Test
             machine.Start()?.Wait();
 
             // Act
-            RunningState runningState1 = machine.ActualRunningState;
+            RunningState runningState1 = machine.RunningState;
             machine.ToggleRunning().Wait();
-            RunningState runningState2 = machine.ActualRunningState;
+            RunningState runningState2 = machine.RunningState;
             machine.ToggleRunning().Wait();
 
             // Verify
             Assert.AreEqual(RunningState.Running, runningState1);
             Assert.AreEqual(RunningState.Paused, runningState2);
-            Assert.AreEqual(RunningState.Running, machine.ActualRunningState);
+            Assert.AreEqual(RunningState.Running, machine.RunningState);
             machine.Close();
         }
 
@@ -278,7 +278,7 @@ namespace CPvC.Test
             Wait(machine, RunningState.Paused);
 
             // Verify
-            Assert.AreEqual(RunningState.Paused, machine.ActualRunningState);
+            Assert.AreEqual(RunningState.Paused, machine.RunningState);
             Assert.AreEqual(machine.EndTicks, machine.Ticks);
             machine.Close();
         }
