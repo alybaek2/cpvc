@@ -19,8 +19,8 @@ namespace CPvC
         private string _status;
 
         protected RunningState _runningState;
-        protected RunningState _requestedState;
-        protected RunningState _actualState;
+        protected RunningState _requestedRunningState;
+        protected RunningState _actualRunningState;
         
         protected int _lockCount;
 
@@ -28,8 +28,8 @@ namespace CPvC
 
         public event EventHandler DisplayUpdated;
 
-        protected readonly Queue<MachineRequest> _machineRequests;
-        protected ManualResetEvent _machineRequestsAvailable;
+        protected readonly Queue<MachineRequest> _requests;
+        protected ManualResetEvent _requestsAvailable;
         protected readonly Queue<MachineRequest> _coreRequests;
         protected ManualResetEvent _coreRequestsAvailable;
 
@@ -46,8 +46,8 @@ namespace CPvC
         {
             _lockCount = 0;
             _runningState = RunningState.Paused;
-            _requestedState = RunningState.Paused;
-            _actualState = RunningState.Paused;
+            _requestedRunningState = RunningState.Paused;
+            _actualRunningState = RunningState.Paused;
             _volume = 80;
 
             _core = new Core(Core.LatestVersion, Core.Type.CPC6128);
@@ -55,8 +55,8 @@ namespace CPvC
             _coreRequests = new Queue<MachineRequest>();
             _coreRequestsAvailable = new ManualResetEvent(false);
 
-            _machineRequests = new Queue<MachineRequest>();
-            _machineRequestsAvailable = new ManualResetEvent(false);
+            _requests = new Queue<MachineRequest>();
+            _requestsAvailable = new ManualResetEvent(false);
 
             _audioBuffer = new AudioBuffer(48000);
             _audioBuffer.OverrunThreshold = int.MaxValue;
@@ -87,17 +87,17 @@ namespace CPvC
         {
             get
             {
-                return _actualState;
+                return _actualRunningState;
             }
 
             private set
             {
-                if (_actualState == value)
+                if (_actualRunningState == value)
                 {
                     return;
                 }
 
-                _actualState = value;
+                _actualRunningState = value;
 
                 OnPropertyChanged();
             }
@@ -263,30 +263,30 @@ namespace CPvC
             }
             else
             {
-                lock (_machineRequests)
+                lock (_requests)
                 {
-                    _machineRequests.Enqueue(request);
-                    _machineRequestsAvailable.Set();
+                    _requests.Enqueue(request);
+                    _requestsAvailable.Set();
                 }
             }
         }
 
-        private void ProcessNextMachineRequest(MachineRequest request)
+        private void ProcessRequest(MachineRequest request)
         {
             if (request != null)
             {
                 switch (request.Type)
                 {
                     case MachineRequest.Types.Pause:
-                        _requestedState = RunningState.Paused;
+                        _requestedRunningState = RunningState.Paused;
                         Status = "Paused";
                         break;
                     case MachineRequest.Types.Resume:
-                        _requestedState = RunningState.Running;
+                        _requestedRunningState = RunningState.Running;
                         Status = "Resumed";
                         break;
                     case MachineRequest.Types.Reverse:
-                        _requestedState = RunningState.Reverse;
+                        _requestedRunningState = RunningState.Reverse;
                         Status = "Reversing";
                         break;
                     case MachineRequest.Types.Lock:
@@ -306,7 +306,7 @@ namespace CPvC
                 }
                 else
                 {
-                    ActualRunningState = _requestedState;
+                    ActualRunningState = _requestedRunningState;
                 }
 
                 request.SetProcessed();
@@ -314,7 +314,7 @@ namespace CPvC
 
         }
 
-        private (bool, MachineAction) ProcessRequest(MachineRequest request)
+        private (bool, MachineAction) ProcessCoreRequest(MachineRequest request)
         {
             bool success = true;
 
@@ -529,13 +529,8 @@ namespace CPvC
 
             WaitHandle[] allEvents = new WaitHandle[]
             {
-                _machineRequestsAvailable,
+                _requestsAvailable,
                 CanProcessEvent
-            };
-
-            WaitHandle[] allEventsPaused = new WaitHandle[]
-            {
-                _machineRequestsAvailable
             };
 
             while (true)
@@ -544,15 +539,15 @@ namespace CPvC
                 while (true)
                 {
                     MachineRequest request = null;
-                    lock (_machineRequests)
+                    lock (_requests)
                     {
-                        if (_machineRequests.Count > 0)
+                        if (_requests.Count > 0)
                         {
-                            request = _machineRequests.Dequeue();
+                            request = _requests.Dequeue();
                         }
                         else
                         {
-                            _machineRequestsAvailable.Reset();
+                            _requestsAvailable.Reset();
                             break;
                         }
                     }
@@ -566,7 +561,7 @@ namespace CPvC
                             break;
                         }
 
-                        ProcessNextMachineRequest(request);
+                        ProcessRequest(request);
                     }
                 }
 
@@ -575,9 +570,9 @@ namespace CPvC
                     break;
                 }
 
-                if (_requestedState == RunningState.Paused || _lockCount > 0)
+                if (_actualRunningState == RunningState.Paused)
                 {
-                    _machineRequestsAvailable.WaitOne();
+                    _requestsAvailable.WaitOne();
 
                     continue;
                 }
@@ -593,7 +588,7 @@ namespace CPvC
                     }
                 }
 
-                (bool done, MachineAction action) = ProcessRequest(coreRequest);
+                (bool done, MachineAction action) = ProcessCoreRequest(coreRequest);
 
                 CoreActionDone(coreRequest, action);
 

@@ -556,7 +556,7 @@ namespace CPvC
         {
             lock (_snapshots)
             {
-                if (_requestedState != RunningState.Running || _snapshots.Count == 0)
+                if (_requestedRunningState != RunningState.Running || _snapshots.Count == 0)
                 {
                     return null;
                 }
@@ -750,11 +750,11 @@ namespace CPvC
             MachineRequest request = base.GetNextCoreRequest();
             if (request == null)
             {
-                if (_requestedState == RunningState.Running)
+                if (_requestedRunningState == RunningState.Running)
                 {
                     request = MachineRequest.RunUntil(Ticks + 1000);
                 }
-                else if (_requestedState == RunningState.Reverse)
+                else if (_requestedRunningState == RunningState.Reverse)
                 {
                     lock (_snapshots)
                     {
