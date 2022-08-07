@@ -945,6 +945,23 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void OpenClosedMachine()
+        {
+            // Setup
+            using (LocalMachine machine = LocalMachine.OpenFromFile(_mockFileSystem.Object, _filename))
+            {
+                TestHelpers.Run(machine, 1000);
+                machine.Close();
+
+                // Act
+                machine.OpenFromFile(_mockFileSystem.Object);
+
+                // Verify
+                Assert.True(machine.IsOpen);
+            }
+        }
+
+        [Test]
         public void SnapshotLimitPropertyChanged()
         {
             // Setup
