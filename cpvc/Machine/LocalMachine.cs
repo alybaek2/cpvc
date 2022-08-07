@@ -568,16 +568,6 @@ namespace CPvC
             return request;
         }
 
-        public MachineRequest ReverseStop()
-        {
-            MachineRequest request = MachineRequest.Resume();
-            PushRequest(request);
-
-            AllKeysUp();
-
-            return request;
-        }
-
         public void ToggleReversibilityEnabled()
         {
             if (SnapshotLimit == 0)
@@ -770,6 +760,16 @@ namespace CPvC
             }
 
             return request;
+        }
+
+        public override void ProcessResume()
+        {
+            if (_actualRunningState == RunningState.Reverse)
+            {
+                AllKeysUp();
+            }
+
+            base.ProcessResume();
         }
 
         public override MachineAction ProcessRevertToSnapshot(MachineRequest request)

@@ -820,7 +820,7 @@ namespace CPvC.Test
         }
 
         /// <summary>
-        /// Test to ensure that multiple Reverse calls only require a single ReverseStop
+        /// Test to ensure that multiple Reverse calls only require a single Resume
         /// call to get back to the original running state.
         /// </summary>
         [Test]
@@ -838,7 +838,7 @@ namespace CPvC.Test
             _machine.Reverse()?.Wait();
 
             // Act
-            _machine.ReverseStop().Wait();
+            _machine.Start().Wait();
 
             // Verify
             Assert.AreEqual(RunningState.Running, _machine.RunningState);
@@ -874,7 +874,7 @@ namespace CPvC.Test
             _machine.Reverse().Wait();
 
             // Act
-            _machine.ReverseStop().Wait();
+            _machine.Start().Wait();
             //System.Threading.Thread.Sleep(100);
 
             // Verify

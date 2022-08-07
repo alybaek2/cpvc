@@ -282,8 +282,7 @@ namespace CPvC
                         Status = "Paused";
                         break;
                     case MachineRequest.Types.Resume:
-                        _requestedRunningState = RunningState.Running;
-                        Status = "Resumed";
+                        ProcessResume();
                         break;
                     case MachineRequest.Types.Reverse:
                         _requestedRunningState = RunningState.Reverse;
@@ -381,6 +380,12 @@ namespace CPvC
             }
 
             return (success, action);
+        }
+
+        public virtual void ProcessResume()
+        {
+            _requestedRunningState = RunningState.Running;
+            Status = "Resumed";
         }
 
         public virtual MachineAction ProcessRevertToSnapshot(MachineRequest request)

@@ -71,7 +71,6 @@ namespace CPvC
         private readonly Command _seekToPrevBookmarkCommand;
         private readonly Command _seekToStartCommand;
         private readonly Command _reverseStartCommand;
-        private readonly Command _reverseStopCommand;
         private readonly Command _toggleSnapshotCommand;
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -251,11 +250,6 @@ namespace CPvC
 
             _reverseStartCommand = CreateCommand(
                 p => (p as IReversibleMachine)?.Reverse(),
-                p => p is IReversibleMachine
-            );
-
-            _reverseStopCommand = CreateCommand(
-                p => (p as IReversibleMachine)?.ReverseStop(),
                 p => p is IReversibleMachine
             );
 
@@ -487,11 +481,6 @@ namespace CPvC
         public Command ReverseStartCommand
         {
             get { return _reverseStartCommand; }
-        }
-
-        public Command ReverseStopCommand
-        {
-            get { return _reverseStopCommand; }
         }
 
         public Command ToggleReversibility

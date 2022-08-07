@@ -836,13 +836,6 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void ReverseStop()
-        {
-            TestInterfacePassthrough<IReversibleMachine>(_mainViewModel.ReverseStopCommand, m => m.ReverseStop());
-            Assert.True(_mainViewModel.ReverseStopCommand.CanExecute(_machine));
-        }
-
-        [Test]
         public void ToggleReversibility()
         {
             TestInterfacePassthrough<IReversibleMachine>(_mainViewModel.ToggleReversibility, m => m.ToggleReversibilityEnabled());
@@ -1231,15 +1224,9 @@ namespace CPvC.Test
         }
 
         [Test]
-        public void ReverseStopForNonReversibleMachine()
-        {
-            TestNoInterfacePassthrough<ITurboableMachine>(_mainViewModel.ReverseStopCommand, false);
-        }
-
-        [Test]
         public void ToggleReversibilityForNonReversibleMachine()
         {
-            TestNoInterfacePassthrough<ITurboableMachine>(_mainViewModel.ReverseStopCommand, false);
+            TestNoInterfacePassthrough<ITurboableMachine>(_mainViewModel.ResumeCommand, false);
         }
 
         [Test]

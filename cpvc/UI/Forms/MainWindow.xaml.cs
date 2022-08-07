@@ -221,7 +221,7 @@ namespace CPvC.UI.Forms
         {
             if (e.Key == Key.F1)
             {
-                _mainViewModel.ReverseStopCommand.Execute(_mainViewModel.ActiveMachine);
+                _mainViewModel.ResumeCommand.Execute(_mainViewModel.ActiveMachine);
             }
             else if (e.Key == Key.F2)
             {
