@@ -772,7 +772,7 @@ namespace CPvC
             return request;
         }
 
-        public override (bool, MachineAction) ProcessRevertToSnapshot(MachineRequest request)
+        public override MachineAction ProcessRevertToSnapshot(MachineRequest request)
         {
             // Play samples from the snapshot info until they run out, then actually revert to snapshot.
             SnapshotInfo snapshotInfo = _allSnapshots[request.SnapshotId];
@@ -790,10 +790,10 @@ namespace CPvC
 
                 _allSnapshots.Remove(request.SnapshotId);
 
-                return (true, MachineAction.RevertToSnapshot(request.StopTicks, request.SnapshotId));
+                return MachineAction.RevertToSnapshot(request.StopTicks, request.SnapshotId);
             }
 
-            return (false, null);
+            return null;
         }
     }
 }

@@ -371,16 +371,8 @@ namespace CPvC
                     break;
                 case MachineRequest.Types.RevertToSnapshot:
                     {
-                        (bool succeeded, MachineAction raction) = ProcessRevertToSnapshot(request);
-                        if (succeeded)
-                        {
-                            success = true;
-                            action = raction;
-                        }
-                        else
-                        {
-                            success = false;
-                        }
+                        action = ProcessRevertToSnapshot(request);
+                        success = action != null;
                     }
 
                     break;
@@ -391,7 +383,7 @@ namespace CPvC
             return (success, action);
         }
 
-        public virtual (bool, MachineAction) ProcessRevertToSnapshot(MachineRequest request)
+        public virtual MachineAction ProcessRevertToSnapshot(MachineRequest request)
         {
             MachineAction action = null;
             if (_core.RevertToSnapshotSync(request.SnapshotId))
@@ -401,7 +393,7 @@ namespace CPvC
                 RaiseDisplayUpdated();
             }
 
-            return (true, action);
+            return action;
         }
 
         public MachineRequest RunUntil(UInt64 ticks)
