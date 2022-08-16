@@ -298,7 +298,7 @@ namespace CPvC.Test
         public void RootLine()
         {
             // Verify
-            Assert.Throws<NotImplementedException>(() => _history.RootEvent.GetLine());
+            Assert.Throws<NotImplementedException>(() => _history.RootEvent.GetLine(null, null));
         }
     }
 }

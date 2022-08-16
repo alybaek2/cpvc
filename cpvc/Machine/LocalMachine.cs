@@ -516,10 +516,7 @@ namespace CPvC
         {
             using (Lock())
             {
-                byte[] screen = _core.GetScreen();
-                byte[] core = _core.GetState();
-
-                return new Bookmark(system, _core.Version, core, screen);
+                return new Bookmark(system, _core.Version, _core.GetState(), _core.GetScreen());
             }
         }
 

@@ -158,6 +158,7 @@
     <Compile Include="Machine\Interfaces\ITurboableMachine.cs" />
     <Compile Include="Machine\MachineServerListener.cs" />
     <Compile Include="Machine\MachineServerConnection.cs" />
+    <Compile Include="Miscellaneous\LazyLoadBlob.cs" />
     <Compile Include="Miscellaneous\MemoryBlob.cs" />
     <Compile Include="Machine\RemoteMachine.cs" />
     <Compile Include="Machine\ReplayMachine.cs" />

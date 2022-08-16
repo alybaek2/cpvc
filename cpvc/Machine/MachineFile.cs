@@ -5,6 +5,47 @@ using System.Text;
 
 namespace CPvC
 {
+    public class Blobs
+    {
+        private int _nextBlobId;
+        private Dictionary<int, IBlob> _blobs;
+
+        public Blobs(int nextBlobId)
+        {
+            _nextBlobId = nextBlobId;
+            _blobs = new Dictionary<int, IBlob>();
+        }
+
+        public List<int> Ids
+        {
+            get
+            {
+                return _blobs.Keys.ToList();
+            }
+        }
+
+        public int Add(IBlob blob)
+        {
+            int id = _nextBlobId++;
+            _blobs[id] = blob;
+
+            return id;
+        }
+
+        public int Add(int id, IBlob blob)
+        {
+            _blobs[id] = blob;
+
+            _nextBlobId = Math.Max(id + 1, _nextBlobId);
+            return id;
+        }
+
+        public IBlob Get(int id)
+        {
+            return _blobs[id];
+        }
+    }
+
     public class MachineFileInfo
     {
         public string Name { get; private set; }
@@ -36,7 +77,7 @@ namespace CPvC
         public const string _idArgs = "args";
 
         private History _machineHistory;
-        private int _nextBlobId;
+        private Blobs _blobs;
 
         private LocalMachine _machine;
 
@@ -98,7 +139,7 @@ namespace CPvC
         public MachineFile(ITextFile textFile, History machineHistory, int nextBlobId)
         {
             _textFile = textFile ?? throw new ArgumentNullException(nameof(textFile));
-            _nextBlobId = nextBlobId;
+            _blobs = new Blobs(nextBlobId);
 
             History = machineHistory;
         }
@@ -137,18 +178,18 @@ namespace CPvC
             return String.Format("{0}:{1}", _idName, name);
         }
 
-        static public string AddBookmarkCommand(int id, UInt64 ticks, bool system, int version, DateTime creationTime, byte[] state, byte[] screen)
+        static public string AddBookmarkCommand(Blobs blobs, int id, UInt64 ticks, bool system, int version, DateTime creationTime, int stateBlobId, int screenBlobId)
         {
             return String.Format(
-                "{0}:{1},{2},{3},{4},{5},{6},{7}",
+                "{0}:{1},{2},{3},{4},{5},${6},${7}",
                 _idAddBookmark,
                 id,
                 ticks,
                 system,
                 version,
                 creationTime.Ticks,
-                Helpers.StrFromBytes(state),
-                Helpers.StrFromBytes(screen));
+                stateBlobId,
+                screenBlobId);
         }
 
         static public string KeyCommand(int id, UInt64 ticks, byte keyCode, bool keyDown)
@@ -161,23 +202,23 @@ namespace CPvC
                 keyDown);
         }
 
-        static public string LoadDiscCommand(int id, UInt64 ticks, byte drive, byte[] media)
+        static public string LoadDiscCommand(int id, UInt64 ticks, byte drive, int mediaBlobId)
         {
-            return String.Format("{0}:{1},{2},{3},{4}",
+            return String.Format("{0}:{1},{2},{3},${4}",
                 _idLoadDisc,
                 id,
                 ticks,
                 drive,
-                Helpers.StrFromBytes(media));
+                mediaBlobId);
         }
 
-        static public string LoadTapeCommand(int id, UInt64 ticks, byte[] media)
+        static public string LoadTapeCommand(int id, UInt64 ticks, int mediaBlobId)
         {
-            return String.Format("{0}:{1},{2},{3}",
+            return String.Format("{0}:{1},{2},${3}",
                 _idLoadTape,
                 id,
                 ticks,
-                Helpers.StrFromBytes(media));
+                mediaBlobId);
         }
 
         static public string RunCommand(int id, UInt64 ticks, UInt64 stopTicks)
@@ -206,20 +247,30 @@ namespace CPvC
                 version);
         }
 
-        static private string ArgCommand(int argId, string argValue, bool compress)
+        static public string ArgCommand(int argId, IBlob blob, bool compress)
         {
-            if (compress)
+            string bytesStr = "";
+            byte[] bytes = blob.GetBytes();
+            if (bytes == null)
             {
-                byte[] bytes = Encoding.UTF8.GetBytes(argValue);
-                argValue = Helpers.StrFromBytes(Helpers.Compress(bytes));
+                bytesStr = "";
+                compress = false;
+            }
+            else if (compress)
+            {
+                bytesStr = Helpers.StrFromBytes(Helpers.Compress(bytes));
+            }
+            else
+            {
+                bytesStr = Helpers.StrFromBytes(blob.GetBytes());
             }
 
-            return String.Format("{0}:{1},{2},{3}", _idArg, argId, compress, argValue);
+            return String.Format("{0}:{1},{2},{3}", _idArg, argId, compress, bytesStr);
         }
 
-        static public string ArgsCommand(Dictionary<int, string> args, bool compress)
+        static public string ArgsCommand(Blobs blobs, bool compress)
         {
-            string argsLine = String.Join("@", args.Keys.Select(key => String.Format("{0}#{1}", key, args[key])));
+            string argsLine = String.Join("@", blobs.Ids.Select(key => String.Format("{0}#{1}", key, Helpers.StrFromBytes(blobs.Get(key).GetBytes()))));
             if (compress)
             {
                 byte[] bytes = Encoding.UTF8.GetBytes(argsLine);
@@ -231,22 +282,7 @@ namespace CPvC
 
         private void GetLines(HistoryEvent historyEvent, List<string> lines)
         {
-            string line = historyEvent.GetLine();
-
-            // Check for big parameters
-            string[] args = line.Split(',');
-            for (int i = 0; i < args.Length; i++)
-            {
-                string token = args[i];
-                if (token.Length > 100)
-                {
-                    int blobId = _nextBlobId++;
-                    lines.Add(ArgCommand(blobId, token, true));
-                    args[i] = String.Format("${0}", blobId);
-                }
-            }
-
-            lines.Add(String.Join(",", args));
+            historyEvent.GetLine(lines, _blobs);
         }
 
         private List<string> GetLines(HistoryEvent historyEvent, HistoryChangedAction changeType)
@@ -312,7 +348,7 @@ namespace CPvC
 
             // If we have any "arg" commands, stick them in a "args" command and put them at the start of the file.
             // Putting them in a single command should allow them to be better compressed than individually.
-            Dictionary<int, string> args = new Dictionary<int, string>();
+            Blobs blobs = new Blobs(1);
             int i = 0;
             while (i < lines.Count)
             {
@@ -321,7 +357,7 @@ namespace CPvC
                 {
                     lines.RemoveAt(i);
 
-                    MachineFileReader.ReadArgCommand(tokens[1], args);
+                    MachineFileReader.ReadArgCommand(tokens[1], blobs);
                 }
                 else
                 {
@@ -330,9 +366,9 @@ namespace CPvC
             }
 
             // Write the file.
-            if (args.Count > 0)
+            if (blobs.Ids.Count > 0)
             {
-                lines.Insert(0, ArgsCommand(args, true));
+                lines.Insert(0, ArgsCommand(blobs, true));
             }
 
             foreach (string line in lines)
@@ -365,12 +401,12 @@ namespace CPvC
             private History _machineHistory;
             private Dictionary<int, HistoryEvent> _idToHistoryEvent;
             private int _nextLineId = 0;
-            private Dictionary<int, string> _args;
+            private Blobs _blobs;
 
             public void ReadFile(ITextFile textFile)
             {
                 _idToHistoryEvent = new Dictionary<int, HistoryEvent>();
-                _args = new Dictionary<int, string>();
+                _blobs = new Blobs(1);
 
                 _name = null;
                 _machineHistory = new History();
@@ -414,23 +450,16 @@ namespace CPvC
                 return tokens[0];
             }
 
-            static public void ReadArgCommand(string line, Dictionary<int, string> args)
+            static public void ReadArgCommand(string line, Blobs blobs)
             {
                 string[] tokens = line.Split(',');
                 int argId = Convert.ToInt32(tokens[0]);
                 bool compress = Convert.ToBoolean(tokens[1]);
                 string argValue = tokens[2];
-                if (compress)
-                {
-                    byte[] bytes = Helpers.Uncompress(Helpers.BytesFromStr(argValue));
-
-                    argValue = Encoding.UTF8.GetString(bytes);
-                }
-
-                args[argId] = argValue;
+                blobs.Add(argId, new LazyLoadBlob(argValue, compress));
             }
 
-            public void ReadArgsCommand(string line, Dictionary<int, string> args)
+            public void ReadArgsCommand(string line, Blobs blobs)
             {
                 string[] tokens = line.Split(',');
 
@@ -451,8 +480,19 @@ namespace CPvC
                     int argId = Convert.ToInt32(argPairTokens[0]);
                     string argValue = argPairTokens[1];
 
-                    args[argId] = argValue;
+                    blobs.Add(argId, new LazyLoadBlob(argValue, false));
                 }
+            }
+
+            private IBlob GetBlobArg(string arg)
+            {
+                if (arg.StartsWith("$"))
+                {
+                    int argId = System.Convert.ToInt32(arg.Substring(1));
+                    return _blobs.Get(argId);
+                }
+
+                throw new Exception("No blob found!");
             }
 
             private void ReadAddBookmark(string line)
@@ -469,8 +509,9 @@ namespace CPvC
                 bool system = Convert.ToBoolean(tokens[2]);
                 int version = Convert.ToInt32(tokens[3]);
                 Int64 dateTimeTicks = Convert.ToInt64(tokens[4]);
-                byte[] state = Helpers.BytesFromStr(tokens[5]);
-                byte[] screen = Helpers.BytesFromStr(tokens[6]);
+
+                IBlob state = GetBlobArg(tokens[5]);
+                IBlob screen = GetBlobArg(tokens[6]);
 
                 DateTime creationTime = new DateTime(dateTimeTicks, DateTimeKind.Utc);
 
@@ -531,7 +572,7 @@ namespace CPvC
                 int id = Convert.ToInt32(tokens[0]);
                 UInt64 ticks = Convert.ToUInt64(tokens[1]);
                 byte drive = Convert.ToByte(tokens[2]);
-                IBlob mediaBlob = new MemoryBlob(Helpers.BytesFromStr(tokens[3]));
+                IBlob mediaBlob = GetBlobArg(tokens[3]);
 
                 MachineAction action = MachineAction.LoadDisc(ticks, drive, mediaBlob);
 
@@ -570,7 +611,7 @@ namespace CPvC
 
                 int id = Convert.ToInt32(tokens[0]);
                 UInt64 ticks = Convert.ToUInt64(tokens[1]);
-                IBlob mediaBlob = new MemoryBlob(Helpers.BytesFromStr(tokens[2]));
+                IBlob mediaBlob = GetBlobArg(tokens[2]);
 
                 MachineAction action = MachineAction.LoadTape(ticks, mediaBlob);
 
@@ -630,19 +671,6 @@ namespace CPvC
 
             private void ProcessLine(string line)
             {
-                // Check for large arguments
-                string[] tokens = line.Split(',');
-                for (int i = 0; i < tokens.Length; i++)
-                {
-                    if (tokens[i].StartsWith("$"))
-                    {
-                        int argId = System.Convert.ToInt32(tokens[i].Substring(1));
-                        tokens[i] = _args[argId];
-                    }
-                }
-
-                line = String.Join(",", tokens);
-
                 int colon = line.IndexOf(':');
                 if (colon == -1)
                 {
@@ -688,10 +716,10 @@ namespace CPvC
                         ReadRunUntil(args);
                         break;
                     case MachineFile._idArg:
-                        ReadArgCommand(args, _args);
+                        ReadArgCommand(args, _blobs);
                         break;
                     case MachineFile._idArgs:
-                        ReadArgsCommand(args, _args);
+                        ReadArgsCommand(args, _blobs);
                         break;
                     default:
                         throw new ArgumentException(String.Format("Unknown type {0}.", type), "type");
