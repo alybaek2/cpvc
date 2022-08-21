@@ -293,12 +293,5 @@ namespace CPvC.Test
             Assert.False(_event01.IsEqualToOrAncestorOf(_event0));
             Assert.False(_event01.IsEqualToOrAncestorOf(null));
         }
-
-        [Test]
-        public void RootLine()
-        {
-            // Verify
-            Assert.Throws<NotImplementedException>(() => _history.RootEvent.GetLine(null, null));
-        }
     }
 }

@@ -5,47 +5,6 @@ using System.Text;
 
 namespace CPvC
 {
-    public class Blobs
-    {
-        private int _nextBlobId;
-        private Dictionary<int, IBlob> _blobs;
-
-        public Blobs(int nextBlobId)
-        {
-            _nextBlobId = nextBlobId;
-            _blobs = new Dictionary<int, IBlob>();
-        }
-
-        public List<int> Ids
-        {
-            get
-            {
-                return _blobs.Keys.ToList();
-            }
-        }
-
-        public int Add(IBlob blob)
-        {
-            int id = _nextBlobId++;
-            _blobs[id] = blob;
-
-            return id;
-        }
-
-        public int Add(int id, IBlob blob)
-        {
-            _blobs[id] = blob;
-
-            _nextBlobId = Math.Max(id + 1, _nextBlobId);
-            return id;
-        }
-
-        public IBlob Get(int id)
-        {
-            return _blobs[id];
-        }
-    }
-
     public class MachineFileInfo
     {
         public string Name { get; private set; }
@@ -178,76 +137,7 @@ namespace CPvC
             return String.Format("{0}:{1}", _idName, name);
         }
 
-        static public string AddBookmarkCommand(Blobs blobs, int id, UInt64 ticks, bool system, int version, DateTime creationTime, int stateBlobId, int screenBlobId)
-        {
-            return String.Format(
-                "{0}:{1},{2},{3},{4},{5},${6},${7}",
-                _idAddBookmark,
-                id,
-                ticks,
-                system,
-                version,
-                creationTime.Ticks,
-                stateBlobId,
-                screenBlobId);
-        }
-
-        static public string KeyCommand(int id, UInt64 ticks, byte keyCode, bool keyDown)
-        {
-            return String.Format("{0}:{1},{2},{3},{4}",
-                _idKey,
-                id,
-                ticks,
-                keyCode,
-                keyDown);
-        }
-
-        static public string LoadDiscCommand(int id, UInt64 ticks, byte drive, int mediaBlobId)
-        {
-            return String.Format("{0}:{1},{2},{3},${4}",
-                _idLoadDisc,
-                id,
-                ticks,
-                drive,
-                mediaBlobId);
-        }
-
-        static public string LoadTapeCommand(int id, UInt64 ticks, int mediaBlobId)
-        {
-            return String.Format("{0}:{1},{2},${3}",
-                _idLoadTape,
-                id,
-                ticks,
-                mediaBlobId);
-        }
-
-        static public string RunCommand(int id, UInt64 ticks, UInt64 stopTicks)
-        {
-            return String.Format("{0}:{1},{2},{3}",
-                _idRunUntil,
-                id,
-                ticks,
-                stopTicks);
-        }
-
-        static public string ResetCommand(int id, UInt64 ticks)
-        {
-            return String.Format("{0}:{1},{2}",
-                _idReset,
-                id,
-                ticks);
-        }
-
-        static public string VersionCommand(int id, UInt64 ticks, int version)
-        {
-            return String.Format("{0}:{1},{2},{3}",
-                _idVersion,
-                id,
-                ticks,
-                version);
-        }
-
-        static public string ArgCommand(int argId, IBlob blob, bool compress)
+        private string ArgCommand(int argId, IBlob blob, bool compress)
         {
             string bytesStr = "";
             byte[] bytes = blob.GetBytes();
@@ -268,7 +158,7 @@ namespace CPvC
             return String.Format("{0}:{1},{2},{3}", _idArg, argId, compress, bytesStr);
         }
 
-        static public string ArgsCommand(Blobs blobs, bool compress)
+        private string ArgsCommand(Blobs blobs, bool compress)
         {
             string argsLine = String.Join("@", blobs.Ids.Select(key => String.Format("{0}#{1}", key, Helpers.StrFromBytes(blobs.Get(key).GetBytes()))));
             if (compress)
@@ -282,7 +172,94 @@ namespace CPvC
 
         private void GetLines(HistoryEvent historyEvent, List<string> lines)
         {
-            historyEvent.GetLine(lines, _blobs);
+            int AddBlobLine(IBlob blob)
+            {
+                int id = _blobs.Add(blob);
+                if (id != Blobs._nullBlobId)
+                {
+                    lines.Add(ArgCommand(id, blob, true));
+                }
+
+                return id;
+            }
+
+            switch (historyEvent)
+            {
+                case BookmarkHistoryEvent bookmarkHistoryEvent:
+                    lines.Add(
+                        String.Format(
+                            "{0}:{1},{2},{3},{4},{5},${6},${7}",
+                            _idAddBookmark,
+                            bookmarkHistoryEvent.Id,
+                            bookmarkHistoryEvent.Ticks,
+                            bookmarkHistoryEvent.Bookmark.System,
+                            bookmarkHistoryEvent.Bookmark.Version,
+                            bookmarkHistoryEvent.Node.CreateDate.Ticks,
+                            AddBlobLine(bookmarkHistoryEvent.Bookmark.State),
+                            AddBlobLine(bookmarkHistoryEvent.Bookmark.Screen)));
+
+                    break;
+                case CoreActionHistoryEvent coreActionHistoryEvent:
+                    switch (coreActionHistoryEvent.CoreAction.Type)
+                    {
+                        case MachineRequest.Types.KeyPress:
+                            lines.Add(
+                                String.Format(
+                                    "{0}:{1},{2},{3},{4}",
+                                    _idKey,
+                                    coreActionHistoryEvent.Id,
+                                    coreActionHistoryEvent.CoreAction.Ticks,
+                                    coreActionHistoryEvent.CoreAction.KeyCode,
+                                    coreActionHistoryEvent.CoreAction.KeyDown));
+                            break;
+                        case MachineRequest.Types.Reset:
+                            lines.Add(
+                                String.Format("{0}:{1},{2}",
+                                    _idReset,
+                                    coreActionHistoryEvent.Id,
+                                    coreActionHistoryEvent.CoreAction.Ticks));
+                            break;
+                        case MachineRequest.Types.LoadDisc:
+                            lines.Add(
+                                String.Format("{0}:{1},{2},{3},${4}",
+                                    _idLoadDisc,
+                                    coreActionHistoryEvent.Id,
+                                    coreActionHistoryEvent.CoreAction.Ticks,
+                                    coreActionHistoryEvent.CoreAction.Drive,
+                                    AddBlobLine(coreActionHistoryEvent.CoreAction.MediaBuffer)));
+                            break;
+                        case MachineRequest.Types.LoadTape:
+                            lines.Add(
+                                String.Format("{0}:{1},{2},${3}",
+                                    _idLoadTape,
+                                    coreActionHistoryEvent.Id,
+                                    coreActionHistoryEvent.CoreAction.Ticks,
+                                    AddBlobLine(coreActionHistoryEvent.CoreAction.MediaBuffer)));
+                            break;
+                        case MachineRequest.Types.CoreVersion:
+                            lines.Add(
+                                String.Format("{0}:{1},{2},{3}",
+                                    _idVersion,
+                                    coreActionHistoryEvent.Id,
+                                    coreActionHistoryEvent.CoreAction.Ticks,
+                                    coreActionHistoryEvent.CoreAction.Version));
+                            break;
+                        case MachineRequest.Types.RunUntil:
+                            lines.Add(
+                                String.Format("{0}:{1},{2},{3}",
+                                    _idRunUntil,
+                                    coreActionHistoryEvent.Id,
+                                    coreActionHistoryEvent.CoreAction.Ticks,
+                                    coreActionHistoryEvent.CoreAction.StopTicks));
+                            break;
+                        default:
+                            throw new ArgumentException(String.Format("Unrecognized core action type {0}.", coreActionHistoryEvent.CoreAction.Type), "type");
+                    }
+
+                    break;
+                default:
+                    throw new ArgumentException(String.Format("Unknown history event type '{0}'.", historyEvent.GetType()));
+            }
         }
 
         private List<string> GetLines(HistoryEvent historyEvent, HistoryChangedAction changeType)
@@ -724,6 +701,68 @@ namespace CPvC
                     default:
                         throw new ArgumentException(String.Format("Unknown type {0}.", type), "type");
                 }
+            }
+        }
+
+        private class Blobs
+        {
+            public const int _nullBlobId = -1;
+            static private NullBlob _nullBlob = new NullBlob();
+            private int _nextBlobId;
+            private Dictionary<int, IBlob> _blobs;
+
+            private class NullBlob : IBlob
+            {
+                public byte[] GetBytes()
+                {
+                    return null;
+                }
+            }
+
+            public Blobs(int nextBlobId)
+            {
+                _nextBlobId = nextBlobId;
+                _blobs = new Dictionary<int, IBlob>();
+                _blobs[_nullBlobId] = _nullBlob;
+            }
+
+            public List<int> Ids
+            {
+                get
+                {
+                    return _blobs.Keys.ToList();
+                }
+            }
+
+            public int Add(IBlob blob)
+            {
+                if (blob == null || blob.GetBytes() == null)
+                {
+                    return _nullBlobId;
+                }
+
+                int id = _nextBlobId++;
+                _blobs[id] = blob;
+
+                return id;
+            }
+
+            public int Add(int id, IBlob blob)
+            {
+                if (blob == null || blob.GetBytes() == null)
+                {
+                    return _nullBlobId;
+                }
+
+                _blobs[id] = blob;
+
+                _nextBlobId = Math.Max(id + 1, _nextBlobId);
+                return id;
+            }
+
+            public IBlob Get(int id)
+            {
+                return _blobs[id];
             }
         }
     }
