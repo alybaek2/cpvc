@@ -177,6 +177,21 @@ namespace CPvC
             RaiseEvent(action);
         }
 
+        protected override void BeginVSync()
+        {
+            CoreSnapshot coreSnapshot = CreateCoreSnapshot(_nextCoreSnapshotId++);
+            if (coreSnapshot != null)
+            {
+                _currentCoreSnapshot = coreSnapshot;
+                _core.CreateSnapshotSync(coreSnapshot.Id);
+
+                MachineAction action = MachineAction.CreateSnapshot(Ticks, coreSnapshot.Id);
+                RaiseEvent(action);
+            }
+
+            base.BeginVSync();
+        }
+
         protected override void OnPropertyChanged(string name)
         {
             if (name == nameof(RunningState))

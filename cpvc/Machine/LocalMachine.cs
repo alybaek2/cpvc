@@ -40,9 +40,6 @@ namespace CPvC
         private History _history;
 
         private int _snapshotLimit = 3000;
-        private int _lastTakenSnapshotId = -1;
-        private List<int> _snapshots;
-        private Dictionary<int, SnapshotInfo> _allSnapshots;
 
         private bool _isOpen = false;
 
@@ -99,8 +96,6 @@ namespace CPvC
         {
             _name = name;
 
-            _snapshots = new List<int>();
-            _allSnapshots = new Dictionary<int, SnapshotInfo>();
             _history = history;
 
             _core.Create(Core.LatestVersion, Core.Type.CPC6128);
@@ -134,22 +129,6 @@ namespace CPvC
             {
                 return IsOpen && RunningState == RunningState.Running;
             }
-        }
-
-        private class SnapshotInfo
-        {
-            public SnapshotInfo(int id, HistoryEvent historyEvent)
-            {
-                Id = id;
-                AudioBuffer = new AudioBuffer(-1);
-                HistoryEvent = historyEvent;
-            }
-
-            public int Id { get; }
-
-            public AudioBuffer AudioBuffer { get; }
-
-            public HistoryEvent HistoryEvent { get; }
         }
 
         static public LocalMachine New(string name, string persistentFilepath)
@@ -224,7 +203,15 @@ namespace CPvC
         /// <param name="core">Core whose VSync signal went from low to high.</param>
         protected override void BeginVSync()
         {
-            TakeSnapshot();
+            CoreSnapshot coreSnapshot = CreateCoreSnapshot(_nextCoreSnapshotId++);
+            if (coreSnapshot != null)
+            {
+                _currentCoreSnapshot = coreSnapshot;
+                _core.CreateSnapshotSync(coreSnapshot.Id);
+
+                MachineAction action = MachineAction.CreateSnapshot(Ticks, coreSnapshot.Id);
+                RaiseEvent(action);
+            }
 
             base.BeginVSync();
         }
@@ -234,40 +221,14 @@ namespace CPvC
             return base.ReadAudio(buffer, offset, samplesRequested);
         }
 
-        private void TakeSnapshot()
+        private void KeepSnapshotsUnderLimit()
         {
-            if (SnapshotLimit > 0)
+            while (_snapshots.Count > _snapshotLimit)
             {
-                // This doesn't necessarily have to go through the request queue.... can't just do it right away!
-                int snapshotId = ++_lastTakenSnapshotId;
-
-                lock (_snapshots)
-                {
-                    // Figure out what history event should be set as current if we revert to this snapshot.
-                    // If the current event is a RunUntil, it may not be "finalized" yet (i.e. it may still
-                    // be updated), so go with its parent.
-                    HistoryEvent historyEvent = _history.MostRecentClosedEvent(_history.CurrentEvent);
-
-                    SnapshotInfo newSnapshot = new SnapshotInfo(snapshotId, historyEvent);
-                    _snapshots.Add(newSnapshot.Id);
-                    _allSnapshots.Add(newSnapshot.Id, newSnapshot);
-
-                    _core.CreateSnapshotSync(snapshotId);
-
-                    MachineAction action = MachineAction.CreateSnapshot(Ticks, snapshotId);
-                    RaiseEvent(action);
-
-                    while (_snapshots.Count > SnapshotLimit)
-                    {
-                        SnapshotInfo snapshot = _allSnapshots[_snapshots[0]];
-                        _allSnapshots.Remove(_snapshots[0]);
-                        _snapshots.RemoveAt(0);
-
-                        _core.DeleteSnapshotSync(snapshot.Id);
-                        action = MachineAction.DeleteSnapshot(Ticks, snapshot.Id);
-                        RaiseEvent(action);
-                    }
-                }
+                int snapshotId = _snapshots[0].Id;
+                _snapshots.RemoveAt(0);
+                _allCoreSnapshots.Remove(snapshotId);
+                PushRequest(MachineRequest.DeleteSnapshot(snapshotId));
             }
         }
 
@@ -300,41 +261,49 @@ namespace CPvC
                 }
             }
 
-            if (action.Type == MachineAction.Types.RunUntil)
+            if (action.Type == MachineAction.Types.CreateSnapshot)
             {
                 lock (_snapshots)
                 {
-                    if (_snapshots.Count > 0)
-                    {
-                        SnapshotInfo newSnapshot = _allSnapshots[_snapshots.Last()];
-                        if (newSnapshot != null && action.AudioSamples != null)
-                        {
-                            newSnapshot.AudioBuffer.Write(action.AudioSamples);
-                        }
-                    }
+                    CreateCoreSnapshot(action.SnapshotId);
+
+                    KeepSnapshotsUnderLimit();
                 }
             }
-            else if (action.Type == MachineAction.Types.CreateSnapshot)
+        }
+
+        private class LocalCoreSnapshot : CoreSnapshot
+        {
+            public LocalCoreSnapshot(int id, HistoryEvent historyEvent) : base(id)
             {
-                lock (_snapshots)
+                HistoryEvent = historyEvent;
+            }
+
+            public HistoryEvent HistoryEvent { get; }
+        }
+
+        protected override CoreSnapshot CreateCoreSnapshot(int id)
+        {
+            lock (_snapshots)
+            {
+                if (SnapshotLimit <= 0)
                 {
-                    // Figure out what history event should be set as current if we revert to this snapshot.
-                    // If the current event is a RunUntil, it may not be "finalized" yet (i.e. it may still
-                    // be updated), so go with its parent.
-                    HistoryEvent historyEvent = _history.MostRecentClosedEvent(_history.CurrentEvent);
-
-                    SnapshotInfo newSnapshot = new SnapshotInfo(action.SnapshotId, historyEvent);
-                    _snapshots.Add(newSnapshot.Id);
-                    _allSnapshots.Add(newSnapshot.Id, newSnapshot);
-
-                    while (_snapshots.Count > _snapshotLimit)
-                    {
-                        int snapshotId = _snapshots[0];
-                        _snapshots.RemoveAt(0);
-                        _allSnapshots.Remove(snapshotId);
-                        PushRequest(MachineRequest.DeleteSnapshot(snapshotId));
-                    }
+                    return null;
                 }
+
+                // Figure out what history event should be set as current if we revert to this snapshot.
+                // If the current event is a RunUntil, it may not be "finalized" yet (i.e. it may still
+                // be updated), so go with its parent.
+                HistoryEvent historyEvent = _history.MostRecentClosedEvent(_history.CurrentEvent);
+
+                LocalCoreSnapshot coreSnapshot = new LocalCoreSnapshot(id, historyEvent);
+
+                _allCoreSnapshots.Add(coreSnapshot.Id, coreSnapshot);
+                _snapshots.Add(coreSnapshot);
+
+                KeepSnapshotsUnderLimit();
+
+                return coreSnapshot;
             }
         }
 
@@ -747,7 +716,7 @@ namespace CPvC
                     {
                         if (_snapshots.Count > 0)
                         {
-                            int snapshotId = _snapshots[_snapshots.Count - 1];
+                            int snapshotId = _snapshots[_snapshots.Count - 1].Id;
                             _snapshots.RemoveAt(_snapshots.Count - 1);
 
                             request = MachineRequest.RevertToSnapshot(snapshotId);
@@ -772,10 +741,10 @@ namespace CPvC
         public override MachineAction ProcessRevertToSnapshot(MachineRequest request)
         {
             // Play samples from the snapshot info until they run out, then actually revert to snapshot.
-            SnapshotInfo snapshotInfo = _allSnapshots[request.SnapshotId];
-            AudioBuffer.CopyFrom(snapshotInfo.AudioBuffer);
+            LocalCoreSnapshot coreSnapshot = (LocalCoreSnapshot)_allCoreSnapshots[request.SnapshotId];
+            AudioBuffer.CopyFrom(coreSnapshot.AudioBuffer);
 
-            if (snapshotInfo.AudioBuffer.SampleCount == 0)
+            if (coreSnapshot.AudioBuffer.SampleCount == 0)
             {
                 _core.RevertToSnapshotSync(request.SnapshotId);
 
@@ -783,9 +752,9 @@ namespace CPvC
 
                 _core.DeleteSnapshotSync(request.SnapshotId);
 
-                _history.CurrentEvent = snapshotInfo.HistoryEvent;
+                _history.CurrentEvent = coreSnapshot.HistoryEvent;
 
-                _allSnapshots.Remove(request.SnapshotId);
+                _allCoreSnapshots.Remove(request.SnapshotId);
 
                 return MachineAction.RevertToSnapshot(request.StopTicks, request.SnapshotId);
             }

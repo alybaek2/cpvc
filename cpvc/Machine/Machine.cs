@@ -37,6 +37,11 @@ namespace CPvC
 
         protected Thread _machineThread;
 
+        protected Dictionary<int, CoreSnapshot> _allCoreSnapshots;
+        protected List<CoreSnapshot> _snapshots;
+        protected CoreSnapshot _currentCoreSnapshot;
+        protected int _nextCoreSnapshotId;
+
         /// <summary>
         /// Value indicating the relative volume level of rendered audio (0 = mute, 255 = loudest).
         /// </summary>
@@ -60,6 +65,11 @@ namespace CPvC
 
             _audioBuffer = new AudioBuffer(48000);
             _audioBuffer.OverrunThreshold = int.MaxValue;
+
+            _allCoreSnapshots = new Dictionary<int, CoreSnapshot>();
+            _currentCoreSnapshot = null;
+            _nextCoreSnapshotId = 1000000000;
+            _snapshots = new List<CoreSnapshot>();
 
             _machineThread = new Thread(MachineThread);
             _machineThread.Start();
@@ -345,6 +355,11 @@ namespace CPvC
 
                     success = request.StopTicks <= Ticks;
 
+                    if (_currentCoreSnapshot != null && action != null)
+                    {
+                        _currentCoreSnapshot.AudioBuffer.Write(action.AudioSamples);
+                    }
+
                     break;
                 case MachineRequest.Types.CoreVersion:
                     _core.ProcessCoreVersion(request.Version);
@@ -454,6 +469,16 @@ namespace CPvC
             }
 
             return MachineAction.RunUntil(ticks, Ticks, audioSamples);
+        }
+
+        protected virtual CoreSnapshot CreateCoreSnapshot(int id)
+        {
+            CoreSnapshot coreSnapshot = new CoreSnapshot(id);
+
+            _allCoreSnapshots.Add(coreSnapshot.Id, coreSnapshot);
+            _snapshots.Add(coreSnapshot);
+
+            return coreSnapshot;
         }
 
         protected virtual void BeginVSync()
@@ -613,6 +638,34 @@ namespace CPvC
         protected void RaiseEvent(MachineAction action)
         {
             Event?.Invoke(this, new MachineEventArgs(action));
+        }
+
+        protected class CoreSnapshot
+        {
+            private int _id;
+            private readonly AudioBuffer _audioBuffer;
+
+            public CoreSnapshot(int id)
+            {
+                _id = id;
+                _audioBuffer = new AudioBuffer(-1);
+            }
+
+            public int Id
+            {
+                get
+                {
+                    return _id;
+                }
+            }
+
+            public AudioBuffer AudioBuffer
+            {
+                get
+                {
+                    return _audioBuffer;
+                }
+            }
         }
     }
 }
