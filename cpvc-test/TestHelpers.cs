@@ -9,6 +9,16 @@ namespace CPvC.Test
 {
     static public class TestHelpers
     {
+
+        public class UnknownRequest : MachineRequest
+        {
+        }
+
+        public class UnknownAction : IMachineAction
+        {
+            public UInt64 Ticks { get; }
+        }
+
         /// <summary>
         /// Effectively a Times value representing 0 or more times.
         /// </summary>
@@ -23,163 +33,12 @@ namespace CPvC.Test
             return It.IsAny<string>();
         }
 
-        static public bool IsKeyRequest(MachineRequest request, byte keycode, bool down)
-        {
-            return request != null && request.Type == MachineRequest.Types.KeyPress && request.KeyCode == keycode && request.KeyDown == down;
-        }
-
-        static public MachineRequest KeyRequest(byte keycode, bool down)
-        {
-            return It.Is<MachineRequest>(r => IsKeyRequest(r, keycode, down));
-        }
-
-        static public MachineAction KeyAction(byte keycode, bool down)
-        {
-            return It.Is<MachineAction>(r => IsKeyRequest(r, keycode, down));
-        }
-
-        static public MachineRequest DiscRequest()
-        {
-            return It.Is<MachineRequest>(r => r != null && r.Type == MachineRequest.Types.LoadDisc);
-        }
-
-        static public MachineAction DiscAction()
-        {
-            return It.Is<MachineAction>(r => r != null && r.Type == MachineRequest.Types.LoadDisc);
-        }
-
-        static public MachineRequest TapeRequest()
-        {
-            return It.Is<MachineRequest>(r => r != null && r.Type == MachineRequest.Types.LoadTape);
-        }
-
-        static public MachineAction TapeAction()
-        {
-            return It.Is<MachineAction>(r => r != null && r.Type == MachineRequest.Types.LoadTape);
-        }
-
-        static public MachineAction RunUntilActionForce()
-        {
-            return It.Is<MachineAction>(r => r == null || r.Type == MachineRequest.Types.RunUntil);
-        }
-
-        static public bool IsResetRequest(MachineRequest request)
-        {
-            return request != null && request.Type == MachineRequest.Types.Reset;
-        }
-
-        static public MachineRequest ResetRequest()
-        {
-            return It.Is<MachineRequest>(r => r != null && r.Type == MachineRequest.Types.Reset);
-        }
-
-        static public MachineAction ResetAction()
-        {
-            return It.Is<MachineAction>(r => r != null && r.Type == MachineRequest.Types.Reset);
-        }
-
-        //static public HistoryEvent CoreActionEvent(int id, CoreRequest.Types type)
-        //{
-        //    return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction.Type == type && h.Id == id);
-        //}
-
-        //static public HistoryEvent CoreActionEvent(int id, UInt64 ticks, CoreRequest.Types type)
-        //{
-        //    return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction.Type == type && h.Ticks == ticks && h.Id == id);
-        //}
-
-        //static public HistoryEvent KeyPressEvent(int id, UInt64 ticks, byte keyCode, bool keyDown)
-        //{
-        //    return It.Is<HistoryEvent>(h => h != null &&
-        //                                    h.Type == HistoryEvent.Types.CoreAction &&
-        //                                    h.CoreAction.Type == CoreRequest.Types.KeyPress &&
-        //                                    h.CoreAction.KeyCode == keyCode &&
-        //                                    h.CoreAction.KeyDown == keyDown &&
-        //                                    h.Ticks == ticks &&
-        //                                    h.Id == id);
-        //}
-
-        //static public HistoryEvent LoadDiscEvent(int id, UInt64 ticks, byte drive, byte[] disc)
-        //{
-        //    return It.Is<HistoryEvent>(h => h != null &&
-        //                                    h.Type == HistoryEvent.Types.CoreAction &&
-        //                                    h.CoreAction.Type == CoreRequest.Types.LoadDisc &&
-        //                                    h.CoreAction.Drive == drive &&
-        //                                    h.CoreAction.MediaBuffer.GetBytes().SequenceEqual(disc) &&
-        //                                    h.Ticks == ticks &&
-        //                                    h.Id == id);
-        //}
-
-        //static public HistoryEvent LoadTapeEvent(int id, UInt64 ticks, byte[] tape)
-        //{
-        //    return It.Is<HistoryEvent>(h => h != null &&
-        //                                    h.Type == HistoryEvent.Types.CoreAction &&
-        //                                    h.CoreAction.Type == CoreRequest.Types.LoadTape &&
-        //                                    h.CoreAction.MediaBuffer.GetBytes().SequenceEqual(tape) &&
-        //                                    h.Ticks == ticks &&
-        //                                    h.Id == id);
-        //}
-
-        static public Bookmark BookmarkMatch(bool system, int version, int statePos, int screenPos)
-        {
-            return It.Is<Bookmark>(
-                b => b != null &&
-                b.System == system &&
-                b.Version == version &&
-                ((IStreamBlob)(b.State)).Position == statePos &&
-                ((IStreamBlob)(b.Screen)).Position == screenPos);
-        }
-
-        //static public HistoryEvent VersionEvent(int id)
-        //{
-        //    return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.CoreAction && h.CoreAction != null && h.CoreAction.Type == CoreRequest.Types.CoreVersion && h.Id == id);
-        //}
-
-        //static public HistoryEvent CheckpointEvent(int id)
-        //{
-        //    return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id);
-        //}
-
-        //static public HistoryEvent CheckpointWithBookmarkEvent(int id, UInt64 ticks, bool system, int version, int stateBlobPos, int screenBlobPos)
-        //{
-        //    return It.Is<HistoryEvent>(h => h != null &&
-        //                                    h.Type == HistoryEvent.Types.Checkpoint &&
-        //                                    h.Id == id &&
-        //                                    h.Ticks == ticks &&
-        //                                    h.Bookmark != null &&
-        //                                    h.Bookmark.System == system &&
-        //                                    h.Bookmark.Version == version &&
-        //                                    ((IStreamBlob)(h.Bookmark.State)).Position == stateBlobPos &&
-        //                                    ((IStreamBlob)(h.Bookmark.Screen)).Position == screenBlobPos);
-        //}
-
-        //static public HistoryEvent CheckpointWithoutBookmarkEvent(int id, UInt64 ticks)
-        //{
-        //    return It.Is<HistoryEvent>(h => h != null && h.Type == HistoryEvent.Types.Checkpoint && h.Id == id && h.Ticks == ticks && h.Bookmark == null);
-        //}
-
-        /// <summary>
-        /// Returns a lambda representing the invocation of the IFileSystem.ReadBytes method with a specific filename.
-        /// </summary>
-        static public Expression<Func<IFileSystem, byte[]>> ReadBytes(string filename)
-        {
-            return fileSystem => fileSystem.ReadBytes(filename);
-        }
-
         /// <summary>
         /// Returns a lambda representing the invocation of the IFileSystem.ReadBytes method with any filename.
         /// </summary>
         static public Expression<Func<IFileSystem, byte[]>> ReadBytes()
         {
             return fileSystem => fileSystem.ReadBytes(AnyString());
-        }
-
-        /// <summary>
-        /// Returns a lambda representing the invocation of the IFileSystem.DeleteFile method with a specific filename.
-        /// </summary>
-        static public Expression<Action<IFileSystem>> DeleteFile(string filename)
-        {
-            return fileSystem => fileSystem.DeleteFile(filename);
         }
 
         /// <summary>
@@ -205,13 +64,7 @@ namespace CPvC.Test
             UInt64 afterTicks = beforeTicks + ticks;
 
             ManualResetEvent e = new ManualResetEvent(false);
-            //machine.Core.OnIdle += (sender, args) =>
-            //{
-            //    args.Handled = true;
-            //    e.Set();
-            //    args.Request = null;
-            //};
-            machine.PushRequest(MachineRequest.RunUntil(machine.Ticks + ticks));
+            machine.PushRequest(new RunUntilRequest(machine.Ticks + ticks));
             machine.Start();
 
             while (machine.Ticks < afterTicks)
@@ -255,63 +108,12 @@ namespace CPvC.Test
             
         }
 
-        static public MachineAction ProcessOneRequest(Core core, MachineRequest request, int timeout = 1000)
+        static public void ProcessRemoteRequest(RemoteMachine machine, ReceiveCoreActionDelegate receive, IMachineAction action)
         {
-            MachineRequest nextRequest = MachineRequest.RunUntil(0);
-
-            MachineAction action = null;
-            ManualResetEvent e = new ManualResetEvent(false);
-
-            //core.OnCoreAction += (sender, args) =>
-            //{
-            //    // Advance the audio playback so RunUntil requests don't stall.
-            //    core.AdvancePlayback(100000);
-
-            //    if (ReferenceEquals(sender, core))
-            //    {
-            //        if (args.Request == nextRequest)
-            //        {
-            //            e.Set();
-            //        }
-            //        else if (args.Request == request)
-            //        {
-            //            action = args.Action;
-            //        }
-            //    }
-
-            //};
-
-            throw new Exception("Fix me!");
-            //core.PushRequest(request);
-            //core.PushRequest(nextRequest);
-
-            // Wait for at most one second.
-            bool result = e.WaitOne(timeout);
-            if (!result)
-            {
-                throw new TimeoutException("Timeout while waiting for request to process.");
-            }
-
-            return action;
-        }
-
-        /// <summary>
-        /// Returns once all the requests currently in the core's request queue are processed.
-        /// </summary>
-        /// <param name="core">Core to run.</param>
-        static public void WaitForQueueToProcess(Core core)
-        {
-            // Insert a request that will effectively do nothing and wait for it
-            // to be processed.
-            ProcessOneRequest(core, MachineRequest.RunUntil(0), 10000);
-        }
-
-        static public void ProcessRemoteRequest(RemoteMachine machine, ReceiveCoreActionDelegate receive, MachineAction action)
-        {
-            receive(action);
+            MachineRequest request = receive(action);
             machine.Start();
 
-            bool result = action.Wait(10000);
+            bool result = request.Wait(10000);
 
             machine.Stop();
 
@@ -449,39 +251,65 @@ namespace CPvC.Test
                 return false;
             }
 
-            if (request1.Type != request2.Type)
+            if (request1.GetType() != request2.GetType())
             {
                 return false;
             }
 
-            switch (request1.Type)
+            switch (request1)
             {
-                case MachineRequest.Types.CoreVersion:
-                    return request1.Version == request2.Version;
-                case MachineRequest.Types.KeyPress:
-                    return request1.KeyCode == request2.KeyCode && request1.KeyDown == request2.KeyDown;
-                case MachineRequest.Types.LoadCore:
-                    return request1.CoreState.GetBytes().SequenceEqual(request2.CoreState.GetBytes());
-                case MachineRequest.Types.LoadDisc:
-                    return request1.Drive == request2.Drive && request1.MediaBuffer.GetBytes().SequenceEqual(request2.MediaBuffer.GetBytes());
-                case MachineRequest.Types.LoadTape:
-                    return request1.MediaBuffer.GetBytes().SequenceEqual(request2.MediaBuffer.GetBytes());
-                case MachineRequest.Types.Reset:
+                case CoreVersionRequest coreVersionRequest1:
+                    return coreVersionRequest1.Version == ((CoreVersionRequest)request2).Version;
+                case KeyPressRequest keyPressRequest1:
+                    {
+                        KeyPressRequest keyPressRequest2 = (KeyPressRequest)request2;
+                        return keyPressRequest1.KeyCode == keyPressRequest2.KeyCode && keyPressRequest1.KeyDown == keyPressRequest2.KeyDown;
+                    }
+                case LoadCoreRequest loadCoreRequest1:
+                    {
+                        LoadCoreRequest loadCoreRequest2 = (LoadCoreRequest)request2;
+                        return loadCoreRequest1.State.GetBytes().SequenceEqual(loadCoreRequest2.State.GetBytes());
+                    }
+                case LoadDiscRequest loadDiscRequest1:
+                    {
+                        LoadDiscRequest loadDiscRequest2 = (LoadDiscRequest)request2;
+                        return loadDiscRequest1.Drive == loadDiscRequest2.Drive && loadDiscRequest1.MediaBuffer.GetBytes().SequenceEqual(loadDiscRequest2.MediaBuffer.GetBytes());
+                    }
+                case LoadTapeRequest loadTapeRequest1:
+                    {
+                        LoadTapeRequest loadTapeRequest2 = (LoadTapeRequest)request2;
+                        return loadTapeRequest1.MediaBuffer.GetBytes().SequenceEqual(loadTapeRequest2.MediaBuffer.GetBytes());
+                    }
+                case ResetRequest _:
                     return true;
-                case MachineRequest.Types.RunUntil:
-                    return request1.StopTicks == request2.StopTicks;
-                case MachineRequest.Types.CreateSnapshot:
-                case MachineRequest.Types.RevertToSnapshot:
-                case MachineRequest.Types.DeleteSnapshot:
-                    return request1.SnapshotId == request2.SnapshotId;
+                case RunUntilRequest runUntilRequest1:
+                    {
+                        RunUntilRequest runUntilRequest2 = (RunUntilRequest)request2;
+                        return runUntilRequest1.StopTicks == runUntilRequest2.StopTicks;
+                    }
+                case CreateSnapshotRequest createSnapshotRequest1:
+                    {
+                        CreateSnapshotRequest createSnapshotRequest2 = (CreateSnapshotRequest)request2;
+                        return createSnapshotRequest1.SnapshotId == createSnapshotRequest2.SnapshotId;
+                    }
+                case DeleteSnapshotRequest deleteSnapshotRequest1:
+                    {
+                        DeleteSnapshotRequest deleteSnapshotRequest2 = (DeleteSnapshotRequest)request2;
+                        return deleteSnapshotRequest1.SnapshotId == deleteSnapshotRequest2.SnapshotId;
+                    }
+                case RevertToSnapshotRequest revertToSnapshotRequest1:
+                    {
+                        RevertToSnapshotRequest revertToSnapshotRequest2 = (RevertToSnapshotRequest)request2;
+                        return revertToSnapshotRequest1.SnapshotId == revertToSnapshotRequest2.SnapshotId;
+                    }
             }
 
             return false;
         }
 
-        static public bool CoreActionsEqual(MachineAction action1, MachineAction action2)
+        static public bool CoreActionsEqual(IMachineAction action1, IMachineAction action2)
         {
-            if (!CoreRequestsEqual(action1, action2))
+            if (!CoreRequestsEqual((MachineRequest)action1, (MachineRequest)action2))
             {
                 return false;
             }
@@ -496,7 +324,7 @@ namespace CPvC.Test
                 return false;
             }
 
-            if (action1.Type != action2.Type)
+            if (action1.GetType() != action2.GetType())
             {
                 return false;
             }

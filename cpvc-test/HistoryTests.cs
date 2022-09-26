@@ -107,9 +107,10 @@ namespace CPvC.Test
             Assert.AreEqual(event1, history.RootEvent.Children[0]);
             Assert.AreEqual(0, event1.Children.Count);
             Assert.AreEqual(event1, event2);
-            Assert.AreEqual(MachineAction.Types.RunUntil, event1.CoreAction.Type);
-            Assert.AreEqual(100, event1.CoreAction.Ticks);
-            Assert.AreEqual(300, event1.CoreAction.StopTicks);
+            Assert.True(event1.CoreAction is RunUntilAction);
+            RunUntilAction runUntilAction = (RunUntilAction)event1.CoreAction;
+            Assert.AreEqual(100, runUntilAction.Ticks);
+            Assert.AreEqual(300, runUntilAction.StopTicks);
         }
 
         [Test]

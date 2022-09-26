@@ -200,60 +200,60 @@ namespace CPvC
 
                     break;
                 case CoreActionHistoryEvent coreActionHistoryEvent:
-                    switch (coreActionHistoryEvent.CoreAction.Type)
+                    switch (coreActionHistoryEvent.CoreAction)
                     {
-                        case MachineRequest.Types.KeyPress:
+                        case KeyPressAction keyPressAction:
                             lines.Add(
                                 String.Format(
                                     "{0}:{1},{2},{3},{4}",
                                     _idKey,
                                     coreActionHistoryEvent.Id,
-                                    coreActionHistoryEvent.CoreAction.Ticks,
-                                    coreActionHistoryEvent.CoreAction.KeyCode,
-                                    coreActionHistoryEvent.CoreAction.KeyDown));
+                                    keyPressAction.Ticks,
+                                    keyPressAction.KeyCode,
+                                    keyPressAction.KeyDown));
                             break;
-                        case MachineRequest.Types.Reset:
+                        case ResetAction resetAction:
                             lines.Add(
                                 String.Format("{0}:{1},{2}",
                                     _idReset,
                                     coreActionHistoryEvent.Id,
-                                    coreActionHistoryEvent.CoreAction.Ticks));
+                                    resetAction.Ticks));
                             break;
-                        case MachineRequest.Types.LoadDisc:
+                        case LoadDiscAction loadDiscAction:
                             lines.Add(
                                 String.Format("{0}:{1},{2},{3},${4}",
                                     _idLoadDisc,
                                     coreActionHistoryEvent.Id,
-                                    coreActionHistoryEvent.CoreAction.Ticks,
-                                    coreActionHistoryEvent.CoreAction.Drive,
-                                    AddBlobLine(coreActionHistoryEvent.CoreAction.MediaBuffer)));
+                                    loadDiscAction.Ticks,
+                                    loadDiscAction.Drive,
+                                    AddBlobLine(loadDiscAction.MediaBuffer)));
                             break;
-                        case MachineRequest.Types.LoadTape:
+                        case LoadTapeAction loadTapeAction:
                             lines.Add(
                                 String.Format("{0}:{1},{2},${3}",
                                     _idLoadTape,
                                     coreActionHistoryEvent.Id,
-                                    coreActionHistoryEvent.CoreAction.Ticks,
-                                    AddBlobLine(coreActionHistoryEvent.CoreAction.MediaBuffer)));
+                                    loadTapeAction.Ticks,
+                                    AddBlobLine(loadTapeAction.MediaBuffer)));
                             break;
-                        case MachineRequest.Types.CoreVersion:
+                        case CoreVersionAction coreVersionAction:
                             lines.Add(
                                 String.Format("{0}:{1},{2},{3}",
                                     _idVersion,
                                     coreActionHistoryEvent.Id,
-                                    coreActionHistoryEvent.CoreAction.Ticks,
-                                    coreActionHistoryEvent.CoreAction.Version));
+                                    coreVersionAction.Ticks,
+                                    coreVersionAction.Version));
                             break;
-                        case MachineRequest.Types.RunUntil:
+                        case RunUntilAction runUntilAction:
                             lines.Add(
                                 String.Format("{0}:{1},{2},{3}",
                                     _idRunUntil,
                                     coreActionHistoryEvent.Id,
-                                    coreActionHistoryEvent.CoreAction.Ticks,
-                                    coreActionHistoryEvent.CoreAction.StopTicks));
+                                    runUntilAction.Ticks,
+                                    runUntilAction.StopTicks));
                             break;
                         default:
-                            throw new ArgumentException(String.Format("Unrecognized core action type {0}.", coreActionHistoryEvent.CoreAction.Type), "type");
+                            throw new ArgumentException(String.Format("Unrecognized core action type {0}.", coreActionHistoryEvent.CoreAction.GetType()), "type");
                     }
 
                     break;
@@ -308,7 +308,7 @@ namespace CPvC
                     lines.Add(CurrentCommand(currentEvent.Parent.Id));
                 }
 
-                if (History.IsClosedEvent(currentEvent) && !(currentEvent is CoreActionHistoryEvent coreActionHistoryEvent && coreActionHistoryEvent.CoreAction.Type == MachineRequest.Types.RunUntil && coreActionHistoryEvent.Children.Count == 1))
+                if (History.IsClosedEvent(currentEvent) && !(currentEvent is CoreActionHistoryEvent coreActionHistoryEvent && coreActionHistoryEvent.CoreAction is RunUntilAction runUntilAction && coreActionHistoryEvent.Children.Count == 1))
                 {
                     GetLines(currentEvent, lines);
                 }
@@ -526,7 +526,7 @@ namespace CPvC
                 byte keyCode = Convert.ToByte(tokens[2]);
                 bool keyDown = Convert.ToBoolean(tokens[3]);
 
-                MachineAction action = MachineAction.KeyPress(ticks, keyCode, keyDown);
+                IMachineAction action = new KeyPressAction(ticks, keyCode, keyDown);
 
                 AddCoreAction(id, action);
             }
@@ -537,7 +537,7 @@ namespace CPvC
 
                 int id = Convert.ToInt32(tokens[0]);
                 UInt64 ticks = Convert.ToUInt64(tokens[1]);
-                MachineAction action = MachineAction.Reset(ticks);
+                IMachineAction action = new ResetAction(ticks); // MachineAction.Reset(ticks);
 
                 AddCoreAction(id, action);
             }
@@ -551,7 +551,7 @@ namespace CPvC
                 byte drive = Convert.ToByte(tokens[2]);
                 IBlob mediaBlob = GetBlobArg(tokens[3]);
 
-                MachineAction action = MachineAction.LoadDisc(ticks, drive, mediaBlob);
+                IMachineAction action = new LoadDiscAction(ticks, drive, mediaBlob);
 
                 AddCoreAction(id, action);
             }
@@ -564,7 +564,7 @@ namespace CPvC
                 UInt64 ticks = Convert.ToUInt64(tokens[1]);
                 int version = Convert.ToInt32(tokens[2]);
 
-                MachineAction action = MachineAction.CoreVersion(ticks, version);
+                IMachineAction action = new CoreVersionAction(ticks, version);
 
                 AddCoreAction(id, action);
             }
@@ -577,7 +577,7 @@ namespace CPvC
                 UInt64 ticks = Convert.ToUInt64(tokens[1]);
                 UInt64 stopTicks = Convert.ToUInt64(tokens[2]);
 
-                MachineAction action = MachineAction.RunUntil(ticks, stopTicks, null);
+                IMachineAction action = new RunUntilAction(ticks, stopTicks, null);
 
                 AddCoreAction(id, action);
             }
@@ -590,12 +590,12 @@ namespace CPvC
                 UInt64 ticks = Convert.ToUInt64(tokens[1]);
                 IBlob mediaBlob = GetBlobArg(tokens[2]);
 
-                MachineAction action = MachineAction.LoadTape(ticks, mediaBlob);
+                IMachineAction action = new LoadTapeAction(ticks, mediaBlob);
 
                 AddCoreAction(id, action);
             }
 
-            private HistoryEvent AddCoreAction(int id, MachineAction coreAction)
+            private HistoryEvent AddCoreAction(int id, IMachineAction coreAction)
             {
                 if (_idToHistoryEvent.ContainsKey(id))
                 {

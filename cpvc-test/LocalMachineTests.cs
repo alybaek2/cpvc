@@ -55,6 +55,7 @@ namespace CPvC.Test
         [TearDown]
         public void Teardown()
         {
+            _machine.AdvancePlayback(100000000);
             _machine.Dispose();
             _machine = null;
             _mockFileSystem = null;
@@ -194,47 +195,49 @@ namespace CPvC.Test
 
                 CoreActionHistoryEvent coreActionHistoryEvent = machine.History.RootEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(MachineRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
+                Assert.IsInstanceOf<RunUntilAction>(coreActionHistoryEvent.CoreAction);
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(MachineRequest.Types.KeyPress, coreActionHistoryEvent.CoreAction.Type);
-                Assert.AreEqual(Keys.A, coreActionHistoryEvent.CoreAction.KeyCode);
-                Assert.IsTrue(coreActionHistoryEvent.CoreAction.KeyDown);
+                Assert.IsInstanceOf<KeyPressAction>(coreActionHistoryEvent.CoreAction);
+                KeyPressAction keyPressAction = (KeyPressAction)coreActionHistoryEvent.CoreAction;
+                Assert.AreEqual(Keys.A, keyPressAction.KeyCode);
+                Assert.IsTrue(keyPressAction.KeyDown);
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(MachineRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
+                Assert.IsInstanceOf<RunUntilAction>(coreActionHistoryEvent.CoreAction);
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(MachineRequest.Types.LoadDisc, coreActionHistoryEvent.CoreAction.Type);
-                Assert.AreEqual(0, coreActionHistoryEvent.CoreAction.Drive);
-                Assert.IsNull(coreActionHistoryEvent.CoreAction.MediaBuffer.GetBytes());
+                Assert.IsInstanceOf<LoadDiscAction>(coreActionHistoryEvent.CoreAction);
+                LoadDiscAction loadDiscAction = (LoadDiscAction)coreActionHistoryEvent.CoreAction;
+                Assert.AreEqual(0, loadDiscAction.Drive);
+                Assert.IsNull(loadDiscAction.MediaBuffer.GetBytes());
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(MachineRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
+                Assert.IsInstanceOf<RunUntilAction>(coreActionHistoryEvent.CoreAction);
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(MachineRequest.Types.LoadTape, coreActionHistoryEvent.CoreAction.Type);
-                Assert.IsNull(coreActionHistoryEvent.CoreAction.MediaBuffer.GetBytes());
+                LoadTapeAction loadTapeAction = (LoadTapeAction)coreActionHistoryEvent.CoreAction;
+                Assert.IsNull(loadTapeAction.MediaBuffer.GetBytes());
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(MachineRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
+                Assert.IsInstanceOf<RunUntilAction>(coreActionHistoryEvent.CoreAction);
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(MachineRequest.Types.Reset, coreActionHistoryEvent.CoreAction.Type);
+                Assert.IsInstanceOf<ResetAction>(coreActionHistoryEvent.CoreAction);
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
@@ -246,14 +249,14 @@ namespace CPvC.Test
 
                 coreActionHistoryEvent = bookmarkHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.AreEqual(MachineRequest.Types.RunUntil, coreActionHistoryEvent.CoreAction.Type);
+                Assert.IsInstanceOf<RunUntilAction>(coreActionHistoryEvent.CoreAction);
 
                 bookmarkHistoryEvent = coreActionHistoryEvent.Children[0] as BookmarkHistoryEvent;
                 Assert.IsNotNull(bookmarkHistoryEvent);
 
                 Assert.AreEqual(bookmarkHistoryEvent, machine.History.CurrentEvent);
 
-                _mockHandler.Verify(a => a(It.IsAny<object>(), It.Is<MachineEventArgs>(args => args.Action.Type == MachineRequest.Types.LoadCore)), Times.Once());
+                _mockHandler.Verify(a => a(It.IsAny<object>(), It.Is<MachineEventArgs>(args => args.Action is LoadCoreAction)), Times.Once());
             }
         }
 
@@ -1114,12 +1117,12 @@ namespace CPvC.Test
                 machine.SnapshotLimit = 0;
                 machine.Event += (sender, args) =>
                 {
-                    switch (args.Action.Type)
+                    switch (args.Action)
                     {
-                        case MachineRequest.Types.CreateSnapshot:
+                        case CreateSnapshotAction _:
                             createSnapshotCount++;
                             break;
-                        case MachineRequest.Types.DeleteSnapshot:
+                        case DeleteSnapshotAction _:
                             deleteSnapshotCount++;
                             break;
                     }
@@ -1164,11 +1167,11 @@ namespace CPvC.Test
                 ManualResetEvent e = new ManualResetEvent(false);
                 machine.Event += (sender, args) =>
                 {
-                    if (args.Action.Type == MachineRequest.Types.CreateSnapshot)
+                    if (args.Action is CreateSnapshotAction)
                     {
                         createSnapshotCount++;
                     }
-                    if (args.Action.Type == MachineRequest.Types.DeleteSnapshot)
+                    if (args.Action is DeleteSnapshotAction)
                     {
                         deleteSnapshotCount++;
                     }
@@ -1203,11 +1206,11 @@ namespace CPvC.Test
                 ManualResetEvent e = new ManualResetEvent(false);
                 machine.Event += (sender, args) =>
                 {
-                    if (args.Action.Type == MachineRequest.Types.CreateSnapshot)
+                    if (args.Action is CreateSnapshotAction)
                     {
                         createSnapshotCount++;
                     }
-                    if (args.Action.Type == MachineRequest.Types.DeleteSnapshot)
+                    if (args.Action is DeleteSnapshotAction)
                     {
                         deleteSnapshotCount++;
                     }
@@ -1219,8 +1222,8 @@ namespace CPvC.Test
                     }
                 };
 
-                machine.PushRequest(MachineRequest.CreateSnapshot(123456));
-                machine.PushRequest(MachineRequest.CreateSnapshot(123457));
+                machine.PushRequest(new CreateSnapshotRequest(123456));
+                machine.PushRequest(new CreateSnapshotRequest(123457));
 
                 // Act
                 machine.Start();
@@ -1242,19 +1245,19 @@ namespace CPvC.Test
 
                 machine.Event += (sender, args) =>
                 {
-                    if (args.Action.Type == MachineRequest.Types.CreateSnapshot && args.Action.SnapshotId == 123456)
+                    if (args.Action is CreateSnapshotAction createSnapshotAction && createSnapshotAction.SnapshotId == 123456)
                     {
-                        createdSnapshots.Add(args.Action.SnapshotId);
+                        createdSnapshots.Add(createSnapshotAction.SnapshotId);
                     }
-                    if (args.Action.Type == MachineRequest.Types.DeleteSnapshot && args.Action.SnapshotId == 123456)
+                    if (args.Action is DeleteSnapshotAction deleteSnapshotAction && deleteSnapshotAction.SnapshotId == 123456)
                     {
-                        deletedSnapshots.Add(args.Action.SnapshotId);
+                        deletedSnapshots.Add(deleteSnapshotAction.SnapshotId);
                     }
                 };
 
-                machine.PushRequest(MachineRequest.CreateSnapshot(123456));
-                machine.PushRequest(MachineRequest.DeleteSnapshot(123457));
-                MachineRequest request = MachineRequest.DeleteSnapshot(123456);
+                machine.PushRequest(new CreateSnapshotRequest(123456));
+                machine.PushRequest(new DeleteSnapshotRequest(123457));
+                MachineRequest request = new DeleteSnapshotRequest(123456);
                 machine.PushRequest(request);
 
                 // Act
@@ -1277,13 +1280,13 @@ namespace CPvC.Test
                 ManualResetEvent e = new ManualResetEvent(false);
                 machine.Event += (sender, args) =>
                 {
-                    if (args.Action.Type == MachineRequest.Types.LoadCore)
+                    if (args.Action is LoadCoreAction)
                     {
                         e.Set();
                     }
                 };
 
-                MachineRequest request = MachineRequest.RunUntil(1000);
+                MachineRequest request = new RunUntilRequest(1000);
                 machine.PushRequest(request);
                 byte[] state = machine.GetState();
 
@@ -1296,12 +1299,12 @@ namespace CPvC.Test
 
                     byte[] newState = machine.GetState();
 
-                    request = MachineRequest.LoadCore(new MemoryBlob(state));
+                    request = new LoadCoreRequest(MemoryBlob.Create(state), null);
                     machine.PushRequest(request);
 
                     machine.Start();
 
-                    request = MachineRequest.RunUntil(1000);
+                    request = new RunUntilRequest(1000);
                     request.Wait(2000);
                 }
 
@@ -1318,7 +1321,7 @@ namespace CPvC.Test
             {
                 // Run for at least one frame so that the screen bytes are
                 // set to something non-zero.
-                MachineRequest request = MachineRequest.RunUntil(80000);
+                MachineRequest request = new RunUntilRequest(1000);
                 machine.PushRequest(request);
                 machine.Start();
                 request.Wait();

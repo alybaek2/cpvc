@@ -3,167 +3,199 @@ using System.Collections.Generic;
 
 namespace CPvC
 {
+    public interface IMachineAction
+    {
+        UInt64 Ticks { get; }
+    }
+
+    public class ResetAction : ResetRequest, IMachineAction
+    {
+        public ResetAction(UInt64 ticks)
+        {
+            Ticks = ticks;
+        }
+
+        public UInt64 Ticks { get; }
+    }
+
+    public class KeyPressAction : KeyPressRequest, IMachineAction
+    {
+        public KeyPressAction(UInt64 ticks, byte keyCode, bool keyDown) : base(keyCode, keyDown)
+        {
+            Ticks = ticks;
+        }
+
+        public UInt64 Ticks { get; }
+    }
+
+    public class LoadDiscAction : LoadDiscRequest, IMachineAction
+    {
+        public LoadDiscAction(UInt64 ticks, byte drive, IBlob mediaBuffer) : base(drive, mediaBuffer)
+        {
+            Ticks = ticks;
+        }
+
+        public UInt64 Ticks { get; }
+    }
+
+    public class LoadTapeAction : LoadTapeRequest, IMachineAction
+    {
+        public LoadTapeAction(UInt64 ticks, IBlob mediaBuffer) : base(mediaBuffer)
+        {
+            Ticks = ticks;
+        }
+
+        public UInt64 Ticks { get; }
+    }
+
+    public class CoreVersionAction : CoreVersionRequest, IMachineAction
+    {
+        public CoreVersionAction(UInt64 ticks, int version) : base(version)
+        {
+            Ticks = ticks;
+        }
+
+        public UInt64 Ticks { get; }
+    }
+
+    public class RunUntilAction : RunUntilRequest, IMachineAction
+    {
+        public RunUntilAction(UInt64 ticks, UInt64 stopTicks, List<UInt16> audioSamples) : base(stopTicks)
+        {
+            Ticks = ticks;
+            AudioSamples = audioSamples;
+        }
+
+        public UInt64 Ticks { get; }
+    }
+
+    public class LoadCoreAction : LoadCoreRequest, IMachineAction
+    {
+        public LoadCoreAction(UInt64 ticks, IBlob state, IBlob screen) : base(state, screen)
+        {
+            Ticks = ticks;
+        }
+
+        public UInt64 Ticks { get; }
+    }
+
+    public class CreateSnapshotAction : CreateSnapshotRequest, IMachineAction
+    {
+        public CreateSnapshotAction(UInt64 ticks, int snapshotId) : base(snapshotId)
+        {
+            Ticks = ticks;
+        }
+
+        public UInt64 Ticks { get; }
+    }
+
+    public class DeleteSnapshotAction : DeleteSnapshotRequest, IMachineAction
+    {
+        public DeleteSnapshotAction(UInt64 ticks, int snapshotId) : base(snapshotId)
+        {
+            Ticks = ticks;
+        }
+
+        public UInt64 Ticks { get; }
+    }
+
+    public class RevertToSnapshotAction : RevertToSnapshotRequest, IMachineAction
+    {
+        public RevertToSnapshotAction(UInt64 ticks, int snapshotId) : base(snapshotId)
+        {
+            Ticks = ticks;
+        }
+
+        public UInt64 Ticks { get; }
+    }
+
     /// <summary>
     /// Represents an action taken by the core thread in response to a request.
     /// </summary>
-    public class MachineAction : MachineRequest
+    static public class MachineAction
     {
-        /// <summary>
-        /// The ticks at which the action took place.
-        /// </summary>
-        public UInt64 Ticks { get; }
-
-        /// <summary>
-        /// The set of audio samples that were generated during a RunUntil request.
-        /// </summary>
-        public List<UInt16> AudioSamples { get; private set; }
-
-        /// <summary>
-        /// For a create snapshot action, this indicates the id of the parent snapshot.
-        /// </summary>
-        //public int CreatedSnapshotId { get; private set; }
-
-        public MachineAction(Types type, UInt64 ticks) : base(type)
+        static public ResetAction Reset(UInt64 ticks)
         {
-            Ticks = ticks;
-            AudioSamples = new List<UInt16>();
+            return new ResetAction(ticks);
         }
 
-        static public MachineAction Reset(UInt64 ticks)
+        static public KeyPressAction KeyPress(UInt64 ticks, byte keycode, bool down)
         {
-            return new MachineAction(Types.Reset, ticks);
+            return new KeyPressAction(ticks, keycode, down);
         }
 
-        static public MachineAction KeyPress(UInt64 ticks, byte keycode, bool down)
+        static public RunUntilAction RunUntil(UInt64 ticks, UInt64 stopTicks, List<UInt16> audioSamples)
         {
-            MachineAction action = new MachineAction(Types.KeyPress, ticks)
+            return new RunUntilAction(ticks, stopTicks, audioSamples);
+        }
+
+        static public LoadDiscAction LoadDisc(UInt64 ticks, byte drive, IBlob disc)
+        {
+            return new LoadDiscAction(ticks, drive, disc);
+        }
+
+        static public LoadTapeAction LoadTape(UInt64 ticks, IBlob tape)
+        {
+            return new LoadTapeAction(ticks, tape);
+        }
+
+        static public LoadCoreAction LoadCore(UInt64 ticks, IBlob state)
+        {
+            return new LoadCoreAction(ticks, state, null);
+        }
+
+        static public CreateSnapshotAction CreateSnapshot(UInt64 ticks, int id)
+        {
+            return new CreateSnapshotAction(ticks, id);
+        }
+
+        static public DeleteSnapshotAction DeleteSnapshot(UInt64 ticks, int id)
+        {
+            return new DeleteSnapshotAction(ticks, id);
+        }
+
+        static public RevertToSnapshotAction RevertToSnapshot(UInt64 ticks, int id)
+        {
+            return new RevertToSnapshotAction(ticks, id);
+        }
+
+        static public CoreVersionAction CoreVersion(UInt64 ticks, int version)
+        {
+            return new CoreVersionAction(ticks, version);
+        }
+
+        static public IMachineAction Clone(IMachineAction action)
+        {
+            switch (action)
             {
-                KeyCode = keycode,
-                KeyDown = down
-            };
-
-            return action;
-        }
-
-        static public MachineAction RunUntil(UInt64 ticks, UInt64 stopTicks, List<UInt16> audioSamples)
-        {
-            MachineAction action = new MachineAction(Types.RunUntil, ticks)
-            {
-                StopTicks = stopTicks,
-                AudioSamples = audioSamples
-            };
-
-            return action;
-        }
-
-        static public MachineAction LoadDisc(UInt64 ticks, byte drive, IBlob disc)
-        {
-            MachineAction action = new MachineAction(Types.LoadDisc, ticks)
-            {
-                Drive = drive,
-                MediaBuffer = disc
-            };
-
-            return action;
-        }
-
-        static public MachineAction LoadTape(UInt64 ticks, IBlob tape)
-        {
-            MachineAction action = new MachineAction(Types.LoadTape, ticks)
-            {
-                MediaBuffer = tape
-            };
-
-            return action;
-        }
-
-        static public MachineAction LoadCore(UInt64 ticks, IBlob state)
-        {
-            MachineAction action = new MachineAction(Types.LoadCore, ticks)
-            {
-                CoreState = state
-            };
-
-            return action;
-        }
-
-        static public MachineAction CreateSnapshot(UInt64 ticks, int id)
-        {
-            MachineAction action = new MachineAction(Types.CreateSnapshot, ticks)
-            {
-                SnapshotId = id
-            };
-
-            return action;
-        }
-
-        static public MachineAction DeleteSnapshot(UInt64 ticks, int id)
-        {
-            MachineAction action = new MachineAction(Types.DeleteSnapshot, ticks)
-            {
-                SnapshotId = id
-            };
-
-            return action;
-        }
-
-        static public MachineAction RevertToSnapshot(UInt64 ticks, int id)
-        {
-            MachineAction action = new MachineAction(Types.RevertToSnapshot, ticks)
-            {
-                SnapshotId = id
-            };
-
-            return action;
-        }
-
-        static public MachineAction CoreVersion(UInt64 ticks, int version)
-        {
-            MachineAction action = new MachineAction(Types.CoreVersion, ticks)
-            {
-                Version = version
-            };
-
-            return action;
-        }
-
-        public MachineAction Clone()
-        {
-            switch (Type)
-            {
-                case Types.CoreVersion:
-                    return MachineAction.CoreVersion(Ticks, Version);
-                case Types.KeyPress:
-                    return MachineAction.KeyPress(Ticks, KeyCode, KeyDown);
-                case Types.LoadDisc:
-                    return MachineAction.LoadDisc(Ticks, Drive, (MediaBuffer != null) ? (new MemoryBlob(MediaBuffer.GetBytes())) : null);
-                case Types.LoadTape:
-                    return MachineAction.LoadTape(Ticks, (MediaBuffer != null) ? (new MemoryBlob(MediaBuffer.GetBytes())) : null);
-                case Types.Reset:
-                    return MachineAction.Reset(Ticks);
-                case Types.RunUntil:
+                case CoreVersionAction coreVersionAction:
+                    return new CoreVersionAction(coreVersionAction.Ticks, coreVersionAction.Version);
+                case KeyPressAction keyPressAction:
+                    return new KeyPressAction(keyPressAction.Ticks, keyPressAction.KeyCode, keyPressAction.KeyDown);
+                case LoadDiscAction loadDiscAction:
+                    return new LoadDiscAction(loadDiscAction.Ticks, loadDiscAction.Drive, MemoryBlob.Create(loadDiscAction.MediaBuffer));
+                case LoadTapeAction loadTapeAction:
+                    return new LoadTapeAction(loadTapeAction.Ticks, MemoryBlob.Create(loadTapeAction.MediaBuffer));
+                case ResetAction resetAction:
+                    return new ResetAction(resetAction.Ticks);
+                case RunUntilAction runUntilAction:
                     {
                         List<UInt16> samples = null;
-                        if (AudioSamples != null)
+                        if (runUntilAction.AudioSamples != null)
                         {
-                            samples = new List<UInt16>(AudioSamples);
+                            samples = new List<UInt16>(runUntilAction.AudioSamples);
                         }
-                        return MachineAction.RunUntil(Ticks, StopTicks, samples);
+                        return new RunUntilAction(runUntilAction.Ticks, runUntilAction.StopTicks, samples);
                     }
-                case Types.LoadCore:
-                    return MachineAction.LoadCore(Ticks, CoreState);
-                case Types.CreateSnapshot:
-                    return MachineAction.CreateSnapshot(Ticks, SnapshotId);
-                case Types.RevertToSnapshot:
-                    return MachineAction.RevertToSnapshot(Ticks, SnapshotId);
+                case LoadCoreAction loadCoreAction:
+                    return new LoadCoreAction(loadCoreAction.Ticks, loadCoreAction.State, loadCoreAction.Screen);
+                case CreateSnapshotAction createSnapshotAction:
+                    return new CreateSnapshotAction(createSnapshotAction.Ticks, createSnapshotAction.SnapshotId);
+                case RevertToSnapshotAction revertToSnapshotAction:
+                    return new RevertToSnapshotAction(revertToSnapshotAction.Ticks, revertToSnapshotAction.SnapshotId);
                 default:
                     return null;
             }
-        }
-
-        public override string ToString()
-        {
-            return String.Format("{0} @ {1}", Type, Ticks);
         }
     }
 }

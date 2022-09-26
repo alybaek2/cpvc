@@ -12,10 +12,9 @@ namespace CPvC.Test
             byte[] bytes = new byte[] { 0x01, 0x02 };
 
             // Act
-            MachineRequest request = MachineRequest.LoadDisc(1, eject ? null : bytes);
+            LoadDiscRequest request = new LoadDiscRequest(1, MemoryBlob.Create(eject ? null : bytes));
 
             // Verify
-            Assert.AreEqual(MachineRequest.Types.LoadDisc, request.Type);
             Assert.AreEqual(1, request.Drive);
 
             if (eject)
@@ -36,11 +35,9 @@ namespace CPvC.Test
             byte[] bytes = new byte[] { 0x01, 0x02 };
 
             // Act
-            MachineRequest request = MachineRequest.LoadTape(eject ? null : bytes);
+            LoadTapeRequest request = new LoadTapeRequest(MemoryBlob.Create(eject ? null : bytes));
 
             // Verify
-            Assert.AreEqual(MachineRequest.Types.LoadTape, request.Type);
-
             if (eject)
             {
                 Assert.IsNull(request.MediaBuffer.GetBytes());

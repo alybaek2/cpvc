@@ -2,8 +2,8 @@
 {
     public interface IPrerecordedMachine
     {
-        void SeekToStart();
-        void SeekToPreviousBookmark();
-        void SeekToNextBookmark();
+        MachineRequest SeekToStart();
+        MachineRequest SeekToPreviousBookmark();
+        MachineRequest SeekToNextBookmark();
     }
 }

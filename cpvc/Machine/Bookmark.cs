@@ -34,8 +34,8 @@
         {
             System = system;
             Version = version;
-            State = new MemoryBlob(state);
-            Screen = new MemoryBlob(screen);
+            State = MemoryBlob.Create(state);
+            Screen = MemoryBlob.Create(screen);
         }
 
         public Bookmark Clone()

@@ -470,7 +470,7 @@ namespace CPvC.Test
             MainViewModel viewModel = _mainViewModelNew;
             _machine.OpenFromFile(_mockFileSystem.Object);
 
-            MachineRequest request = _machine.RunUntil(1000);
+            MachineRequest request = new RunUntilRequest(1000);
             request = _machine.Key(42, true);
 
             _machine.Start();
@@ -676,7 +676,7 @@ namespace CPvC.Test
         [Test]
         public void Reset()
         {
-            TestInterfacePassthroughIInteractiveMachine(_mainViewModel.ResetCommand, m => m.Reset(), MachineRequest.Reset());
+            TestInterfacePassthroughIInteractiveMachine(_mainViewModel.ResetCommand, m => m.Reset(), new ResetRequest());
         }
 
         [Test]
@@ -688,7 +688,7 @@ namespace CPvC.Test
         [Test]
         public void DriveAEject()
         {
-            TestInterfacePassthroughIInteractiveMachine(_mainViewModel.DriveAEjectCommand, m => m.LoadDisc(0, null), MachineRequest.LoadDisc(0, null));
+            TestInterfacePassthroughIInteractiveMachine(_mainViewModel.DriveAEjectCommand, m => m.LoadDisc(0, null), new LoadDiscRequest(0, null));
         }
 
         [Test]
@@ -700,7 +700,7 @@ namespace CPvC.Test
         [Test]
         public void DriveBEject()
         {
-            TestInterfacePassthroughIInteractiveMachine(_mainViewModel.DriveBEjectCommand, m => m.LoadDisc(1, null), MachineRequest.LoadDisc(1, null));
+            TestInterfacePassthroughIInteractiveMachine(_mainViewModel.DriveBEjectCommand, m => m.LoadDisc(1, null), new LoadDiscRequest(1, null));
         }
 
         [Test]
@@ -712,7 +712,7 @@ namespace CPvC.Test
         [Test]
         public void TapeEject()
         {
-            TestInterfacePassthroughIInteractiveMachine(_mainViewModel.TapeEjectCommand, m => m.LoadTape(null), MachineRequest.LoadTape(null));
+            TestInterfacePassthroughIInteractiveMachine(_mainViewModel.TapeEjectCommand, m => m.LoadTape(null), new LoadTapeRequest(null));
         }
 
         [Test]

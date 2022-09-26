@@ -15,7 +15,7 @@ namespace CPvC
 
         CloseConnectionDelegate CloseConnection { get; set; }
 
-        void SendCoreAction(MachineAction coreAction);
+        void SendCoreAction(IMachineAction coreAction);
         void SendSelectMachine(string machineName);
         void SendRequestAvailableMachines();
         void SendAvailableMachines(IEnumerable<string> availableMachines);

@@ -10,28 +10,29 @@ namespace CPvC.Test
         public void CloneCoreVersion()
         {
             // Setup
-            MachineAction action = MachineAction.CoreVersion(100, 1);
+            IMachineAction action = MachineAction.CoreVersion(100, 1);
 
             // Act
-            MachineAction clone = action.Clone();
+            IMachineAction clone = MachineAction.Clone(action);
 
             // Verify
-            Assert.AreEqual(MachineRequest.Types.CoreVersion, clone.Type);
-            Assert.AreEqual(100, clone.Ticks);
-            Assert.AreEqual(1, clone.Version);
+            Assert.True(clone is CoreVersionAction);
+            CoreVersionAction coreVersionAction = (CoreVersionAction)clone;
+            Assert.AreEqual(100, coreVersionAction.Ticks);
+            Assert.AreEqual(1, coreVersionAction.Version);
         }
 
         [Test]
         public void CloneReset()
         {
             // Setup
-            MachineAction action = MachineAction.Reset(100);
+            IMachineAction action = MachineAction.Reset(100);
 
             // Act
-            MachineAction clone = action.Clone();
+            IMachineAction clone = MachineAction.Clone(action);
 
             // Verify
-            Assert.AreEqual(MachineRequest.Types.Reset, clone.Type);
+            Assert.True(clone is ResetAction);
             Assert.AreEqual(100, clone.Ticks);
         }
 
@@ -39,16 +40,17 @@ namespace CPvC.Test
         public void CloneKeyPress()
         {
             // Setup
-            MachineAction action = MachineAction.KeyPress(100, 78, true);
+            IMachineAction action = MachineAction.KeyPress(100, 78, true);
 
             // Act
-            MachineAction clone = action.Clone();
+            IMachineAction clone = MachineAction.Clone(action);
 
             // Verify
-            Assert.AreEqual(MachineRequest.Types.KeyPress, clone.Type);
-            Assert.AreEqual(100, clone.Ticks);
-            Assert.AreEqual(78, clone.KeyCode);
-            Assert.AreEqual(true, clone.KeyDown);
+            Assert.True(clone is KeyPressAction);
+            KeyPressAction keyPressAction = (KeyPressAction)clone;
+            Assert.AreEqual(100, keyPressAction.Ticks);
+            Assert.AreEqual(78, keyPressAction.KeyCode);
+            Assert.AreEqual(true, keyPressAction.KeyDown);
         }
 
         [TestCase(false)]
@@ -57,24 +59,25 @@ namespace CPvC.Test
         {
             // Setup
             byte[] bytes = new byte[] { 0x01, 0x02 };
-            MachineAction action = MachineAction.LoadDisc(100, 1, eject ? null : new MemoryBlob(bytes));
+            LoadDiscAction action = MachineAction.LoadDisc(100, 1, eject ? null : MemoryBlob.Create(bytes));
 
             // Act
-            MachineAction clone = action.Clone();
+            IMachineAction clone = MachineAction.Clone(action);
 
             // Verify
-            Assert.AreEqual(MachineRequest.Types.LoadDisc, clone.Type);
-            Assert.AreEqual(100, clone.Ticks);
-            Assert.AreEqual(1, clone.Drive);
+            Assert.True(clone is LoadDiscAction);
+            LoadDiscAction loadDiscActionClone = (LoadDiscAction)clone;
+            Assert.AreEqual(100, loadDiscActionClone.Ticks);
+            Assert.AreEqual(1, loadDiscActionClone.Drive);
 
             if (eject)
             {
-                Assert.IsNull(clone.MediaBuffer);
+                Assert.IsNull(loadDiscActionClone.MediaBuffer);
             }
             else
             {
-                Assert.AreNotSame(action.MediaBuffer, clone.MediaBuffer);
-                Assert.AreEqual(bytes, clone.MediaBuffer.GetBytes());
+                Assert.AreNotSame(action.MediaBuffer, loadDiscActionClone.MediaBuffer);
+                Assert.AreEqual(bytes, loadDiscActionClone.MediaBuffer.GetBytes());
             }
         }
 
@@ -84,23 +87,24 @@ namespace CPvC.Test
         {
             // Setup
             byte[] bytes = new byte[] { 0x01, 0x02 };
-            MachineAction action = MachineAction.LoadTape(100, eject ? null : new MemoryBlob(bytes));
+            LoadTapeAction action = MachineAction.LoadTape(100, eject ? null : MemoryBlob.Create(bytes));
 
             // Act
-            MachineAction clone = action.Clone();
+            IMachineAction clone = MachineAction.Clone(action);
 
             // Verify
-            Assert.AreEqual(MachineRequest.Types.LoadTape, clone.Type);
-            Assert.AreEqual(100, clone.Ticks);
+            Assert.True(clone is LoadTapeAction);
+            LoadTapeAction loadTapeActionClone = (LoadTapeAction)clone;
+            Assert.AreEqual(100, loadTapeActionClone.Ticks);
 
             if (eject)
             {
-                Assert.IsNull(clone.MediaBuffer);
+                Assert.IsNull(loadTapeActionClone.MediaBuffer);
             }
             else
             {
-                Assert.AreNotSame(action.MediaBuffer, clone.MediaBuffer);
-                Assert.AreEqual(bytes, clone.MediaBuffer.GetBytes());
+                Assert.AreNotSame(action.MediaBuffer, loadTapeActionClone.MediaBuffer);
+                Assert.AreEqual(bytes, loadTapeActionClone.MediaBuffer.GetBytes());
             }
         }
 
@@ -108,16 +112,17 @@ namespace CPvC.Test
         public void CloneRunUntil()
         {
             // Setup
-            MachineAction action = MachineAction.RunUntil(100, 4000000, null);
+            IMachineAction action = MachineAction.RunUntil(100, 4000000, null);
 
             // Act
-            MachineAction clone = action.Clone();
+            IMachineAction clone = MachineAction.Clone(action);
 
             // Verify
-            Assert.AreEqual(MachineRequest.Types.RunUntil, clone.Type);
-            Assert.AreEqual(100, clone.Ticks);
-            Assert.AreEqual(4000000, clone.StopTicks);
-            Assert.AreEqual(null, clone.AudioSamples);
+            Assert.True(clone is RunUntilAction);
+            RunUntilAction runUntilAction = (RunUntilAction)clone;
+            Assert.AreEqual(100, runUntilAction.Ticks);
+            Assert.AreEqual(4000000, runUntilAction.StopTicks);
+            Assert.AreEqual(null, runUntilAction.AudioSamples);
         }
 
         [Test]
@@ -125,46 +130,49 @@ namespace CPvC.Test
         {
             // Setup
             List<UInt16> audioSamples = new List<UInt16> { 0x01, 0x02 };
-            MachineAction action = MachineAction.RunUntil(100, 4000000, audioSamples);
+            IMachineAction action = MachineAction.RunUntil(100, 4000000, audioSamples);
 
             // Act
-            MachineAction clone = action.Clone();
+            IMachineAction clone = MachineAction.Clone(action);
 
             // Verify
-            Assert.AreEqual(MachineRequest.Types.RunUntil, clone.Type);
-            Assert.AreEqual(100, clone.Ticks);
-            Assert.AreEqual(4000000, clone.StopTicks);
-            Assert.AreEqual(new List<UInt16> { 0x01, 0x02 }, clone.AudioSamples);
+            Assert.True(clone is RunUntilAction);
+            RunUntilAction runUntilAction = (RunUntilAction)clone;
+            Assert.AreEqual(100, runUntilAction.Ticks);
+            Assert.AreEqual(4000000, runUntilAction.StopTicks);
+            Assert.AreEqual(new List<UInt16> { 0x01, 0x02 }, runUntilAction.AudioSamples);
         }
 
         [Test]
         public void CloneRevertToSnapshot()
         {
             // Setup
-            MachineAction action = MachineAction.RevertToSnapshot(100, 42);
+            IMachineAction action = MachineAction.RevertToSnapshot(100, 42);
 
             // Act
-            MachineAction clone = action.Clone();
+            IMachineAction clone = MachineAction.Clone(action);
 
             // Verify
-            Assert.AreEqual(MachineRequest.Types.RevertToSnapshot, clone.Type);
-            Assert.AreEqual(100, clone.Ticks);
-            Assert.AreEqual(42, clone.SnapshotId);
+            Assert.True(clone is RevertToSnapshotAction);
+            RevertToSnapshotAction revertToSnapshotAction = (RevertToSnapshotAction)clone;
+            Assert.AreEqual(100, revertToSnapshotAction.Ticks);
+            Assert.AreEqual(42, revertToSnapshotAction.SnapshotId);
         }
 
         [Test]
         public void CloneCreateSnapshot()
         {
             // Setup
-            MachineAction action = MachineAction.CreateSnapshot(100, 42);
+            IMachineAction action = MachineAction.CreateSnapshot(100, 42);
 
             // Act
-            MachineAction clone = action.Clone();
+            IMachineAction clone = MachineAction.Clone(action);
 
             // Verify
-            Assert.AreEqual(MachineRequest.Types.CreateSnapshot, clone.Type);
-            Assert.AreEqual(100, clone.Ticks);
-            Assert.AreEqual(42, clone.SnapshotId);
+            Assert.True(clone is CreateSnapshotAction);
+            CreateSnapshotAction createSnapshotAction = (CreateSnapshotAction)clone;
+            Assert.AreEqual(100, createSnapshotAction.Ticks);
+            Assert.AreEqual(42, createSnapshotAction.SnapshotId);
         }
 
         [Test]
@@ -177,25 +185,26 @@ namespace CPvC.Test
                 state[i] = (byte)(i % 0xff);
             }
 
-            MachineAction action = MachineAction.LoadCore(100, new MemoryBlob(state));
+            IMachineAction action = MachineAction.LoadCore(100, MemoryBlob.Create(state));
 
             // Act
-            MachineAction clone = action.Clone();
+            IMachineAction clone = MachineAction.Clone(action);
 
             // Verify
-            Assert.AreEqual(MachineRequest.Types.LoadCore, clone.Type);
-            Assert.AreEqual(100, clone.Ticks);
-            Assert.AreEqual(state, clone.CoreState.GetBytes());
+            Assert.True(clone is LoadCoreAction);
+            LoadCoreAction loadCoreAction = (LoadCoreAction)clone;
+            Assert.AreEqual(100, loadCoreAction.Ticks);
+            Assert.AreEqual(state, loadCoreAction.State.GetBytes());
         }
 
         [Test]
         public void CloneInvalidType()
         {
             // Setup
-            MachineAction action = new MachineAction((MachineRequest.Types)999, 100);
+            TestHelpers.UnknownAction action = new TestHelpers.UnknownAction();
 
             // Act
-            MachineAction clone = action.Clone();
+            IMachineAction clone = MachineAction.Clone(action);
 
             // Verify
             Assert.IsNull(clone);

@@ -580,31 +580,33 @@ namespace CPvC
 
         public bool CloseAll()
         {
+            List<IMachine> machines = null;
             lock (Machines)
             {
-                foreach (IMachine machine in Machines)
+                machines = Machines.ToList();
+            }
+
+            foreach (IMachine machine in machines)
+            {
+                if (!(machine is IPersistableMachine persistableMachine) || persistableMachine.PersistantFilepath != null)
                 {
-                    if (!(machine is IPersistableMachine persistableMachine) || persistableMachine.PersistantFilepath != null)
-                    {
-                        continue;
-                    }
-
-                    ConfirmCloseEventArgs args = new ConfirmCloseEventArgs("There are machines which haven't been persisted yet. Are you sure you want to exit?");
-                    ConfirmClose?.Invoke(this, args);
-
-                    if (!args.Result)
-                    {
-                        return false;
-                    }
-
-                    break;
+                    continue;
                 }
 
-                List<IMachine> machines = Machines.ToList();
-                foreach (IMachine machine in machines)
+                ConfirmCloseEventArgs args = new ConfirmCloseEventArgs("There are machines which haven't been persisted yet. Are you sure you want to exit?");
+                ConfirmClose?.Invoke(this, args);
+
+                if (!args.Result)
                 {
-                    Close(machine, false);
+                    return false;
                 }
+
+                break;
+            }
+
+            foreach (IMachine machine in machines)
+            {
+                Close(machine, false);
             }
 
             return true;
@@ -647,26 +649,29 @@ namespace CPvC
 
         public int ReadAudio(byte[] buffer, int offset, int samplesRequested)
         {
+            List<IMachine> machines = null;
             lock (Machines)
             {
-                int samplesWritten = 0;
-
-                foreach (IMachine machine in Machines)
-                {
-                    // Play audio only from the currently active machine; for the rest, just
-                    // advance the audio playback position.
-                    if (machine == ActiveMachine)
-                    {
-                        samplesWritten = machine.ReadAudio(buffer, offset, samplesRequested);
-                    }
-                    else
-                    {
-                        machine.AdvancePlayback(samplesRequested);
-                    }
-                }
-
-                return samplesWritten;
+                machines = Machines.ToList();
             }
+
+            int samplesWritten = 0;
+
+            foreach (IMachine machine in machines)
+            {
+                // Play audio only from the currently active machine; for the rest, just
+                // advance the audio playback position.
+                if (machine == ActiveMachine)
+                {
+                    samplesWritten = machine.ReadAudio(buffer, offset, samplesRequested);
+                }
+                else
+                {
+                    machine.AdvancePlayback(samplesRequested);
+                }
+            }
+
+            return samplesWritten;
         }
 
         public void KeyPress(IInteractiveMachine machine, byte keyCode, bool down)

@@ -86,7 +86,7 @@ namespace CPvC.Test
                 _receiveCoreAction(MachineAction.RunUntil(0, 1, null));
 
                 // Verify
-                _mockHandler.Verify(a => a(It.IsAny<object>(), It.Is<MachineEventArgs>(args => args.Action.Type == MachineRequest.Types.RunUntil)), Times.Exactly(closed ? 0 : 1));
+                _mockHandler.Verify(a => a(It.IsAny<object>(), It.Is<MachineEventArgs>(args => args.Action is RunUntilAction)), Times.Exactly(closed ? 0 : 1));
             }
         }
 
@@ -139,7 +139,7 @@ namespace CPvC.Test
                 machine.Key(Keys.A, true);
 
                 // Verify
-                _mockRemote.Verify(remote => remote.SendCoreRequest(It.Is<MachineRequest>(request => request.Type == MachineRequest.Types.KeyPress && request.KeyCode == Keys.A && request.KeyDown)), Times.Once());
+                _mockRemote.Verify(remote => remote.SendCoreRequest(It.Is<KeyPressRequest>(request => request.KeyCode == Keys.A && request.KeyDown)), Times.Once());
             }
         }
 
@@ -153,7 +153,7 @@ namespace CPvC.Test
                 machine.LoadDisc(1, new byte[] { 0x01, 0x02 });
 
                 // Verify
-                _mockRemote.Verify(remote => remote.SendCoreRequest(It.Is<MachineRequest>(request => request.Type == MachineRequest.Types.LoadDisc && request.Drive == 1 && request.MediaBuffer.GetBytes().SequenceEqual(new byte[] { 0x01, 0x02 }))), Times.Once());
+                _mockRemote.Verify(remote => remote.SendCoreRequest(It.Is<LoadDiscRequest>(request => request.Drive == 1 && request.MediaBuffer.GetBytes().SequenceEqual(new byte[] { 0x01, 0x02 }))), Times.Once());
             }
         }
 
@@ -167,7 +167,7 @@ namespace CPvC.Test
                 machine.LoadTape(new byte[] { 0x01, 0x02 });
 
                 // Verify
-                _mockRemote.Verify(remote => remote.SendCoreRequest(It.Is<MachineRequest>(request => request.Type == MachineRequest.Types.LoadTape && request.MediaBuffer.GetBytes().SequenceEqual(new byte[] { 0x01, 0x02 }))), Times.Once());
+                _mockRemote.Verify(remote => remote.SendCoreRequest(It.Is<LoadTapeRequest>(request => request.MediaBuffer.GetBytes().SequenceEqual(new byte[] { 0x01, 0x02 }))), Times.Once());
             }
         }
 
@@ -181,7 +181,7 @@ namespace CPvC.Test
                 machine.Reset();
 
                 // Verify
-                _mockRemote.Verify(remote => remote.SendCoreRequest(It.Is<MachineRequest>(request => request.Type == MachineRequest.Types.Reset)), Times.Once());
+                _mockRemote.Verify(remote => remote.SendCoreRequest(It.Is<ResetRequest>(request => true)), Times.Once());
             }
         }
 

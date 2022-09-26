@@ -209,7 +209,7 @@ namespace CPvC
                 _currentCoreSnapshot = coreSnapshot;
                 _core.CreateSnapshotSync(coreSnapshot.Id);
 
-                MachineAction action = MachineAction.CreateSnapshot(Ticks, coreSnapshot.Id);
+                IMachineAction action = new CreateSnapshotAction(Ticks, coreSnapshot.Id);
                 RaiseEvent(action);
             }
 
@@ -225,14 +225,14 @@ namespace CPvC
         {
             while (_snapshots.Count > _snapshotLimit)
             {
-                int snapshotId = _snapshots[0].Id;
+                int snapshotId = _snapshots[0];
                 _snapshots.RemoveAt(0);
                 _allCoreSnapshots.Remove(snapshotId);
-                PushRequest(MachineRequest.DeleteSnapshot(snapshotId));
+                PushRequest(new DeleteSnapshotRequest(snapshotId));
             }
         }
 
-        protected override void CoreActionDone(MachineRequest request, MachineAction action)
+        protected override void CoreActionDone(MachineRequest request, IMachineAction action)
         {
             if (action == null)
             {
@@ -241,31 +241,32 @@ namespace CPvC
 
             RaiseEvent(action);
 
-            if (action.Type != MachineAction.Types.CreateSnapshot &&
-                action.Type != MachineAction.Types.DeleteSnapshot &&
-                action.Type != MachineAction.Types.RevertToSnapshot)
+            if (!(action is CreateSnapshotAction) &&
+                !(action is DeleteSnapshotAction) &&
+                !(action is RevertToSnapshotAction))
             {
                 HistoryEvent e = _history.AddCoreAction(action);
 
-                switch (action.Type)
+                switch (action)
                 {
-                    case MachineRequest.Types.LoadDisc:
-                        Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded disc" : "Ejected disc";
+                    case LoadDiscAction loadDiscAction:
+                        Status = (loadDiscAction.MediaBuffer.GetBytes() != null) ? "Loaded disc" : "Ejected disc";
                         break;
-                    case MachineRequest.Types.LoadTape:
-                        Status = (action.MediaBuffer.GetBytes() != null) ? "Loaded tape" : "Ejected tape";
+                    case LoadTapeAction loadTapeAction:
+                        Status = (loadTapeAction.MediaBuffer.GetBytes() != null) ? "Loaded tape" : "Ejected tape";
                         break;
-                    case MachineRequest.Types.Reset:
+                    case ResetAction resetAction:
                         Status = "Reset";
                         break;
                 }
             }
 
-            if (action.Type == MachineAction.Types.CreateSnapshot)
+            if (action is CreateSnapshotAction createSnapshotAction)
+            //if (action.Type == MachineAction.Types.CreateSnapshot)
             {
                 lock (_snapshots)
                 {
-                    CreateCoreSnapshot(action.SnapshotId);
+                    CreateCoreSnapshot(createSnapshotAction.SnapshotId);
 
                     KeepSnapshotsUnderLimit();
                 }
@@ -298,8 +299,8 @@ namespace CPvC
 
                 LocalCoreSnapshot coreSnapshot = new LocalCoreSnapshot(id, historyEvent);
 
-                _allCoreSnapshots.Add(coreSnapshot.Id, coreSnapshot);
-                _snapshots.Add(coreSnapshot);
+                _allCoreSnapshots.Add(id, coreSnapshot);
+                _snapshots.Add(id);
 
                 KeepSnapshotsUnderLimit();
 
@@ -330,7 +331,7 @@ namespace CPvC
 
         public MachineRequest Reset()
         {
-            MachineRequest request = MachineRequest.Reset();
+            MachineRequest request = new ResetRequest();
             PushRequest(request);
             Status = "Reset";
 
@@ -339,7 +340,7 @@ namespace CPvC
 
         public MachineRequest Key(byte keycode, bool down)
         {
-            MachineRequest request = MachineRequest.KeyPress(keycode, down);
+            MachineRequest request = new KeyPressRequest(keycode, down);
             PushRequest(request);
 
             return request;
@@ -384,7 +385,7 @@ namespace CPvC
 
         public MachineRequest LoadDisc(byte drive, byte[] diskBuffer)
         {
-            MachineRequest request = MachineRequest.LoadDisc(drive, diskBuffer);
+            MachineRequest request = new LoadDiscRequest(drive, MemoryBlob.Create(diskBuffer));
             PushRequest(request);
 
             return request;
@@ -392,7 +393,7 @@ namespace CPvC
 
         public MachineRequest LoadTape(byte[] tapeBuffer)
         {
-            MachineRequest request = MachineRequest.LoadTape(tapeBuffer);
+            MachineRequest request = new LoadTapeRequest(MemoryBlob.Create(tapeBuffer));
             PushRequest(request);
 
             return request;
@@ -500,7 +501,7 @@ namespace CPvC
 
             SetScreen(bookmarkHistoryEvent.Bookmark.Screen.GetBytes());
 
-            MachineAction action = MachineAction.LoadCore(bookmarkHistoryEvent.Ticks, bookmarkHistoryEvent.Bookmark.State);
+            IMachineAction action = new LoadCoreAction(bookmarkHistoryEvent.Ticks, bookmarkHistoryEvent.Bookmark.State, bookmarkHistoryEvent.Bookmark.Screen);
             RaiseEvent(action);
 
             _history.CurrentEvent = bookmarkHistoryEvent;
@@ -512,7 +513,7 @@ namespace CPvC
 
             BlankScreen();
 
-            MachineAction action = MachineAction.Reset(_history.RootEvent.Ticks);
+            IMachineAction action = new ResetAction(_history.RootEvent.Ticks);
             RaiseEvent(action);
 
             _history.CurrentEvent = _history.RootEvent;
@@ -528,7 +529,7 @@ namespace CPvC
                 }
             }
 
-            MachineRequest request = MachineRequest.Reverse();
+            MachineRequest request = new ReverseRequest();
             PushRequest(request);
 
             return request;
@@ -708,7 +709,7 @@ namespace CPvC
             {
                 if (_requestedRunningState == RunningState.Running)
                 {
-                    request = MachineRequest.RunUntil(Ticks + 1000);
+                    request = new RunUntilRequest(Ticks + 1000);
                 }
                 else if (_requestedRunningState == RunningState.Reverse)
                 {
@@ -716,10 +717,10 @@ namespace CPvC
                     {
                         if (_snapshots.Count > 0)
                         {
-                            int snapshotId = _snapshots[_snapshots.Count - 1].Id;
+                            int snapshotId = _snapshots[_snapshots.Count - 1];
                             _snapshots.RemoveAt(_snapshots.Count - 1);
 
-                            request = MachineRequest.RevertToSnapshot(snapshotId);
+                            request = new RevertToSnapshotRequest(snapshotId);
                         }
                     }
                 }
@@ -733,12 +734,18 @@ namespace CPvC
             if (_actualRunningState == RunningState.Reverse)
             {
                 AllKeysUp();
+
+                // Test!
+                Bookmark bookmark = new Bookmark(true, _core.Version, _core.GetState(), _core.GetScreen());
+                HistoryEvent historyEvent = _history.AddBookmark(_core.Ticks, bookmark);
+
+                Diagnostics.Trace("Created bookmark at tick {0}", _core.Ticks);
             }
 
             base.ProcessResume();
         }
 
-        public override MachineAction ProcessRevertToSnapshot(MachineRequest request)
+        public override IMachineAction ProcessRevertToSnapshot(RevertToSnapshotRequest request)
         {
             // Play samples from the snapshot info until they run out, then actually revert to snapshot.
             LocalCoreSnapshot coreSnapshot = (LocalCoreSnapshot)_allCoreSnapshots[request.SnapshotId];
@@ -756,7 +763,7 @@ namespace CPvC
 
                 _allCoreSnapshots.Remove(request.SnapshotId);
 
-                return MachineAction.RevertToSnapshot(request.StopTicks, request.SnapshotId);
+                return MachineAction.RevertToSnapshot(0 /*request.StopTicks*/, request.SnapshotId);
             }
 
             return null;

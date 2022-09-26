@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace CPvC
 {
-    public delegate void ReceiveCoreActionDelegate(MachineAction action);
+    public delegate MachineRequest ReceiveCoreActionDelegate(IMachineAction action);
     public delegate void ReceiveSelectMachineDelegate(string machineName);
     public delegate void ReceiveRequestAvailableMachinesDelegate();
     public delegate void ReceiveAvailableMachinesDelegate(List<string> availableMachines);
@@ -58,7 +58,7 @@ namespace CPvC
             Close();
         }
 
-        public void SendCoreAction(MachineAction coreAction)
+        public void SendCoreAction(IMachineAction coreAction)
         {
             MemoryByteStream bs = new MemoryByteStream();
             bs.Write(_idCoreAction);
@@ -158,7 +158,7 @@ namespace CPvC
                     break;
                 case _idCoreAction:
                     {
-                        MachineAction coreAction = Serializer.CoreActionFromBytes(bs);
+                        IMachineAction coreAction = Serializer.CoreActionFromBytes(bs);
                         ReceiveCoreAction?.Invoke(coreAction);
                     }
                     break;

@@ -249,7 +249,7 @@ namespace CPvC.Test
             machine.Stop().Wait();
 
             // Act
-            machine.SeekToStart();
+            machine.SeekToStart().Wait();
 
             // Verify
             Assert.AreEqual(0, machine.Ticks);
@@ -292,23 +292,24 @@ namespace CPvC.Test
             // Act and Verify
             foreach (UInt64 bookmarkTick in _bookmarkTicks)
             {
-                machine.SeekToNextBookmark();
+                machine.SeekToNextBookmark().Wait();
+
                 Assert.AreEqual(bookmarkTick, machine.Ticks);
             }
 
             UInt64 finalTicks = machine.Ticks;
-            machine.SeekToNextBookmark();
+            machine.SeekToNextBookmark().Wait();
             Assert.AreEqual(finalTicks, machine.Ticks);
 
             _bookmarkTicks.Reverse();
             foreach (UInt64 bookmarkTick in _bookmarkTicks)
             {
                 Assert.AreEqual(bookmarkTick, machine.Ticks);
-                machine.SeekToPreviousBookmark();
+                machine.SeekToPreviousBookmark().Wait();
             }
 
             Assert.AreEqual(0, machine.Ticks);
-            machine.SeekToPreviousBookmark();
+            machine.SeekToPreviousBookmark().Wait();
             Assert.AreEqual(0, machine.Ticks);
             machine.Close();
         }

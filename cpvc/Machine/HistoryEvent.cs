@@ -168,7 +168,7 @@ namespace CPvC
             }
         }
 
-        public MachineAction CoreAction
+        public IMachineAction CoreAction
         {
             get
             {
@@ -180,9 +180,9 @@ namespace CPvC
         {
             get
             {
-                if (_node.CoreAction.Type == MachineRequest.Types.RunUntil)
+                if (_node.CoreAction is RunUntilAction runUntilAction)
                 {
-                    return _node.CoreAction.StopTicks;
+                    return runUntilAction.StopTicks;
                 }
 
                 return _node.Ticks;

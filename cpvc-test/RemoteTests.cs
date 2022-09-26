@@ -39,10 +39,10 @@ namespace CPvC.Test
                 0x03, 0x00, 0x00, 0x00, 0x44, 0x45, 0x46
             };
 
-        private MachineAction _coreAction = MachineAction.KeyPress(0x01234567, Keys.A, true);
+        private IMachineAction _coreAction = MachineAction.KeyPress(0x01234567, Keys.A, true);
         private byte[] _coreActionMsg = new byte[] { 0x03, 0x01, 0x67, 0x45, 0x23, 0x01, 0x00, 0x00, 0x00, 0x00, 58, 0xFF };
 
-        private MachineRequest _coreRequest = MachineRequest.KeyPress(Keys.A, true);
+        private MachineRequest _coreRequest = new KeyPressRequest(Keys.A, true);
         private byte[] _coreRequestMsg = new byte[] { 0x07, 0x01, 58, 0xFF };
 
         private byte[] _requestAvailableMachinesMsg = new byte[] { 0x05 };
@@ -58,7 +58,7 @@ namespace CPvC.Test
             _mockName.Setup(p => p(It.IsAny<string>()));
 
             _mockCoreAction = new Mock<ReceiveCoreActionDelegate>();
-            _mockCoreAction.Setup(c => c(It.IsAny<MachineAction>()));
+            _mockCoreAction.Setup(c => c(It.IsAny<IMachineAction>()));
 
             _mockCoreRequest = new Mock<ReceiveCoreRequestDelegate>();
             _mockCoreRequest.Setup(c => c(It.IsAny<MachineRequest>()));
@@ -285,7 +285,7 @@ namespace CPvC.Test
             // Verify
             if (handler)
             {
-                _mockCoreAction.Verify(p => p(It.Is<MachineAction>(a => CoreActionsEqual(a, _coreAction))));
+                _mockCoreAction.Verify(p => p(It.Is<IMachineAction>(a => CoreActionsEqual(a, _coreAction))));
             }
             else
             {

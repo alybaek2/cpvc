@@ -49,7 +49,7 @@ namespace CPvC
                 {
                     byte[] state = _machine.GetState();
 
-                    MachineAction loadCoreAction = MachineAction.LoadCore(0, new MemoryBlob(state));
+                    IMachineAction loadCoreAction = new LoadCoreAction(0, MemoryBlob.Create(state), null);
 
                     _remote.SendName(_machine.Name);
                     _remote.SendCoreAction(loadCoreAction);
@@ -77,7 +77,7 @@ namespace CPvC
             _machine.PushRequest(request);
         }
 
-        private void MachineAuditor(MachineAction coreAction)
+        private void MachineAuditor(IMachineAction coreAction)
         {
             _remote.SendCoreAction(coreAction);
         }

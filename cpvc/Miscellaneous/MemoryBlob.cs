@@ -4,9 +4,19 @@
     {
         private byte[] _bytes;
 
-        public MemoryBlob(byte[] bytes)
+        private MemoryBlob(byte[] bytes)
         {
             _bytes = bytes;
+        }
+
+        static public MemoryBlob Create(byte[] bytes)
+        {
+            return new MemoryBlob(bytes);
+        }
+
+        static public MemoryBlob Create(IBlob blob)
+        {
+            return blob == null ? null : Create(blob.GetBytes());
         }
 
         public byte[] GetBytes()
