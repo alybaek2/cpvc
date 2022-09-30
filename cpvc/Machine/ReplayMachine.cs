@@ -327,6 +327,11 @@ namespace CPvC
 
         private MachineRequest ProcessHistoryEvent()
         {
+            if (_historyEventIndex >= _historyEvents.Count)
+            {
+                return null;
+            }
+
             if (_historyEvents[_historyEventIndex] is RootHistoryEvent)
             {
                 Core core = new Core(Core.LatestVersion, Core.Type.CPC6128);
