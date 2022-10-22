@@ -224,8 +224,20 @@
                 </DataTemplate>
             </TabControl.ItemTemplate>
             <TabControl.ContentTemplate>
-                <DataTemplate>  
+                <DataTemplate>
                     <Grid MouseLeftButtonUp="ScreenGrid_MouseLeftButtonUp">
+                        <Grid.Resources>
+                            <converters:Ticks x:Key="ticksConverter" />
+                            <converters:LocalDateTime x:Key="localDateTimeConverter" />
+                            <Style x:Key="GridViewColumnHeaderStyle" TargetType="{x:Type GridViewColumnHeader}">
+                                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                            </Style>
+                            <DataTemplate x:Key="cellTemplate">
+                                <Canvas Width="{Binding ActualWidth, ElementName=_graphColumn, Mode=OneWay}" Height="16" ClipToBounds="True">
+                                    <ContentPresenter Content="{Binding Canvas}" />
+                                </Canvas>
+                            </DataTemplate>
+                        </Grid.Resources>
                         <Rectangle Fill="#7F000000" Stroke="#7F000000" Width="768" Height="576" VerticalAlignment="Top" HorizontalAlignment="Left" Panel.ZIndex="1">
                             <Rectangle.Style>
                                 <Style TargetType="Rectangle">
@@ -265,6 +277,22 @@
                                 </Style>
                             </Grid.Style>
                         </Grid>
+                        <cpvc:HistoryControl History="{Binding History}" Width="200" Height="200" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="{x:Type ListViewItem}">
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Margin" Value="0,-2,0,0"/>
+                                    <Setter Property="Padding" Value="0,0,0,0"/>
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn x:Name="_graphColumn" Header="Graph" Width="150" CellTemplate="{StaticResource cellTemplate}" HeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}" />
+                                    <!--<GridViewColumn Header="Machine time" DisplayMemberBinding="{Binding HistoryEvent.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}" Width="100" HeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}"/>
+                                    <GridViewColumn Header="Date created" DisplayMemberBinding="{Binding HistoryEvent.CreateDate, Converter={StaticResource localDateTimeConverter}, Mode=OneWay}" Width="150" HeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}"/>-->
+                                </GridView>
+                            </ListView.View>
+                        </cpvc:HistoryControl>
                     </Grid>
                 </DataTemplate>
             </TabControl.ContentTemplate>

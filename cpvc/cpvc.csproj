@@ -204,6 +204,7 @@
     <Compile Include="UI\Forms\StartServerWindow.xaml.cs">
       <DependentUpon>StartServerWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UI\HistoryControl.cs" />
     <Compile Include="UI\HistoryViewItem.cs" />
     <Compile Include="UI\MainModel.cs" />
     <Compile Include="UI\MainViewModel.cs" />

@@ -280,6 +280,9 @@ namespace CPvC
                 case HistoryChangedAction.SetCurrent:
                     lines.Add(CurrentCommand(historyEvent.Id));
                     break;
+                case HistoryChangedAction.UpdateCurrent:
+                    // Ignore this!
+                    break;
                 default:
                     throw new ArgumentException("Unknown history action type!", nameof(changeType));
             }

@@ -1,0 +1,422 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+
+namespace CPvC
+{
+    public class HistoryControl : ListView
+    {
+        private History _history;
+
+        private List<HistoryEvent> _horizontalOrdering;
+        private List<HistoryEvent> _verticalOrdering;
+
+        private Dictionary<HistoryEvent, HistoryEvent> _interestingEventParents;
+
+        public static readonly DependencyProperty HistoryProperty =
+            DependencyProperty.Register(
+                "History",
+                typeof(History),
+                typeof(HistoryControl),
+                new PropertyMetadata(null, PropertyChangedCallback));
+
+        public HistoryControl()
+        {
+            _horizontalOrdering = new List<HistoryEvent>();
+            _verticalOrdering = new List<HistoryEvent>();
+            _interestingEventParents = new Dictionary<HistoryEvent, HistoryEvent>();
+        }
+
+        private static void PropertyChangedCallback(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs args)
+        {
+            HistoryControl userControl = (HistoryControl)dependencyObject;
+            userControl.History = (History)args.NewValue;
+        }
+
+        public History History
+        {
+            get
+            {
+                return (History)GetValue(HistoryProperty);
+            }
+
+            set
+            {
+                History h = History;
+                //if (History == value)
+                //{
+                //    return;
+                //}
+
+                _history = value;
+                SetValue(HistoryProperty, value);
+                //return _history;
+
+                value.Auditors += ProcessHistoryChange;
+
+                //_history = History;
+                SetHistory(value);
+            }
+        }
+
+        private class HistoryEventOrdering
+        {
+            private List<HistoryEvent> _historyEvents;
+            private Dictionary<HistoryEvent, HistoryEvent> _historyEventParents;
+
+            private List<HistoryEvent> _verticalOrdering;
+            private List<HistoryEvent> _horizontalOrdering;
+
+            private object _lockObject;
+
+            public HistoryEventOrdering()
+            {
+                _historyEvents = new List<HistoryEvent>();
+                _historyEventParents = new Dictionary<HistoryEvent, HistoryEvent>();
+
+                _verticalOrdering = new List<HistoryEvent>();
+                _horizontalOrdering = new List<HistoryEvent>();
+
+                _lockObject = new object();
+            }
+
+            public void Initialize(RootHistoryEvent rootHistoryEvent)
+            {
+                lock (_lockObject)
+                {
+                    List<HistoryEvent> children = new List<HistoryEvent>();
+
+                    Stack<Tuple<HistoryEvent, HistoryEvent>> events = new Stack<Tuple<HistoryEvent, HistoryEvent>>();
+
+                    _historyEventParents.Clear();
+                    _historyEvents.Clear();
+
+                    _verticalOrdering.Clear();
+                    _horizontalOrdering.Clear();
+
+                    events.Push(new Tuple<HistoryEvent, HistoryEvent>(rootHistoryEvent, null));
+                    while (events.Any())
+                    {
+                        (HistoryEvent e, HistoryEvent parent) = events.Pop();
+
+                        HistoryEvent newParent = parent;
+                        if (InterestingEvent(e))
+                        {
+                            _horizontalOrdering.Add(e);
+                            _verticalOrdering.Add(e);
+                            _historyEventParents.Add(e, parent);
+                            newParent = e;
+                        }
+
+                        children.Clear();
+                        children.AddRange(e.Children);
+                        children.Sort((x, y) => x.GetMaxDescendentTicks().CompareTo(y.GetMaxDescendentTicks()));
+
+                        foreach (HistoryEvent child in children)
+                        {
+                            events.Push(new Tuple<HistoryEvent, HistoryEvent>(child, newParent));
+                        }
+                    }
+
+                    _verticalOrdering.Sort(VerticalSort);
+                }
+            }
+        }
+
+        public void ProcessHistoryChange(HistoryEvent e, HistoryChangedAction action)
+        {
+            switch (action)
+            {
+                case HistoryChangedAction.Add:
+                case HistoryChangedAction.DeleteBranch:
+                case HistoryChangedAction.DeleteBookmark:
+                case HistoryChangedAction.UpdateCurrent:
+                    Update(e);
+                    break;
+            }
+        }
+
+        public void SetHistory(History history)
+        {
+            //_history = history;
+            GenerateTree();
+        }
+
+        public void GenerateTree()
+        {
+            List<HistoryEvent> children = new List<HistoryEvent>();
+
+            Stack<Tuple<HistoryEvent, HistoryEvent>> events = new Stack<Tuple<HistoryEvent, HistoryEvent>>();
+
+            _interestingEventParents.Clear();
+
+            List<HistoryEvent> verticalOrdering = new List<HistoryEvent>();
+            List<HistoryEvent> horizontalOrdering = new List<HistoryEvent>();
+
+            //_verticalOrdering.Clear();
+            //_horizontalOrdering.Clear();
+
+            events.Push(new Tuple<HistoryEvent, HistoryEvent>(_history.RootEvent, null));
+            while (events.Any())
+            {
+                (HistoryEvent e, HistoryEvent parent) = events.Pop();
+
+                HistoryEvent newParent = parent;
+                if (InterestingEvent(e))
+                {
+                    horizontalOrdering.Add(e);
+                    verticalOrdering.Add(e);
+                    _interestingEventParents.Add(e, parent);
+                    newParent = e;
+                }
+
+                children.Clear();
+                children.AddRange(e.Children);
+                children.Sort((x, y) => x.GetMaxDescendentTicks().CompareTo(y.GetMaxDescendentTicks()));
+
+                foreach (HistoryEvent child in children)
+                {
+                    events.Push(new Tuple<HistoryEvent, HistoryEvent>(child, newParent));
+                }
+            }
+
+            verticalOrdering.Sort(VerticalSort);
+
+
+            _verticalOrdering = verticalOrdering;
+            _horizontalOrdering = horizontalOrdering;
+
+
+
+
+
+            ////HistoryViewItem vi = new HistoryViewItem(History.RootEvent);
+            ////vi.Events.Add(History.RootEvent);
+            ////vi.Draw(null, History.RootEvent);
+            //Items.Clear();
+            ////Items.Add(vi);
+
+            ////foreach (HistoryViewItem hvi in historyItems)
+            ////{
+            ////    Items.Add(hvi);
+            ////}
+
+            //// Draw items to their respective canvasses.
+            //HistoryViewItem next = null;
+            //for (int i = historyItems.Count - 1; i >= 0; i--)
+            //{
+            //    HistoryViewItem item = historyItems[i];
+            //    Items.Add(item);
+            //    item.Draw(next, History.CurrentEvent);
+
+            //    next = item;
+            //}
+
+            Action action = new Action(() => SetItems(verticalOrdering, horizontalOrdering));
+            Dispatcher.BeginInvoke(action, null);
+
+
+        }
+
+        public void SetItems(List<HistoryEvent> verticalOrdering, List<HistoryEvent> horizontalOrdering)
+        {
+            lock (_verticalOrdering)
+            {
+                lock (_horizontalOrdering)
+                {
+
+                    _verticalOrdering = verticalOrdering;
+                    _horizontalOrdering = horizontalOrdering;
+
+
+                    Dictionary<HistoryEvent, int> horizontalLookup = new Dictionary<HistoryEvent, int>();
+                    Dictionary<HistoryEvent, int> verticalLookup = new Dictionary<HistoryEvent, int>();
+
+                    for (int i = 0; i < _horizontalOrdering.Count; i++)
+                    {
+                        horizontalLookup[_horizontalOrdering[i]] = i;
+                    }
+
+                    for (int i = 0; i < _verticalOrdering.Count; i++)
+                    {
+                        verticalLookup[_verticalOrdering[i]] = i;
+                    }
+
+                    List<HistoryViewItem> historyItems = new List<HistoryViewItem>();
+                    HistoryViewItem previousViewItem = null;
+
+                    for (int v = 0; v < _verticalOrdering.Count; v++)
+                    {
+                        HistoryViewItem viewItem = new HistoryViewItem(_verticalOrdering[v]);
+
+                        // Add events; either "passthrough" events, or the actual event for this HistoryViewItem.
+                        for (int h = 0; h < _horizontalOrdering.Count; h++)
+                        {
+                            int verticalHorizontalIndex = verticalLookup[_horizontalOrdering[h]];
+                            int previousVerticalIndex = -1;
+
+                            if (_interestingEventParents.TryGetValue(_horizontalOrdering[h], out HistoryEvent previousEvent) && previousEvent != null)
+                            {
+                                previousVerticalIndex = verticalLookup[previousEvent];
+                            }
+
+                            if (previousVerticalIndex < v && v <= verticalHorizontalIndex)
+                            {
+                                int hindex = viewItem.Events.Count;
+                                if (previousViewItem != null)
+                                {
+                                    int prevIndex = previousViewItem.Events.FindIndex(x => x == _horizontalOrdering[h]);
+                                    if (prevIndex == -1)
+                                    {
+                                        prevIndex = previousViewItem.Events.FindIndex(x => x == previousEvent);
+                                    }
+
+                                    if (prevIndex != -1)
+                                    {
+                                        if (hindex < prevIndex)
+                                        {
+                                            for (int g = 0; g < prevIndex - hindex; g++)
+                                            {
+                                                viewItem.Events.Add(null);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                viewItem.Events.Add(_horizontalOrdering[h]);
+                            }
+                        }
+
+                        historyItems.Add(viewItem);
+
+                        previousViewItem = viewItem;
+                    }
+
+                    //HistoryViewItem vi = new HistoryViewItem(History.RootEvent);
+                    //vi.Events.Add(History.RootEvent);
+                    //vi.Draw(null, History.RootEvent);
+                    Items.Clear();
+                    //Items.Add(vi);
+
+                    //foreach (HistoryViewItem hvi in historyItems)
+                    //{
+                    //    Items.Add(hvi);
+                    //}
+
+                    // Draw items to their respective canvasses.
+                    HistoryViewItem next = null;
+                    for (int i = historyItems.Count - 1; i >= 0; i--)
+                    {
+                        HistoryViewItem item = historyItems[i];
+                        Items.Add(item);
+                        item.Draw(next, _history.CurrentEvent);
+
+                        next = item;
+                    }
+                }
+            }
+        }
+
+        public bool Update(HistoryEvent e)
+        {
+            if (!InterestingEvent(e))
+            {
+                return false;
+            }
+
+            lock (_verticalOrdering)
+            {
+                lock (_horizontalOrdering)
+                {
+                    // Has the vertical ordering changed?
+                    int verticalPosition = _verticalOrdering.FindIndex(x => x == e);
+                    if (verticalPosition == -1)
+                    {
+                        // Should really notify open history events and pass a paramter saying if its open or not?
+
+                        GenerateTree();
+                        return true;
+                        //throw new Exception("No vertical position found");
+                    }
+
+                    bool change = false;
+                    if (verticalPosition >= 1)
+                    {
+                        HistoryEvent previousEvent = _verticalOrdering[verticalPosition - 1];
+                        if (VerticalSort(previousEvent, e) > 0)
+                        {
+                            change = true;
+                        }
+                    }
+
+                    if (verticalPosition < (_verticalOrdering.Count - 1))
+                    {
+                        HistoryEvent previousEvent = _verticalOrdering[verticalPosition + 1];
+                        if (VerticalSort(previousEvent, e) < 0)
+                        {
+                            change = true;
+                        }
+                    }
+
+                    if (!change)
+                    {
+                        return false;
+                    }
+
+                    GenerateTree();
+                }
+            }
+
+            return true;
+        }
+
+        static private int VerticalSort(HistoryEvent x, HistoryEvent y)
+        {
+            if (x.Ticks < y.Ticks)
+            {
+                return -1;
+            }
+            else if (x.Ticks > y.Ticks)
+            {
+                return 1;
+            }
+            else
+            {
+                if (x.IsEqualToOrAncestorOf(y))
+                {
+                    return -1;
+                }
+                else if (y.IsEqualToOrAncestorOf(x))
+                {
+                    return 1;
+                }
+            }
+
+            return 0;
+        }
+
+        static private bool InterestingEvent(HistoryEvent historyEvent)
+        {
+            bool interested = false;
+            if (historyEvent is RootHistoryEvent)
+            {
+                interested = true;
+            }
+            else if (historyEvent is BookmarkHistoryEvent)
+            {
+                interested = true;
+            }
+            else if (historyEvent.Children.Count != 1)
+            {
+                interested = true;
+            }
+
+            return interested;
+        }
+
+    }
+}

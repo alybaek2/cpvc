@@ -220,9 +220,6 @@ namespace CPvC.UI
                 }
             }
 
-            Dictionary<HistoryEvent, int> horizontalLookup = new Dictionary<HistoryEvent, int>();
-            Dictionary<HistoryEvent, int> verticalLookup = new Dictionary<HistoryEvent, int>();
-
             verticalOrdering = new List<HistoryEvent>(horizontalOrdering);
             verticalOrdering.Sort((x, y) =>
             {
@@ -248,6 +245,9 @@ namespace CPvC.UI
 
                 return 0;
             });
+
+            Dictionary<HistoryEvent, int> horizontalLookup = new Dictionary<HistoryEvent, int>();
+            Dictionary<HistoryEvent, int> verticalLookup = new Dictionary<HistoryEvent, int>();
 
             for (int i = 0; i < horizontalOrdering.Count; i++)
             {

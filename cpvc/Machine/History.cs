@@ -8,7 +8,8 @@ namespace CPvC
         Add,
         DeleteBookmark,
         DeleteBranch,
-        SetCurrent
+        SetCurrent,
+        UpdateCurrent
     }
 
 
@@ -75,6 +76,8 @@ namespace CPvC
                     currentCoreActionNode.CoreAction is RunUntilAction currentCoreAction)
                 {
                     currentCoreAction.StopTicks = runUntilAction.StopTicks;
+
+                    Auditors?.Invoke(_currentNode.HistoryEvent, HistoryChangedAction.UpdateCurrent);
 
                     return currentCoreActionNode.HistoryEvent as CoreActionHistoryEvent;
                 }
