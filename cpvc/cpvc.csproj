@@ -206,6 +206,7 @@
     </Compile>
     <Compile Include="UI\HistoryControl.cs" />
     <Compile Include="UI\HistoryViewItem.cs" />
+    <Compile Include="UI\ListTree.cs" />
     <Compile Include="UI\MainModel.cs" />
     <Compile Include="UI\MainViewModel.cs" />
     <Compile Include="UI\RemoteViewModel.cs" />

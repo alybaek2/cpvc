@@ -63,6 +63,22 @@ namespace CPvC
             }
         }
 
+        public class HistoryOrderingEventArgs : EventArgs
+        {
+            public HistoryOrderingEventArgs()
+            {
+            }
+
+            public HistoryEvent VerticalEvent { get; set; }
+            public int OldVerticalIndex { get; set; }
+            public int NewVerticalIndex { get; set; }
+
+            //public List<HistoryEvent> HorizontalEvents { get; set; }
+            public List<int> HorizonalIndices { get; set; }
+        }
+
+        public delegate void HistoryOrderingEventHandler(object sender, PromptForBookmarkEventArgs e);
+
         private class HistoryEventOrdering
         {
             private List<HistoryEvent> _historyEvents;
@@ -72,6 +88,8 @@ namespace CPvC
             private List<HistoryEvent> _horizontalOrdering;
 
             private object _lockObject;
+
+            public event HistoryOrderingEventHandler SomethingChanged;
 
             public HistoryEventOrdering()
             {
@@ -124,6 +142,49 @@ namespace CPvC
 
                     _verticalOrdering.Sort(VerticalSort);
                 }
+            }
+
+            public void AddHistoryEvent(HistoryEvent historyEvent)
+            {
+                HistoryEvent parentHistoryEvent = historyEvent.Parent;
+                if (_historyEvents.Contains(parentHistoryEvent))
+                {
+                    // This event may no longer be interesting!
+                    if (!InterestingEvent(parentHistoryEvent))
+                    {
+                        // Not any more!
+                    }
+                }
+
+
+                int parentHistoryEventIndex = GetVerticalIndex(parentHistoryEvent);
+
+
+            }
+
+            public void UpdateHistoryEvent(HistoryEvent historyEvent)
+            {
+
+            }
+
+            public void DeleteHistoryEvent(HistoryEvent historyEvent, bool recursive)
+            {
+
+            }
+
+            public HistoryEvent GetParentEvent(HistoryEvent historyEvent)
+            {
+                return _historyEventParents[historyEvent];
+            }
+
+            public int GetVerticalIndex(HistoryEvent historyEvent)
+            {
+                return _verticalOrdering.FindIndex(x => ReferenceEquals(x, historyEvent));
+            }
+
+            public int GetHorizontalIndex(HistoryEvent historyEvent)
+            {
+                return _horizontalOrdering.FindIndex(x => ReferenceEquals(x, historyEvent));
             }
         }
 
