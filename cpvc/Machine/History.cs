@@ -251,7 +251,7 @@ namespace CPvC
 
         private void Notify(HistoryEvent historyEvent, HistoryChangedAction action)
         {
-            if (IsClosedEvent(historyEvent))
+            //if (IsClosedEvent(historyEvent))
             {
                 Auditors?.Invoke(historyEvent, action);
             }

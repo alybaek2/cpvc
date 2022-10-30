@@ -17,6 +17,10 @@ namespace CPvC
 
         private Dictionary<HistoryEvent, HistoryEvent> _interestingEventParents;
 
+        private ListTree<HistoryEvent> _listTree;
+        private Dictionary<HistoryEvent, ListTreeNode<HistoryEvent>> _eventToNodeMap;
+        private HistoryViewNodeList _nodeList;
+
         public static readonly DependencyProperty HistoryProperty =
             DependencyProperty.Register(
                 "History",
@@ -29,6 +33,8 @@ namespace CPvC
             _horizontalOrdering = new List<HistoryEvent>();
             _verticalOrdering = new List<HistoryEvent>();
             _interestingEventParents = new Dictionary<HistoryEvent, HistoryEvent>();
+            _eventToNodeMap = new Dictionary<HistoryEvent, ListTreeNode<HistoryEvent>>();
+            _nodeList = new HistoryViewNodeList();
         }
 
         private static void PropertyChangedCallback(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs args)
@@ -190,13 +196,39 @@ namespace CPvC
 
         public void ProcessHistoryChange(HistoryEvent e, HistoryChangedAction action)
         {
+            if (!_eventToNodeMap.ContainsKey(e) && action != HistoryChangedAction.Add)
+            {
+                // Warning! Need to fix this!
+                return;
+            }
+
+            Update(e);
+
             switch (action)
             {
                 case HistoryChangedAction.Add:
+                    {
+                        //ListTree<HistoryEvent> parentNode = null;
+                        HistoryEvent p = e.Parent;
+
+                        while (!_eventToNodeMap.ContainsKey(p))
+                        {
+                            p = p.Parent;
+                        }
+
+
+                        _listTree.AddNode(_eventToNodeMap[p], _eventToNodeMap[e]);
+                    }
+                    break;
                 case HistoryChangedAction.DeleteBranch:
+                    _listTree.DeleteNode(_eventToNodeMap[e], true);
+                    break;
                 case HistoryChangedAction.DeleteBookmark:
+                    _listTree.DeleteNode(_eventToNodeMap[e], false);
+                    break;
                 case HistoryChangedAction.UpdateCurrent:
-                    Update(e);
+                    _listTree.UpdateNode(_eventToNodeMap[e]);
+                    //Update(e);
                     break;
             }
         }
@@ -207,11 +239,24 @@ namespace CPvC
             GenerateTree();
         }
 
+        private int HorizontalSort(HistoryEvent x, HistoryEvent y)
+        {
+            return x.GetMaxDescendentTicks().CompareTo(y.GetMaxDescendentTicks());
+        }
+
         public void GenerateTree()
         {
+            //Stack<HistoryEvent> events2 = new Stack<HistoryEvent>();
+            //events2.
+
+
+
+
+            //ListTreeNode<HistoryEvent> root = new ListTreeNode<HistoryEvent>(_history.RootEvent, null);
+
             List<HistoryEvent> children = new List<HistoryEvent>();
 
-            Stack<Tuple<HistoryEvent, HistoryEvent>> events = new Stack<Tuple<HistoryEvent, HistoryEvent>>();
+            Stack<Tuple<HistoryEvent, ListTreeNode<HistoryEvent>>> events = new Stack<Tuple<HistoryEvent, ListTreeNode<HistoryEvent>>>();
 
             _interestingEventParents.Clear();
 
@@ -220,19 +265,37 @@ namespace CPvC
 
             //_verticalOrdering.Clear();
             //_horizontalOrdering.Clear();
+            _eventToNodeMap = new Dictionary<HistoryEvent, ListTreeNode<HistoryEvent>>();
 
-            events.Push(new Tuple<HistoryEvent, HistoryEvent>(_history.RootEvent, null));
+            ListTreeNode<HistoryEvent> root = null;
+
+            events.Push(new Tuple<HistoryEvent, ListTreeNode<HistoryEvent>>(_history.RootEvent, null)); // root));
             while (events.Any())
             {
-                (HistoryEvent e, HistoryEvent parent) = events.Pop();
+                (HistoryEvent e, ListTreeNode<HistoryEvent> parentNode) = events.Pop();
 
-                HistoryEvent newParent = parent;
-                if (InterestingEvent(e))
+                _nodeList.Add(e);
+
+                ListTreeNode<HistoryEvent> newParent = parentNode;
+                if (InterestingEvent(e)) // && !(e is RootHistoryEvent))
                 {
+                    ListTreeNode<HistoryEvent> node = new ListTreeNode<HistoryEvent>(e, null);
+                    node.Parent = newParent;
+                    if (newParent != null)
+                    {
+                        newParent.Children.Add(node);
+                    }
+                    _eventToNodeMap.Add(e, node);
+
+                    if (e is RootHistoryEvent)
+                    {
+                        root = node;
+                    }
+
                     horizontalOrdering.Add(e);
                     verticalOrdering.Add(e);
-                    _interestingEventParents.Add(e, parent);
-                    newParent = e;
+                    _interestingEventParents.Add(e, newParent?.Obj);
+                    newParent = node;
                 }
 
                 children.Clear();
@@ -241,7 +304,7 @@ namespace CPvC
 
                 foreach (HistoryEvent child in children)
                 {
-                    events.Push(new Tuple<HistoryEvent, HistoryEvent>(child, newParent));
+                    events.Push(new Tuple<HistoryEvent, ListTreeNode<HistoryEvent>>(child, newParent));
                 }
             }
 
@@ -252,7 +315,7 @@ namespace CPvC
             _horizontalOrdering = horizontalOrdering;
 
 
-
+            _listTree = new ListTree<HistoryEvent>(root, VerticalSort, HorizontalSort);
 
 
             ////HistoryViewItem vi = new HistoryViewItem(History.RootEvent);

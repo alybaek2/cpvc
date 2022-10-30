@@ -109,6 +109,12 @@ namespace CPvC
 
         private void HistoryEventHappened(HistoryEvent historyEvent, HistoryChangedAction changeAction)
         {
+            // This may not be the best way to do this... are there any better alternatives?
+            if (!History.IsClosedEvent(historyEvent))
+            {
+                return;
+            }
+
             List<string> lines = GetLines(historyEvent, changeAction);
 
             foreach (string line in lines)
