@@ -20,7 +20,7 @@ namespace CPvC
 
         private HashSet<HistoryNode> _nodes;
 
-        public delegate void HistoryEventDelegate(HistoryEvent historyEvent, HistoryChangedAction changeAction);
+        public delegate void HistoryEventDelegate(HistoryEvent historyEvent, HistoryEvent formerParentEvent, HistoryChangedAction changeAction);
 
         public HistoryEventDelegate Auditors;
 
@@ -77,7 +77,7 @@ namespace CPvC
                 {
                     currentCoreAction.StopTicks = runUntilAction.StopTicks;
 
-                    Auditors?.Invoke(_currentNode.HistoryEvent, HistoryChangedAction.UpdateCurrent);
+                    Auditors?.Invoke(_currentNode.HistoryEvent, null, HistoryChangedAction.UpdateCurrent);
 
                     return currentCoreActionNode.HistoryEvent as CoreActionHistoryEvent;
                 }
@@ -153,7 +153,7 @@ namespace CPvC
                 nodesToRemove.RemoveAt(0);
             }
 
-            Notify(historyEvent, HistoryChangedAction.DeleteBranch);
+            Notify(historyEvent, parent.HistoryEvent, HistoryChangedAction.DeleteBranch);
 
             return true;
         }
@@ -184,9 +184,10 @@ namespace CPvC
 
             historyNode.Children.Clear();
             historyNode.Parent.Children.Remove(historyNode);
+            HistoryEvent oldParentEvent = historyNode.Parent.HistoryEvent;
             historyNode.Parent = null;
 
-            Notify(historyEvent, HistoryChangedAction.DeleteBookmark);
+            Notify(historyEvent, oldParentEvent, HistoryChangedAction.DeleteBookmark);
 
             return true;
         }
@@ -225,11 +226,11 @@ namespace CPvC
 
                 if (currentCoreActionNode != null && currentCoreActionNode.CoreAction is RunUntilAction)
                 {
-                    Notify(currentCoreActionNode.HistoryEvent, HistoryChangedAction.Add);
+                    Notify(currentCoreActionNode.HistoryEvent, null, HistoryChangedAction.Add);
                 }
 
 
-                Notify(_currentNode.HistoryEvent, HistoryChangedAction.SetCurrent);
+                Notify(_currentNode.HistoryEvent, null, HistoryChangedAction.SetCurrent);
             }
         }
 
@@ -241,19 +242,19 @@ namespace CPvC
 
             if (notifyCurrent)
             {
-                Notify(_currentNode.HistoryEvent, HistoryChangedAction.Add);
+                Notify(_currentNode.HistoryEvent, null, HistoryChangedAction.Add);
             }
 
             _currentNode = historyNode;
 
-            Notify(historyNode.HistoryEvent, HistoryChangedAction.Add);
+            Notify(historyNode.HistoryEvent, null, HistoryChangedAction.Add);
         }
 
-        private void Notify(HistoryEvent historyEvent, HistoryChangedAction action)
+        private void Notify(HistoryEvent historyEvent, HistoryEvent formerParentEvent, HistoryChangedAction action)
         {
             //if (IsClosedEvent(historyEvent))
             {
-                Auditors?.Invoke(historyEvent, action);
+                Auditors?.Invoke(historyEvent, formerParentEvent, action);
             }
         }
     }

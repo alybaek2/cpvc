@@ -12,13 +12,13 @@ namespace CPvC
     {
         private History _history;
 
-        private List<HistoryEvent> _horizontalOrdering;
-        private List<HistoryEvent> _verticalOrdering;
+        //private List<HistoryEvent> _horizontalOrdering;
+        //private List<HistoryEvent> _verticalOrdering;
 
-        private Dictionary<HistoryEvent, HistoryEvent> _interestingEventParents;
+        //private Dictionary<HistoryEvent, HistoryEvent> _interestingEventParents;
 
-        private ListTree<HistoryEvent> _listTree;
-        private Dictionary<HistoryEvent, ListTreeNode<HistoryEvent>> _eventToNodeMap;
+        //private ListTree<HistoryEvent> _listTree;
+        //private Dictionary<HistoryEvent, ListTreeNode<HistoryEvent>> _eventToNodeMap;
         private HistoryViewNodeList _nodeList;
 
         public static readonly DependencyProperty HistoryProperty =
@@ -30,10 +30,10 @@ namespace CPvC
 
         public HistoryControl()
         {
-            _horizontalOrdering = new List<HistoryEvent>();
-            _verticalOrdering = new List<HistoryEvent>();
-            _interestingEventParents = new Dictionary<HistoryEvent, HistoryEvent>();
-            _eventToNodeMap = new Dictionary<HistoryEvent, ListTreeNode<HistoryEvent>>();
+            //_horizontalOrdering = new List<HistoryEvent>();
+            //_verticalOrdering = new List<HistoryEvent>();
+            //_interestingEventParents = new Dictionary<HistoryEvent, HistoryEvent>();
+            //_eventToNodeMap = new Dictionary<HistoryEvent, ListTreeNode<HistoryEvent>>();
             _nodeList = new HistoryViewNodeList();
         }
 
@@ -194,49 +194,60 @@ namespace CPvC
             }
         }
 
-        public void ProcessHistoryChange(HistoryEvent e, HistoryChangedAction action)
+        public void ProcessHistoryChange(HistoryEvent e, HistoryEvent formerParentEvent, HistoryChangedAction action)
         {
-            if (!_eventToNodeMap.ContainsKey(e) && action != HistoryChangedAction.Add)
-            {
-                // Warning! Need to fix this!
-                return;
-            }
+            //if (!_eventToNodeMap.ContainsKey(e) && action != HistoryChangedAction.Add)
+            //{
+            //    // Warning! Need to fix this!
+            //    return;
+            //}
 
-            Update(e);
 
             switch (action)
             {
                 case HistoryChangedAction.Add:
                     {
                         //ListTree<HistoryEvent> parentNode = null;
-                        HistoryEvent p = e.Parent;
+                        //HistoryEvent p = e.Parent;
 
-                        while (!_eventToNodeMap.ContainsKey(p))
-                        {
-                            p = p.Parent;
-                        }
+                        //while (!_eventToNodeMap.ContainsKey(p))
+                        //{
+                        //    p = p.Parent;
+                        //}
 
 
-                        _listTree.AddNode(_eventToNodeMap[p], _eventToNodeMap[e]);
+                        //_listTree.AddNode(_eventToNodeMap[p], _eventToNodeMap[e]);
+
+                        _nodeList.Add(e);
+
                     }
                     break;
                 case HistoryChangedAction.DeleteBranch:
-                    _listTree.DeleteNode(_eventToNodeMap[e], true);
+                    //_listTree.DeleteNode(_eventToNodeMap[e], true);
+                    _nodeList.Delete(e, formerParentEvent, true);
                     break;
                 case HistoryChangedAction.DeleteBookmark:
-                    _listTree.DeleteNode(_eventToNodeMap[e], false);
+                    //_listTree.DeleteNode(_eventToNodeMap[e], false);
+                    _nodeList.Delete(e, formerParentEvent, false);
                     break;
                 case HistoryChangedAction.UpdateCurrent:
-                    _listTree.UpdateNode(_eventToNodeMap[e]);
+                    //_listTree.UpdateNode(_eventToNodeMap[e]);
+                    _nodeList.Update(e);
                     //Update(e);
                     break;
             }
+
+            Update(e);
         }
 
         public void SetHistory(History history)
         {
             //_history = history;
+            CPvC.Diagnostics.Trace("SetHistory: rebuilding whole tree!");
+
             GenerateTree();
+            _nodeList.Add(_history.RootEvent);
+
         }
 
         private int HorizontalSort(HistoryEvent x, HistoryEvent y)
@@ -258,64 +269,71 @@ namespace CPvC
 
             Stack<Tuple<HistoryEvent, ListTreeNode<HistoryEvent>>> events = new Stack<Tuple<HistoryEvent, ListTreeNode<HistoryEvent>>>();
 
-            _interestingEventParents.Clear();
+            //_interestingEventParents.Clear();
 
-            List<HistoryEvent> verticalOrdering = new List<HistoryEvent>();
-            List<HistoryEvent> horizontalOrdering = new List<HistoryEvent>();
+            //List<HistoryEvent> verticalOrdering = new List<HistoryEvent>();
+            //List<HistoryEvent> horizontalOrdering = new List<HistoryEvent>();
 
-            //_verticalOrdering.Clear();
-            //_horizontalOrdering.Clear();
-            _eventToNodeMap = new Dictionary<HistoryEvent, ListTreeNode<HistoryEvent>>();
-
-            ListTreeNode<HistoryEvent> root = null;
-
-            events.Push(new Tuple<HistoryEvent, ListTreeNode<HistoryEvent>>(_history.RootEvent, null)); // root));
-            while (events.Any())
-            {
-                (HistoryEvent e, ListTreeNode<HistoryEvent> parentNode) = events.Pop();
-
-                _nodeList.Add(e);
-
-                ListTreeNode<HistoryEvent> newParent = parentNode;
-                if (InterestingEvent(e)) // && !(e is RootHistoryEvent))
-                {
-                    ListTreeNode<HistoryEvent> node = new ListTreeNode<HistoryEvent>(e, null);
-                    node.Parent = newParent;
-                    if (newParent != null)
-                    {
-                        newParent.Children.Add(node);
-                    }
-                    _eventToNodeMap.Add(e, node);
-
-                    if (e is RootHistoryEvent)
-                    {
-                        root = node;
-                    }
-
-                    horizontalOrdering.Add(e);
-                    verticalOrdering.Add(e);
-                    _interestingEventParents.Add(e, newParent?.Obj);
-                    newParent = node;
-                }
-
-                children.Clear();
-                children.AddRange(e.Children);
-                children.Sort((x, y) => x.GetMaxDescendentTicks().CompareTo(y.GetMaxDescendentTicks()));
-
-                foreach (HistoryEvent child in children)
-                {
-                    events.Push(new Tuple<HistoryEvent, ListTreeNode<HistoryEvent>>(child, newParent));
-                }
-            }
-
-            verticalOrdering.Sort(VerticalSort);
+            //_eventToNodeMap = new Dictionary<HistoryEvent, ListTreeNode<HistoryEvent>>();
 
 
-            _verticalOrdering = verticalOrdering;
-            _horizontalOrdering = horizontalOrdering;
+            //ListTreeNode<HistoryEvent> root = null;
+
+            //events.Push(new Tuple<HistoryEvent, ListTreeNode<HistoryEvent>>(_history.RootEvent, null)); // root));
+            //while (events.Any())
+            //{
+            //    (HistoryEvent e, ListTreeNode<HistoryEvent> parentNode) = events.Pop();
+
+            //    //_nodeList.Add(e);
+
+            //    ListTreeNode<HistoryEvent> newParent = parentNode;
+            //    if (InterestingEvent(e)) // && !(e is RootHistoryEvent))
+            //    {
+            //        ListTreeNode<HistoryEvent> node = new ListTreeNode<HistoryEvent>(e, null);
+            //        node.Parent = newParent;
+            //        if (newParent != null)
+            //        {
+            //            newParent.Children.Add(node);
+            //        }
+            //        _eventToNodeMap.Add(e, node);
+
+            //        if (e is RootHistoryEvent)
+            //        {
+            //            root = node;
+            //        }
+
+            //        horizontalOrdering.Add(e);
+            //        verticalOrdering.Add(e);
+            //        _interestingEventParents.Add(e, newParent?.Obj);
+            //        newParent = node;
+            //    }
+
+            //    children.Clear();
+            //    children.AddRange(e.Children);
+            //    children.Sort((x, y) => x.GetMaxDescendentTicks().CompareTo(y.GetMaxDescendentTicks()));
+
+            //    foreach (HistoryEvent child in children)
+            //    {
+            //        events.Push(new Tuple<HistoryEvent, ListTreeNode<HistoryEvent>>(child, newParent));
+            //    }
+            //}
+
+            //verticalOrdering.Sort(VerticalSort);
 
 
-            _listTree = new ListTree<HistoryEvent>(root, VerticalSort, HorizontalSort);
+            //_verticalOrdering = verticalOrdering;
+            //_horizontalOrdering = horizontalOrdering;
+
+            List<HistoryEvent> hz = _nodeList.SortHorizontally(_history.RootEvent);
+            List<HistoryEvent> vt = _nodeList.NodeList.ToList();
+
+            CPvC.Diagnostics.Trace("[GenerateTree] Horizontal Ordering count {0}", hz.Count);
+            CPvC.Diagnostics.Trace("[GenerateTree] Vertictal Ordering count {0}", vt.Count);
+
+            //_verticalOrdering = vt;
+            //_horizontalOrdering = hz;
+
+            //_listTree = new ListTree<HistoryEvent>(_history.RootEvent, VerticalSort, HorizontalSort);
 
 
             ////HistoryViewItem vi = new HistoryViewItem(History.RootEvent);
@@ -340,7 +358,7 @@ namespace CPvC
             //    next = item;
             //}
 
-            Action action = new Action(() => SetItems(verticalOrdering, horizontalOrdering));
+            Action action = new Action(() => SetItems(vt, hz));
             Dispatcher.BeginInvoke(action, null);
 
 
@@ -348,100 +366,107 @@ namespace CPvC
 
         public void SetItems(List<HistoryEvent> verticalOrdering, List<HistoryEvent> horizontalOrdering)
         {
-            lock (_verticalOrdering)
+            Dictionary<HistoryEvent, int> horizontalLookup = new Dictionary<HistoryEvent, int>();
+            Dictionary<HistoryEvent, int> verticalLookup = new Dictionary<HistoryEvent, int>();
+
+            for (int i = 0; i < horizontalOrdering.Count; i++)
             {
-                lock (_horizontalOrdering)
+                horizontalLookup[horizontalOrdering[i]] = i;
+            }
+
+            for (int i = 0; i < verticalOrdering.Count; i++)
+            {
+                verticalLookup[verticalOrdering[i]] = i;
+            }
+
+            List<HistoryViewItem> historyItems = new List<HistoryViewItem>();
+            HistoryViewItem previousViewItem = null;
+
+            for (int v = 0; v < verticalOrdering.Count; v++)
+            {
+                HistoryViewItem viewItem = new HistoryViewItem(verticalOrdering[v]);
+
+                // Add events; either "passthrough" events, or the actual event for this HistoryViewItem.
+                for (int h = 0; h < horizontalOrdering.Count; h++)
                 {
-
-                    _verticalOrdering = verticalOrdering;
-                    _horizontalOrdering = horizontalOrdering;
-
-
-                    Dictionary<HistoryEvent, int> horizontalLookup = new Dictionary<HistoryEvent, int>();
-                    Dictionary<HistoryEvent, int> verticalLookup = new Dictionary<HistoryEvent, int>();
-
-                    for (int i = 0; i < _horizontalOrdering.Count; i++)
+                    if (!verticalLookup.ContainsKey(horizontalOrdering[h]))
                     {
-                        horizontalLookup[_horizontalOrdering[i]] = i;
+                        // THis is usually the current node! WHy is it not in the vertical lookup??
+                        continue;
                     }
 
-                    for (int i = 0; i < _verticalOrdering.Count; i++)
+                    int verticalHorizontalIndex = verticalLookup[horizontalOrdering[h]];
+                    int previousVerticalIndex = -1;
+
+                    HistoryEvent previousEvent = horizontalOrdering[h].Parent;
+                    while (previousEvent != null)
                     {
-                        verticalLookup[_verticalOrdering[i]] = i;
-                    }
-
-                    List<HistoryViewItem> historyItems = new List<HistoryViewItem>();
-                    HistoryViewItem previousViewItem = null;
-
-                    for (int v = 0; v < _verticalOrdering.Count; v++)
-                    {
-                        HistoryViewItem viewItem = new HistoryViewItem(_verticalOrdering[v]);
-
-                        // Add events; either "passthrough" events, or the actual event for this HistoryViewItem.
-                        for (int h = 0; h < _horizontalOrdering.Count; h++)
+                        if (verticalLookup.ContainsKey(previousEvent))
                         {
-                            int verticalHorizontalIndex = verticalLookup[_horizontalOrdering[h]];
-                            int previousVerticalIndex = -1;
+                            previousVerticalIndex = verticalLookup[previousEvent];
+                            break;
+                        }
 
-                            if (_interestingEventParents.TryGetValue(_horizontalOrdering[h], out HistoryEvent previousEvent) && previousEvent != null)
+                        previousEvent = previousEvent.Parent;
+                    }
+
+                    //if (_interestingEventParents.TryGetValue(horizontalOrdering[h], out HistoryEvent previousEvent) && previousEvent != null)
+                    //{
+                    //    previousVerticalIndex = verticalLookup[previousEvent];
+                    //}
+
+                    if (previousVerticalIndex < v && v <= verticalHorizontalIndex)
+                    {
+                        int hindex = viewItem.Events.Count;
+                        if (previousViewItem != null)
+                        {
+                            int prevIndex = previousViewItem.Events.FindIndex(x => x == horizontalOrdering[h]);
+                            if (prevIndex == -1)
                             {
-                                previousVerticalIndex = verticalLookup[previousEvent];
+                                prevIndex = previousViewItem.Events.FindIndex(x => x == previousEvent);
                             }
 
-                            if (previousVerticalIndex < v && v <= verticalHorizontalIndex)
+                            if (prevIndex != -1)
                             {
-                                int hindex = viewItem.Events.Count;
-                                if (previousViewItem != null)
+                                if (hindex < prevIndex)
                                 {
-                                    int prevIndex = previousViewItem.Events.FindIndex(x => x == _horizontalOrdering[h]);
-                                    if (prevIndex == -1)
+                                    for (int g = 0; g < prevIndex - hindex; g++)
                                     {
-                                        prevIndex = previousViewItem.Events.FindIndex(x => x == previousEvent);
-                                    }
-
-                                    if (prevIndex != -1)
-                                    {
-                                        if (hindex < prevIndex)
-                                        {
-                                            for (int g = 0; g < prevIndex - hindex; g++)
-                                            {
-                                                viewItem.Events.Add(null);
-                                            }
-                                        }
+                                        viewItem.Events.Add(null);
                                     }
                                 }
-
-                                viewItem.Events.Add(_horizontalOrdering[h]);
                             }
                         }
 
-                        historyItems.Add(viewItem);
-
-                        previousViewItem = viewItem;
-                    }
-
-                    //HistoryViewItem vi = new HistoryViewItem(History.RootEvent);
-                    //vi.Events.Add(History.RootEvent);
-                    //vi.Draw(null, History.RootEvent);
-                    Items.Clear();
-                    //Items.Add(vi);
-
-                    //foreach (HistoryViewItem hvi in historyItems)
-                    //{
-                    //    Items.Add(hvi);
-                    //}
-
-                    // Draw items to their respective canvasses.
-                    HistoryViewItem next = null;
-                    for (int i = historyItems.Count - 1; i >= 0; i--)
-                    {
-                        HistoryViewItem item = historyItems[i];
-                        Items.Add(item);
-                        item.Draw(next, _history.CurrentEvent);
-
-                        next = item;
+                        viewItem.Events.Add(horizontalOrdering[h]);
                     }
                 }
+
+                historyItems.Add(viewItem);
+
+                previousViewItem = viewItem;
+            }
+
+            //HistoryViewItem vi = new HistoryViewItem(History.RootEvent);
+            //vi.Events.Add(History.RootEvent);
+            //vi.Draw(null, History.RootEvent);
+            Items.Clear();
+            //Items.Add(vi);
+
+            //foreach (HistoryViewItem hvi in historyItems)
+            //{
+            //    Items.Add(hvi);
+            //}
+
+            // Draw items to their respective canvasses.
+            HistoryViewItem next = null;
+            for (int i = historyItems.Count - 1; i >= 0; i--)
+            {
+                HistoryViewItem item = historyItems[i];
+                Items.Add(item);
+                item.Draw(next, _history.CurrentEvent);
+
+                next = item;
             }
         }
 
@@ -452,15 +477,21 @@ namespace CPvC
                 return false;
             }
 
-            lock (_verticalOrdering)
+            //lock (_verticalOrdering)
             {
-                lock (_horizontalOrdering)
+                //lock (_horizontalOrdering)
                 {
+                    // This is horribly inefficient!
+                    //List<HistoryEvent> vn = _nodeList.NodeList.ToList();
+
                     // Has the vertical ordering changed?
-                    int verticalPosition = _verticalOrdering.FindIndex(x => x == e);
+                    //_nodeList.NodeList.
+                    int verticalPosition = _nodeList.VerticalIndex(e); //  vn.FindIndex(x => x == e);
+                    //int verticalPosition = _verticalOrdering.FindIndex(x => x == e);
                     if (verticalPosition == -1)
                     {
                         // Should really notify open history events and pass a paramter saying if its open or not?
+                        CPvC.Diagnostics.Trace("Can't find node in vertical ordering! Rebuilding whole tree!");
 
                         GenerateTree();
                         return true;
@@ -470,18 +501,21 @@ namespace CPvC
                     bool change = false;
                     if (verticalPosition >= 1)
                     {
-                        HistoryEvent previousEvent = _verticalOrdering[verticalPosition - 1];
+                        HistoryEvent previousEvent = _nodeList.NodeList[verticalPosition - 1];
                         if (VerticalSort(previousEvent, e) > 0)
                         {
+                            CPvC.Diagnostics.Trace("Event is now less than previous event! Rebuilding whole tree!");
                             change = true;
                         }
                     }
 
-                    if (verticalPosition < (_verticalOrdering.Count - 1))
+                    if (verticalPosition < (_nodeList.NodeList.Count - 1))
                     {
-                        HistoryEvent previousEvent = _verticalOrdering[verticalPosition + 1];
+                        // OOps! _nodelist doesn't seem to be updating! This always sets change to true!
+                        HistoryEvent previousEvent = _nodeList.NodeList[verticalPosition + 1];
                         if (VerticalSort(previousEvent, e) < 0)
                         {
+                            CPvC.Diagnostics.Trace("Event is now more than next event! Rebuilding whole tree!");
                             change = true;
                         }
                     }

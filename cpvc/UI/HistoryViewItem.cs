@@ -36,7 +36,7 @@ namespace CPvC
                 }
             }
 
-            return 0;
+            return x.Id.CompareTo(y.Id);
         }
     }
 
@@ -48,15 +48,34 @@ namespace CPvC
 
             _verticalOrdering = new List<HistoryEvent>();
             _horizontalOrdering = new List<HistoryEvent>();
-            _verticalOrdering2 = new SortedList<HistoryEvent, HistoryViewNode>(new HistoryEventVerticalComparer());
+            _verticalOrdering2 = new SortedList<HistoryEvent, HistoryEvent>(new HistoryEventVerticalComparer());
         }
 
-        public IList<HistoryViewNode> NodeList
+        public IList<HistoryEvent> NodeList
         {
             get
             {
-                return _verticalOrdering2.Values;
+                return _verticalOrdering2.Keys;
             }
+        }
+
+        public int VerticalIndex(HistoryEvent historyEvent)
+        {
+            return _verticalOrdering2.IndexOfValue(historyEvent);
+
+            //for (int i = 0; i < _verticalOrdering2.Keys.Count; i++)
+            //{
+            //    if (ReferenceEquals(historyEvent, _verticalOrdering2.Keys[i]))
+            //    {
+            //        return i;
+            //    }
+            //}
+
+            //return -1;
+
+            // Oops! IndexOfKey will use the comparator... but the current history node will constantly be changing! This kind of screws up the searching for a key!
+            // maybe need to use value instead?
+            //return _verticalOrdering2.IndexOfKey(historyEvent);
         }
 
         public void Add(HistoryEvent historyEvent)
@@ -64,21 +83,22 @@ namespace CPvC
             // Check the "interestingness" of the parent. Either it will now be interesting (where before it wasn't), or it was
             // interesting and no longer is.
             HistoryEvent parentEvent = historyEvent.Parent;
-            bool parentInteresting = false;
-            bool present = false;
-            if (parentEvent != null)
+            //bool parentInteresting = false;
+            //bool present = false;
+            //if (parentEvent != null)
             {
-                parentInteresting = InterestingEvent(parentEvent);
-                present = _verticalOrdering2.ContainsKey(parentEvent);
+                Check(parentEvent);
+                //parentInteresting = InterestingEvent(parentEvent);
+                //present = _verticalOrdering2.ContainsKey(parentEvent);
             }
-            if (present && !parentInteresting)
-            {
-                _verticalOrdering2.Remove(parentEvent);
-            }
-            else if (!present && parentInteresting)
-            {
-                _verticalOrdering2.Add(parentEvent, null);
-            }
+            //if (present && !parentInteresting)
+            //{
+            //    _verticalOrdering2.Remove(parentEvent);
+            //}
+            //else if (!present && parentInteresting)
+            //{
+            //    _verticalOrdering2.Add(parentEvent, null);
+            //}
 
             // Add this event and all its children, if they're interesting!
             Queue<HistoryEvent> historyEvents = new Queue<HistoryEvent>();
@@ -87,183 +107,141 @@ namespace CPvC
             while (historyEvents.Any())
             {
                 HistoryEvent he = historyEvents.Dequeue();
-                foreach (HistoryEvent child in he.Children)
+
+                if (InterestingEvent(he))
                 {
-                    historyEvents.Enqueue(child);
-                }
-
-
-                if (!InterestingEvent(he))
-                {
-                    continue;
-                }
-
-                HistoryEvent interestingParentEvent = GetParentNodeOrCreateIt(he);
-
-                //if (_verticalOrdering2.ContainsKey(he))
-                //{
-                //    throw new ArgumentException();
-                //}
-
-                //// Find parent!
-                //// GAH! Parent might not be shown if it only has one child!
-                //HistoryViewNode parentNode = null;
-                //HistoryEvent parent = he.Parent;
-                //bool addParent = parent != null && !_verticalOrdering2.ContainsKey(parent) && InterestingEvent(parent);
-
-                //HistoryEvent last = parent;
-                //while (parent != null)
-                //{
-                //    if (parent is RootHistoryEvent)
-                //    {
-                //        string breakymcbreakpoint = "";
-                //    }
-                //    if (_verticalOrdering2.ContainsKey(parent))
-                //    {
-                //        parentNode = _verticalOrdering2[parent];
-                //        break;
-                //    }
-
-                //    last = parent;
-                //    parent = parent.Parent;
-                //}
-
-                //if (addParent)
-                //{
-                //    foreach (HistoryViewNode childNode in parentNode.Children)
-                //    {
-                //        if (parentNode.HistoryEvent.IsEqualToOrAncestorOf(childNode.HistoryEvent))
-                //        {
-                //            // This is the one we need to move!
-                //            HistoryViewNode newParent = new HistoryViewNode(he.Parent);
-                //            parentNode.Children.Remove(childNode);
-                //            parentNode.Children.Add(newParent);
-                //            newParent.Parent = parentNode;
-                //            childNode.Parent = newParent;
-                //            newParent.Children.Add(childNode);
-                //            _verticalOrdering2.Add(he.Parent, newParent);
-
-                //            parentNode = newParent;
-
-                //            break;
-                //        }
-                //    }
-
-
-
-                //}
-
-                //// Re-evaluate whether the parent is still interesting!
-                //else if (parentNode != null && !InterestingEvent(parentNode.HistoryEvent))
-                //{
-                //    HistoryViewNode newParentNode = parentNode.Parent;
-                //    newParentNode.Children.AddRange(parentNode.Children);
-                //    newParentNode.Children.Remove(parentNode);
-                //    parentNode.Parent = null;
-                //    parentNode.Children.Clear();
-                //    _verticalOrdering2.Remove(parentNode.HistoryEvent);
-
-                //    parentNode = newParentNode;
-                //}
-
-                //HistoryViewNode node = new HistoryViewNode(historyEvent);
-                //node.Parent = parentNode;
-                //if (parentNode != null)
-                //{
-                //    parentNode.Children.Add(node);
-                //}
-
-                //_verticalOrdering2.Add(historyEvent, node);
-                //bool c = _verticalOrdering2.ContainsKey(historyEvent);
-
-                // Horizontal ordering! Can this be deferred until rendering? Just do one horizontal sort at render time!
-                // Maybe track horizontal ordering later as an optimization!
-            }
-        }
-
-        private HistoryEvent GetParentNodeOrCreateIt(HistoryEvent historyEvent)
-        {
-            HistoryEvent parentEvent = historyEvent.Parent;
-            while (parentEvent != null)
-            {
-                if (InterestingEvent(parentEvent))
-                {
-                    if (_verticalOrdering2.ContainsKey(parentEvent))
+                    if (_verticalOrdering2.ContainsValue(he))
                     {
-                        // Found it!
-                        return parentEvent;
+                        string g = "";
                     }
                     else
                     {
-                        // Create it!
-
-                        _verticalOrdering2.Add(parentEvent, null);
-                        return parentEvent;
+                        _verticalOrdering2.Add(he, he);
                     }
                 }
-                //else
-                //{
-                //    if (_verticalOrdering2.ContainsKey(parentEvent))
-                //    {
-                //        _verticalOrdering2.Remove(parentEvent);
-                //    }
-                //}
+                else
+                {
+                    string y = "";
+                }
 
-                parentEvent = parentEvent.Parent;
+                foreach (HistoryEvent child in he.Children)
+                {
+                    //CPvC.Diagnostics.Trace("Parent {0} enqueuing child {1}...", he.Id, child.Id);
+                    historyEvents.Enqueue(child);
+                }
             }
-
-            return null;
-            //throw new Exception("There should be a parent!");
         }
 
         public void Update(HistoryEvent historyEvent)
         {
-            HistoryViewNode node = _verticalOrdering2[historyEvent];
-
-            // Might be able to optimize this by checking the events on either side of this one... did the ordering change?
-            _verticalOrdering2.Remove(historyEvent);
-            _verticalOrdering2.Add(historyEvent, node);
-        }
-
-        public void Delete(HistoryEvent historyEvent, bool recursive)
-        {
-            HistoryViewNode node = _verticalOrdering2[historyEvent];
-
-            if (!recursive)
+            if (!_verticalOrdering2.ContainsValue(historyEvent))
             {
-                // Need to add check here for if parent is still interesting? Maybe not necessary?
-                HistoryViewNode parentNode = node.Parent;
-                parentNode.Children.AddRange(node.Children);
-                parentNode.Children.Remove(node);
-                node.Parent = null;
-                node.Children.Clear();
-                _verticalOrdering2.Remove(node.HistoryEvent);
+                return;
+            }
+
+            //HistoryEvent node = _verticalOrdering2[historyEvent];
+
+            if (!InterestingEvent(historyEvent))
+            {
+                _verticalOrdering2.Remove(historyEvent);
             }
             else
             {
-                Queue<HistoryViewNode> nodes = new Queue<HistoryViewNode>();
-                nodes.Enqueue(node);
+                // Might be able to optimize this by checking the events on either side of this one... did the ordering change?
+
+                // Oops! Using a sortedlist here is screwing up the removal of this event, I think! Need to rethink usage of this!
+                //_verticalOrdering2.Remove(historyEvent);
+                _verticalOrdering2.RemoveAt(_verticalOrdering2.IndexOfValue(historyEvent));
+                _verticalOrdering2.Add(historyEvent, historyEvent);
+
+            }
+        }
+
+        public void Delete(HistoryEvent historyEvent, HistoryEvent formerParentEvent, bool recursive)
+        {
+            if (!recursive)
+            {
+                _verticalOrdering2.Remove(historyEvent);
+            }
+            else
+            {
+                Queue<HistoryEvent> nodes = new Queue<HistoryEvent>();
+                nodes.Enqueue(historyEvent);
 
                 while (nodes.Any())
                 {
-                    HistoryViewNode d = nodes.Dequeue();
+                    HistoryEvent he = nodes.Dequeue();
 
-                    d.Parent.Children.Remove(d);
-                    d.Parent = null;
+                    _verticalOrdering2.Remove(he);
 
-                    _verticalOrdering2.Remove(d.HistoryEvent);
-
-                    foreach (HistoryViewNode c in d.Children)
+                    foreach (HistoryEvent c in he.Children)
                     {
                         nodes.Enqueue(c);
                     }
-
-                    d.Children.Clear();
                 }
-
-                // Need to add check if the deleted node's parent is now interesting?
             }
 
+            // Parent interestingness affected?
+            Check(formerParentEvent);
+        }
+
+        public List<HistoryEvent> SortHorizontally(HistoryEvent rootEvent)
+        {
+            //int HorizontalSort(HistoryEvent x, HistoryEvent y)
+            //{
+            //    return x.GetMaxDescendentTicks().CompareTo(y.GetMaxDescendentTicks());
+            //}
+
+            List<HistoryEvent> children = new List<HistoryEvent>();
+
+            List<HistoryEvent> horizontalOrdering = new List<HistoryEvent>();
+
+            horizontalOrdering.Capacity = _verticalOrdering2.Count;
+
+            horizontalOrdering.Add(rootEvent);
+            int i = 0;
+
+            while (i < horizontalOrdering.Count)
+            {
+                children.Clear();
+                children.AddRange(horizontalOrdering[i].Children);
+                children.Sort((x, y) => y.GetMaxDescendentTicks().CompareTo(x.GetMaxDescendentTicks()));
+
+                if (!InterestingEvent(horizontalOrdering[i]))
+                {
+                    horizontalOrdering.RemoveAt(i);
+                    i--;
+                }
+                //else
+                //{
+                //    i++;
+                //}
+
+                horizontalOrdering.InsertRange(i + 1, children);
+                i++;
+            }
+
+            return horizontalOrdering;
+        }
+
+        private void Check(HistoryEvent historyEvent)
+        {
+            if (historyEvent == null)
+            {
+                return;
+            }
+
+            bool interesting = InterestingEvent(historyEvent);
+            bool present = _verticalOrdering2.ContainsValue(historyEvent);
+
+            if (present && !interesting)
+            {
+                _verticalOrdering2.Remove(historyEvent);
+            }
+            else if (!present && interesting)
+            {
+                _verticalOrdering2.Add(historyEvent, historyEvent);
+            }
         }
 
         static private bool InterestingEvent(HistoryEvent historyEvent)
@@ -282,7 +260,7 @@ namespace CPvC
 
         private List<HistoryEvent> _verticalOrdering;
         private List<HistoryEvent> _horizontalOrdering;
-        private SortedList<HistoryEvent, HistoryViewNode> _verticalOrdering2;
+        private SortedList<HistoryEvent, HistoryEvent> _verticalOrdering2;
     }
 
     public class HistoryViewNode
