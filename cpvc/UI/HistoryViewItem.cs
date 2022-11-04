@@ -132,18 +132,23 @@ namespace CPvC
             }
         }
 
-        public void Update(HistoryEvent historyEvent)
+        public bool Update(HistoryEvent historyEvent)
         {
             if (!_verticalOrdering2.ContainsValue(historyEvent))
             {
-                return;
+                return false;
             }
 
             //HistoryEvent node = _verticalOrdering2[historyEvent];
 
             if (!InterestingEvent(historyEvent))
             {
-                _verticalOrdering2.Remove(historyEvent);
+                int index = _verticalOrdering2.IndexOfValue(historyEvent);
+                if (index >= 0)
+                {
+                    _verticalOrdering2.RemoveAt(index);
+                    return true;
+                }
             }
             else
             {
@@ -151,10 +156,15 @@ namespace CPvC
 
                 // Oops! Using a sortedlist here is screwing up the removal of this event, I think! Need to rethink usage of this!
                 //_verticalOrdering2.Remove(historyEvent);
-                _verticalOrdering2.RemoveAt(_verticalOrdering2.IndexOfValue(historyEvent));
+                int index = _verticalOrdering2.IndexOfValue(historyEvent);
+                _verticalOrdering2.RemoveAt(index);
                 _verticalOrdering2.Add(historyEvent, historyEvent);
 
+                return index != _verticalOrdering2.IndexOfValue(historyEvent);
+
             }
+
+            return false;
         }
 
         public void Delete(HistoryEvent historyEvent, HistoryEvent formerParentEvent, bool recursive)
@@ -185,12 +195,28 @@ namespace CPvC
             Check(formerParentEvent);
         }
 
-        public List<HistoryEvent> SortHorizontally(HistoryEvent rootEvent)
+        public List<HistoryEvent> SortHorizontally(History history, HistoryEvent rootEvent)
         {
-            //int HorizontalSort(HistoryEvent x, HistoryEvent y)
-            //{
-            //    return x.GetMaxDescendentTicks().CompareTo(y.GetMaxDescendentTicks());
-            //}
+            int HorizontalSort(HistoryEvent x, HistoryEvent y)
+            {
+                int result = y.GetMaxDescendentTicks().CompareTo(x.GetMaxDescendentTicks());
+
+                if (result != 0)
+                {
+                    return result;
+                }
+
+                if (x.IsEqualToOrAncestorOf(history.CurrentEvent)) // history.IsClosedEvent(x))
+                {
+                    return -1;
+                }
+                else if (y.IsEqualToOrAncestorOf(history.CurrentEvent)) // history.IsClosedEvent(y))
+                {
+                    return 1;
+                }
+
+                return y.Id.CompareTo(x.Id);
+            }
 
             List<HistoryEvent> children = new List<HistoryEvent>();
 
@@ -205,7 +231,7 @@ namespace CPvC
             {
                 children.Clear();
                 children.AddRange(horizontalOrdering[i].Children);
-                children.Sort((x, y) => y.GetMaxDescendentTicks().CompareTo(x.GetMaxDescendentTicks()));
+                children.Sort((x, y) => HorizontalSort(x,y));
 
                 if (!InterestingEvent(horizontalOrdering[i]))
                 {

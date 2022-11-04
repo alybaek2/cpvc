@@ -202,42 +202,53 @@ namespace CPvC
             //    return;
             //}
 
-
-            switch (action)
+            lock (_nodeList)
             {
-                case HistoryChangedAction.Add:
-                    {
-                        //ListTree<HistoryEvent> parentNode = null;
-                        //HistoryEvent p = e.Parent;
+                bool refresh = false;
 
-                        //while (!_eventToNodeMap.ContainsKey(p))
-                        //{
-                        //    p = p.Parent;
-                        //}
+                switch (action)
+                {
+                    case HistoryChangedAction.Add:
+                        {
+                            //ListTree<HistoryEvent> parentNode = null;
+                            //HistoryEvent p = e.Parent;
+
+                            //while (!_eventToNodeMap.ContainsKey(p))
+                            //{
+                            //    p = p.Parent;
+                            //}
 
 
-                        //_listTree.AddNode(_eventToNodeMap[p], _eventToNodeMap[e]);
+                            //_listTree.AddNode(_eventToNodeMap[p], _eventToNodeMap[e]);
 
-                        _nodeList.Add(e);
+                            _nodeList.Add(e);
+                            refresh = true;
 
-                    }
-                    break;
-                case HistoryChangedAction.DeleteBranch:
-                    //_listTree.DeleteNode(_eventToNodeMap[e], true);
-                    _nodeList.Delete(e, formerParentEvent, true);
-                    break;
-                case HistoryChangedAction.DeleteBookmark:
-                    //_listTree.DeleteNode(_eventToNodeMap[e], false);
-                    _nodeList.Delete(e, formerParentEvent, false);
-                    break;
-                case HistoryChangedAction.UpdateCurrent:
-                    //_listTree.UpdateNode(_eventToNodeMap[e]);
-                    _nodeList.Update(e);
-                    //Update(e);
-                    break;
+                        }
+                        break;
+                    case HistoryChangedAction.DeleteBranch:
+                        //_listTree.DeleteNode(_eventToNodeMap[e], true);
+                        _nodeList.Delete(e, formerParentEvent, true);
+                        refresh = true;
+                        break;
+                    case HistoryChangedAction.DeleteBookmark:
+                        //_listTree.DeleteNode(_eventToNodeMap[e], false);
+                        _nodeList.Delete(e, formerParentEvent, false);
+                        refresh = true;
+                        break;
+                    case HistoryChangedAction.UpdateCurrent:
+                        //_listTree.UpdateNode(_eventToNodeMap[e]);
+                        refresh = _nodeList.Update(e);
+                        //Update(e);
+                        break;
+                }
+
+                if (refresh)
+                {
+                    GenerateTree();
+                }
+                //Update(e);
             }
-
-            Update(e);
         }
 
         public void SetHistory(History history)
@@ -245,8 +256,11 @@ namespace CPvC
             //_history = history;
             CPvC.Diagnostics.Trace("SetHistory: rebuilding whole tree!");
 
-            GenerateTree();
-            _nodeList.Add(_history.RootEvent);
+            lock (_nodeList)
+            {
+                _nodeList.Add(_history.RootEvent);
+                GenerateTree();
+            }
 
         }
 
@@ -324,43 +338,45 @@ namespace CPvC
             //_verticalOrdering = verticalOrdering;
             //_horizontalOrdering = horizontalOrdering;
 
-            List<HistoryEvent> hz = _nodeList.SortHorizontally(_history.RootEvent);
-            List<HistoryEvent> vt = _nodeList.NodeList.ToList();
+            lock (_nodeList)
+            {
+                List<HistoryEvent> hz = _nodeList.SortHorizontally(_history, _history.RootEvent);
+                List<HistoryEvent> vt = _nodeList.NodeList.ToList();
 
-            CPvC.Diagnostics.Trace("[GenerateTree] Horizontal Ordering count {0}", hz.Count);
-            CPvC.Diagnostics.Trace("[GenerateTree] Vertictal Ordering count {0}", vt.Count);
+                CPvC.Diagnostics.Trace("[GenerateTree] Horizontal Ordering count {0}", hz.Count);
+                CPvC.Diagnostics.Trace("[GenerateTree] Vertictal Ordering count {0}", vt.Count);
 
-            //_verticalOrdering = vt;
-            //_horizontalOrdering = hz;
+                //_verticalOrdering = vt;
+                //_horizontalOrdering = hz;
 
-            //_listTree = new ListTree<HistoryEvent>(_history.RootEvent, VerticalSort, HorizontalSort);
+                //_listTree = new ListTree<HistoryEvent>(_history.RootEvent, VerticalSort, HorizontalSort);
 
 
-            ////HistoryViewItem vi = new HistoryViewItem(History.RootEvent);
-            ////vi.Events.Add(History.RootEvent);
-            ////vi.Draw(null, History.RootEvent);
-            //Items.Clear();
-            ////Items.Add(vi);
+                ////HistoryViewItem vi = new HistoryViewItem(History.RootEvent);
+                ////vi.Events.Add(History.RootEvent);
+                ////vi.Draw(null, History.RootEvent);
+                //Items.Clear();
+                ////Items.Add(vi);
 
-            ////foreach (HistoryViewItem hvi in historyItems)
-            ////{
-            ////    Items.Add(hvi);
-            ////}
+                ////foreach (HistoryViewItem hvi in historyItems)
+                ////{
+                ////    Items.Add(hvi);
+                ////}
 
-            //// Draw items to their respective canvasses.
-            //HistoryViewItem next = null;
-            //for (int i = historyItems.Count - 1; i >= 0; i--)
-            //{
-            //    HistoryViewItem item = historyItems[i];
-            //    Items.Add(item);
-            //    item.Draw(next, History.CurrentEvent);
+                //// Draw items to their respective canvasses.
+                //HistoryViewItem next = null;
+                //for (int i = historyItems.Count - 1; i >= 0; i--)
+                //{
+                //    HistoryViewItem item = historyItems[i];
+                //    Items.Add(item);
+                //    item.Draw(next, History.CurrentEvent);
 
-            //    next = item;
-            //}
+                //    next = item;
+                //}
 
-            Action action = new Action(() => SetItems(vt, hz));
-            Dispatcher.BeginInvoke(action, null);
-
+                Action action = new Action(() => SetItems(vt, hz));
+                Dispatcher.BeginInvoke(action, null);
+            }
 
         }
 
@@ -477,7 +493,7 @@ namespace CPvC
                 return false;
             }
 
-            //lock (_verticalOrdering)
+            lock (_nodeList)
             {
                 //lock (_horizontalOrdering)
                 {
