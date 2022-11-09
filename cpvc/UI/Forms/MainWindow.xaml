@@ -288,6 +288,7 @@
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn x:Name="_graphColumn" Header="Graph" Width="150" CellTemplate="{StaticResource cellTemplate}" HeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}" />
+                                    <GridViewColumn Header="Machine time" DisplayMemberBinding="{Binding HistoryEvent.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}" Width="100" HeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}"/>
                                     <!--<GridViewColumn Header="Machine time" DisplayMemberBinding="{Binding HistoryEvent.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}" Width="100" HeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}"/>
                                     <GridViewColumn Header="Date created" DisplayMemberBinding="{Binding HistoryEvent.CreateDate, Converter={StaticResource localDateTimeConverter}, Mode=OneWay}" Width="150" HeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}"/>-->
                                 </GridView>

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace CPvC
 {
@@ -153,11 +155,29 @@ namespace CPvC
         private BookmarkHistoryNode _node;
     }
 
-    public class CoreActionHistoryEvent : HistoryEvent
+    public class CoreActionHistoryEvent : HistoryEvent, INotifyPropertyChanged
     {
         internal CoreActionHistoryEvent(CoreActionHistoryNode historyNode) : base()
         {
             _node = historyNode;
+
+            if (_node.CoreAction is RunUntilAction runUntilAction)
+            {
+                runUntilAction.PropertyChanged += RunUntilAction_PropertyChanged;
+            }
+        }
+
+        private void RunUntilAction_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(RunUntilRequest.StopTicks))
+            {
+                OnPropertyChanged(nameof(Ticks));
+            }
+        }
+
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
         internal override HistoryNode Node
@@ -188,6 +208,8 @@ namespace CPvC
                 return _node.Ticks;
             }
         }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         private CoreActionHistoryNode _node;
     }

@@ -6,19 +6,6 @@ namespace CPvC.Test
 {
     public class HistoryViewNodeTests
     {
-        //private History _history;
-
-        [SetUp]
-        public void Setup()
-        {
-            //_history = new History();
-            //CoreActionHistoryEvent coreEvent1 = _history.AddCoreAction(new RunUntilAction(100, 200, null));
-            //CoreActionHistoryEvent coreEvent2 = _history.AddCoreAction(new KeyPressAction(100, Keys.A, true)); //CoreAction(new RunUntilAction(200, 300, null));
-            ////BookmarkHistoryEvent coreEvent2 = _history.AddBookmark(200, new Bookmark(false, 1, (byte[])null, (byte[])null)); //CoreAction(new RunUntilAction(200, 300, null));
-            //_history.CurrentEvent = coreEvent1;
-            //CoreActionHistoryEvent coreEvent3 = _history.AddCoreAction(new RunUntilAction(200, 250, null));
-        }
-
         [Test]
         public void AddRootAndChild()
         {

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace CPvC
@@ -97,7 +99,7 @@ namespace CPvC
         public int Version { get; protected set; }
     }
 
-    public class RunUntilRequest : CoreRequest
+    public class RunUntilRequest : CoreRequest, INotifyPropertyChanged
     {
         public RunUntilRequest(UInt64 stopTicks)
         {
@@ -107,8 +109,35 @@ namespace CPvC
         /// <summary>
         /// For a request, indicates the desired ticks to stop at. For an action represents the actual ticks value that the core stopped at.
         /// </summary>
-        public UInt64 StopTicks { get; set; }
+        public UInt64 StopTicks
+        {
+            get
+            {
+                return _stopTicks;
+            }
+
+            set
+            {
+                if (_stopTicks == value)
+                {
+                    return;
+                }
+
+                _stopTicks = value;
+                OnPropertyChanged();
+            }
+        }
+
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
         public List<UInt16> AudioSamples { get; protected set; }
+
+        private UInt64 _stopTicks;
+
+        public event PropertyChangedEventHandler PropertyChanged;
     }
 
     public class LoadCoreRequest : CoreRequest
