@@ -40,14 +40,173 @@ namespace CPvC
         }
     }
 
+    public class HistoryEventOrderings
+    {
+        public HistoryEventOrderings(History history)
+        {
+            Init(history);
+        }
+
+        public IEnumerable<HistoryEvent> GetVerticallySorted()
+        {
+            return _verticalEvents;
+        }
+
+        public IEnumerable<HistoryEvent> GetHorizonallySorted()
+        {
+            return _horizontalEvents;
+        }
+
+        public int GetVerticalPosition(HistoryEvent historyEvent)
+        {
+            return _verticalPosition[historyEvent];
+        }
+
+        public int GetHorizontalPosition(HistoryEvent historyEvent)
+        {
+            return _horizontalPosition[historyEvent];
+        }
+
+        public HistoryEvent GetParent(HistoryEvent historyEvent)
+        {
+            return _parentEvents[historyEvent];
+        }
+
+        public int Count()
+        {
+            return _verticalEvents.Count;
+        }
+
+        private void Init(History history)
+        {
+            _parentEvents = new Dictionary<HistoryEvent, HistoryEvent>();
+            _horizontalEvents = new List<HistoryEvent>();
+
+            int HorizontalSort(HistoryEvent x, HistoryEvent y)
+            {
+                int result = y.GetMaxDescendentTicks().CompareTo(x.GetMaxDescendentTicks());
+
+                if (result != 0)
+                {
+                    return result;
+                }
+
+                if (x.IsEqualToOrAncestorOf(history.CurrentEvent)) // history.IsClosedEvent(x))
+                {
+                    return -1;
+                }
+                else if (y.IsEqualToOrAncestorOf(history.CurrentEvent)) // history.IsClosedEvent(y))
+                {
+                    return 1;
+                }
+
+                return y.Id.CompareTo(x.Id);
+            }
+
+            int VerticalSort(HistoryEvent x, HistoryEvent y)
+            {
+                if (x.Ticks < y.Ticks)
+                {
+                    return -1;
+                }
+                else if (x.Ticks > y.Ticks)
+                {
+                    return 1;
+                }
+                else
+                {
+                    if (ReferenceEquals(x, y))
+                    {
+                        return 0;
+                    }
+                    else if (x.IsEqualToOrAncestorOf(y))
+                    {
+                        return -1;
+                    }
+                    else if (y.IsEqualToOrAncestorOf(x))
+                    {
+                        return 1;
+                    }
+                }
+
+                return x.Id.CompareTo(y.Id);
+            }
+
+            _verticalEvents = new List<HistoryEvent>();
+            List<HistoryEvent> children = new List<HistoryEvent>();
+
+            //List<HistoryEvent> horizontalOrdering = new List<HistoryEvent>();
+            //
+            //horizontalOrdering.Capacity = _verticalOrdering2.Count;
+
+            _horizontalEvents.Add(history.RootEvent);
+            //_parentEvents.Add(history.RootEvent, null);
+
+            int i = 0;
+
+            while (i < _horizontalEvents.Count)
+            {
+                children.Clear();
+                children.AddRange(_horizontalEvents[i].Children);
+                children.Sort((x, y) => HorizontalSort(x, y));
+
+                if (!HistoryViewNodeList.InterestingEvent(_horizontalEvents[i]))
+                {
+                    _horizontalEvents.RemoveAt(i);
+                    i--;
+                }
+                else
+                {
+                    _verticalEvents.Add(_horizontalEvents[i]);
+                }
+                //else
+                //{
+                //    i++;
+                //}
+
+                _horizontalEvents.InsertRange(i + 1, children);
+                i++;
+            }
+
+            // Figure out parents.
+            foreach (HistoryEvent historyEvent in _horizontalEvents)
+            {
+                HistoryEvent parentEvent = historyEvent.Parent;
+                while (parentEvent != null && !_verticalEvents.Contains(parentEvent))
+                {
+                    parentEvent = parentEvent.Parent;
+                }
+
+                _parentEvents.Add(historyEvent, parentEvent);
+            }
+
+            _verticalEvents.Sort((x, y) => VerticalSort(x, y));
+
+            _horizontalPosition = new Dictionary<HistoryEvent, int>();
+            _verticalPosition = new Dictionary<HistoryEvent, int>();
+
+            for (int v = 0; v < _verticalEvents.Count; v++)
+            {
+                _verticalPosition.Add(_verticalEvents[v], v);
+            }
+
+            for (int h = 0; h < _horizontalEvents.Count; h++)
+            {
+                _horizontalPosition.Add(_horizontalEvents[h], h);
+            }
+        }
+
+        private Dictionary<HistoryEvent, HistoryEvent> _parentEvents;
+        private List<HistoryEvent> _horizontalEvents;
+        private List<HistoryEvent> _verticalEvents;
+        private Dictionary<HistoryEvent, int> _horizontalPosition;
+        private Dictionary<HistoryEvent, int> _verticalPosition;
+    }
+
     public class HistoryViewNodeList
     {
         public HistoryViewNodeList()
         {
-            _nodeList = new List<HistoryViewNode>();
-
-            _verticalOrdering = new List<HistoryEvent>();
-            _horizontalOrdering = new List<HistoryEvent>();
             _verticalOrdering2 = new SortedList<HistoryEvent, HistoryEvent>(new HistoryEventVerticalComparer());
         }
 
@@ -62,43 +221,12 @@ namespace CPvC
         public int VerticalIndex(HistoryEvent historyEvent)
         {
             return _verticalOrdering2.IndexOfValue(historyEvent);
-
-            //for (int i = 0; i < _verticalOrdering2.Keys.Count; i++)
-            //{
-            //    if (ReferenceEquals(historyEvent, _verticalOrdering2.Keys[i]))
-            //    {
-            //        return i;
-            //    }
-            //}
-
-            //return -1;
-
-            // Oops! IndexOfKey will use the comparator... but the current history node will constantly be changing! This kind of screws up the searching for a key!
-            // maybe need to use value instead?
-            //return _verticalOrdering2.IndexOfKey(historyEvent);
         }
 
         public void Add(HistoryEvent historyEvent)
         {
-            // Check the "interestingness" of the parent. Either it will now be interesting (where before it wasn't), or it was
-            // interesting and no longer is.
             HistoryEvent parentEvent = historyEvent.Parent;
-            //bool parentInteresting = false;
-            //bool present = false;
-            //if (parentEvent != null)
-            {
-                Check(parentEvent);
-                //parentInteresting = InterestingEvent(parentEvent);
-                //present = _verticalOrdering2.ContainsKey(parentEvent);
-            }
-            //if (present && !parentInteresting)
-            //{
-            //    _verticalOrdering2.Remove(parentEvent);
-            //}
-            //else if (!present && parentInteresting)
-            //{
-            //    _verticalOrdering2.Add(parentEvent, null);
-            //}
+            Check(parentEvent);
 
             // Add this event and all its children, if they're interesting!
             Queue<HistoryEvent> historyEvents = new Queue<HistoryEvent>();
@@ -108,25 +236,13 @@ namespace CPvC
             {
                 HistoryEvent he = historyEvents.Dequeue();
 
-                if (InterestingEvent(he))
+                if (InterestingEvent(he) &&!_verticalOrdering2.ContainsValue(he))
                 {
-                    if (_verticalOrdering2.ContainsValue(he))
-                    {
-                        string g = "";
-                    }
-                    else
-                    {
-                        _verticalOrdering2.Add(he, he);
-                    }
-                }
-                else
-                {
-                    string y = "";
+                    _verticalOrdering2.Add(he, he);
                 }
 
                 foreach (HistoryEvent child in he.Children)
                 {
-                    //CPvC.Diagnostics.Trace("Parent {0} enqueuing child {1}...", he.Id, child.Id);
                     historyEvents.Enqueue(child);
                 }
             }
@@ -270,7 +386,7 @@ namespace CPvC
             }
         }
 
-        static private bool InterestingEvent(HistoryEvent historyEvent)
+        static public bool InterestingEvent(HistoryEvent historyEvent)
         {
             if (historyEvent is RootHistoryEvent ||
                 historyEvent is BookmarkHistoryEvent ||
@@ -282,10 +398,6 @@ namespace CPvC
             return false;
         }
 
-        private List<HistoryViewNode> _nodeList;
-
-        private List<HistoryEvent> _verticalOrdering;
-        private List<HistoryEvent> _horizontalOrdering;
         private SortedList<HistoryEvent, HistoryEvent> _verticalOrdering2;
     }
 

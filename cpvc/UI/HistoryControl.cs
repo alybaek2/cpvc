@@ -114,52 +114,62 @@ namespace CPvC
             {
                 timer.Stop();
 
-                List<HistoryEvent> hz = null;
-                List<HistoryEvent> vt = null;
-                lock (_nodeList)
-                {
-                    hz = _nodeList.SortHorizontally(_history, _history.RootEvent);
-                    vt = _nodeList.NodeList.ToList();
-                    _updatePending = false;
-                }
-
-                SetItems(vt, hz);
+                SetItems();
             };
 
             timer.Start();
         }
 
-        public void SetItems(List<HistoryEvent> verticalOrdering, List<HistoryEvent> horizontalOrdering)
+        public void SetItems()
         {
-            List<HistoryViewItem> historyItems = new List<HistoryViewItem>();
-            for (int v = 0; v < verticalOrdering.Count; v++)
+            HistoryEventOrderings orderings = null;
+            //List<HistoryEvent> verticalOrdering = null;
+            //List<HistoryEvent> horizontalOrdering = null;
+            lock (_nodeList)
             {
-                historyItems.Add(new HistoryViewItem(verticalOrdering[v]));
+                orderings = new HistoryEventOrderings(_history);
+                //horizontalOrdering = _nodeList.SortHorizontally(_history, _history.RootEvent);
+                //verticalOrdering = _nodeList.NodeList.ToList();
+                _updatePending = false;
             }
 
+            List<HistoryViewItem> historyItems = new List<HistoryViewItem>();
+            //for (int v = 0; v < verticalOrdering.Count; v++)
+            //{
+            //    historyItems.Add(new HistoryViewItem(verticalOrdering[v]));
+            //}
 
-            for (int h = 0; h < horizontalOrdering.Count; h++)
+            historyItems = orderings.GetVerticallySorted().Select(x => new HistoryViewItem(x)).ToList();
+
+            foreach (HistoryEvent horizontalEvent in orderings.GetHorizonallySorted())
+            //for (int h = 0; h < horizontalOrdering.Count; h++)
             {
-                HistoryEvent historyEvent = horizontalOrdering[h];
+                //HistoryEvent historyEvent = horizontalOrdering[h];
 
-                int v = verticalOrdering.FindIndex(x => ReferenceEquals(x, horizontalOrdering[h]));
-                if (v < 0)
-                {
-                    throw new Exception("Couldn't find history event in vertical ordering.");
-                }
+                int v = orderings.GetVerticalPosition(horizontalEvent);
+                //int v = verticalOrdering.FindIndex(x => ReferenceEquals(x, horizontalEvent));
+                //if (v < 0)
+                //{
+                //    throw new Exception("Couldn't find history event in vertical ordering.");
+                //}
 
                 // Find the parent HistoryViewItem... there must be a more efficient way of doing this!
-                int pv = -1;
-                int ph = 0;
-                for (pv = verticalOrdering.Count - 1; pv >= 0; pv--)
-                {
-                    if (verticalOrdering[pv].IsEqualToOrAncestorOf(historyEvent) && !ReferenceEquals(historyEvent, verticalOrdering[pv]))
-                    {
-                        ph = historyItems[pv].Events.FindIndex(x => ReferenceEquals(x, verticalOrdering[pv]));
-                        //ph = horizontalOrdering.FindIndex(x => ReferenceEquals(x, verticalOrdering[pv]));
-                        break;
-                    }
-                }
+                //int pv = -1;
+                //int ph = 0;
+                //for (pv = orderings.Count() - 1; pv >= 0; pv--)
+                //{
+                //    HistoryEvent parentEvent = orderings.GetParent(horizontalEvent);
+                //    if (verticalOrdering[pv].IsEqualToOrAncestorOf(horizontalEvent) && !ReferenceEquals(horizontalEvent, verticalOrdering[pv]))
+                //    {
+                //        ph = historyItems[pv].Events.FindIndex(x => ReferenceEquals(x, verticalOrdering[pv]));
+                //        //ph = horizontalOrdering.FindIndex(x => ReferenceEquals(x, verticalOrdering[pv]));
+                //        break;
+                //    }
+                //}
+
+                HistoryEvent parentEvent = orderings.GetParent(horizontalEvent);
+                int pv = parentEvent != null ? orderings.GetVerticalPosition(parentEvent) : -1;
+                int ph = parentEvent != null ? historyItems[pv].Events.FindIndex(x => ReferenceEquals(x, parentEvent)) : 0;
 
                 // "Draw" the history event from pv + 1 to v
                 for (int d = pv + 1; d <= v; d++)
@@ -172,7 +182,7 @@ namespace CPvC
                         historyViewItem.Events.Add(null);
                     }
 
-                    historyViewItem.Events.Add(historyEvent);
+                    historyViewItem.Events.Add(horizontalEvent);
                     ph = Math.Max(ph, historyViewItem.Events.Count - 1);
                 }
             }
