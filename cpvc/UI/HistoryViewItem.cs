@@ -77,70 +77,109 @@ namespace CPvC
             return _verticalEvents.Count;
         }
 
-        private void Init(History history)
+        public bool VerticalPositionChanged(HistoryEvent historyEvent)
         {
-            _parentEvents = new Dictionary<HistoryEvent, HistoryEvent>();
-            _horizontalEvents = new List<HistoryEvent>();
-
-            int HorizontalSort(HistoryEvent x, HistoryEvent y)
+            // Has "interestingness" changed?
+            if (HistoryViewNodeList.InterestingEvent(historyEvent))
             {
-                int result = y.GetMaxDescendentTicks().CompareTo(x.GetMaxDescendentTicks());
-
-                if (result != 0)
+                if (!_verticalEvents.Contains(historyEvent))
                 {
-                    return result;
+                    return true;
                 }
-
-                if (x.IsEqualToOrAncestorOf(history.CurrentEvent)) // history.IsClosedEvent(x))
-                {
-                    return -1;
-                }
-                else if (y.IsEqualToOrAncestorOf(history.CurrentEvent)) // history.IsClosedEvent(y))
-                {
-                    return 1;
-                }
-
-                return y.Id.CompareTo(x.Id);
             }
-
-            int VerticalSort(HistoryEvent x, HistoryEvent y)
+            else
             {
-                if (x.Ticks < y.Ticks)
+                if (_verticalEvents.Contains(historyEvent))
                 {
-                    return -1;
-                }
-                else if (x.Ticks > y.Ticks)
-                {
-                    return 1;
+                    return true;
                 }
                 else
                 {
-                    if (ReferenceEquals(x, y))
-                    {
-                        return 0;
-                    }
-                    else if (x.IsEqualToOrAncestorOf(y))
-                    {
-                        return -1;
-                    }
-                    else if (y.IsEqualToOrAncestorOf(x))
-                    {
-                        return 1;
-                    }
+                    return false;
                 }
-
-                return x.Id.CompareTo(y.Id);
             }
+
+            int v = GetVerticalPosition(historyEvent);
+            if (v < _verticalEvents.Count - 1)
+            {
+                if (VerticalSort(historyEvent, _verticalEvents[v + 1]) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            if (v > 0)
+            {
+                if (VerticalSort(_verticalEvents[v - 1], historyEvent) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        int HorizontalSort(HistoryEvent x, HistoryEvent y)
+        {
+            int result = y.GetMaxDescendentTicks().CompareTo(x.GetMaxDescendentTicks());
+
+            if (result != 0)
+            {
+                return result;
+            }
+
+            // Need to reevaluate whether this should be needed...
+            if (x.IsEqualToOrAncestorOf(_history.CurrentEvent))
+            {
+                return -1;
+            }
+            else if (y.IsEqualToOrAncestorOf(_history.CurrentEvent))
+            {
+                return 1;
+            }
+
+            return y.Id.CompareTo(x.Id);
+        }
+
+        int VerticalSort(HistoryEvent x, HistoryEvent y)
+        {
+            if (x.Ticks < y.Ticks)
+            {
+                return -1;
+            }
+            else if (x.Ticks > y.Ticks)
+            {
+                return 1;
+            }
+            else
+            {
+                if (ReferenceEquals(x, y))
+                {
+                    return 0;
+                }
+                else if (x.IsEqualToOrAncestorOf(y))
+                {
+                    return -1;
+                }
+                else if (y.IsEqualToOrAncestorOf(x))
+                {
+                    return 1;
+                }
+            }
+
+            return x.Id.CompareTo(y.Id);
+        }
+
+        private void Init(History history)
+        {
+            _history = history;
+            _parentEvents = new Dictionary<HistoryEvent, HistoryEvent>();
+            _horizontalEvents = new List<HistoryEvent>();
 
             _verticalEvents = new List<HistoryEvent>();
             List<HistoryEvent> children = new List<HistoryEvent>();
 
-            //List<HistoryEvent> horizontalOrdering = new List<HistoryEvent>();
-            //
-            //horizontalOrdering.Capacity = _verticalOrdering2.Count;
-
             _horizontalEvents.Add(history.RootEvent);
-            //_parentEvents.Add(history.RootEvent, null);
 
             int i = 0;
 
@@ -159,10 +198,6 @@ namespace CPvC
                 {
                     _verticalEvents.Add(_horizontalEvents[i]);
                 }
-                //else
-                //{
-                //    i++;
-                //}
 
                 _horizontalEvents.InsertRange(i + 1, children);
                 i++;
@@ -196,6 +231,7 @@ namespace CPvC
             }
         }
 
+        private History _history;
         private Dictionary<HistoryEvent, HistoryEvent> _parentEvents;
         private List<HistoryEvent> _horizontalEvents;
         private List<HistoryEvent> _verticalEvents;

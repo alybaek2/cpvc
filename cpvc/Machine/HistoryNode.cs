@@ -5,7 +5,7 @@ namespace CPvC
 {
     internal class HistoryNode
     {
-        protected HistoryNode(int id, UInt64 ticks, IMachineAction action, Bookmark bookmark, HistoryNode parent, DateTime createDate)
+        protected HistoryNode(int id, UInt64 ticks, HistoryNode parent, DateTime createDate)
         {
             Id = id;
             Ticks = ticks;
@@ -41,7 +41,7 @@ namespace CPvC
     {
         private const int RootId = -1;
 
-        internal RootHistoryNode() : base(RootId, 0, null, null, null, DateTime.Now)
+        internal RootHistoryNode() : base(RootId, 0, null, DateTime.Now)
         {
             HistoryEvent = new RootHistoryEvent(this);
         }
@@ -51,7 +51,7 @@ namespace CPvC
     {
         public Bookmark Bookmark { get; }
 
-        internal BookmarkHistoryNode(int id, UInt64 ticks, Bookmark bookmark, HistoryNode parent, DateTime createDate) : base(id, ticks, null, bookmark, parent, createDate)
+        internal BookmarkHistoryNode(int id, UInt64 ticks, Bookmark bookmark, HistoryNode parent, DateTime createDate) : base(id, ticks, parent, createDate)
         {
             Bookmark = bookmark;
 
@@ -63,7 +63,7 @@ namespace CPvC
     {
         public IMachineAction CoreAction { get; }
 
-        internal CoreActionHistoryNode(int id, UInt64 ticks, IMachineAction action, HistoryNode parent, DateTime createDate) : base(id, ticks, action, null, parent, createDate)
+        internal CoreActionHistoryNode(int id, UInt64 ticks, IMachineAction action, HistoryNode parent, DateTime createDate) : base(id, ticks, parent, createDate)
         {
             CoreAction = action;
 
