@@ -8,38 +8,6 @@ using System.Windows.Shapes;
 
 namespace CPvC
 {
-    internal class HistoryEventVerticalComparer : IComparer<HistoryEvent>
-    {
-        public int Compare(HistoryEvent x, HistoryEvent y)
-        {
-            if (x.Ticks < y.Ticks)
-            {
-                return -1;
-            }
-            else if (x.Ticks > y.Ticks)
-            {
-                return 1;
-            }
-            else
-            {
-                if (ReferenceEquals(x, y))
-                {
-                    return 0;
-                }
-                else if (x.IsEqualToOrAncestorOf(y))
-                {
-                    return -1;
-                }
-                else if (y.IsEqualToOrAncestorOf(x))
-                {
-                    return 1;
-                }
-            }
-
-            return x.Id.CompareTo(y.Id);
-        }
-    }
-
     public class HistoryEventOrderings
     {
         public HistoryEventOrderings(History history)
@@ -133,16 +101,6 @@ namespace CPvC
                 return result;
             }
 
-            // Need to reevaluate whether this should be needed...
-            if (x.IsEqualToOrAncestorOf(_history.CurrentEvent))
-            {
-                return -1;
-            }
-            else if (y.IsEqualToOrAncestorOf(_history.CurrentEvent))
-            {
-                return 1;
-            }
-
             return y.Id.CompareTo(x.Id);
         }
 
@@ -177,7 +135,6 @@ namespace CPvC
 
         private void Init(History history)
         {
-            _history = history;
             _parentEvents = new Dictionary<HistoryEvent, HistoryEvent>();
             _horizontalEvents = new List<HistoryEvent>();
 
@@ -236,7 +193,6 @@ namespace CPvC
             }
         }
 
-        private History _history;
         private Dictionary<HistoryEvent, HistoryEvent> _parentEvents;
         private List<HistoryEvent> _horizontalEvents;
         private List<HistoryEvent> _verticalEvents;
