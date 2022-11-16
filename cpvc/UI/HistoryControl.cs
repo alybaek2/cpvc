@@ -13,7 +13,6 @@ namespace CPvC
     {
         private History _history;
 
-        private HistoryViewNodeList _nodeList;
         private HistoryEventOrderings _orderings;
         private bool _updatePending;
 
@@ -26,7 +25,6 @@ namespace CPvC
 
         public HistoryControl()
         {
-            _nodeList = new HistoryViewNodeList();
             _orderings = null;
             _updatePending = false;
         }
@@ -58,49 +56,34 @@ namespace CPvC
 
         public void ProcessHistoryChange(HistoryEvent e, HistoryEvent formerParentEvent, HistoryChangedAction action)
         {
-            lock (_nodeList)
+            bool refresh = false;
+
+            switch (action)
             {
-                bool refresh = false;
+                case HistoryChangedAction.Add:
+                case HistoryChangedAction.DeleteBranch:
+                case HistoryChangedAction.DeleteBookmark:
+                    refresh = true;
+                    break;
+                case HistoryChangedAction.UpdateCurrent:
+                    refresh = _orderings?.VerticalPositionChanged(e) ?? true;
+                    break;
+            }
 
-                switch (action)
-                {
-                    case HistoryChangedAction.Add:
-                        _nodeList.Add(e);
-                        refresh = true;
-                        break;
-                    case HistoryChangedAction.DeleteBranch:
-                        _nodeList.Delete(e, formerParentEvent, true);
-                        refresh = true;
-                        break;
-                    case HistoryChangedAction.DeleteBookmark:
-                        _nodeList.Delete(e, formerParentEvent, false);
-                        refresh = true;
-                        break;
-                    case HistoryChangedAction.UpdateCurrent:
-                        refresh = _orderings?.VerticalPositionChanged(e) ?? true;
-                        //refresh = _nodeList.Update(e);
-                        break;
-                }
-
-                if (refresh)
-                {
-                    GenerateTree();
-                }
+            if (refresh)
+            {
+                GenerateTree();
             }
         }
 
         public void SetHistory(History history)
         {
-            lock (_nodeList)
-            {
-                _nodeList.Add(_history.RootEvent);
-                GenerateTree();
-            }
+            GenerateTree();
         }
 
         public void GenerateTree()
         {
-            lock (_nodeList)
+            // Need some kind of lock here!
             {
                 if (_updatePending)
                 {
@@ -124,8 +107,7 @@ namespace CPvC
 
         public void SetItems()
         {
-            //_orderings = null;
-            lock (_nodeList)
+            // Probably need a lock here!
             {
                 _orderings = new HistoryEventOrderings(_history);
                 _updatePending = false;

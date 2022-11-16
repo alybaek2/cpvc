@@ -80,7 +80,7 @@ namespace CPvC
         public bool VerticalPositionChanged(HistoryEvent historyEvent)
         {
             // Has "interestingness" changed?
-            if (HistoryViewNodeList.InterestingEvent(historyEvent))
+            if (InterestingEvent(historyEvent))
             {
                 if (!_verticalEvents.Contains(historyEvent))
                 {
@@ -89,14 +89,7 @@ namespace CPvC
             }
             else
             {
-                if (_verticalEvents.Contains(historyEvent))
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
+                return _verticalEvents.Contains(historyEvent);
             }
 
             int v = GetVerticalPosition(historyEvent);
@@ -119,7 +112,19 @@ namespace CPvC
             return false;
         }
 
-        int HorizontalSort(HistoryEvent x, HistoryEvent y)
+        static private bool InterestingEvent(HistoryEvent historyEvent)
+        {
+            if (historyEvent is RootHistoryEvent ||
+                historyEvent is BookmarkHistoryEvent ||
+                historyEvent.Children.Count != 1)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private int HorizontalSort(HistoryEvent x, HistoryEvent y)
         {
             int result = y.GetMaxDescendentTicks().CompareTo(x.GetMaxDescendentTicks());
 
@@ -141,7 +146,7 @@ namespace CPvC
             return y.Id.CompareTo(x.Id);
         }
 
-        int VerticalSort(HistoryEvent x, HistoryEvent y)
+        private int VerticalSort(HistoryEvent x, HistoryEvent y)
         {
             if (x.Ticks < y.Ticks)
             {
@@ -189,7 +194,7 @@ namespace CPvC
                 children.AddRange(_horizontalEvents[i].Children);
                 children.Sort((x, y) => HorizontalSort(x, y));
 
-                if (!HistoryViewNodeList.InterestingEvent(_horizontalEvents[i]))
+                if (!InterestingEvent(_horizontalEvents[i]))
                 {
                     _horizontalEvents.RemoveAt(i);
                     i--;
@@ -239,204 +244,6 @@ namespace CPvC
         private Dictionary<HistoryEvent, int> _verticalPosition;
     }
 
-    public class HistoryViewNodeList
-    {
-        public HistoryViewNodeList()
-        {
-            _verticalOrdering2 = new SortedList<HistoryEvent, HistoryEvent>(new HistoryEventVerticalComparer());
-        }
-
-        public IList<HistoryEvent> NodeList
-        {
-            get
-            {
-                return _verticalOrdering2.Keys;
-            }
-        }
-
-        public int VerticalIndex(HistoryEvent historyEvent)
-        {
-            return _verticalOrdering2.IndexOfValue(historyEvent);
-        }
-
-        public void Add(HistoryEvent historyEvent)
-        {
-            HistoryEvent parentEvent = historyEvent.Parent;
-            Check(parentEvent);
-
-            // Add this event and all its children, if they're interesting!
-            Queue<HistoryEvent> historyEvents = new Queue<HistoryEvent>();
-            historyEvents.Enqueue(historyEvent);
-
-            while (historyEvents.Any())
-            {
-                HistoryEvent he = historyEvents.Dequeue();
-
-                if (InterestingEvent(he) &&!_verticalOrdering2.ContainsValue(he))
-                {
-                    _verticalOrdering2.Add(he, he);
-                }
-
-                foreach (HistoryEvent child in he.Children)
-                {
-                    historyEvents.Enqueue(child);
-                }
-            }
-        }
-
-        public bool Update(HistoryEvent historyEvent)
-        {
-            if (!_verticalOrdering2.ContainsValue(historyEvent))
-            {
-                return false;
-            }
-
-            //HistoryEvent node = _verticalOrdering2[historyEvent];
-
-            if (!InterestingEvent(historyEvent))
-            {
-                int index = _verticalOrdering2.IndexOfValue(historyEvent);
-                if (index >= 0)
-                {
-                    _verticalOrdering2.RemoveAt(index);
-                    return true;
-                }
-            }
-            else
-            {
-                // Might be able to optimize this by checking the events on either side of this one... did the ordering change?
-
-                // Oops! Using a sortedlist here is screwing up the removal of this event, I think! Need to rethink usage of this!
-                //_verticalOrdering2.Remove(historyEvent);
-                int index = _verticalOrdering2.IndexOfValue(historyEvent);
-                _verticalOrdering2.RemoveAt(index);
-                _verticalOrdering2.Add(historyEvent, historyEvent);
-
-                return index != _verticalOrdering2.IndexOfValue(historyEvent);
-
-            }
-
-            return false;
-        }
-
-        public void Delete(HistoryEvent historyEvent, HistoryEvent formerParentEvent, bool recursive)
-        {
-            if (!recursive)
-            {
-                _verticalOrdering2.Remove(historyEvent);
-            }
-            else
-            {
-                Queue<HistoryEvent> nodes = new Queue<HistoryEvent>();
-                nodes.Enqueue(historyEvent);
-
-                while (nodes.Any())
-                {
-                    HistoryEvent he = nodes.Dequeue();
-
-                    _verticalOrdering2.Remove(he);
-
-                    foreach (HistoryEvent c in he.Children)
-                    {
-                        nodes.Enqueue(c);
-                    }
-                }
-            }
-
-            // Parent interestingness affected?
-            Check(formerParentEvent);
-        }
-
-        public List<HistoryEvent> SortHorizontally(History history, HistoryEvent rootEvent)
-        {
-            int HorizontalSort(HistoryEvent x, HistoryEvent y)
-            {
-                int result = y.GetMaxDescendentTicks().CompareTo(x.GetMaxDescendentTicks());
-
-                if (result != 0)
-                {
-                    return result;
-                }
-
-                if (x.IsEqualToOrAncestorOf(history.CurrentEvent)) // history.IsClosedEvent(x))
-                {
-                    return -1;
-                }
-                else if (y.IsEqualToOrAncestorOf(history.CurrentEvent)) // history.IsClosedEvent(y))
-                {
-                    return 1;
-                }
-
-                return y.Id.CompareTo(x.Id);
-            }
-
-            List<HistoryEvent> children = new List<HistoryEvent>();
-
-            List<HistoryEvent> horizontalOrdering = new List<HistoryEvent>();
-
-            horizontalOrdering.Capacity = _verticalOrdering2.Count;
-
-            horizontalOrdering.Add(rootEvent);
-            int i = 0;
-
-            while (i < horizontalOrdering.Count)
-            {
-                children.Clear();
-                children.AddRange(horizontalOrdering[i].Children);
-                children.Sort((x, y) => HorizontalSort(x,y));
-
-                if (!InterestingEvent(horizontalOrdering[i]))
-                {
-                    horizontalOrdering.RemoveAt(i);
-                    i--;
-                }
-                //else
-                //{
-                //    i++;
-                //}
-
-                horizontalOrdering.InsertRange(i + 1, children);
-                i++;
-            }
-
-            return horizontalOrdering;
-        }
-
-        private void Check(HistoryEvent historyEvent)
-        {
-            if (historyEvent == null)
-            {
-                return;
-            }
-
-            bool interesting = InterestingEvent(historyEvent);
-            bool present = _verticalOrdering2.ContainsValue(historyEvent);
-
-            if (present && !interesting)
-            {
-                _verticalOrdering2.Remove(historyEvent);
-            }
-            else if (!present && interesting)
-            {
-                _verticalOrdering2.Add(historyEvent, historyEvent);
-            }
-        }
-
-        static public bool InterestingEvent(HistoryEvent historyEvent)
-        {
-            if (historyEvent is RootHistoryEvent ||
-                historyEvent is BookmarkHistoryEvent ||
-                historyEvent.Children.Count != 1)
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        private SortedList<HistoryEvent, HistoryEvent> _verticalOrdering2;
-    }
-
     public class HistoryViewNode
     {
         public HistoryViewNode(HistoryEvent historyEvent)
@@ -449,11 +256,6 @@ namespace CPvC
         public HistoryEvent HistoryEvent { get; }
         public HistoryViewNode Parent { get; set; }
         public List<HistoryViewNode> Children { get; }
-
-        public void Draw()
-        {
-
-        }
     }
 
     /// <summary>
