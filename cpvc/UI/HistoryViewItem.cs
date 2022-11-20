@@ -12,6 +12,7 @@ namespace CPvC
     {
         public HistoryEventOrderings(History history)
         {
+            _fullRefresh = false;
             Init(history);
         }
 
@@ -78,6 +79,41 @@ namespace CPvC
             }
 
             return false;
+        }
+
+        public void Process(HistoryControl historyControl, HistoryEvent e, HistoryEvent formerParentEvent, HistoryChangedAction action)
+        {
+            if (_fullRefresh)
+            {
+                // No need to check, we're refreshing the tree anyway!
+                return;
+            }
+
+            switch (action)
+            {
+                case HistoryChangedAction.Add:
+                    _lastAddedEvent = e;
+                    _fullRefresh = true;
+                    break;
+                case HistoryChangedAction.DeleteBranch:
+                case HistoryChangedAction.DeleteBookmark:
+                    _fullRefresh = true;
+                    break;
+                case HistoryChangedAction.SetCurrent:
+                    if (!ReferenceEquals(e, _lastAddedEvent))
+                    {
+                        _fullRefresh = true;
+                    }
+                    break;
+                case HistoryChangedAction.UpdateCurrent:
+                    _fullRefresh = VerticalPositionChanged(e);
+                    break;
+            }
+
+            if (_fullRefresh)
+            {
+                historyControl.GenerateTree();
+            }
         }
 
         static private bool InterestingEvent(HistoryEvent historyEvent)
@@ -198,6 +234,9 @@ namespace CPvC
         private List<HistoryEvent> _verticalEvents;
         private Dictionary<HistoryEvent, int> _horizontalPosition;
         private Dictionary<HistoryEvent, int> _verticalPosition;
+
+        private bool _fullRefresh;
+        private HistoryEvent _lastAddedEvent;
     }
 
     public class HistoryViewNode

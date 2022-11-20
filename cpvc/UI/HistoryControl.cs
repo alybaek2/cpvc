@@ -16,64 +16,43 @@ namespace CPvC
         private HistoryEventOrderings _orderings;
         private bool _updatePending;
 
-        public static readonly DependencyProperty HistoryProperty =
-            DependencyProperty.Register(
-                "History",
-                typeof(History),
-                typeof(HistoryControl),
-                new PropertyMetadata(null, PropertyChangedCallback));
 
         public HistoryControl()
         {
             _orderings = null;
             _updatePending = false;
+
+            DataContextChanged += HistoryControl_DataContextChanged;
         }
 
-        private static void PropertyChangedCallback(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs args)
+        private void HistoryControl_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            HistoryControl userControl = (HistoryControl)dependencyObject;
-            userControl.History = (History)args.NewValue;
-        }
-
-        public History History
-        {
-            get
+            if (ReferenceEquals(e.OldValue, e.NewValue))
             {
-                return (History)GetValue(HistoryProperty);
+                return;
             }
 
-            set
+
+            History oldHistory = (History)e.OldValue;
+            if (oldHistory != null)
             {
-                _history = value;
-                SetValue(HistoryProperty, value);
-
-                value.Auditors += ProcessHistoryChange;
-
-                SetHistory(value);
+                oldHistory.Auditors -= ProcessHistoryChange;
             }
-        }
 
+            History newHistory = (History)e.NewValue;
+            if (newHistory != null)
+            {
+                newHistory.Auditors += ProcessHistoryChange;
+            }
+
+            _history = newHistory;
+
+            SetHistory(newHistory);
+        }
 
         public void ProcessHistoryChange(HistoryEvent e, HistoryEvent formerParentEvent, HistoryChangedAction action)
         {
-            bool refresh = false;
-
-            switch (action)
-            {
-                case HistoryChangedAction.Add:
-                case HistoryChangedAction.DeleteBranch:
-                case HistoryChangedAction.DeleteBookmark:
-                    refresh = true;
-                    break;
-                case HistoryChangedAction.UpdateCurrent:
-                    refresh = _orderings?.VerticalPositionChanged(e) ?? true;
-                    break;
-            }
-
-            if (refresh)
-            {
-                GenerateTree();
-            }
+            _orderings.Process(this, e, formerParentEvent, action);
         }
 
         public void SetHistory(History history)
@@ -107,6 +86,15 @@ namespace CPvC
 
         public void SetItems()
         {
+            if (_history == null)
+            {
+                Items.Clear();
+                _updatePending = false;
+                return;
+            }
+
+            HistoryEventOrderings oldOrderings = _orderings;
+
             // Probably need a lock here!
             {
                 _orderings = new HistoryEventOrderings(_history);
