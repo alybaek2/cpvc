@@ -37,6 +37,8 @@ namespace CPvC
 
         private History _machineHistory;
         private Blobs _blobs;
+        private HistoryEvent _pendingEvent;
+        private HistoryChangedAction _pendingAction;
 
         private LocalMachine _machine;
 
@@ -101,6 +103,8 @@ namespace CPvC
             _blobs = new Blobs(nextBlobId);
 
             History = machineHistory;
+            _pendingEvent = null;
+            _pendingAction = HistoryChangedAction.Add;
         }
 
         public MachineFile(ITextFile textFile, History machineHistory) : this(textFile, machineHistory, 0)
@@ -110,8 +114,27 @@ namespace CPvC
         private void HistoryEventHappened(HistoryEvent historyEvent, HistoryEvent formerParentEvent, HistoryChangedAction changeAction)
         {
             // This may not be the best way to do this... are there any better alternatives?
+            if (_pendingEvent != null && !ReferenceEquals(_pendingEvent, historyEvent))
+            {
+                List<string> pendingLines = GetLines(_pendingEvent, _pendingAction);
+
+                foreach (string line in pendingLines)
+                {
+                    _textFile.WriteLine(line);
+                }
+
+                _pendingEvent = null;
+            }
+
+            // Need to remember the event if it's not closed and write it out the next time we get a different event.
             if (!History.IsClosedEvent(historyEvent))
             {
+                if (_pendingEvent == null)
+                {
+                    _pendingAction = changeAction;
+                }
+                _pendingEvent = historyEvent;
+
                 return;
             }
 

@@ -226,7 +226,7 @@ namespace CPvC
 
                 if (currentCoreActionNode != null && currentCoreActionNode.CoreAction is RunUntilAction)
                 {
-                    Notify(currentCoreActionNode.HistoryEvent, null, HistoryChangedAction.Add);
+                    //Notify(currentCoreActionNode.HistoryEvent, null, HistoryChangedAction.Add);
                 }
 
 
@@ -242,7 +242,7 @@ namespace CPvC
 
             if (notifyCurrent)
             {
-                Notify(_currentNode.HistoryEvent, null, HistoryChangedAction.Add);
+                //Notify(_currentNode.HistoryEvent, null, HistoryChangedAction.Add);
             }
 
             _currentNode = historyNode;

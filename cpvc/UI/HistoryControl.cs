@@ -52,7 +52,7 @@ namespace CPvC
 
         public void ProcessHistoryChange(HistoryEvent e, HistoryEvent formerParentEvent, HistoryChangedAction action)
         {
-            _orderings.Process(this, e, formerParentEvent, action);
+            _orderings?.Process(this, e, formerParentEvent, action);
         }
 
         public void SetHistory(History history)
@@ -97,7 +97,7 @@ namespace CPvC
 
             // Probably need a lock here!
             {
-                _orderings = new HistoryEventOrderings(_history);
+                _orderings = new HistoryEventOrderings(Items, _history);
                 _updatePending = false;
             }
 
