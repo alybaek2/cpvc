@@ -17,36 +17,6 @@ namespace CPvC
             Init(_history);
         }
 
-        private IEnumerable<HistoryEvent> GetVerticallySorted()
-        {
-            return _verticalEvents;
-        }
-
-        private IEnumerable<HistoryEvent> GetHorizonallySorted()
-        {
-            return _horizontalEvents;
-        }
-
-        private int GetVerticalPosition(HistoryEvent historyEvent)
-        {
-            return _verticalPosition[historyEvent];
-        }
-
-        private int GetHorizontalPosition(HistoryEvent historyEvent)
-        {
-            return _horizontalPosition[historyEvent];
-        }
-
-        private HistoryEvent GetParent(HistoryEvent historyEvent)
-        {
-            return _parentEvents[historyEvent];
-        }
-
-        private int Count()
-        {
-            return _verticalEvents.Count;
-        }
-
         private bool VerticalPositionChanged(HistoryEvent historyEvent)
         {
             // Has "interestingness" changed?
@@ -62,7 +32,7 @@ namespace CPvC
                 return _verticalEvents.Contains(historyEvent);
             }
 
-            int v = GetVerticalPosition(historyEvent);
+            int v = _verticalPosition[historyEvent];
             if (v < _verticalEvents.Count - 1)
             {
                 if (VerticalSort(historyEvent, _verticalEvents[v + 1]) >= 0)
@@ -143,14 +113,14 @@ namespace CPvC
             // Do a full refresh!
             Init(_history);
 
-            List<HistoryViewItem> historyItems = GetVerticallySorted().Select(x => new HistoryViewItem(x)).ToList();
+            List<HistoryViewItem> historyItems = _verticalEvents.Select(x => new HistoryViewItem(x)).ToList();
 
-            foreach (HistoryEvent horizontalEvent in GetHorizonallySorted())
+            foreach (HistoryEvent horizontalEvent in _horizontalEvents)
             {
-                int v = GetVerticalPosition(horizontalEvent);
+                int v = _verticalPosition[horizontalEvent];
 
-                HistoryEvent parentEvent = GetParent(horizontalEvent);
-                int pv = parentEvent != null ? GetVerticalPosition(parentEvent) : -1;
+                HistoryEvent parentEvent = _parentEvents[horizontalEvent];
+                int pv = parentEvent != null ? _verticalPosition[parentEvent] : -1;
                 int ph = parentEvent != null ? historyItems[pv].Events.FindIndex(x => ReferenceEquals(x, parentEvent)) : 0;
 
                 // "Draw" the history event from pv + 1 to v
