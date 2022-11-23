@@ -75,6 +75,7 @@ namespace CPvC
             timer.Tick += (sender, args) =>
             {
                 timer.Stop();
+                _updatePending = false;
 
                 SetItems();
             };
@@ -87,13 +88,7 @@ namespace CPvC
             if (_history == null)
             {
                 Items.Clear();
-                _updatePending = false;
                 return;
-            }
-
-            // Probably need a lock here!
-            {
-                _updatePending = false;
             }
 
             List<HistoryViewItem> historyItems = _orderings.UpdateItems();
