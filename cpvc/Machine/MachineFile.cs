@@ -111,7 +111,7 @@ namespace CPvC
         {
         }
 
-        private void HistoryEventHappened(HistoryEvent historyEvent, HistoryEvent formerParentEvent, HistoryChangedAction changeAction)
+        private void HistoryEventHappened(HistoryEvent historyEvent, HistoryChangedAction changeAction)
         {
             // This may not be the best way to do this... are there any better alternatives?
             if (_pendingEvent != null && !ReferenceEquals(_pendingEvent, historyEvent))

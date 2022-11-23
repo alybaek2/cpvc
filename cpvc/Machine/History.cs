@@ -20,7 +20,7 @@ namespace CPvC
 
         private HashSet<HistoryNode> _nodes;
 
-        public delegate void HistoryEventDelegate(HistoryEvent historyEvent, HistoryEvent formerParentEvent, HistoryChangedAction changeAction);
+        public delegate void HistoryEventDelegate(HistoryEvent historyEvent, HistoryChangedAction changeAction);
 
         public HistoryEventDelegate Auditors;
 
@@ -77,7 +77,7 @@ namespace CPvC
                 {
                     currentCoreAction.StopTicks = runUntilAction.StopTicks;
 
-                    Auditors?.Invoke(_currentNode.HistoryEvent, null, HistoryChangedAction.UpdateCurrent);
+                    Auditors?.Invoke(_currentNode.HistoryEvent, HistoryChangedAction.UpdateCurrent);
 
                     return currentCoreActionNode.HistoryEvent as CoreActionHistoryEvent;
                 }
@@ -153,7 +153,7 @@ namespace CPvC
                 nodesToRemove.RemoveAt(0);
             }
 
-            Notify(historyEvent, parent.HistoryEvent, HistoryChangedAction.DeleteBranch);
+            Notify(historyEvent, HistoryChangedAction.DeleteBranch);
 
             return true;
         }
@@ -187,7 +187,7 @@ namespace CPvC
             HistoryEvent oldParentEvent = historyNode.Parent.HistoryEvent;
             historyNode.Parent = null;
 
-            Notify(historyEvent, oldParentEvent, HistoryChangedAction.DeleteBookmark);
+            Notify(historyEvent, HistoryChangedAction.DeleteBookmark);
 
             return true;
         }
@@ -230,7 +230,7 @@ namespace CPvC
                 }
 
 
-                Notify(_currentNode.HistoryEvent, null, HistoryChangedAction.SetCurrent);
+                Notify(_currentNode.HistoryEvent, HistoryChangedAction.SetCurrent);
             }
         }
 
@@ -247,14 +247,14 @@ namespace CPvC
 
             _currentNode = historyNode;
 
-            Notify(historyNode.HistoryEvent, null, HistoryChangedAction.Add);
+            Notify(historyNode.HistoryEvent, HistoryChangedAction.Add);
         }
 
-        private void Notify(HistoryEvent historyEvent, HistoryEvent formerParentEvent, HistoryChangedAction action)
+        private void Notify(HistoryEvent historyEvent, HistoryChangedAction action)
         {
             //if (IsClosedEvent(historyEvent))
             {
-                Auditors?.Invoke(historyEvent, formerParentEvent, action);
+                Auditors?.Invoke(historyEvent, action);
             }
         }
     }

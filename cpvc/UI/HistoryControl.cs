@@ -32,7 +32,6 @@ namespace CPvC
                 return;
             }
 
-
             History oldHistory = (History)e.OldValue;
             if (oldHistory != null)
             {
@@ -46,18 +45,17 @@ namespace CPvC
             }
 
             _history = newHistory;
+            _orderings = new HistoryEventOrderings(_history);
 
-            SetHistory(newHistory);
-        }
-
-        public void ProcessHistoryChange(HistoryEvent e, HistoryEvent formerParentEvent, HistoryChangedAction action)
-        {
-            _orderings?.Process(this, e, formerParentEvent, action);
-        }
-
-        public void SetHistory(History history)
-        {
             GenerateTree();
+        }
+
+        public void ProcessHistoryChange(HistoryEvent e, HistoryChangedAction action)
+        {
+            if (_orderings.Process(e, action))
+            {
+                GenerateTree();
+            }
         }
 
         public void GenerateTree()
@@ -93,39 +91,12 @@ namespace CPvC
                 return;
             }
 
-            HistoryEventOrderings oldOrderings = _orderings;
-
             // Probably need a lock here!
             {
-                _orderings = new HistoryEventOrderings(Items, _history);
                 _updatePending = false;
             }
 
-            List<HistoryViewItem> historyItems = _orderings.GetVerticallySorted().Select(x => new HistoryViewItem(x)).ToList();
-
-            foreach (HistoryEvent horizontalEvent in _orderings.GetHorizonallySorted())
-            {
-                int v = _orderings.GetVerticalPosition(horizontalEvent);
-
-                HistoryEvent parentEvent = _orderings.GetParent(horizontalEvent);
-                int pv = parentEvent != null ? _orderings.GetVerticalPosition(parentEvent) : -1;
-                int ph = parentEvent != null ? historyItems[pv].Events.FindIndex(x => ReferenceEquals(x, parentEvent)) : 0;
-
-                // "Draw" the history event from pv + 1 to v
-                for (int d = pv + 1; d <= v; d++)
-                {
-                    HistoryViewItem historyViewItem = historyItems[d];
-
-                    // Pad out the Events to ensure the line connecting us to our parent never moves to the left.... it just looks better that way!
-                    for (int padIndex = historyViewItem.Events.Count; padIndex < ph; padIndex++)
-                    {
-                        historyViewItem.Events.Add(null);
-                    }
-
-                    historyViewItem.Events.Add(horizontalEvent);
-                    ph = Math.Max(ph, historyViewItem.Events.Count - 1);
-                }
-            }
+            List<HistoryViewItem> historyItems = _orderings.UpdateItems();
 
             // Draw items to their respective canvasses.
             HistoryViewItem next = null;

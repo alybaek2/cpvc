@@ -9,44 +9,45 @@ namespace CPvC
 {
     public class HistoryEventOrderings
     {
-        public HistoryEventOrderings(ItemCollection itemCollection, History history)
+        public HistoryEventOrderings(History history)
         {
-            _itemCollection = itemCollection;
-            _fullRefresh = false;
-            Init(history);
+            _history = history;
+            _fullRefresh = true;
+            _items = new List<HistoryViewItem>();
+            Init(_history);
         }
 
-        public IEnumerable<HistoryEvent> GetVerticallySorted()
+        private IEnumerable<HistoryEvent> GetVerticallySorted()
         {
             return _verticalEvents;
         }
 
-        public IEnumerable<HistoryEvent> GetHorizonallySorted()
+        private IEnumerable<HistoryEvent> GetHorizonallySorted()
         {
             return _horizontalEvents;
         }
 
-        public int GetVerticalPosition(HistoryEvent historyEvent)
+        private int GetVerticalPosition(HistoryEvent historyEvent)
         {
             return _verticalPosition[historyEvent];
         }
 
-        public int GetHorizontalPosition(HistoryEvent historyEvent)
+        private int GetHorizontalPosition(HistoryEvent historyEvent)
         {
             return _horizontalPosition[historyEvent];
         }
 
-        public HistoryEvent GetParent(HistoryEvent historyEvent)
+        private HistoryEvent GetParent(HistoryEvent historyEvent)
         {
             return _parentEvents[historyEvent];
         }
 
-        public int Count()
+        private int Count()
         {
             return _verticalEvents.Count;
         }
 
-        public bool VerticalPositionChanged(HistoryEvent historyEvent)
+        private bool VerticalPositionChanged(HistoryEvent historyEvent)
         {
             // Has "interestingness" changed?
             if (InterestingEvent(historyEvent))
@@ -110,9 +111,9 @@ namespace CPvC
 
                         if (n)
                         {
-                            foreach (object o in _itemCollection)
+                            foreach (HistoryViewItem item in _items)
                             {
-                                HistoryViewItem item = (HistoryViewItem)o;
+                                //HistoryViewItem item = (HistoryViewItem)o;
                                 if (item.HistoryEvent == parentEvent)
                                 {
                                     item.HistoryEvent = historyEvent;
@@ -129,16 +130,57 @@ namespace CPvC
                 }
             }
 
-            _lastAddedEvent = historyEvent;
             _fullRefresh = true;
         }
 
-        public void Process(HistoryControl historyControl, HistoryEvent e, HistoryEvent formerParentEvent, HistoryChangedAction action)
+        public List<HistoryViewItem> UpdateItems()
+        {
+            if (!_fullRefresh)
+            {
+                return _items;
+            }
+
+            // Do a full refresh!
+            Init(_history);
+
+            List<HistoryViewItem> historyItems = GetVerticallySorted().Select(x => new HistoryViewItem(x)).ToList();
+
+            foreach (HistoryEvent horizontalEvent in GetHorizonallySorted())
+            {
+                int v = GetVerticalPosition(horizontalEvent);
+
+                HistoryEvent parentEvent = GetParent(horizontalEvent);
+                int pv = parentEvent != null ? GetVerticalPosition(parentEvent) : -1;
+                int ph = parentEvent != null ? historyItems[pv].Events.FindIndex(x => ReferenceEquals(x, parentEvent)) : 0;
+
+                // "Draw" the history event from pv + 1 to v
+                for (int d = pv + 1; d <= v; d++)
+                {
+                    HistoryViewItem historyViewItem = historyItems[d];
+
+                    // Pad out the Events to ensure the line connecting us to our parent never moves to the left.... it just looks better that way!
+                    for (int padIndex = historyViewItem.Events.Count; padIndex < ph; padIndex++)
+                    {
+                        historyViewItem.Events.Add(null);
+                    }
+
+                    historyViewItem.Events.Add(horizontalEvent);
+                    ph = Math.Max(ph, historyViewItem.Events.Count - 1);
+                }
+            }
+
+            _items = historyItems;
+            _fullRefresh = false;
+
+            return historyItems;
+        }
+
+        public bool Process(HistoryEvent e, HistoryChangedAction action)
         {
             if (_fullRefresh)
             {
                 // No need to check, we're refreshing the tree anyway!
-                return;
+                return true;
             }
 
             switch (action)
@@ -151,20 +193,14 @@ namespace CPvC
                     _fullRefresh = true;
                     break;
                 case HistoryChangedAction.SetCurrent:
-                    if (!ReferenceEquals(e, _lastAddedEvent))
-                    {
-                        //_fullRefresh = true;
-                    }
+                    _fullRefresh = true;
                     break;
                 case HistoryChangedAction.UpdateCurrent:
                     _fullRefresh = VerticalPositionChanged(e);
                     break;
             }
 
-            if (_fullRefresh)
-            {
-                historyControl.GenerateTree();
-            }
+            return _fullRefresh;
         }
 
         static private bool InterestingEvent(HistoryEvent historyEvent)
@@ -228,6 +264,14 @@ namespace CPvC
             _verticalEvents = new List<HistoryEvent>();
             List<HistoryEvent> children = new List<HistoryEvent>();
 
+            _horizontalPosition = new Dictionary<HistoryEvent, int>();
+            _verticalPosition = new Dictionary<HistoryEvent, int>();
+
+            if (history == null)
+            {
+                return;
+            }
+
             _horizontalEvents.Add(history.RootEvent);
 
             int i = 0;
@@ -266,9 +310,6 @@ namespace CPvC
 
             _verticalEvents.Sort((x, y) => VerticalSort(x, y));
 
-            _horizontalPosition = new Dictionary<HistoryEvent, int>();
-            _verticalPosition = new Dictionary<HistoryEvent, int>();
-
             for (int v = 0; v < _verticalEvents.Count; v++)
             {
                 _verticalPosition.Add(_verticalEvents[v], v);
@@ -280,6 +321,7 @@ namespace CPvC
             }
         }
 
+        private History _history;
         private Dictionary<HistoryEvent, HistoryEvent> _parentEvents;
         private List<HistoryEvent> _horizontalEvents;
         private List<HistoryEvent> _verticalEvents;
@@ -287,7 +329,6 @@ namespace CPvC
         private Dictionary<HistoryEvent, int> _verticalPosition;
 
         private bool _fullRefresh;
-        private HistoryEvent _lastAddedEvent;
-        private ItemCollection _itemCollection;
+        private List<HistoryViewItem> _items;
     }
 }
