@@ -58,42 +58,34 @@ namespace CPvC
 
             if (_verticalPosition.TryGetValue(parentEvent, out int parentVerticalPosition))
             {
-                if (!InterestingEvent(parentEvent))
+                if (!InterestingEvent(parentEvent) && InterestingEvent(historyEvent))
                 {
-                    if (InterestingEvent(historyEvent))
+                    bool verticalPositionUnchanged = false;
+                    if (parentVerticalPosition >= _verticalEvents.Count - 1 || VerticalSort(historyEvent, _verticalEvents[parentVerticalPosition + 1]) <= 0)
                     {
-                        bool n = true;
-                        if (parentVerticalPosition < _verticalEvents.Count - 1)
+                        if (parentVerticalPosition <= 0 || VerticalSort(_verticalEvents[parentVerticalPosition - 1], historyEvent) <= 0)
                         {
-                            if (VerticalSort(historyEvent, _verticalEvents[parentVerticalPosition + 1]) > 0)
-                            {
-                                n = false;
-                            }
+                            verticalPositionUnchanged = true;
                         }
+                    }
 
-                        if (parentVerticalPosition > 0)
+                    if (verticalPositionUnchanged)
+                    {
+                        foreach (HistoryViewItem item in _items)
                         {
-                            if (VerticalSort(_verticalEvents[parentVerticalPosition - 1], historyEvent) > 0)
+                            if (ReferenceEquals(item.HistoryEvent, parentEvent))
                             {
-                                n = false;
-                            }
-                        }
+                                item.HistoryEvent = historyEvent;
 
-                        if (n)
-                        {
-                            foreach (HistoryViewItem item in _items)
-                            {
-                                //HistoryViewItem item = (HistoryViewItem)o;
-                                if (item.HistoryEvent == parentEvent)
-                                {
-                                    item.HistoryEvent = historyEvent;
+                                _verticalEvents[parentVerticalPosition] = historyEvent;
+                                _verticalPosition.Remove(parentEvent);
+                                _verticalPosition.Add(historyEvent, parentVerticalPosition);
 
-                                    _verticalEvents[parentVerticalPosition] = historyEvent;
-                                    _verticalPosition.Remove(parentEvent);
-                                    _verticalPosition.Add(historyEvent, parentVerticalPosition);
+                                HistoryEvent interestingParentEvent = _interestingParentEvents[parentEvent];
+                                _interestingParentEvents.Add(historyEvent, interestingParentEvent);
+                                _interestingParentEvents.Remove(parentEvent);
 
-                                    return;
-                                }
+                                return;
                             }
                         }
                     }
@@ -119,7 +111,7 @@ namespace CPvC
             {
                 int v = _verticalPosition[horizontalEvent];
 
-                HistoryEvent parentEvent = _parentEvents[horizontalEvent];
+                HistoryEvent parentEvent = _interestingParentEvents[horizontalEvent];
                 int pv = parentEvent != null ? _verticalPosition[parentEvent] : -1;
                 int ph = parentEvent != null ? historyItems[pv].Events.FindIndex(x => ReferenceEquals(x, parentEvent)) : 0;
 
@@ -150,7 +142,7 @@ namespace CPvC
             if (_fullRefresh)
             {
                 // No need to check, we're refreshing the tree anyway!
-                return true;
+                return false;
             }
 
             switch (action)
@@ -228,7 +220,7 @@ namespace CPvC
 
         private void Init(History history)
         {
-            _parentEvents = new Dictionary<HistoryEvent, HistoryEvent>();
+            _interestingParentEvents = new Dictionary<HistoryEvent, HistoryEvent>();
             _horizontalEvents = new List<HistoryEvent>();
 
             _verticalEvents = new List<HistoryEvent>();
@@ -275,7 +267,7 @@ namespace CPvC
                     parentEvent = parentEvent.Parent;
                 }
 
-                _parentEvents.Add(historyEvent, parentEvent);
+                _interestingParentEvents.Add(historyEvent, parentEvent);
             }
 
             _verticalEvents.Sort((x, y) => VerticalSort(x, y));
@@ -292,7 +284,7 @@ namespace CPvC
         }
 
         private History _history;
-        private Dictionary<HistoryEvent, HistoryEvent> _parentEvents;
+        private Dictionary<HistoryEvent, HistoryEvent> _interestingParentEvents;
         private List<HistoryEvent> _horizontalEvents;
         private List<HistoryEvent> _verticalEvents;
         private Dictionary<HistoryEvent, int> _horizontalPosition;

@@ -14,7 +14,7 @@ namespace CPvC
         private History _history;
 
         private HistoryEventOrderings _orderings;
-        private bool _updatePending;
+        private volatile bool _updatePending;
 
 
         public HistoryControl()
@@ -47,28 +47,25 @@ namespace CPvC
             _history = newHistory;
             _orderings = new HistoryEventOrderings(_history);
 
-            GenerateTree();
+            ScheduleUpdateItems();
         }
 
         public void ProcessHistoryChange(HistoryEvent e, HistoryChangedAction action)
         {
             if (_orderings.Process(e, action))
             {
-                GenerateTree();
+                ScheduleUpdateItems();
             }
         }
 
-        public void GenerateTree()
+        public void ScheduleUpdateItems()
         {
-            // Need some kind of lock here!
+            if (_updatePending)
             {
-                if (_updatePending)
-                {
-                    return;
-                }
-
-                _updatePending = true;
+                return;
             }
+
+            _updatePending = true;
 
             DispatcherTimer timer = new DispatcherTimer(DispatcherPriority.Normal, Dispatcher);
             timer.Interval = new TimeSpan(0, 0, 0, 0, 20);
@@ -77,13 +74,13 @@ namespace CPvC
                 timer.Stop();
                 _updatePending = false;
 
-                SetItems();
+                UpdateItems();
             };
 
             timer.Start();
         }
 
-        public void SetItems()
+        public void UpdateItems()
         {
             if (_history == null)
             {

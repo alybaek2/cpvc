@@ -50,9 +50,13 @@ namespace CPvC
 
         public event PropertyChangedEventHandler PropertyChanged;
 
+        private bool _needsDraw;
+
         public HistoryViewItem(HistoryEvent historyEvent)
         {
             HistoryEvent = historyEvent ?? throw new ArgumentNullException(nameof(historyEvent));
+
+            _needsDraw = true;
 
             Canvas = null;
             Canvas = new Canvas();
@@ -80,6 +84,11 @@ namespace CPvC
             Events.Add(historyEvent);
 
             return Events.Count - 1;
+        }
+
+        public void Invalidate()
+        {
+            _needsDraw = true;
         }
 
         private void DrawDot(double x, Brush brush, bool filled)
@@ -134,10 +143,19 @@ namespace CPvC
         /// <param name="currentEvent">The current event in the machine's history.</param>
         public void Draw(HistoryViewItem next, HistoryEvent currentEvent)
         {
+            if (!_needsDraw)
+            {
+                return;
+            }
+
+            Canvas.Children.Clear();
+
             for (int t = 0; t < Events.Count; t++)
             {
                 Draw(Events[t], t, next, currentEvent);
             }
+
+            _needsDraw = false;
         }
 
         /// <summary>
@@ -153,8 +171,6 @@ namespace CPvC
             {
                 return;
             }
-
-            //Canvas = new Canvas();
 
             // Calculate the "centre" of the cell at position x.
             double cx = x + 0.5;
