@@ -52,9 +52,12 @@ namespace CPvC
 
         public void ProcessHistoryChange(HistoryEvent e, HistoryChangedAction action)
         {
-            if (_orderings.Process(e, action))
+            lock (_orderings)
             {
-                ScheduleUpdateItems();
+                if (_orderings.Process(e, action))
+                {
+                    ScheduleUpdateItems();
+                }
             }
         }
 
@@ -88,7 +91,11 @@ namespace CPvC
                 return;
             }
 
-            List<HistoryViewItem> historyItems = _orderings.UpdateItems();
+            List<HistoryViewItem> historyItems = null;
+            lock (_orderings)
+            {
+                historyItems = _orderings.UpdateItems();
+            }
 
             // Draw items to their respective canvasses.
             HistoryViewItem next = null;
