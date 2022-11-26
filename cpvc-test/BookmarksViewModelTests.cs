@@ -108,7 +108,7 @@ namespace CPvC.Test
         public void DeleteBookmarkNoSelection()
         {
             // Setup
-            Mock<History.HistoryEventDelegate> mockAuditor = new Mock<History.HistoryEventDelegate>(MockBehavior.Loose);
+            Mock<HistoryChangedEventHandler> mockAuditor = new Mock<HistoryChangedEventHandler>(MockBehavior.Loose);
             _history.Auditors += mockAuditor.Object;
 
             // Act
@@ -230,7 +230,7 @@ namespace CPvC.Test
         public void DeleteBranchNoSelection()
         {
             // Setup
-            Mock<History.HistoryEventDelegate> mockAuditor = new Mock<History.HistoryEventDelegate>(MockBehavior.Loose);
+            Mock<HistoryChangedEventHandler> mockAuditor = new Mock<HistoryChangedEventHandler>(MockBehavior.Loose);
             _history.Auditors += mockAuditor.Object;
 
             // Act
@@ -286,7 +286,7 @@ namespace CPvC.Test
         public void DeleteBranchNonDeletable()
         {
             // Setup
-            Mock<History.HistoryEventDelegate> mockAuditor = new Mock<History.HistoryEventDelegate>(MockBehavior.Loose);
+            Mock<HistoryChangedEventHandler> mockAuditor = new Mock<HistoryChangedEventHandler>(MockBehavior.Loose);
             _history.Auditors += mockAuditor.Object;
 
             _history.CurrentEvent = _bookmark3Event;

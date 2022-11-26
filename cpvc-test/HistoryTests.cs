@@ -137,7 +137,7 @@ namespace CPvC.Test
         public void SetCurrentEventToCurrentEvent()
         {
             // Setup
-            Mock<History.HistoryEventDelegate> mockAuditor = new Mock<History.HistoryEventDelegate>(MockBehavior.Loose);
+            Mock<HistoryChangedEventHandler> mockAuditor = new Mock<HistoryChangedEventHandler>(MockBehavior.Loose);
             _history.Auditors += mockAuditor.Object;
 
             // Act

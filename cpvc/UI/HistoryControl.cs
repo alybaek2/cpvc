@@ -13,13 +13,13 @@ namespace CPvC
     {
         private History _history;
 
-        private HistoryEventOrderings _orderings;
+        private readonly HistoryEventOrderings _orderings;
         private volatile bool _updatePending;
 
 
         public HistoryControl()
         {
-            _orderings = null;
+            _orderings = new HistoryEventOrderings();
             _updatePending = false;
 
             DataContextChanged += HistoryControl_DataContextChanged;
@@ -45,16 +45,20 @@ namespace CPvC
             }
 
             _history = newHistory;
-            _orderings = new HistoryEventOrderings(_history);
+
+            lock (_orderings)
+            {
+                _orderings.SetHistory(_history);
+            }
 
             ScheduleUpdateItems();
         }
 
-        public void ProcessHistoryChange(HistoryEvent e, HistoryChangedAction action)
+        public void ProcessHistoryChange(object sender, HistoryChangedEventArgs args)
         {
             lock (_orderings)
             {
-                if (_orderings.Process(e, action))
+                if (_orderings.Process(args.Event, args.Action))
                 {
                     ScheduleUpdateItems();
                 }

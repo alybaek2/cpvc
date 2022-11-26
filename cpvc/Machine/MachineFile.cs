@@ -111,10 +111,9 @@ namespace CPvC
         {
         }
 
-        private void HistoryEventHappened(HistoryEvent historyEvent, HistoryChangedAction changeAction)
+        private void HistoryEventHappened(object sender, HistoryChangedEventArgs args)
         {
-            // This may not be the best way to do this... are there any better alternatives?
-            if (_pendingEvent != null && !ReferenceEquals(_pendingEvent, historyEvent))
+            if (_pendingEvent != null && !ReferenceEquals(_pendingEvent, args.Event))
             {
                 List<string> pendingLines = GetLines(_pendingEvent, _pendingAction);
 
@@ -127,18 +126,18 @@ namespace CPvC
             }
 
             // Need to remember the event if it's not closed and write it out the next time we get a different event.
-            if (!History.IsClosedEvent(historyEvent))
+            if (!History.IsClosedEvent(args.Event))
             {
                 if (_pendingEvent == null)
                 {
-                    _pendingAction = changeAction;
+                    _pendingAction = args.Action;
                 }
-                _pendingEvent = historyEvent;
+                _pendingEvent = args.Event;
 
                 return;
             }
 
-            List<string> lines = GetLines(historyEvent, changeAction);
+            List<string> lines = GetLines(args.Event, args.Action);
 
             foreach (string line in lines)
             {

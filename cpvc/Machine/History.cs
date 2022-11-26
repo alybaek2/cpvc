@@ -22,7 +22,7 @@ namespace CPvC
 
         public delegate void HistoryEventDelegate(HistoryEvent historyEvent, HistoryChangedAction changeAction);
 
-        public HistoryEventDelegate Auditors;
+        public event HistoryChangedEventHandler Auditors;
 
         private int _nextId;
 
@@ -77,7 +77,8 @@ namespace CPvC
                 {
                     currentCoreAction.StopTicks = runUntilAction.StopTicks;
 
-                    Auditors?.Invoke(_currentNode.HistoryEvent, HistoryChangedAction.UpdateCurrent);
+                    HistoryChangedEventArgs args = new HistoryChangedEventArgs(this, _currentNode.HistoryEvent, HistoryChangedAction.UpdateCurrent);
+                    Auditors?.Invoke(this, args);
 
                     return currentCoreActionNode.HistoryEvent as CoreActionHistoryEvent;
                 }
@@ -254,7 +255,8 @@ namespace CPvC
         {
             //if (IsClosedEvent(historyEvent))
             {
-                Auditors?.Invoke(historyEvent, action);
+                HistoryChangedEventArgs args = new HistoryChangedEventArgs(this, historyEvent, action);
+                Auditors?.Invoke(this, args);
             }
         }
     }

@@ -9,12 +9,18 @@ namespace CPvC
 {
     public class HistoryEventOrderings
     {
-        public HistoryEventOrderings(History history)
+        public HistoryEventOrderings()
+        {
+            _history = null;
+            _fullRefresh = false;
+            _items = null;
+        }
+
+        public void SetHistory(History history)
         {
             _history = history;
             _fullRefresh = true;
             _items = new List<HistoryViewItem>();
-            Init(_history);
         }
 
         private bool VerticalPositionChanged(HistoryEvent historyEvent)
