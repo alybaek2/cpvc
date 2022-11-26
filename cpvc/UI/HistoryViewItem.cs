@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -12,24 +15,50 @@ namespace CPvC
     /// and MachinePropertiesWindow classes. These events can be either a bookmark, the root
     /// node of the timeline, or the terminus of a branch.
     /// </summary>
-    public class HistoryViewItem
+    public class HistoryViewItem : INotifyPropertyChanged
     {
         // The event represented by this HistoryViewItem
-        public HistoryEvent HistoryEvent { get; }
+        public HistoryEvent HistoryEvent
+        {
+            get
+            {
+                return _historyEvent;
+            }
+
+            set
+            {
+                if (ReferenceEquals(value, _historyEvent))
+                {
+                    return;
+                }
+
+                _historyEvent = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private HistoryEvent _historyEvent;
 
         // The full set of events shown in this item. This will include "HistoryEvent", and the rest are "passthrough"
         // of other history events. In the history view "passthrough" is shown as a vertical line.
         public List<HistoryEvent> Events { get; set; }
 
-        public Canvas Canvas { get; }
+        public Canvas Canvas { get; private set; }
 
         private const double _scalingX = 16;
         private const double _scalingY = 16;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private bool _needsDraw;
 
         public HistoryViewItem(HistoryEvent historyEvent)
         {
             HistoryEvent = historyEvent ?? throw new ArgumentNullException(nameof(historyEvent));
 
+            _needsDraw = true;
+
+            Canvas = null;
             Canvas = new Canvas();
             Events = new List<HistoryEvent>();
         }
@@ -55,6 +84,11 @@ namespace CPvC
             Events.Add(historyEvent);
 
             return Events.Count - 1;
+        }
+
+        public void Invalidate()
+        {
+            _needsDraw = true;
         }
 
         private void DrawDot(double x, Brush brush, bool filled)
@@ -109,10 +143,19 @@ namespace CPvC
         /// <param name="currentEvent">The current event in the machine's history.</param>
         public void Draw(HistoryViewItem next, HistoryEvent currentEvent)
         {
+            if (!_needsDraw)
+            {
+                return;
+            }
+
+            Canvas.Children.Clear();
+
             for (int t = 0; t < Events.Count; t++)
             {
                 Draw(Events[t], t, next, currentEvent);
             }
+
+            _needsDraw = false;
         }
 
         /// <summary>
@@ -175,6 +218,11 @@ namespace CPvC
                 // History events with no children are drawn as a terminating dot.
                 DrawDot(cx, (bookmarkHistoryEvent != null) ? (bookmarkHistoryEvent.Bookmark.System ? Brushes.DarkRed : Brushes.Crimson) : Brushes.DarkBlue, historyEvent != currentEvent);
             }
+        }
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
     }
 }

@@ -37,6 +37,8 @@ namespace CPvC
 
         private History _machineHistory;
         private Blobs _blobs;
+        private HistoryEvent _pendingEvent;
+        private HistoryChangedAction _pendingAction;
 
         private LocalMachine _machine;
 
@@ -101,15 +103,41 @@ namespace CPvC
             _blobs = new Blobs(nextBlobId);
 
             History = machineHistory;
+            _pendingEvent = null;
+            _pendingAction = HistoryChangedAction.Add;
         }
 
         public MachineFile(ITextFile textFile, History machineHistory) : this(textFile, machineHistory, 0)
         {
         }
 
-        private void HistoryEventHappened(HistoryEvent historyEvent, HistoryChangedAction changeAction)
+        private void HistoryEventHappened(object sender, HistoryChangedEventArgs args)
         {
-            List<string> lines = GetLines(historyEvent, changeAction);
+            if (_pendingEvent != null && !ReferenceEquals(_pendingEvent, args.Event))
+            {
+                List<string> pendingLines = GetLines(_pendingEvent, _pendingAction);
+
+                foreach (string line in pendingLines)
+                {
+                    _textFile.WriteLine(line);
+                }
+
+                _pendingEvent = null;
+            }
+
+            // Need to remember the event if it's not closed and write it out the next time we get a different event.
+            if (!History.IsClosedEvent(args.Event))
+            {
+                if (_pendingEvent == null)
+                {
+                    _pendingAction = args.Action;
+                }
+                _pendingEvent = args.Event;
+
+                return;
+            }
+
+            List<string> lines = GetLines(args.Event, args.Action);
 
             foreach (string line in lines)
             {
@@ -279,6 +307,9 @@ namespace CPvC
                     break;
                 case HistoryChangedAction.SetCurrent:
                     lines.Add(CurrentCommand(historyEvent.Id));
+                    break;
+                case HistoryChangedAction.UpdateCurrent:
+                    // Ignore this!
                     break;
                 default:
                     throw new ArgumentException("Unknown history action type!", nameof(changeType));

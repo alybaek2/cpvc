@@ -242,17 +242,23 @@ namespace CPvC.Test
 
                 coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
                 Assert.IsNotNull(coreActionHistoryEvent);
+                Assert.IsInstanceOf<RunUntilAction>(coreActionHistoryEvent.CoreAction);
+                Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
+
+                coreActionHistoryEvent = coreActionHistoryEvent.Children[0] as CoreActionHistoryEvent;
+                Assert.IsNotNull(coreActionHistoryEvent);
+                Assert.IsInstanceOf<RunUntilAction>(coreActionHistoryEvent.CoreAction);
                 Assert.AreEqual(1, coreActionHistoryEvent.Children.Count);
 
                 BookmarkHistoryEvent bookmarkHistoryEvent = coreActionHistoryEvent.Children[0] as BookmarkHistoryEvent;
                 Assert.IsNotNull(bookmarkHistoryEvent);
 
-                coreActionHistoryEvent = bookmarkHistoryEvent.Children[0] as CoreActionHistoryEvent;
-                Assert.IsNotNull(coreActionHistoryEvent);
-                Assert.IsInstanceOf<RunUntilAction>(coreActionHistoryEvent.CoreAction);
+                //coreActionHistoryEvent = bookmarkHistoryEvent.Children[0] as CoreActionHistoryEvent;
+                //Assert.IsNotNull(coreActionHistoryEvent);
+                //Assert.IsInstanceOf<RunUntilAction>(coreActionHistoryEvent.CoreAction);
 
-                bookmarkHistoryEvent = coreActionHistoryEvent.Children[0] as BookmarkHistoryEvent;
-                Assert.IsNotNull(bookmarkHistoryEvent);
+                //bookmarkHistoryEvent = coreActionHistoryEvent.Children[0] as BookmarkHistoryEvent;
+                //Assert.IsNotNull(bookmarkHistoryEvent);
 
                 Assert.AreEqual(bookmarkHistoryEvent, machine.History.CurrentEvent);
 

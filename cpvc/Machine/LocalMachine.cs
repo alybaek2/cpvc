@@ -734,12 +734,6 @@ namespace CPvC
             if (_actualRunningState == RunningState.Reverse)
             {
                 AllKeysUp();
-
-                // Test!
-                Bookmark bookmark = new Bookmark(true, _core.Version, _core.GetState(), _core.GetScreen());
-                HistoryEvent historyEvent = _history.AddBookmark(_core.Ticks, bookmark);
-
-                Diagnostics.Trace("Created bookmark at tick {0}", _core.Ticks);
             }
 
             base.ProcessResume();

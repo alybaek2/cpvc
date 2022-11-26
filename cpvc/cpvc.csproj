@@ -113,6 +113,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Events\HistoryChangedEventArgs.cs" />
     <Compile Include="Events\MachineEvent.cs" />
     <Compile Include="Events\PromptForNameEvent.cs" />
     <Compile Include="Events\ConfirmCloseEvent.cs" />
@@ -204,6 +205,8 @@
     <Compile Include="UI\Forms\StartServerWindow.xaml.cs">
       <DependentUpon>StartServerWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UI\HistoryControl.cs" />
+    <Compile Include="UI\HistoryEventOrderings.cs" />
     <Compile Include="UI\HistoryViewItem.cs" />
     <Compile Include="UI\MainModel.cs" />
     <Compile Include="UI\MainViewModel.cs" />
