@@ -24,6 +24,7 @@ namespace CPvC
         ITurboableMachine,
         ICompactableMachine,
         IPersistableMachine,
+        IHistoricalMachine,
         INotifyPropertyChanged,
         IDisposable
     {
@@ -761,6 +762,48 @@ namespace CPvC
             }
 
             return null;
+        }
+
+        public void DeleteBookmarks(List<HistoryEvent> bookmarksToDelete)
+        {
+            foreach (HistoryEvent historyEvent in bookmarksToDelete)
+            {
+                if (historyEvent is BookmarkHistoryEvent bookmarkHistoryEvent)
+                {
+                    _history.DeleteBookmark(bookmarkHistoryEvent);
+                }
+            }
+        }
+
+        public void DeleteBranches(List<HistoryEvent> branchesToDelete)
+        {
+            foreach (HistoryEvent historyEvent in branchesToDelete)
+            {
+                DeleteBranch2(historyEvent);
+            }
+        }
+
+        /// <summary>
+        /// Removes a branch of the timeline.
+        /// </summary>
+        /// <param name="historyEvent">HistoryEvent object which belongs to the branch to be removed.</param>
+        private bool DeleteBranch2(HistoryEvent historyEvent)
+        {
+            if (historyEvent.Children.Count != 0 || historyEvent == _history.CurrentEvent || historyEvent is RootHistoryEvent)
+            {
+                return false;
+            }
+
+            // Walk up the tree to find the node to be removed...
+            HistoryEvent parent = historyEvent.Parent;
+            HistoryEvent child = historyEvent;
+            while (parent != _history.CurrentEvent && parent.Children.Count == 1)
+            {
+                child = parent;
+                parent = parent.Parent;
+            }
+
+            return _history.DeleteBranch(child);
         }
     }
 }

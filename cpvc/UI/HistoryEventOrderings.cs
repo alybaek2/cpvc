@@ -118,22 +118,22 @@ namespace CPvC
                 int v = _verticalPosition[horizontalEvent];
 
                 HistoryEvent parentEvent = _interestingParentEvents[horizontalEvent];
-                int pv = parentEvent != null ? _verticalPosition[parentEvent] : -1;
-                int ph = parentEvent != null ? historyItems[pv].Events.FindIndex(x => ReferenceEquals(x, parentEvent)) : 0;
+                int parentVerticalPosition = parentEvent != null ? _verticalPosition[parentEvent] : -1;
+                int parentHorizontalPosition = parentEvent != null ? historyItems[parentVerticalPosition].Events.FindIndex(x => ReferenceEquals(x, parentEvent)) : 0;
 
                 // "Draw" the history event from pv + 1 to v
-                for (int d = pv + 1; d <= v; d++)
+                for (int d = parentVerticalPosition + 1; d <= v; d++)
                 {
                     HistoryViewItem historyViewItem = historyItems[d];
 
                     // Pad out the Events to ensure the line connecting us to our parent never moves to the left.... it just looks better that way!
-                    for (int padIndex = historyViewItem.Events.Count; padIndex < ph; padIndex++)
+                    for (int padIndex = historyViewItem.Events.Count; padIndex < parentHorizontalPosition; padIndex++)
                     {
                         historyViewItem.Events.Add(null);
                     }
 
                     historyViewItem.Events.Add(horizontalEvent);
-                    ph = Math.Max(ph, historyViewItem.Events.Count - 1);
+                    parentHorizontalPosition = Math.Max(parentHorizontalPosition, historyViewItem.Events.Count - 1);
                 }
             }
 

@@ -11,13 +11,13 @@ namespace CPvC
         public HistoryChangedEventArgs(History history, HistoryEvent historyEvent, HistoryChangedAction action)
         {
             History = history;
-            Event = historyEvent;
+            HistoryEvent = historyEvent;
             Action = action;
         }
 
         public History History { get; }
         public HistoryChangedAction Action { get; }
-        public HistoryEvent Event { get; }
+        public HistoryEvent HistoryEvent { get; }
     }
 
     public delegate void HistoryChangedEventHandler(object sender, HistoryChangedEventArgs e);

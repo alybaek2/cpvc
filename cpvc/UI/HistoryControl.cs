@@ -49,6 +49,7 @@ namespace CPvC
             lock (_orderings)
             {
                 _orderings.SetHistory(_history);
+                _updatePending = false;
             }
 
             ScheduleUpdateItems();
@@ -58,7 +59,7 @@ namespace CPvC
         {
             lock (_orderings)
             {
-                if (_orderings.Process(args.Event, args.Action))
+                if (_orderings.Process(args.HistoryEvent, args.Action))
                 {
                     ScheduleUpdateItems();
                 }

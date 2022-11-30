@@ -113,7 +113,7 @@ namespace CPvC
 
         private void HistoryEventHappened(object sender, HistoryChangedEventArgs args)
         {
-            if (_pendingEvent != null && !ReferenceEquals(_pendingEvent, args.Event))
+            if (_pendingEvent != null && !ReferenceEquals(_pendingEvent, args.HistoryEvent))
             {
                 List<string> pendingLines = GetLines(_pendingEvent, _pendingAction);
 
@@ -126,18 +126,18 @@ namespace CPvC
             }
 
             // Need to remember the event if it's not closed and write it out the next time we get a different event.
-            if (!History.IsClosedEvent(args.Event))
+            if (!History.IsClosedEvent(args.HistoryEvent))
             {
                 if (_pendingEvent == null)
                 {
                     _pendingAction = args.Action;
                 }
-                _pendingEvent = args.Event;
+                _pendingEvent = args.HistoryEvent;
 
                 return;
             }
 
-            List<string> lines = GetLines(args.Event, args.Action);
+            List<string> lines = GetLines(args.HistoryEvent, args.Action);
 
             foreach (string line in lines)
             {
