@@ -356,7 +356,7 @@
         <Grid x:Name="_historyCell"
               Grid.Row="2"
               Grid.Column="1"
-              Visibility="{Binding ElementName=_showHistoryToggleButton, Path=IsChecked, Converter={StaticResource BoolToVisConverter}}">
+              Visibility="{Binding ElementName=_showHistoryToggleButton, Path=IsChecked, Converter={StaticResource BoolToVisConverter}}" Height="575" VerticalAlignment="Top">
             <Button x:Name="_deleteBookmarkButton"
                     Content="Delete Bookmark"
                     Width="100"
@@ -377,12 +377,22 @@
                     HorizontalAlignment="Left"
                     VerticalAlignment="Top"
                     Margin="220, 0, 0, 0" Click="JumpButton_Click"/>
-            <cpvc:HistoryControl x:Name="_historyControl"
+            <cpvc:HistoryControl2 x:Name="_historyControl2"
+                                  DataContext="{Binding ActiveMachine.History, Mode=OneWay}"
+                                  Margin="0,40,0,0"
+                                  Width="300"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Top"
+                                  Height="200">
+                <cpvc:HistoryControl2.Children>
+                    <Line HorizontalAlignment="Left" VerticalAlignment="Top" X1="200" X2="200" Y1="10" Y2="100" StrokeThickness="2" Stroke="{x:Static Brushes.Blue}"/>
+                </cpvc:HistoryControl2.Children>
+            </cpvc:HistoryControl2>
+            <!--<cpvc:HistoryControl x:Name="_historyControl"
                                  DataContext="{Binding ActiveMachine.History, Mode=OneWay}"
                                  ScrollViewer.VerticalScrollBarVisibility="Visible"
                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                 Height="546"
-                                 Width="300" Margin="0,40,0,0">
+                                 Width="300" Margin="0,342,0,0" HorizontalAlignment="Left" Height="174" VerticalAlignment="Top">
                 <ListView.ItemContainerStyle>
                     <Style TargetType="{x:Type ListViewItem}">
                         <Setter Property="BorderThickness" Value="0"/>
@@ -394,11 +404,11 @@
                     <GridView>
                         <GridViewColumn x:Name="_graphColumn" Header="Graph" Width="150" CellTemplate="{StaticResource cellTemplate}" HeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}" />
                         <GridViewColumn Header="Machine time" DisplayMemberBinding="{Binding HistoryEvent.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}" Width="100" HeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}"/>
-                        <!--<GridViewColumn Header="Machine time" DisplayMemberBinding="{Binding HistoryEvent.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}" Width="100" HeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}"/>
-                                        <GridViewColumn Header="Date created" DisplayMemberBinding="{Binding HistoryEvent.CreateDate, Converter={StaticResource localDateTimeConverter}, Mode=OneWay}" Width="150" HeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}"/>-->
+                        --><!--<GridViewColumn Header="Machine time" DisplayMemberBinding="{Binding HistoryEvent.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}" Width="100" HeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}"/>
+                                        <GridViewColumn Header="Date created" DisplayMemberBinding="{Binding HistoryEvent.CreateDate, Converter={StaticResource localDateTimeConverter}, Mode=OneWay}" Width="150" HeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}"/>--><!--
                     </GridView>
                 </ListView.View>
-            </cpvc:HistoryControl>
+            </cpvc:HistoryControl>-->
         </Grid>
         <StatusBar Height="30" Grid.Row="3" VerticalAlignment="Top">
             <TextBlock TextWrapping="Wrap" Text="{Binding ActiveMachine.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>

@@ -60,6 +60,11 @@ namespace CPvC
             return Node.IsEqualToOrAncestorOf(ancestor?.Node);
         }
 
+        public void Sort(Comparison<HistoryEvent> comparison)
+        {
+           Node.Children.Sort((x, y) => comparison(x.HistoryEvent, y.HistoryEvent));
+        }
+
         public T MostRecent<T>() where T : HistoryEvent
         {
             HistoryEvent historyEvent = this;
@@ -104,6 +109,12 @@ namespace CPvC
                 {
                     events.AddRange(e.Children);
                 }
+            }
+
+            UInt64 compare = Node.GetCachedMDT();
+            if (compare != maxTicks)
+            {
+                string h = "";
             }
 
             return maxTicks;
@@ -171,6 +182,15 @@ namespace CPvC
         {
             if (e.PropertyName == nameof(RunUntilRequest.StopTicks))
             {
+                Node.InvalidateCachedMDT();
+
+                //HistoryEvent h = this;
+                //while (h != null)
+                //{
+                //    h.Node.InvalidateCachedMDT();
+                //    h = h.Parent;
+                //}
+
                 OnPropertyChanged(nameof(Ticks));
             }
         }
@@ -196,18 +216,18 @@ namespace CPvC
             }
         }
 
-        public override UInt64 Ticks
-        {
-            get
-            {
-                if (_node.CoreAction is RunUntilAction runUntilAction)
-                {
-                    return runUntilAction.StopTicks;
-                }
+        //public override UInt64 Ticks
+        //{
+        //    get
+        //    {
+        //        if (_node.CoreAction is RunUntilAction runUntilAction)
+        //        {
+        //            return runUntilAction.StopTicks;
+        //        }
 
-                return _node.Ticks;
-            }
-        }
+        //        return _node.Ticks;
+        //    }
+        //}
 
         public event PropertyChangedEventHandler PropertyChanged;
 

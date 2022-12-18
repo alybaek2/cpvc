@@ -548,7 +548,7 @@ namespace CPvC.UI.Forms
                 return;
             }
 
-            MessageBoxResult result = MessageBox.Show(this, "Are you you want to delete these bookmarks?", "CPvC", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            MessageBoxResult result = MessageBox.Show(this, "Are you sure you want to delete these bookmarks?", "CPvC", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result != MessageBoxResult.Yes)
             {
                 return;
@@ -556,10 +556,10 @@ namespace CPvC.UI.Forms
 
             List<HistoryEvent> bookmarks = new List<HistoryEvent>();
 
-            foreach (object item in _historyControl.SelectedItems)
-            {
-                bookmarks.Add(((HistoryViewItem)item).HistoryEvent);
-            }
+            //foreach (object item in _historyControl.SelectedItems)
+            //{
+            //    bookmarks.Add(((HistoryViewItem)item).HistoryEvent);
+            //}
 
             historyMachine.DeleteBookmarks(bookmarks);
         }
@@ -572,7 +572,7 @@ namespace CPvC.UI.Forms
                 return;
             }
 
-            MessageBoxResult result = MessageBox.Show(this, "Are you you want to delete these branches?", "CPvC", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            MessageBoxResult result = MessageBox.Show(this, "Are you sure you want to delete these branches?", "CPvC", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result != MessageBoxResult.Yes)
             {
                 return;
@@ -580,27 +580,31 @@ namespace CPvC.UI.Forms
 
             List<HistoryEvent> branches = new List<HistoryEvent>();
 
-            foreach (object item in _historyControl.SelectedItems)
-            {
-                branches.Add(((HistoryViewItem)item).HistoryEvent);
-            }
+            //foreach (object item in _historyControl.SelectedItems)
+            //{
+            //    branches.Add(((HistoryViewItem)item).HistoryEvent);
+            //}
 
             historyMachine.DeleteBranches(branches);
         }
 
         private void JumpButton_Click(object sender, RoutedEventArgs e)
         {
-            MessageBoxResult result = MessageBox.Show(this, "Are you you want to jump to this bookmark?", "CPvC", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            MessageBoxResult result = MessageBox.Show(this, "Are you sure you want to jump to this bookmark?", "CPvC", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result != MessageBoxResult.Yes)
             {
                 return;
             }
 
-            if (_historyControl.SelectedItems.Count == 1 && _historyControl.SelectedItems[0] is BookmarkHistoryEvent bookmarkEvent)
-            {
-                IHistoricalMachine historyMachine = _mainViewModel.ActiveMachine as IHistoricalMachine;
-                historyMachine.JumpToBookmark(bookmarkEvent);
-            }
+            //if (_historyControl.SelectedItems.Count == 1)
+            //{
+            //    HistoryViewItem item = (HistoryViewItem)_historyControl.SelectedItems[0];
+            //    if (item.HistoryEvent is BookmarkHistoryEvent bookmarkEvent)
+            //    {
+            //        IHistoricalMachine historyMachine = _mainViewModel.ActiveMachine as IHistoricalMachine;
+            //        historyMachine.JumpToBookmark(bookmarkEvent);
+            //    }
+            //}
         }
     }
 }

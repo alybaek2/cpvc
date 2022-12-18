@@ -154,6 +154,8 @@ namespace CPvC
                 nodesToRemove.RemoveAt(0);
             }
 
+            parent.InvalidateCachedMDT();
+
             Notify(historyEvent, HistoryChangedAction.DeleteBranch);
 
             return true;
@@ -185,6 +187,7 @@ namespace CPvC
 
             historyNode.Children.Clear();
             historyNode.Parent.Children.Remove(historyNode);
+            historyNode.Parent.InvalidateCachedMDT();
             HistoryEvent oldParentEvent = historyNode.Parent.HistoryEvent;
             historyNode.Parent = null;
 
@@ -240,6 +243,9 @@ namespace CPvC
             bool notifyCurrent = !IsClosedEvent(_currentNode.HistoryEvent);
             _currentNode.Children.Add(historyNode);
             _nodes.Add(historyNode);
+
+            // Could probably just get the MDT of the new node, and see if it's bigger...
+            _currentNode.InvalidateCachedMDT();
 
             if (notifyCurrent)
             {

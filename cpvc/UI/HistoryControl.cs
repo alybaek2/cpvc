@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -82,7 +83,11 @@ namespace CPvC
                 timer.Stop();
                 _updatePending = false;
 
+                Stopwatch sw = Stopwatch.StartNew();
                 UpdateItems();
+                sw.Stop();
+
+                CPvC.Diagnostics.Trace("Update items took {0}ms", sw.ElapsedMilliseconds);
             };
 
             timer.Start();
@@ -99,23 +104,39 @@ namespace CPvC
             List<HistoryViewItem> historyItems = null;
             lock (_orderings)
             {
+                Stopwatch sw = Stopwatch.StartNew();
                 historyItems = _orderings.UpdateItems();
+                sw.Stop();
+
+                CPvC.Diagnostics.Trace("Orderings UpdateItems took {0}ms", sw.ElapsedMilliseconds);
             }
 
-            // Draw items to their respective canvasses.
-            HistoryViewItem next = null;
-            for (int i = historyItems.Count - 1; i >= 0; i--)
             {
-                HistoryViewItem item = historyItems[i];
-                item.Draw(next, _history.CurrentEvent);
+                Stopwatch sw = Stopwatch.StartNew();
+                // Draw items to their respective canvasses.
+                HistoryViewItem next = null;
+                for (int i = historyItems.Count - 1; i >= 0; i--)
+                {
+                    HistoryViewItem item = historyItems[i];
+                    item.Draw(next, _history.CurrentEvent);
 
-                next = item;
+                    next = item;
+                }
+                sw.Stop();
+
+                CPvC.Diagnostics.Trace("Drawing items took {0}ms", sw.ElapsedMilliseconds);
             }
 
-            Items.Clear();
-            for (int i = historyItems.Count - 1; i >= 0; i--)
             {
-                Items.Add(historyItems[i]);
+                Stopwatch sw = Stopwatch.StartNew();
+                Items.Clear();
+                for (int i = historyItems.Count - 1; i >= 0; i--)
+                {
+                    Items.Add(historyItems[i]);
+                }
+                sw.Stop();
+
+                CPvC.Diagnostics.Trace("Adding items took {0}ms", sw.ElapsedMilliseconds);
             }
         }
     }
