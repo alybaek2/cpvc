@@ -384,9 +384,6 @@
                                   HorizontalAlignment="Left"
                                   VerticalAlignment="Top"
                                   Height="200">
-                <cpvc:HistoryControl2.Children>
-                    <Line HorizontalAlignment="Left" VerticalAlignment="Top" X1="200" X2="200" Y1="10" Y2="100" StrokeThickness="2" Stroke="{x:Static Brushes.Blue}"/>
-                </cpvc:HistoryControl2.Children>
             </cpvc:HistoryControl2>
             <!--<cpvc:HistoryControl x:Name="_historyControl"
                                  DataContext="{Binding ActiveMachine.History, Mode=OneWay}"

@@ -16,33 +16,33 @@ namespace CPvC
     {
         private History _history;
 
-        private readonly HistoryEventOrderings _orderings;
-        private readonly HistoryEventOrderings _previousOrderings;
+        //private readonly HistoryEventOrderings _orderings;
+        //private readonly HistoryEventOrderings _previousOrderings;
 
         private ListTree _listTree;
 
-        private Dictionary<HistoryEvent, Polyline> _polylines;
-        private Dictionary<HistoryEvent, Ellipse> _circles;
+        //private Dictionary<HistoryEvent, Polyline> _polylines;
+        //private Dictionary<HistoryEvent, Ellipse> _circles;
 
         private bool _updatePending;
 
         public HistoryControl2()
         {
-            _orderings = new HistoryEventOrderings();
+            //_orderings = new HistoryEventOrderings();
             //_orderings.VerticalOrdering().ListChanged += VerticalListChanged;
             //_orderings.HorizontalOrdering().ListChanged += HorizontalListChanged;
             //_orderings.PositionChanged += OrderingsPositionChanged;
 
-            _previousOrderings = null;
+            //_previousOrderings = null;
 
             _updatePending = false;
-            _polylines = new Dictionary<HistoryEvent, Polyline>();
-            _circles = new Dictionary<HistoryEvent, Ellipse>();
+            //_polylines = new Dictionary<HistoryEvent, Polyline>();
+            //_circles = new Dictionary<HistoryEvent, Ellipse>();
 
             _branches = new List<BranchInfo>();
             _branchesMap = new Dictionary<HistoryEvent, BranchInfo>();
 
-            _rows = new List<Row>(); //  new OrderedList<ulong, OldRow>();
+            //_rows = new List<Row>(); //  new OrderedList<ulong, OldRow>();
             DataContextChanged += HistoryControl2_DataContextChanged;
         }
 
@@ -69,11 +69,11 @@ namespace CPvC
 
             _history = newHistory;
 
-            lock (_orderings)
+            //lock (_orderings)
             {
-                _orderings.SetHistory(_history);
+                //_orderings.SetHistory(_history);
                 //_updatePending = false;
-                _circles.Clear();
+                //_circles.Clear();
                 Children.Clear();
 
                 //InitRows();
@@ -112,18 +112,22 @@ namespace CPvC
 
         public void ProcessHistoryChange(object sender, HistoryChangedEventArgs args)
         {
-            lock (_orderings)
+            //lock (_orderings)
+            //{
+            //    bool changed = false;
+            //    if (_orderings.Process(args.HistoryEvent, args.Action))
+            //    {
+            //        ScheduleUpdateCanvas();
+            //        changed = true;
+            //    }
+
+            //}
+
+            bool changed = UpdateListTree(args);
+            if (changed)
             {
-                bool changed = false;
-                if (_orderings.Process(args.HistoryEvent, args.Action))
-                {
-                    ScheduleUpdateCanvas();
-                    changed = true;
-                }
-
+                ScheduleUpdateCanvas();
             }
-
-            UpdateListTree(args);
         }
 
         static private bool InterestingEvent(HistoryEvent historyEvent)
@@ -138,12 +142,14 @@ namespace CPvC
             return false;
         }
 
-        private void UpdateListTree(HistoryChangedEventArgs args)
+        private bool UpdateListTree(HistoryChangedEventArgs args)
         {
             if (_listTree == null)
             {
-                return;
+                return false;
             }
+
+            bool changed = false;
 
             lock (_listTree)
             {
@@ -157,13 +163,15 @@ namespace CPvC
                             bool wasParentInteresting = parentNode != null;
                             bool isNodeInteresting = InterestingEvent(args.HistoryEvent);
 
+                            // Probably should deal with the case when the node isn't interesting but it was... need to delete!
+
                             if (wasParentInteresting && !isParentInteresting)
                             {
                                 // Remove the parent node, or change it!
                                 if (isNodeInteresting)
                                 {
                                     // Change it!
-                                    _listTree.Update(parent, args.HistoryEvent);
+                                    changed = _listTree.Update(parent, args.HistoryEvent);
                                 }
                                 else
                                 {
@@ -172,61 +180,75 @@ namespace CPvC
                             }
                             else if ((wasParentInteresting && isParentInteresting) || (!wasParentInteresting && !isParentInteresting))
                             {
-                                // Just add the node!
-                                HistoryEvent interestingParent = parent;
-                                while (!InterestingEvent(interestingParent))
+                                if (isNodeInteresting)
                                 {
-                                    interestingParent = interestingParent.Parent;
+                                    // Just add the node!
+                                    HistoryEvent interestingParent = parent;
+                                    while (!InterestingEvent(interestingParent))
+                                    {
+                                        interestingParent = interestingParent.Parent;
+                                    }
+
+                                    parentNode = _listTree.GetNode(interestingParent);
+                                    //ListTreeNode node = new ListTreeNode(args.HistoryEvent);
+
+                                    _listTree.Add(parentNode, args.HistoryEvent);
+                                    changed = true;
                                 }
-
-                                parentNode = _listTree.GetNode(interestingParent);
-                                //ListTreeNode node = new ListTreeNode(args.HistoryEvent);
-
-                                _listTree.Add(parentNode, args.HistoryEvent);
                             }
                             else if (!wasParentInteresting && isParentInteresting)
                             {
-                                // Add the parent... it has become interesting!
-                                HistoryEvent interestingGrandParent = parent.Parent;
-                                while (!InterestingEvent(interestingGrandParent))
+                                if (isNodeInteresting)
                                 {
-                                    interestingGrandParent = interestingGrandParent.Parent;
+                                    // Add the parent... it has become interesting!
+                                    HistoryEvent interestingGrandParent = parent.Parent;
+                                    while (!InterestingEvent(interestingGrandParent))
+                                    {
+                                        interestingGrandParent = interestingGrandParent.Parent;
+                                    }
+
+                                    ListTreeNode grandparentNode = _listTree.GetNode(interestingGrandParent);
+                                    //parentNode = new ListTreeNode(parent);
+                                    parentNode = _listTree.Add(grandparentNode, parent);
+
+                                    // There must be one descendent of grandparent that should now be moved to be a child of parent!
+
+                                    // Now add the node itself.
+                                    //ListTreeNode node = new ListTreeNode(args.HistoryEvent);
+
+                                    _listTree.Add(parentNode, args.HistoryEvent);
+
+                                    changed = true;
                                 }
-
-                                ListTreeNode grandparentNode = _listTree.GetNode(interestingGrandParent);
-                                //parentNode = new ListTreeNode(parent);
-                                parentNode = _listTree.Add(grandparentNode, parent);
-
-                                // There must be one descendent of grandparent that should now be moved to be a child of parent!
-
-                                // Now add the node itself.
-                                //ListTreeNode node = new ListTreeNode(args.HistoryEvent);
-
-                                _listTree.Add(parentNode, args.HistoryEvent);
                             }
                             else if (!wasParentInteresting && !isParentInteresting)
                             {
-                                // Just add the node!
-                                HistoryEvent interestingParent = parent;
-                                while (!InterestingEvent(interestingParent))
+                                if (isNodeInteresting)
                                 {
-                                    interestingParent = interestingParent.Parent;
+                                    // Just add the node!
+                                    HistoryEvent interestingParent = parent;
+                                    while (!InterestingEvent(interestingParent))
+                                    {
+                                        interestingParent = interestingParent.Parent;
+                                    }
+
+                                    parentNode = _listTree.GetNode(interestingParent);
+                                    //ListTreeNode node = new ListTreeNode(args.HistoryEvent);
+
+                                    _listTree.Add(parentNode, args.HistoryEvent);
+
+                                    changed = true;
                                 }
-
-                                parentNode = _listTree.GetNode(interestingParent);
-                                //ListTreeNode node = new ListTreeNode(args.HistoryEvent);
-
-                                _listTree.Add(parentNode, args.HistoryEvent);
                             }
 
-                            _listTree.DebugDump();
+                            //_listTree.DebugDump();
                         }
                         break;
                     case HistoryChangedAction.UpdateCurrent:
                         {
                             ListTreeNode node = _listTree.GetNode(args.HistoryEvent);
 
-                            _listTree.Update(node);
+                            changed = _listTree.Update(node);
                         }
                         break;
                     case HistoryChangedAction.DeleteBranch:
@@ -234,6 +256,8 @@ namespace CPvC
                             ListTreeNode node = _listTree.GetNode(args.HistoryEvent);
 
                             _listTree.RemoveRecursive(node);
+
+                            changed = true;
                         }
                         break;
                     case HistoryChangedAction.DeleteBookmark:
@@ -241,11 +265,15 @@ namespace CPvC
                             ListTreeNode node = _listTree.GetNode(args.HistoryEvent);
 
                             _listTree.RemoveNonRecursive(node);
+
+                            changed = true;
                         }
                         break;
                 }
             }
 
+
+            return changed;
         }
 
         private void ScheduleUpdateCanvas()
@@ -348,390 +376,48 @@ namespace CPvC
             }
         }
 
-        private void UpdateCanvas()
-        {
-            lock (_orderings)
-            {
-                Children.Clear();
-                ObservableList<HistoryEvent> horizontalEvents = _orderings.HorizontalOrdering();
-
-                HashSet<HistoryEvent> branchesToDelete = new HashSet<HistoryEvent>(_branchesMap.Keys);
-
-                // Create some branches!
-                _branches.Clear();
-                _branchesMap.Clear();
-                for (int i = 0; i < horizontalEvents.Count; i++)
-                {
-                    HistoryEvent horizontalEvent = horizontalEvents[i];
-                    HistoryEvent parent = _orderings.ParentEvent(horizontalEvent);
-                    int parentVertical = (parent != null) ? _orderings.VerticalPosition(parent) : -1;
-
-                    if (!_branchesMap.TryGetValue(horizontalEvents[i], out BranchInfo branch))
-                    {
-                        branch = new BranchInfo(null, i, _orderings.VerticalPosition(horizontalEvent), horizontalEvent);
-                    }
-
-                    // If we go through in order, we should always have the parent before the child.
-                    BranchInfo parentBranch = null;
-                    HistoryEvent parentEvent = _orderings.ParentEvent(horizontalEvents[i]);
-                    if (parentEvent != null && !_branchesMap.TryGetValue(parentEvent, out parentBranch))
-                    {
-                        throw new Exception("Should have parent branch!");
-                    }
-
-                    branch._x = i;
-                    branch._y = _orderings.VerticalPosition(horizontalEvent);
-                    branch._parent = parentBranch;
-
-
-                    _branchesMap.Add(horizontalEvent, branch);
-                    branchesToDelete.Remove(horizontalEvent);
-
-                    //BranchInfo branch = new BranchInfo(null, i, _orderings.VerticalPosition(horizontalEvent), horizontalEvent);
-
-                    _branches.Add(branch);
-                }
-
-                for (int b = 0; b < _branches.Count; b++)
-                {
-                    HistoryEvent horizontalEvent = _branches[b]._historyEvent;
-                    HistoryEvent parent = _orderings.ParentEvent(horizontalEvent);
-
-                    if (parent != null)
-                    {
-                        _branches[b]._parent = _branches.Find(p => ReferenceEquals(p._historyEvent, parent));
-
-                    }
-
-                    bool filled = _history.CurrentEvent != horizontalEvent;
-                    Ellipse circle = new Ellipse
-                    {
-                        Stroke = Brushes.DarkBlue,
-                        Fill = filled ? Brushes.DarkBlue : Brushes.White,
-                        StrokeThickness = 2,
-                        HorizontalAlignment = HorizontalAlignment.Left,
-                        VerticalAlignment = VerticalAlignment.Top,
-                        UseLayoutRounding = true,
-                        Margin = new Thickness((_branches[b]._x + 0.5) * 16 - 5, (_branches[b]._y + 0.5) * 16 - 5, 0, 0),
-                        Width = 10,
-                        Height = 10
-                    };
-
-                    // Ensure the dot is always "on top".
-                    Canvas.SetZIndex(circle, 100);
-
-                    Children.Add(circle);
-
-                    if (_branches[b]._parent != null)
-                    {
-                        Line line = new Line
-                        {
-                            X1 = 16 * (_branches[b]._x + 0.5),
-                            Y1 = 16 * (_branches[b]._y + 0.5),
-                            X2 = 16 * (_branches[b]._parent._x + 0.5),
-                            Y2 = 16 * (_branches[b]._parent._y + 0.5),
-                            StrokeThickness = 2,
-                            Stroke = Brushes.DarkBlue,
-                            HorizontalAlignment = HorizontalAlignment.Left,
-                            VerticalAlignment = VerticalAlignment.Top,
-                            UseLayoutRounding = true
-                        };
-
-                        Children.Add(line);
-
-                        // Ensure lines are never "on top" of dots.
-                        Canvas.SetZIndex(line, 1);
-                    }
-                }
-
-                //for (int h = 0; h < horizontalEvents.Count; h++)
-                //{
-                //    HistoryEvent horizontalEvent = horizontalEvents[h];
-                //    HistoryEvent parent = _orderings.ParentEvent(horizontalEvent);
-                //    int parentVertical = (parent != null) ? _orderings.VerticalPosition(parent) : -1;
-
-                //    int vertical = _orderings.VerticalPosition(horizontalEvent);
-
-                //    bool filled = _history.CurrentEvent != horizontalEvent;
-                //    if (!_circles.TryGetValue(horizontalEvent, out Ellipse circle))
-                //    {
-                //        circle = new Ellipse
-                //        {
-                //            Stroke = Brushes.DarkBlue,
-                //            Fill = filled ? Brushes.DarkBlue : Brushes.White,
-                //            StrokeThickness = 2,
-                //            HorizontalAlignment = HorizontalAlignment.Left,
-                //            VerticalAlignment = VerticalAlignment.Top,
-                //            UseLayoutRounding = true,
-                //            Margin = new Thickness(h * 16, vertical * 16, 0, 0),
-                //            Width = 10,
-                //            Height = 10
-                //        };
-
-                //        _circles.Add(horizontalEvent, circle);
-                //        Children.Add(circle);
-                //    }
-                //    else
-                //    {
-                //        circle.Margin = new Thickness(h * 16, vertical * 16, 0, 0);
-                //        circle.Fill = filled ? Brushes.DarkBlue : Brushes.White;
-                //    }
-
-                //    //if (!_polylines.TryGetValue(horizontalEvent, out Polyline polyline))
-                //    //{
-                //    //    polyline = new Polyline
-                //    //    {
-                //    //        StrokeThickness = 2,
-                //    //        Stroke = Brushes.DarkBlue,
-                //    //        HorizontalAlignment = HorizontalAlignment.Left,
-                //    //        VerticalAlignment = VerticalAlignment.Top,
-                //    //        //Points = { new Point(200, 200), new Point(240, 240) },
-                //    //        UseLayoutRounding = true
-                //    //    };
-
-                //    //    _polylines.Add(horizontalEvent, polyline);
-                //    //    Children.Add(polyline);
-
-                //    //    Canvas.SetZIndex(polyline, 1);
-
-                //    //}
-
-                //    //int p = 0;
-                //    //for (int v = parentVertical + 1; v <= vertical; v++)
-                //    //{
-                //    //    if (p < polyline.Points.Count)
-                //    //    {
-                //    //        polyline.Points[p] = new Point(h * 16, v * 16);
-                //    //        Diagnostics.Trace("Inserting point with {0},{1}", h * 16, v * 16);
-                //    //    }
-                //    //    else
-                //    //    {
-                //    //        polyline.Points.Add(new Point(h * 16, v * 16));
-                //    //        Diagnostics.Trace("Adding point with {0},{1}", h * 16, v * 16);
-                //    //    }
-
-                //    //    p++;
-                //    //}
-
-                //}
-
-                // Get rid of any circles that correspond to history events that are no longer interesting!
-                List<HistoryEvent> deleteCircles = _circles.Keys.ToList();
-                foreach (HistoryEvent historyEvent in horizontalEvents)
-                {
-                    deleteCircles.Remove(historyEvent);
-                    //if (!horizontalEvents.Contains(historyEvent))
-                    //{
-
-                    //}
-                }
-
-                foreach (HistoryEvent historyEvent in deleteCircles)
-                {
-                    Ellipse circle = _circles[historyEvent];
-                    Children.Remove(circle);
-                    _circles.Remove(historyEvent);
-                }
-
-                //Children.Clear();
-
-                //foreach (Polyline p in _polylines.Values)
-                //{
-                //    Children.Add(p);
-                //}
-            }
-        }
-
-        public void InitRows()
-        {
-            _rows.Clear();
-
-            ObservableList<HistoryEvent> historyEvents = _orderings.HorizontalOrdering();
-
-            foreach(HistoryEvent historyEvent in historyEvents)
-            {
-                Add(historyEvent);
-            }
-        }
-
-        public void Dump()
-        {
-            string str = "";
-            for (int r = _rows.Count - 1; r >= 0; r--)
-            {
-                Row row = _rows[r];
-
-                string line = "";
-
-                foreach (Cell c in row.Cells)
-                {
-                    // Pad out to X!
-                    while (line.Length < c.X * 10)
-                    {
-                        line += " ";
-                    }
-
-
-                    if (c.HistoryEvent != row.HistoryEvent)
-                    {
-                        line += String.Format("| ({0})  ", c.HistoryEvent.Id);
-                    }
-                    else if (c.HistoryEvent.Children.Count == 0)
-                    {
-                        line += String.Format("o ({0})  ", c.HistoryEvent.Id);
-                    }
-                    else
-                    {
-                        line += String.Format("+ ({0})  ", c.HistoryEvent.Id);
-                    }
-                }
-
-                str += line + "\n";
-            }
-
-            CPvC.Diagnostics.Trace(str);
-        }
-
-        public void RemoveRecursive(HistoryEvent historyEvent)
-        {
-            List<HistoryEvent> descendents = new List<HistoryEvent>();
-            descendents.Add(historyEvent);
-
-            while (descendents.Any())
-            {
-                HistoryEvent he = descendents[0];
-                descendents.RemoveAt(0);
-
-                // Since the history event may no longer be in _orderings, we should really be searching
-                // _rows for history events to delete.
-                //if (_orderings.Contains(he))
-                {
-                    Remove(he);
-                }
-
-                descendents.AddRange(he.Children);
-            }
-        }
-
-        public bool Remove(HistoryEvent historyEvent)
-        {
-            int index = _rows.FindIndex(r => ReferenceEquals(r.HistoryEvent, historyEvent));
-            if (index != -1)
-            {
-                _rows.RemoveAt(index);
-                index--;
-
-                // Now remove any "passthroughs"...
-                int cellIndex = -1;
-                while ((cellIndex = _rows[index].Cells.FindIndex(c => ReferenceEquals(c.HistoryEvent, historyEvent))) != -1)
-                {
-                    _rows[index].Cells.RemoveAt(cellIndex);
-                    index--;
-                }
-
-                return true;
-            }
-
-            return false;
-        }
-
-        public void AddRecursive(HistoryEvent historyEvent)
-        {
-            List<HistoryEvent> descendents = new List<HistoryEvent>();
-            descendents.Add(historyEvent);
-
-            while (descendents.Any())
-            {
-                HistoryEvent he = descendents[0];
-                descendents.RemoveAt(0);
-
-                if (_orderings.VerticalPosition(he) != -1)
-                {
-                    Add(he);
-                }
-
-                descendents.AddRange(he.Children);
-            }
-        }
-
-        public void Add(HistoryEvent historyEvent)
-        {
-            int index = _rows.FindIndex(r => ReferenceEquals(r.HistoryEvent, historyEvent));
-            if (index != -1)
-            {
-                // Already exists!
-                return;
-            }
-
-            // Figure out the vertical position!
-            int verticalPosition = _orderings.VerticalPosition(historyEvent);
-            if (verticalPosition == -1)
-            {
-                return;
-            }
-
-            // Insert a new row!
-            Row row = new Row(historyEvent);
-            _rows.Insert(verticalPosition, row);
-
-            if (verticalPosition < _rows.Count - 1)
-            {
-                Row previousRow = _rows[verticalPosition + 1];
-                for (int c = 0; c < previousRow.Cells.Count; c++)
-                {
-                    if (!ReferenceEquals(row.HistoryEvent, previousRow.Cells[c].HistoryEvent))
-                    {
-                        row.Cells.Add(new Cell(previousRow.Cells[c]));
-                    }
-                }
-
-            }
-            else
-            {
-                //row.Cells.Add(new Cell(historyEvent, 0));
-            }
-
-            // Add passthroughs! Todo!
-            int parentVerticalIndex = -1;
-            HistoryEvent parentHistoryEvent = _orderings.ParentEvent(historyEvent);
-            if (parentHistoryEvent != null)
-            {
-                parentVerticalIndex = _orderings.VerticalPosition(parentHistoryEvent);
-            }
-
-            //bool inserted = false;
-            ObservableList<HistoryEvent> horizontalOrdering = _orderings.HorizontalOrdering();
-
-            int newCellHorizontalPosition = horizontalOrdering.FindIndex(historyEvent);
-
-            for (int v = parentVerticalIndex + 1; v <= verticalPosition; v++)
-            {
-                Row vrow = _rows[v];
-
-                int x = 0;
-                int h = 0;
-                while (h < vrow.Cells.Count)
-                {
-                    int cellHorizontalPosition = horizontalOrdering.FindIndex(vrow.Cells[h].HistoryEvent);
-                    if (newCellHorizontalPosition < cellHorizontalPosition)
-                    {
-                        //inserted = true;
-                        break;
-                    }
-
-                    x = vrow.Cells[h].X + 1;
-                    h++;
-                }
-
-                vrow.Cells.Insert(h, new Cell(historyEvent, x));
-                //if (!inserted)
-                //{
-                //    row.Cells.Add(new Cell(historyEvent, x));
-                //}
-            }
-        }
-
-        private List<Row> _rows;
+        //public void Dump()
+        //{
+        //    string str = "";
+        //    for (int r = _rows.Count - 1; r >= 0; r--)
+        //    {
+        //        Row row = _rows[r];
+
+        //        string line = "";
+
+        //        foreach (Cell c in row.Cells)
+        //        {
+        //            // Pad out to X!
+        //            while (line.Length < c.X * 10)
+        //            {
+        //                line += " ";
+        //            }
+
+
+        //            if (c.HistoryEvent != row.HistoryEvent)
+        //            {
+        //                line += String.Format("| ({0})  ", c.HistoryEvent.Id);
+        //            }
+        //            else if (c.HistoryEvent.Children.Count == 0)
+        //            {
+        //                line += String.Format("o ({0})  ", c.HistoryEvent.Id);
+        //            }
+        //            else
+        //            {
+        //                line += String.Format("+ ({0})  ", c.HistoryEvent.Id);
+        //            }
+        //        }
+
+        //        str += line + "\n";
+        //    }
+
+        //    CPvC.Diagnostics.Trace(str);
+        //}
+
+
+
+
+        //private List<Row> _rows;
 
         private class Row
         {
