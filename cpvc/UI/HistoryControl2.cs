@@ -142,6 +142,103 @@ namespace CPvC
             return false;
         }
 
+        private ListTreeNode ParentNode(HistoryEvent historyEvent)
+        {
+            HistoryEvent interestingParent = historyEvent; //.Parent;
+            ListTreeNode parentNode = null;
+            do //while (parentNode == null)
+            {
+                //parentNode = parentNode.Parent;
+                interestingParent = interestingParent.Parent;
+
+                parentNode = _listTree.GetNode(interestingParent);
+            }
+            while (parentNode == null);
+
+            //ListTreeNode parentNode = _listTree.GetNode(interestingParent);
+
+            return parentNode;
+        }
+
+        private bool AddEventToListTree(HistoryEvent historyEvent)
+        {
+            HistoryEvent parentHistoryEvent = historyEvent.Parent;
+            ListTreeNode parentNode = _listTree.GetNode(parentHistoryEvent);
+            bool wasParentInteresting = parentNode != null;
+            bool isParentInteresting = InterestingEvent(parentHistoryEvent);
+            ListTreeNode node = _listTree.GetNode(historyEvent);
+
+            if (node != null)
+            {
+                // The node is already in the tree... we shouldn't be trying to add it!
+                throw new Exception("Node was already in the tree.");
+            }
+
+            if (!InterestingEvent(historyEvent))
+            {
+                return false;
+            }
+
+            bool add = true;
+
+            // First, check if the parent's interestingness has changed from false to true.
+            if (!wasParentInteresting && isParentInteresting)
+            {
+                // Need to add the parent!
+
+                // But first, find the child who will share this new parent!
+                ListTreeNode cousinNode = null;
+                HistoryEvent he = parentHistoryEvent;
+                while (true)
+                {
+                    he = he.Children[0];
+                    cousinNode = _listTree.GetNode(he);
+                    if (cousinNode != null)
+                    {
+                        break;
+                    }
+                }
+
+                //ListTreeNode cousinNode = parentNode.Children[0];
+
+
+                parentNode = _listTree.InsertNewParent(cousinNode, parentHistoryEvent);
+            }
+            else if (!wasParentInteresting && !isParentInteresting)
+            {
+                // Work our way up the tree to find who should be our parent!
+                HistoryEvent he = parentHistoryEvent;
+                while (true)
+                {
+                    ListTreeNode n = _listTree.GetNode(he);
+                    if (n != null)
+                    {
+                        parentNode = n;
+                        break;
+                    }
+
+                    he = he.Parent;
+                }
+            }
+            else if (wasParentInteresting && !isParentInteresting)
+            {
+                // Replace the parent node with the child!
+                _listTree.Update(parentHistoryEvent, historyEvent);
+                add = false;
+            }
+            else if (wasParentInteresting && isParentInteresting)
+            {
+                // Nothing to do! Just add the new node!
+            }
+
+            if (add && InterestingEvent(historyEvent))
+            {
+                _listTree.Add(parentNode, historyEvent);
+            }
+
+            return true;
+        }
+
         private bool UpdateListTree(HistoryChangedEventArgs args)
         {
             if (_listTree == null)
@@ -157,89 +254,120 @@ namespace CPvC
                 {
                     case HistoryChangedAction.Add:
                         {
-                            HistoryEvent parent = args.HistoryEvent.Parent;
-                            bool isParentInteresting = InterestingEvent(parent);
-                            ListTreeNode parentNode = _listTree.GetNode(parent);
-                            bool wasParentInteresting = parentNode != null;
-                            bool isNodeInteresting = InterestingEvent(args.HistoryEvent);
+                            changed = AddEventToListTree(args.HistoryEvent);
 
-                            // Probably should deal with the case when the node isn't interesting but it was... need to delete!
+                            //HistoryEvent parent = args.HistoryEvent.Parent;
+                            //bool isParentInteresting = InterestingEvent(parent);
+                            //ListTreeNode parentNode = _listTree.GetNode(parent);
+                            //bool wasParentInteresting = parentNode != null;
+                            //bool isNodeInteresting = InterestingEvent(args.HistoryEvent);
+                            //ListTreeNode node = _listTree.GetNode(args.HistoryEvent);
+                            //bool wasNodeInteresting = node != null;
 
-                            if (wasParentInteresting && !isParentInteresting)
-                            {
-                                // Remove the parent node, or change it!
-                                if (isNodeInteresting)
-                                {
-                                    // Change it!
-                                    changed = _listTree.Update(parent, args.HistoryEvent);
-                                }
-                                else
-                                {
-                                    // Todo: Delete it!
-                                }
-                            }
-                            else if ((wasParentInteresting && isParentInteresting) || (!wasParentInteresting && !isParentInteresting))
-                            {
-                                if (isNodeInteresting)
-                                {
-                                    // Just add the node!
-                                    HistoryEvent interestingParent = parent;
-                                    while (!InterestingEvent(interestingParent))
-                                    {
-                                        interestingParent = interestingParent.Parent;
-                                    }
+                            //// Probably should deal with the case when the node isn't interesting but it was... need to delete!
 
-                                    parentNode = _listTree.GetNode(interestingParent);
-                                    //ListTreeNode node = new ListTreeNode(args.HistoryEvent);
+                            //if (wasNodeInteresting)
+                            //{
+                            //    // This should be impossible!
+                            //    throw new Exception("Node was already in the tree.");
+                            //}
 
-                                    _listTree.Add(parentNode, args.HistoryEvent);
-                                    changed = true;
-                                }
-                            }
-                            else if (!wasParentInteresting && isParentInteresting)
-                            {
-                                if (isNodeInteresting)
-                                {
-                                    // Add the parent... it has become interesting!
-                                    HistoryEvent interestingGrandParent = parent.Parent;
-                                    while (!InterestingEvent(interestingGrandParent))
-                                    {
-                                        interestingGrandParent = interestingGrandParent.Parent;
-                                    }
+                            //if (!wasParentInteresting && isParentInteresting)
+                            //{
+                            //    // This will happen if a history event was added to a parent which previously had only one child.
+                            //    changed = _listTree.Update(args.HistoryEvent, parent);
 
-                                    ListTreeNode grandparentNode = _listTree.GetNode(interestingGrandParent);
-                                    //parentNode = new ListTreeNode(parent);
-                                    parentNode = _listTree.Add(grandparentNode, parent);
+                            //}
+                            //else
+                            //{
+                            //    // Remove it!
+                            //    _listTree.RemoveNonRecursive(node);
+                            //}
 
-                                    // There must be one descendent of grandparent that should now be moved to be a child of parent!
+                            //if (!wasNodeInteresting && isNodeInteresting)
+                            //{
+                            //    if (wasParentInteresting && !isParentInteresting)
+                            //    {
+                            //        changed = _listTree.Update(parent, args.HistoryEvent);
+                            //    }
+                            //}
 
-                                    // Now add the node itself.
-                                    //ListTreeNode node = new ListTreeNode(args.HistoryEvent);
 
-                                    _listTree.Add(parentNode, args.HistoryEvent);
+                            //if (wasParentInteresting && !isParentInteresting)
+                            //{
+                            //    // Remove the parent node, or change it!
+                            //    if (isNodeInteresting)
+                            //    {
+                            //        // Change it!
+                            //        changed = _listTree.Update(parent, args.HistoryEvent);
+                            //    }
+                            //    else
+                            //    {
+                            //        // Todo: Delete it!
+                            //    }
+                            //}
+                            //else if ((wasParentInteresting && isParentInteresting) || (!wasParentInteresting && !isParentInteresting))
+                            //{
+                            //    if (isNodeInteresting)
+                            //    {
+                            //        // Just add the node!
+                            //        parentNode = ParentNode(args.HistoryEvent); // parent;
+                            //        //while (!InterestingEvent(interestingParent))
+                            //        //{
+                            //        //    interestingParent = interestingParent.Parent;
+                            //        //}
 
-                                    changed = true;
-                                }
-                            }
-                            else if (!wasParentInteresting && !isParentInteresting)
-                            {
-                                if (isNodeInteresting)
-                                {
-                                    // Just add the node!
-                                    HistoryEvent interestingParent = parent;
-                                    while (!InterestingEvent(interestingParent))
-                                    {
-                                        interestingParent = interestingParent.Parent;
-                                    }
+                            //        //parentNode = _listTree.GetNode(interestingParent);
+                            //        //ListTreeNode node = new ListTreeNode(args.HistoryEvent);
 
-                                    parentNode = _listTree.GetNode(interestingParent);
-                                    //ListTreeNode node = new ListTreeNode(args.HistoryEvent);
+                            //        _listTree.Add(parentNode, args.HistoryEvent);
+                            //        changed = true;
+                            //    }
+                            //}
+                            //else if (!wasParentInteresting && isParentInteresting)
+                            //{
+                            //    // Add the parent... it has become interesting!
+                            //    //HistoryEvent interestingGrandParent = parent.Parent;
+                            //    //while (!InterestingEvent(interestingGrandParent))
+                            //    //{
+                            //    //    interestingGrandParent = interestingGrandParent.Parent;
+                            //    //}
 
-                                    _listTree.Add(parentNode, args.HistoryEvent);
+                            //    //ListTreeNode grandparentNode = _listTree.GetNode(interestingGrandParent);
+                            //    ListTreeNode grandparentNode = ParentNode(parent.Parent);
+                            //    parentNode = _listTree.Add(grandparentNode, parent);
 
-                                    changed = true;
-                                }
-                            }
+                            //    if (isNodeInteresting)
+                            //    {
+                            //        // There must be one descendent of grandparent that should now be moved to be a child of parent!
+
+                            //        // Now add the node itself.
+                            //        //ListTreeNode node = new ListTreeNode(args.HistoryEvent);
+
+                            //        _listTree.Add(parentNode, args.HistoryEvent);
+
+                            //        changed = true;
+                            //    }
+                            //}
+                            //else if (!wasParentInteresting && !isParentInteresting)
+                            //{
+                            //    if (isNodeInteresting)
+                            //    {
+                            //        // Just add the node!
+                            //        HistoryEvent interestingParent = parent;
+                            //        while (!InterestingEvent(interestingParent))
+                            //        {
+                            //            interestingParent = interestingParent.Parent;
+                            //        }
+
+                            //        parentNode = _listTree.GetNode(interestingParent);
+                            //        //ListTreeNode node = new ListTreeNode(args.HistoryEvent);
+
+                            //        _listTree.Add(parentNode, args.HistoryEvent);
+
+                            //        changed = true;
+                            //    }
+                            //}
 
                             //_listTree.DebugDump();
                         }

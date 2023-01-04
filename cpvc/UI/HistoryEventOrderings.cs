@@ -93,6 +93,135 @@ namespace CPvC
             return changed;
         }
 
+        private int GetHorizontalInsertionIndex(ListTreeNode parent, int childIndex)
+        {
+            // Insert into horizontal events!
+            int previousHorizontalIndex = _horizontalPositions[parent];
+            if (childIndex > 0)
+            {
+                // Find the "right"-most descendent of the previous child!
+                ListTreeNode node = RightmostDescendent(parent.Children[childIndex - 1]);
+                previousHorizontalIndex = _horizontalPositions[node];
+            }
+
+            return previousHorizontalIndex + 1;
+        }
+
+        private int ChildPosition(ListTreeNode parent, ListTreeNode child)
+        {
+            return parent.Children.FindIndex(x => ReferenceEquals(x, child));
+        }
+
+        public ListTreeNode InsertNewParent(ListTreeNode node, HistoryEvent historyEvent)
+        {
+            if (_eventsToNodes.ContainsKey(historyEvent))
+            {
+                throw new Exception("History event already exists in the list tree!");
+            }
+
+            ListTreeNode newParentNode = new ListTreeNode(historyEvent);
+            ListTreeNode oldParentNode = node.Parent;
+
+            // Remove the node from the old parent.
+            int oldParentChildIndex = ChildPosition(oldParentNode, node);
+            oldParentNode.Children.RemoveAt(oldParentChildIndex);
+            node.Parent = null;
+            int oldHorizontalPosition = _horizontalPositions[node];
+
+            int childIndex = GetChildIndex(oldParentNode, newParentNode);
+            int newHorizontalIndex = GetHorizontalInsertionIndex(oldParentNode, childIndex);
+            ListTreeNode rightmostDescendentNode = RightmostDescendent(node);
+
+            int leftmostHorizontalIndex = _horizontalPositions[node];
+            int rightmostHorizontalIndex = _horizontalPositions[rightmostDescendentNode];
+
+            // Shift the horizontal indexes over...
+            MoveHorizontal(leftmostHorizontalIndex, newHorizontalIndex, rightmostHorizontalIndex - leftmostHorizontalIndex + 1);
+            _horizontalNodes.Insert(newHorizontalIndex, newParentNode);
+            oldParentNode.Children.Insert(childIndex, newParentNode);
+            newParentNode.Parent = oldParentNode;
+
+            // Add the node as a child of the new parent
+            newParentNode.Children.Add(node);
+            node.Parent = newParentNode;
+
+            _eventsToNodes.Add(historyEvent, newParentNode);
+            int verticalIndex = GetVerticalIndex(newParentNode);
+            _verticalNodes.Insert(verticalIndex, newParentNode);
+
+            RefreshHorizontalPositions(0);
+            RefreshVerticalPositions(0);
+
+            //_horizontalNodes.RemoveAt(oldHorizontalPosition);
+            //RefreshHorizontalPositions(oldHorizontalPosition);
+            //int oldVerticalPosition = _verticalPositions[node];
+            //_verticalNodes.RemoveAt(oldVerticalPosition);
+            //RefreshVerticalPositions(oldVerticalPosition);
+
+            //// Insert the new parent as a child of the old parent.
+            //int childIndex = GetChildIndex(oldParentNode, newParentNode);
+            //int newHorizontalIndex = GetHorizontalInsertionIndex(oldParentNode, childIndex);
+            //oldParentNode.Children.Insert(childIndex, newParentNode);
+            //newParentNode.Parent = oldParentNode;
+            //_eventsToNodes.Add(historyEvent, newParentNode);
+            //int verticalIndex = GetVerticalIndex(newParentNode);
+            //_verticalNodes.Insert(verticalIndex, newParentNode);
+            //_horizontalNodes.Insert(newHorizontalIndex, newParentNode);
+            //RefreshHorizontalPositions(newHorizontalIndex);
+
+            //ListTreeNode rightmostDescendentNode = RightmostDescendent(node);
+
+            //int leftmostHorizontalIndex = _horizontalPositions[node];
+            //int rightmostHorizontalIndex = _horizontalPositions[rightmostDescendentNode];
+
+            //RefreshVerticalPositions(verticalIndex);
+
+
+            // Shift the horizontal indexes over...
+            //MoveHorizontal(leftmostHorizontalIndex, newHorizontalIndex, rightmostHorizontalIndex - leftmostHorizontalIndex + 1);
+
+            // Test!
+            RefreshHorizontalPositions(0);
+
+            return newParentNode;
+        }
+
+        private void MoveHorizontal(int oldIndex, int newIndex, int count)
+        {
+            int refreshIndex;
+            if (oldIndex < newIndex)
+            {
+                refreshIndex = oldIndex;
+                
+                while (count > 0)
+                {
+                    ListTreeNode temp = _horizontalNodes[oldIndex];
+                    _horizontalNodes.Insert(newIndex, temp);
+                    _horizontalNodes.RemoveAt(oldIndex);
+
+                    count--;
+                }
+            }
+            else
+            {
+                refreshIndex = newIndex;
+
+                while (count > 0)
+                {
+                    ListTreeNode temp = _horizontalNodes[oldIndex];
+                    _horizontalNodes.RemoveAt(oldIndex);
+                    _horizontalNodes.Insert(newIndex, temp);
+                    oldIndex++;
+                    newIndex++;
+
+                    count--;
+                }
+            }
+
+            RefreshHorizontalPositions(refreshIndex);
+
+        }
+
         public ListTreeNode Add(ListTreeNode parent, HistoryEvent historyEvent)
         {
             ListTreeNode child = new ListTreeNode(historyEvent);
@@ -134,17 +263,18 @@ namespace CPvC
             _eventsToNodes.Add(child.HistoryEvent, child);
 
             // Insert into horizontal events!
-            int previousHorizontalIndex = _horizontalPositions[parent];
-            if (childIndex > 0)
-            {
-                // Find the "right"-most descendent of the previous child!
-                ListTreeNode node = RightmostDescendent(parent.Children[childIndex - 1]);
-                previousHorizontalIndex = _horizontalPositions[node];
-            }
+            int newHorizontalIndex = GetHorizontalInsertionIndex(parent, childIndex);
+            //int previousHorizontalIndex = _horizontalPositions[parent];
+            //if (childIndex > 0)
+            //{
+            //    // Find the "right"-most descendent of the previous child!
+            //    ListTreeNode node = RightmostDescendent(parent.Children[childIndex - 1]);
+            //    previousHorizontalIndex = _horizontalPositions[node];
+            //}
 
-            _horizontalNodes.Insert(previousHorizontalIndex + 1, child);
+            _horizontalNodes.Insert(newHorizontalIndex, child);
 
-            RefreshHorizontalPositions(previousHorizontalIndex + 1);
+            RefreshHorizontalPositions(newHorizontalIndex);
 
             // Insert vertically!
             int verticalIndex = GetVerticalIndex(child);
@@ -404,39 +534,40 @@ namespace CPvC
             }
 
             // Move them!
-            if (previousHorizontalIndex < leftmostHorizontalIndex)
-            {
-                int oldIndex = leftmostHorizontalIndex;
-                int newIndex = previousHorizontalIndex + 1;
+            MoveHorizontal(leftmostHorizontalIndex, previousHorizontalIndex + 1, rightmostHorizontalIndex - leftmostHorizontalIndex + 1);
+            //if (previousHorizontalIndex < leftmostHorizontalIndex)
+            //{
+            //    int oldIndex = leftmostHorizontalIndex;
+            //    int newIndex = previousHorizontalIndex + 1;
 
-                while (oldIndex <= rightmostHorizontalIndex)
-                {
-                    ListTreeNode temp = _horizontalNodes[oldIndex];
-                    _horizontalNodes.RemoveAt(oldIndex);
-                    _horizontalNodes.Insert(newIndex, temp);
-                    oldIndex++;
-                    newIndex++;
-                }
+            //    while (oldIndex <= rightmostHorizontalIndex)
+            //    {
+            //        ListTreeNode temp = _horizontalNodes[oldIndex];
+            //        _horizontalNodes.RemoveAt(oldIndex);
+            //        _horizontalNodes.Insert(newIndex, temp);
+            //        oldIndex++;
+            //        newIndex++;
+            //    }
 
-                RefreshHorizontalPositions(previousHorizontalIndex + 1);
-            }
-            else
-            {
-                int oldIndex = leftmostHorizontalIndex;
-                int newIndex = previousHorizontalIndex + 1;
-                int count = rightmostHorizontalIndex - leftmostHorizontalIndex + 1;
+            //    RefreshHorizontalPositions(previousHorizontalIndex + 1);
+            //}
+            //else
+            //{
+            //    int oldIndex = leftmostHorizontalIndex;
+            //    int newIndex = previousHorizontalIndex + 1;
+            //    int count = rightmostHorizontalIndex - leftmostHorizontalIndex + 1;
 
-                while (count > 0)
-                {
-                    ListTreeNode temp = _horizontalNodes[oldIndex];
-                    _horizontalNodes.Insert(newIndex, temp);
-                    _horizontalNodes.RemoveAt(oldIndex);
-                    //oldIndex++;
-                    //newIndex++;
-                }
+            //    while (count > 0)
+            //    {
+            //        ListTreeNode temp = _horizontalNodes[oldIndex];
+            //        _horizontalNodes.Insert(newIndex, temp);
+            //        _horizontalNodes.RemoveAt(oldIndex);
+            //        //oldIndex++;
+            //        //newIndex++;
+            //    }
 
-                RefreshHorizontalPositions(leftmostHorizontalIndex);
-            }
+            //    RefreshHorizontalPositions(leftmostHorizontalIndex);
+            //}
 
             return true;
         }
