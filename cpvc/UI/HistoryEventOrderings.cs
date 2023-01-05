@@ -607,6 +607,222 @@ namespace CPvC
         private Dictionary<HistoryEvent, ListTreeNode> _eventsToNodes;
     }
 
+    public class HistoryListTree
+    {
+        public HistoryListTree(History history)
+        {
+            SetHistory(history);
+            //_listTree = new ListTree(_history.RootEvent);
+        }
+
+        public ListTreeNode Root
+        {
+            get
+            {
+                return _listTree?.Root;
+            }
+        }
+
+        public System.Drawing.Point GetPosition(ListTreeNode node)
+        {
+            return _listTree.GetPosition(node);
+        }
+
+        public void SetHistory(History history)
+        {
+            if (_history != null)
+            {
+                _history.Auditors -= ProcessHistoryChange;
+            }
+
+            _history = history;
+
+            if (_history != null)
+            {
+                Init();
+                _history.Auditors += ProcessHistoryChange;
+            }
+        }
+
+        private void Init()
+        {
+            _listTree = new ListTree(_history.RootEvent);
+
+            List<HistoryEvent> nodes = new List<HistoryEvent>();
+            nodes.AddRange(_history.RootEvent.Children);
+
+            while (nodes.Any())
+            {
+                HistoryEvent historyEvent = nodes[0];
+                nodes.RemoveAt(0);
+
+                //HistoryChangedEventArgs args = new HistoryChangedEventArgs(_history, historyEvent, HistoryChangedAction.Add);
+                //UpdateListTree(args);
+                AddEventToListTree(historyEvent);
+
+
+                nodes.AddRange(historyEvent.Children);
+            }
+        }
+
+        public void ProcessHistoryChange(object sender, HistoryChangedEventArgs args)
+        {
+
+            bool changed = UpdateListTree(args);
+            if (changed)
+            {
+                PositionChanged?.Invoke(this, new NotifyPositionChangedEventArgs(NotifyListChangedAction.Added, -1, -1, -1, -1, null, null, null, null));
+                //ScheduleUpdateCanvas();
+            }
+        }
+
+        static private bool InterestingEvent(HistoryEvent historyEvent)
+        {
+            if (historyEvent is RootHistoryEvent ||
+                historyEvent is BookmarkHistoryEvent ||
+                historyEvent.Children.Count != 1)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+
+        private bool AddEventToListTree(HistoryEvent historyEvent)
+        {
+            HistoryEvent parentHistoryEvent = historyEvent.Parent;
+            ListTreeNode parentNode = _listTree.GetNode(parentHistoryEvent);
+            bool wasParentInteresting = parentNode != null;
+            bool isParentInteresting = InterestingEvent(parentHistoryEvent);
+            ListTreeNode node = _listTree.GetNode(historyEvent);
+
+            if (node != null)
+            {
+                // The node is already in the tree... we shouldn't be trying to add it!
+                throw new Exception("Node was already in the tree.");
+            }
+
+            if (!InterestingEvent(historyEvent))
+            {
+                return false;
+            }
+
+            bool add = true;
+
+            // First, check if the parent's interestingness has changed from false to true.
+            if (!wasParentInteresting && isParentInteresting)
+            {
+                // Need to add the parent!
+
+                // But first, find the child who will share this new parent!
+                ListTreeNode cousinNode = null;
+                HistoryEvent he = parentHistoryEvent;
+                while (true)
+                {
+                    he = he.Children[0];
+                    cousinNode = _listTree.GetNode(he);
+                    if (cousinNode != null)
+                    {
+                        break;
+                    }
+                }
+
+                //ListTreeNode cousinNode = parentNode.Children[0];
+
+
+                parentNode = _listTree.InsertNewParent(cousinNode, parentHistoryEvent);
+            }
+            else if (!wasParentInteresting && !isParentInteresting)
+            {
+                // Work our way up the tree to find who should be our parent!
+                HistoryEvent he = parentHistoryEvent;
+                while (true)
+                {
+                    ListTreeNode n = _listTree.GetNode(he);
+                    if (n != null)
+                    {
+                        parentNode = n;
+                        break;
+                    }
+
+                    he = he.Parent;
+                }
+            }
+            else if (wasParentInteresting && !isParentInteresting)
+            {
+                // Replace the parent node with the child!
+                _listTree.Update(parentHistoryEvent, historyEvent);
+                add = false;
+            }
+            else if (wasParentInteresting && isParentInteresting)
+            {
+                // Nothing to do! Just add the new node!
+            }
+
+            if (add && InterestingEvent(historyEvent))
+            {
+                _listTree.Add(parentNode, historyEvent);
+            }
+
+            return true;
+        }
+
+        private bool UpdateListTree(HistoryChangedEventArgs args)
+        {
+            if (_listTree == null)
+            {
+                return false;
+            }
+
+            bool changed = false;
+
+            lock (_listTree)
+            {
+                switch (args.Action)
+                {
+                    case HistoryChangedAction.Add:
+                        {
+                            changed = AddEventToListTree(args.HistoryEvent);
+                        }
+                        break;
+                    case HistoryChangedAction.UpdateCurrent:
+                        {
+                            ListTreeNode node = _listTree.GetNode(args.HistoryEvent);
+
+                            changed = _listTree.Update(node);
+                        }
+                        break;
+                    case HistoryChangedAction.DeleteBranch:
+                        {
+                            ListTreeNode node = _listTree.GetNode(args.HistoryEvent);
+
+                            _listTree.RemoveRecursive(node);
+
+                            changed = true;
+                        }
+                        break;
+                    case HistoryChangedAction.DeleteBookmark:
+                        {
+                            ListTreeNode node = _listTree.GetNode(args.HistoryEvent);
+
+                            _listTree.RemoveNonRecursive(node);
+
+                            changed = true;
+                        }
+                        break;
+                }
+            }
+
+
+            return changed;
+        }
+
+        public event NotifyPositionChangedEventHandler PositionChanged;
+
+        private History _history;
+        private ListTree _listTree;
+    }
 
     public enum NotifyListChangedAction
     {
