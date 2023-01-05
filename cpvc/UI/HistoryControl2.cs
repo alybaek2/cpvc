@@ -69,14 +69,8 @@ namespace CPvC
 
             _history = newHistory;
 
-            //lock (_orderings)
             {
-                //_orderings.SetHistory(_history);
-                //_updatePending = false;
-                //_circles.Clear();
                 Children.Clear();
-
-                //InitRows();
 
                 if (_history == null)
                 {

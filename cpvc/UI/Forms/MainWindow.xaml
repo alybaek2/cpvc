@@ -385,27 +385,6 @@
                                   VerticalAlignment="Top"
                                   Height="200">
             </cpvc:HistoryControl2>
-            <!--<cpvc:HistoryControl x:Name="_historyControl"
-                                 DataContext="{Binding ActiveMachine.History, Mode=OneWay}"
-                                 ScrollViewer.VerticalScrollBarVisibility="Visible"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                 Width="300" Margin="0,342,0,0" HorizontalAlignment="Left" Height="174" VerticalAlignment="Top">
-                <ListView.ItemContainerStyle>
-                    <Style TargetType="{x:Type ListViewItem}">
-                        <Setter Property="BorderThickness" Value="0"/>
-                        <Setter Property="Margin" Value="0,-2,0,0"/>
-                        <Setter Property="Padding" Value="0,0,0,0"/>
-                    </Style>
-                </ListView.ItemContainerStyle>
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn x:Name="_graphColumn" Header="Graph" Width="150" CellTemplate="{StaticResource cellTemplate}" HeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}" />
-                        <GridViewColumn Header="Machine time" DisplayMemberBinding="{Binding HistoryEvent.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}" Width="100" HeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}"/>
-                        --><!--<GridViewColumn Header="Machine time" DisplayMemberBinding="{Binding HistoryEvent.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}" Width="100" HeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}"/>
-                                        <GridViewColumn Header="Date created" DisplayMemberBinding="{Binding HistoryEvent.CreateDate, Converter={StaticResource localDateTimeConverter}, Mode=OneWay}" Width="150" HeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}"/>--><!--
-                    </GridView>
-                </ListView.View>
-            </cpvc:HistoryControl>-->
         </Grid>
         <StatusBar Height="30" Grid.Row="3" VerticalAlignment="Top">
             <TextBlock TextWrapping="Wrap" Text="{Binding ActiveMachine.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
