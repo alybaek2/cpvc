@@ -39,16 +39,16 @@ namespace CPvC
             //_polylines = new Dictionary<HistoryEvent, Polyline>();
             //_circles = new Dictionary<HistoryEvent, Ellipse>();
 
-            _branches = new List<BranchInfo>();
-            _branchesMap = new Dictionary<HistoryEvent, BranchInfo>();
+            //_branches = new List<BranchInfo>();
+            //_branchesMap = new Dictionary<HistoryEvent, BranchInfo>();
 
-            _oldHorizontalOrdering = new List<HistoryEvent>();
-            _oldVerticalOrdering = new List<HistoryEvent>();
-            _shapes = new Dictionary<HistoryEvent, BranchShapes>();
+            //_oldHorizontalOrdering = new List<HistoryEvent>();
+            //_oldVerticalOrdering = new List<HistoryEvent>();
+            //_shapes = new Dictionary<HistoryEvent, BranchShapes>();
 
             _branchLines = new Dictionary<History, BranchLine>();
 
-            _rows = new List<Row>(); //  new OrderedList<ulong, OldRow>();
+            //_rows = new List<Row>(); //  new OrderedList<ulong, OldRow>();
             DataContextChanged += HistoryControl2_DataContextChanged;
         }
 
@@ -483,12 +483,7 @@ namespace CPvC
                 _updatePending = false;
 
                 Stopwatch sw = Stopwatch.StartNew();
-                //UpdateCanvas();
-                //UpdateCanvasListTree(changeArgs);
-                if (_history != null)
-                {
-                    UpdateCanvasListTree2(changeArgs);
-                }
+                UpdateCanvasListTree2(changeArgs);
                 sw.Stop();
 
                 CPvC.Diagnostics.Trace("Update items took {0}ms", sw.ElapsedMilliseconds);
@@ -504,9 +499,9 @@ namespace CPvC
             //}), null);
         }
 
-        private List<HistoryEvent> _oldHorizontalOrdering;
-        private List<HistoryEvent> _oldVerticalOrdering;
-        private Dictionary<HistoryEvent, BranchShapes> _shapes;
+        //private List<HistoryEvent> _oldHorizontalOrdering;
+        //private List<HistoryEvent> _oldVerticalOrdering;
+        //private Dictionary<HistoryEvent, BranchShapes> _shapes;
 
         private void UpdateCanvasListTree2(NotifyPositionChangedEventArgs changeArgs)
         {
@@ -542,7 +537,7 @@ namespace CPvC
 
                 Point lastPoint = line.Points[line.Points.Count - 1];
 
-                bool filled = _history.CurrentEvent != node.HistoryEvent;
+                bool filled = !ReferenceEquals(_history?.CurrentEvent, node.HistoryEvent);
                 Ellipse circle = new Ellipse
                 {
                     Stroke = Brushes.DarkBlue,
@@ -560,226 +555,112 @@ namespace CPvC
                 Canvas.SetZIndex(circle, 100);
 
                 Children.Add(circle);
-
-
-
-
-
             }
         }
-
-        private void UpdateCanvasListTree(NotifyPositionChangedEventArgs changeArgs)
-        {
-            if (_listTree == null)
-            {
-                return;
-            }
-
-            lock (_listTree)
-            {
-                Children.Clear();
-
-                List<ListTreeNode> nodes = new List<ListTreeNode>();
-                nodes.Add(_listTree.Root);
-
-                while (nodes.Any())
-                {
-                    ListTreeNode node = nodes[0];
-                    nodes.RemoveAt(0);
-
-                    System.Drawing.Point position = _listTree.GetPosition(node);
-
-                    bool filled = _history.CurrentEvent != node.HistoryEvent;
-                    Ellipse circle = new Ellipse
-                    {
-                        Stroke = Brushes.DarkBlue,
-                        Fill = filled ? Brushes.DarkBlue : Brushes.White,
-                        StrokeThickness = 2,
-                        HorizontalAlignment = HorizontalAlignment.Left,
-                        VerticalAlignment = VerticalAlignment.Top,
-                        UseLayoutRounding = true,
-                        Margin = new Thickness((position.X + 0.5) * 16 - 5, (position.Y + 0.5) * 16 - 5, 0, 0),
-                        Width = 10,
-                        Height = 10
-                    };
-
-                    // Ensure the dot is always "on top".
-                    Canvas.SetZIndex(circle, 100);
-
-                    Children.Add(circle);
-
-                    if (node.Parent != null)
-                    {
-                        System.Drawing.Point parentPosition = _listTree.GetPosition(node.Parent);
-
-                        Line line = new Line
-                        {
-                            X1 = 16 * (position.X + 0.5),
-                            Y1 = 16 * (position.Y + 0.5),
-                            X2 = 16 * (parentPosition.X + 0.5),
-                            Y2 = 16 * (parentPosition.Y + 0.5),
-                            StrokeThickness = 2,
-                            Stroke = Brushes.DarkBlue,
-                            HorizontalAlignment = HorizontalAlignment.Left,
-                            VerticalAlignment = VerticalAlignment.Top,
-                            UseLayoutRounding = true
-                        };
-
-                        Children.Add(line);
-
-                        // Ensure lines are never "on top" of dots.
-                        Canvas.SetZIndex(line, 1);
-                    }
-
-                    nodes.AddRange(node.Children);
-                }
-            }
-        }
-
-        //public void Dump()
-        //{
-        //    string str = "";
-        //    for (int r = _rows.Count - 1; r >= 0; r--)
-        //    {
-        //        Row row = _rows[r];
-
-        //        string line = "";
-
-        //        foreach (Cell c in row.Cells)
-        //        {
-        //            // Pad out to X!
-        //            while (line.Length < c.X * 10)
-        //            {
-        //                line += " ";
-        //            }
-
-
-        //            if (c.HistoryEvent != row.HistoryEvent)
-        //            {
-        //                line += String.Format("| ({0})  ", c.HistoryEvent.Id);
-        //            }
-        //            else if (c.HistoryEvent.Children.Count == 0)
-        //            {
-        //                line += String.Format("o ({0})  ", c.HistoryEvent.Id);
-        //            }
-        //            else
-        //            {
-        //                line += String.Format("+ ({0})  ", c.HistoryEvent.Id);
-        //            }
-        //        }
-
-        //        str += line + "\n";
-        //    }
-
-        //    CPvC.Diagnostics.Trace(str);
-        //}
-
 
         private Dictionary<History, BranchLine> _branchLines;
 
-        private List<Row> _rows;
+        //private class Row
+        //{
+        //    public Row(HistoryEvent historyEvent)
+        //    {
+        //        _historyEvent = historyEvent;
+        //        _cells = new List<Cell>();
+        //    }
 
-        private class Row
-        {
-            public Row(HistoryEvent historyEvent)
-            {
-                _historyEvent = historyEvent;
-                _cells = new List<Cell>();
-            }
+        //    public HistoryEvent HistoryEvent
+        //    {
+        //        get
+        //        {
+        //            return _historyEvent;
+        //        }
+        //    }
 
-            public HistoryEvent HistoryEvent
-            {
-                get
-                {
-                    return _historyEvent;
-                }
-            }
+        //    public List<Cell> Cells
+        //    {
+        //        get
+        //        {
+        //            return _cells;
+        //        }
+        //    }
 
-            public List<Cell> Cells
-            {
-                get
-                {
-                    return _cells;
-                }
-            }
+        //    private List<Cell> _cells;
+        //    private HistoryEvent _historyEvent;
+        //}
 
-            private List<Cell> _cells;
-            private HistoryEvent _historyEvent;
-        }
+        //private class Cell
+        //{
+        //    public Cell(HistoryEvent historyEvent, int x)
+        //    {
+        //        _historyEvent = historyEvent;
+        //        _x = x;
+        //        //_terminus = terminus;
+        //    }
 
-        private class Cell
-        {
-            public Cell(HistoryEvent historyEvent, int x)
-            {
-                _historyEvent = historyEvent;
-                _x = x;
-                //_terminus = terminus;
-            }
+        //    public Cell(Cell other)
+        //    {
+        //        _historyEvent = other._historyEvent;
+        //        _x = other._x;
+        //    }
 
-            public Cell(Cell other)
-            {
-                _historyEvent = other._historyEvent;
-                _x = other._x;
-            }
+        //    public HistoryEvent HistoryEvent
+        //    {
+        //        get
+        //        {
+        //            return _historyEvent;
+        //        }
+        //    }
 
-            public HistoryEvent HistoryEvent
-            {
-                get
-                {
-                    return _historyEvent;
-                }
-            }
+        //    public int X
+        //    {
+        //        get
+        //        {
+        //            return _x;
+        //        }
+        //    }
 
-            public int X
-            {
-                get
-                {
-                    return _x;
-                }
-            }
+        //    //public bool Terminus
+        //    //{
+        //    //    get
+        //    //    {
+        //    //        return _terminus;
+        //    //    }
+        //    //}
 
-            //public bool Terminus
-            //{
-            //    get
-            //    {
-            //        return _terminus;
-            //    }
-            //}
-
-            private HistoryEvent _historyEvent;
-            private int _x;
-            //private bool _terminus;
-        }
+        //    private HistoryEvent _historyEvent;
+        //    private int _x;
+        //    //private bool _terminus;
+        //}
 
         //private OrderedList<UInt64, OldRow> _rows;
         //private Dictionary<HistoryEvent, OrderedList<UInt64, Tuple<HistoryEvent, BranchInfo>>> _rowsByHistoryEvent;
 
-        private class OldRow
-        {
-            public OldRow()
-            {
-                _branchBits = new OrderedList<ulong, BranchInfo>();
-            }
+        //private class OldRow
+        //{
+        //    public OldRow()
+        //    {
+        //        _branchBits = new OrderedList<ulong, BranchInfo>();
+        //    }
 
-            public BranchInfo Branch
-            {
-                get
-                {
-                    return _branch;
-                }
-            }
+        //    public BranchInfo Branch
+        //    {
+        //        get
+        //        {
+        //            return _branch;
+        //        }
+        //    }
 
-            public OrderedList<UInt64, BranchInfo> BranchBits
-            {
-                get
-                {
-                    return _branchBits;
-                }
-            }
+        //    public OrderedList<UInt64, BranchInfo> BranchBits
+        //    {
+        //        get
+        //        {
+        //            return _branchBits;
+        //        }
+        //    }
 
-            private BranchInfo _branch;
-            private OrderedList<UInt64, BranchInfo> _branchBits;
-        }
+        //    private BranchInfo _branch;
+        //    private OrderedList<UInt64, BranchInfo> _branchBits;
+        //}
 
         private class BranchShapes
         {
@@ -832,110 +713,110 @@ namespace CPvC
             private List<Point> _points;
         }
 
-        private class BranchInfo
-        {
-            public BranchInfo(BranchInfo parent, int x, int y, HistoryEvent historyEvent)
-            {
-                _parent = parent;
-                _x = x;
-                _y = y;
-                _historyEvent = historyEvent;
-            }
+        //private class BranchInfo
+        //{
+        //    public BranchInfo(BranchInfo parent, int x, int y, HistoryEvent historyEvent)
+        //    {
+        //        _parent = parent;
+        //        _x = x;
+        //        _y = y;
+        //        _historyEvent = historyEvent;
+        //    }
 
-            public BranchInfo _parent;
-            public int _x;
-            public int _y;
-            public HistoryEvent _historyEvent;
-        }
+        //    public BranchInfo _parent;
+        //    public int _x;
+        //    public int _y;
+        //    public HistoryEvent _historyEvent;
+        //}
 
-        private class OrderedList<V, T> where V : IComparable
-        {
-            public OrderedList()
-            {
-                _values = new List<V>();
-                _items = new List<T>();
-            }
+        //private class OrderedList<V, T> where V : IComparable
+        //{
+        //    public OrderedList()
+        //    {
+        //        _values = new List<V>();
+        //        _items = new List<T>();
+        //    }
 
-            public int Add(V value, T item)
-            {
-                int index = Index(item);
-                if (index == -1)
-                {
-                    // Insert
-                    for (int i = 0; i < _items.Count; i++)
-                    {
-                        if (_values[i].CompareTo(value) < 0)
-                        {
-                            _values.Insert(i, value);
-                            _items.Insert(i, item);
+        //    public int Add(V value, T item)
+        //    {
+        //        int index = Index(item);
+        //        if (index == -1)
+        //        {
+        //            // Insert
+        //            for (int i = 0; i < _items.Count; i++)
+        //            {
+        //                if (_values[i].CompareTo(value) < 0)
+        //                {
+        //                    _values.Insert(i, value);
+        //                    _items.Insert(i, item);
 
-                            index = i;
-                            break;
-                        }
-                    }
+        //                    index = i;
+        //                    break;
+        //                }
+        //            }
 
-                    if (index == -1)
-                    {
-                        index = _items.Count;
-                        _values.Add(value);
-                        _items.Add(item);
-                    }
+        //            if (index == -1)
+        //            {
+        //                index = _items.Count;
+        //                _values.Add(value);
+        //                _items.Add(item);
+        //            }
 
-                    return index;
-                }
-                else
-                {
-                    // Update
-                    throw new Exception("Adding already existing item!!!");
-                }
-            }
+        //            return index;
+        //        }
+        //        else
+        //        {
+        //            // Update
+        //            throw new Exception("Adding already existing item!!!");
+        //        }
+        //    }
 
-            public int Update(V value, T item)
-            {
-                int index = Index(item);
-                if (index >= 0)
-                {
-                    if (_values[index].CompareTo(value) == 0)
-                    {
-                        // Nothing to change!
-                        return index;
-                    }
+        //    public int Update(V value, T item)
+        //    {
+        //        int index = Index(item);
+        //        if (index >= 0)
+        //        {
+        //            if (_values[index].CompareTo(value) == 0)
+        //            {
+        //                // Nothing to change!
+        //                return index;
+        //            }
 
-                    _values.RemoveAt(index);
-                    _items.RemoveAt(index);
+        //            _values.RemoveAt(index);
+        //            _items.RemoveAt(index);
 
-                    return Add(value, item);
-                }
-                else
-                {
-                    // Oops!
-                    throw new Exception("Updating a nonexitent item!");
-                }
-            }
+        //            return Add(value, item);
+        //        }
+        //        else
+        //        {
+        //            // Oops!
+        //            throw new Exception("Updating a nonexitent item!");
+        //        }
+        //    }
 
-            public int Remove(T item)
-            {
-                int index = Index(item);
-                if (index >= 0)
-                {
-                    _values.RemoveAt(index);
-                    _items.RemoveAt(index);
-                }
+        //    public int Remove(T item)
+        //    {
+        //        int index = Index(item);
+        //        if (index >= 0)
+        //        {
+        //            _values.RemoveAt(index);
+        //            _items.RemoveAt(index);
+        //        }
 
-                return index;
-            }
+        //        return index;
+        //    }
 
-            public int Index(T item)
-            {
-                return _items.FindIndex(i => ReferenceEquals(i, item));
-            }
+        //    public int Index(T item)
+        //    {
+        //        return _items.FindIndex(i => ReferenceEquals(i, item));
+        //    }
 
-            private List<V> _values;
-            private List<T> _items;
-        }
+        //    private List<V> _values;
+        //    private List<T> _items;
+        //}
 
 
-        private List<BranchInfo> _branches;
-        private Dictionary<HistoryEvent, BranchInfo> _branchesMap;
+        //private List<BranchInfo> _branches;
+        //private Dictionary<HistoryEvent, BranchInfo> _branchesMap;
     }
 }
