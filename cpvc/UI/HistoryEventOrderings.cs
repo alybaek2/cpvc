@@ -78,13 +78,6 @@ namespace CPvC
         {
             ListTreeNode node = GetNode(oldHistoryEvent);
 
-            //if (ReferenceEquals(node.HistoryEvent, newHistoryEvent))
-            //{
-            //    return;
-            //}
-
-
-
             _eventsToNodes.Remove(oldHistoryEvent);
             node.HistoryEvent = newHistoryEvent;
             bool changed = Update(node);
@@ -635,7 +628,6 @@ namespace CPvC
         public HistoryListTree(History history)
         {
             SetHistory(history);
-            //_listTree = new ListTree(_history.RootEvent);
         }
 
         public ListTreeNode Root
@@ -679,10 +671,7 @@ namespace CPvC
                 HistoryEvent historyEvent = nodes[0];
                 nodes.RemoveAt(0);
 
-                //HistoryChangedEventArgs args = new HistoryChangedEventArgs(_history, historyEvent, HistoryChangedAction.Add);
-                //UpdateListTree(args);
                 AddEventToListTree(historyEvent);
-
 
                 nodes.AddRange(historyEvent.Children);
             }
@@ -695,7 +684,6 @@ namespace CPvC
             if (changeArgs != null)
             {
                 PositionChanged?.Invoke(this, changeArgs);
-                //ScheduleUpdateCanvas();
             }
         }
 
@@ -751,19 +739,7 @@ namespace CPvC
                     }
                 }
 
-                //ListTreeNode cousinNode = parentNode.Children[0];
-
-
                 parentNode = _listTree.InsertNewParent(cousinNode, parentHistoryEvent);
-
-                //System.Drawing.Point position = _listTree.GetPosition(parentNode);
-                //NotifyPositionChangedEventArgs args = new NotifyPositionChangedEventArgs(NotifyListChangedAction.Added, -1, position.X, -1, position.Y, null, parentNode.HistoryEvent, null, parentNode?.Parent?.HistoryEvent);
-                //PositionChanged?.Invoke(this, args);
-
-                // Notify all nodes either vertially or horizontally "bigger"?
-                // Should the args contain an array of nodes instead of just one?
-                // Also: can this be done in the ListTree?
-
             }
             else if (!wasParentInteresting && !isParentInteresting)
             {
@@ -858,8 +834,6 @@ namespace CPvC
 
             if (changed)
             {
-                //List<HistoryEvent> horizontalEvents = _listTree.HorizontalOrdering().Select(x => x.HistoryEvent).ToList();
-                //List<HistoryEvent> verticalEvents = _listTree.VerticalOrdering().Select(x => x.HistoryEvent).ToList();
                 NotifyPositionChangedEventArgs changeArgs = new NotifyPositionChangedEventArgs(_listTree.HorizontalOrdering(), _listTree.VerticalOrdering());
 
                 return changeArgs;
@@ -907,15 +881,6 @@ namespace CPvC
             VerticalOrdering = verticalOrdering;
         }
 
-        //public NotifyListChangedAction Action { get; }
-        //public int OldHorizontalIndex { get; }
-        //public int NewHorizontalIndex { get; }
-        //public int OldVerticalIndex { get; }
-        //public int NewVerticalIndex { get; }
-        //public HistoryEvent OldItem { get; }
-        //public HistoryEvent NewItem { get; }
-        //public HistoryEvent OldInterestingParent { get; }
-        //public HistoryEvent NewInterestingParent { get; }
         public List<ListTreeNode> HorizontalOrdering { get; }
         public List<ListTreeNode> VerticalOrdering { get; }
     }
