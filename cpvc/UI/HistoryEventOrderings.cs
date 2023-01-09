@@ -93,6 +93,16 @@ namespace CPvC
             return changed;
         }
 
+        public List<ListTreeNode> HorizontalOrdering()
+        {
+            return _horizontalNodes;
+        }
+
+        public List<ListTreeNode> VerticalOrdering()
+        {
+            return _verticalNodes;
+        }
+
         private int GetHorizontalInsertionIndex(ListTreeNode parent, int childIndex)
         {
             // Insert into horizontal events!
@@ -291,9 +301,16 @@ namespace CPvC
             RefreshHorizontalPositions(leftmostHorizontalIndex);
         }
 
-        public void RemoveNonRecursive(ListTreeNode child)
+        public void RemoveNonRecursive(ListTreeNode node)
         {
+            if (node.Parent == null)
+            {
+                throw new ArgumentException("Can't remove the root node!", nameof(node));
+            }
+
             // Todo!
+
+            // Remove the node, and reinsert its children to node's parent.
         }
 
         public bool Update(ListTreeNode node)
@@ -402,23 +419,7 @@ namespace CPvC
 
             int childIndex = ChildIndex(node);
 
-            bool horizontalPositionChanged = false;
-            if (childIndex > 0)
-            {
-                if (HorizontalSort(node.Parent.Children[childIndex - 1].HistoryEvent, node.HistoryEvent) >= 0)
-                {
-                    horizontalPositionChanged = true;
-                }
-            }
-
-            if (!horizontalPositionChanged && (childIndex + 1 < node.Parent.Children.Count))
-            {
-                if (HorizontalSort(node.HistoryEvent, node.Parent.Children[childIndex + 1].HistoryEvent) >= 0)
-                {
-                    horizontalPositionChanged = true;
-                }
-            }
-
+            bool horizontalPositionChanged = HorizontalPositionChanged(node, childIndex);
             if (!horizontalPositionChanged)
             {
                 return false;
@@ -459,6 +460,28 @@ namespace CPvC
             MoveHorizontal(leftmostHorizontalIndex, previousHorizontalIndex + 1, rightmostHorizontalIndex - leftmostHorizontalIndex + 1);
 
             return true;
+        }
+
+        private bool HorizontalPositionChanged(ListTreeNode node, int childIndex)
+        {
+            bool horizontalPositionChanged = false;
+            if (childIndex > 0)
+            {
+                if (HorizontalSort(node.Parent.Children[childIndex - 1].HistoryEvent, node.HistoryEvent) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            if (!horizontalPositionChanged && (childIndex + 1 < node.Parent.Children.Count))
+            {
+                if (HorizontalSort(node.HistoryEvent, node.Parent.Children[childIndex + 1].HistoryEvent) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private bool VerticalPositionChanged(ListTreeNode node, int verticalIndex)
@@ -668,10 +691,10 @@ namespace CPvC
         public void ProcessHistoryChange(object sender, HistoryChangedEventArgs args)
         {
 
-            bool changed = UpdateListTree(args);
-            if (changed)
+            NotifyPositionChangedEventArgs changeArgs = UpdateListTree(args);
+            if (changeArgs != null)
             {
-                PositionChanged?.Invoke(this, new NotifyPositionChangedEventArgs(NotifyListChangedAction.Added, -1, -1, -1, -1, null, null, null, null));
+                PositionChanged?.Invoke(this, changeArgs);
                 //ScheduleUpdateCanvas();
             }
         }
@@ -732,6 +755,15 @@ namespace CPvC
 
 
                 parentNode = _listTree.InsertNewParent(cousinNode, parentHistoryEvent);
+
+                //System.Drawing.Point position = _listTree.GetPosition(parentNode);
+                //NotifyPositionChangedEventArgs args = new NotifyPositionChangedEventArgs(NotifyListChangedAction.Added, -1, position.X, -1, position.Y, null, parentNode.HistoryEvent, null, parentNode?.Parent?.HistoryEvent);
+                //PositionChanged?.Invoke(this, args);
+
+                // Notify all nodes either vertially or horizontally "bigger"?
+                // Should the args contain an array of nodes instead of just one?
+                // Also: can this be done in the ListTree?
+
             }
             else if (!wasParentInteresting && !isParentInteresting)
             {
@@ -754,6 +786,8 @@ namespace CPvC
                 // Replace the parent node with the child!
                 _listTree.Update(parentHistoryEvent, historyEvent);
                 add = false;
+
+                // Todo: Notify!
             }
             else if (wasParentInteresting && isParentInteresting)
             {
@@ -763,16 +797,18 @@ namespace CPvC
             if (add && InterestingEvent(historyEvent))
             {
                 _listTree.Add(parentNode, historyEvent);
+
+                // Todo: Notify!
             }
 
             return true;
         }
 
-        private bool UpdateListTree(HistoryChangedEventArgs args)
+        private NotifyPositionChangedEventArgs UpdateListTree(HistoryChangedEventArgs args)
         {
             if (_listTree == null)
             {
-                return false;
+                return null;
             }
 
             bool changed = false;
@@ -791,6 +827,8 @@ namespace CPvC
                             ListTreeNode node = _listTree.GetNode(args.HistoryEvent);
 
                             changed = _listTree.Update(node);
+
+                            // Todo: Notify!
                         }
                         break;
                     case HistoryChangedAction.DeleteBranch:
@@ -800,6 +838,8 @@ namespace CPvC
                             _listTree.RemoveRecursive(node);
 
                             changed = true;
+
+                            // Todo: Notify!
                         }
                         break;
                     case HistoryChangedAction.DeleteBookmark:
@@ -809,13 +849,39 @@ namespace CPvC
                             _listTree.RemoveNonRecursive(node);
 
                             changed = true;
+
+                            // Todo: Notify!
                         }
                         break;
                 }
             }
 
+            if (changed)
+            {
+                //List<HistoryEvent> horizontalEvents = _listTree.HorizontalOrdering().Select(x => x.HistoryEvent).ToList();
+                //List<HistoryEvent> verticalEvents = _listTree.VerticalOrdering().Select(x => x.HistoryEvent).ToList();
+                NotifyPositionChangedEventArgs changeArgs = new NotifyPositionChangedEventArgs(_listTree.HorizontalOrdering(), _listTree.VerticalOrdering());
 
-            return changed;
+                return changeArgs;
+            }
+
+            return null;
+        }
+
+        public List<ListTreeNode> HorizontalOrdering
+        {
+            get
+            {
+                return _listTree.HorizontalOrdering();
+            }
+        }
+
+        public List<ListTreeNode> VerticalOrdering
+        {
+            get
+            {
+                return _listTree.VerticalOrdering();
+            }
         }
 
         public event NotifyPositionChangedEventHandler PositionChanged;
@@ -835,28 +901,23 @@ namespace CPvC
 
     public class NotifyPositionChangedEventArgs : EventArgs
     {
-        public NotifyPositionChangedEventArgs(NotifyListChangedAction action, int oldHorizontalIndex, int newHorizontalIndex, int oldVerticalIndex, int newVerticalIndex, HistoryEvent oldItem, HistoryEvent newItem, HistoryEvent oldInterestingParent, HistoryEvent newInterestingParent)
+        public NotifyPositionChangedEventArgs(List<ListTreeNode> horizontalOrdering, List<ListTreeNode> verticalOrdering)
         {
-            Action = action;
-            OldHorizontalIndex = oldHorizontalIndex;
-            NewHorizontalIndex = newHorizontalIndex;
-            OldVerticalIndex = oldVerticalIndex;
-            NewVerticalIndex = newVerticalIndex;
-            OldItem = oldItem;
-            NewItem = newItem;
-            OldInterestingParent = oldInterestingParent;
-            NewInterestingParent = newInterestingParent;
+            HorizontalOrdering = horizontalOrdering;
+            VerticalOrdering = verticalOrdering;
         }
 
-        public NotifyListChangedAction Action { get; }
-        public int OldHorizontalIndex { get; }
-        public int NewHorizontalIndex { get; }
-        public int OldVerticalIndex { get; }
-        public int NewVerticalIndex { get; }
-        public HistoryEvent OldItem { get; }
-        public HistoryEvent NewItem { get; }
-        public HistoryEvent OldInterestingParent { get; }
-        public HistoryEvent NewInterestingParent { get; }
+        //public NotifyListChangedAction Action { get; }
+        //public int OldHorizontalIndex { get; }
+        //public int NewHorizontalIndex { get; }
+        //public int OldVerticalIndex { get; }
+        //public int NewVerticalIndex { get; }
+        //public HistoryEvent OldItem { get; }
+        //public HistoryEvent NewItem { get; }
+        //public HistoryEvent OldInterestingParent { get; }
+        //public HistoryEvent NewInterestingParent { get; }
+        public List<ListTreeNode> HorizontalOrdering { get; }
+        public List<ListTreeNode> VerticalOrdering { get; }
     }
 
     public delegate void NotifyPositionChangedEventHandler(object sender, NotifyPositionChangedEventArgs e);

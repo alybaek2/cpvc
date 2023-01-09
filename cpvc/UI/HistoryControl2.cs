@@ -42,7 +42,13 @@ namespace CPvC
             _branches = new List<BranchInfo>();
             _branchesMap = new Dictionary<HistoryEvent, BranchInfo>();
 
-            //_rows = new List<Row>(); //  new OrderedList<ulong, OldRow>();
+            _oldHorizontalOrdering = new List<HistoryEvent>();
+            _oldVerticalOrdering = new List<HistoryEvent>();
+            _shapes = new Dictionary<HistoryEvent, BranchShapes>();
+
+            _branchLines = new Dictionary<History, BranchLine>();
+
+            _rows = new List<Row>(); //  new OrderedList<ulong, OldRow>();
             DataContextChanged += HistoryControl2_DataContextChanged;
         }
 
@@ -82,6 +88,10 @@ namespace CPvC
 
                     _listTree.PositionChanged += ListTree_PositionChanged;
 
+                    NotifyPositionChangedEventArgs changeArgs = new NotifyPositionChangedEventArgs(_listTree.HorizontalOrdering, _listTree.VerticalOrdering);
+
+                    ScheduleUpdateCanvas(changeArgs);
+
                     //lock (_listTree)
                     //{
                     //    List<HistoryEvent> nodes = new List<HistoryEvent>();
@@ -102,13 +112,11 @@ namespace CPvC
                 }
 
             }
-
-            ScheduleUpdateCanvas();
         }
 
         private void ListTree_PositionChanged(object sender, NotifyPositionChangedEventArgs e)
         {
-            ScheduleUpdateCanvas();
+            ScheduleUpdateCanvas(e);
         }
 
         //public void ProcessHistoryChange(object sender, HistoryChangedEventArgs args)
@@ -131,17 +139,17 @@ namespace CPvC
         //    }
         //}
 
-        static private bool InterestingEvent(HistoryEvent historyEvent)
-        {
-            if (historyEvent is RootHistoryEvent ||
-                historyEvent is BookmarkHistoryEvent ||
-                historyEvent.Children.Count != 1)
-            {
-                return true;
-            }
+        //static private bool InterestingEvent(HistoryEvent historyEvent)
+        //{
+        //    if (historyEvent is RootHistoryEvent ||
+        //        historyEvent is BookmarkHistoryEvent ||
+        //        historyEvent.Children.Count != 1)
+        //    {
+        //        return true;
+        //    }
 
-            return false;
-        }
+        //    return false;
+        //}
 
         //private ListTreeNode ParentNode(HistoryEvent historyEvent)
         //{
@@ -405,7 +413,60 @@ namespace CPvC
         //    return changed;
         //}
 
-        private void ScheduleUpdateCanvas()
+        private Dictionary<ListTreeNode, BranchLine> DrawLines(List<ListTreeNode> horizontalOrdering, List<ListTreeNode> verticalOrdering)
+        {
+            Dictionary<ListTreeNode, BranchLine> lines = new Dictionary<ListTreeNode, BranchLine>();
+
+            Dictionary<int, int> leftmost = new Dictionary<int, int>();
+
+            foreach (ListTreeNode node in horizontalOrdering)
+            {
+                // Find the parent!
+                ListTreeNode parentNode = node.Parent;
+                BranchLine parentLine = null;
+                if (parentNode != null)
+                {
+                    parentLine = lines[parentNode];
+                }
+
+                Point parentPoint = new Point(0, -1);
+                if (parentLine != null)
+                {
+                    parentPoint = parentLine.Points[parentLine.Points.Count - 1];
+                }
+
+                // What's our vertical ordering?
+                int verticalIndex = verticalOrdering.FindIndex(x => ReferenceEquals(x, node));
+
+                // Draw!
+                BranchLine line = new BranchLine();
+
+                // Start with the parent!
+                if (parentLine != null)
+                {
+                    line.Points.Add(parentPoint);
+                }
+
+                for (int v = parentPoint.Y + 1; v <= verticalIndex; v++)
+                {
+                    if (!leftmost.TryGetValue(v, out int left))
+                    {
+                        left = 0;
+                        leftmost.Add(v, left);
+                    }
+
+                    line.Points.Add(new Point(left, v));
+
+                    leftmost[v] = left + 1;
+                }
+
+                lines.Add(node, line);
+            }
+
+            return lines;
+        }
+
+        private void ScheduleUpdateCanvas(NotifyPositionChangedEventArgs changeArgs)
         {
             if (_updatePending)
             {
@@ -423,7 +484,11 @@ namespace CPvC
 
                 Stopwatch sw = Stopwatch.StartNew();
                 //UpdateCanvas();
-                UpdateCanvasListTree();
+                //UpdateCanvasListTree(changeArgs);
+                if (_history != null)
+                {
+                    UpdateCanvasListTree2(changeArgs);
+                }
                 sw.Stop();
 
                 CPvC.Diagnostics.Trace("Update items took {0}ms", sw.ElapsedMilliseconds);
@@ -439,7 +504,71 @@ namespace CPvC
             //}), null);
         }
 
-        private void UpdateCanvasListTree()
+        private List<HistoryEvent> _oldHorizontalOrdering;
+        private List<HistoryEvent> _oldVerticalOrdering;
+        private Dictionary<HistoryEvent, BranchShapes> _shapes;
+
+        private void UpdateCanvasListTree2(NotifyPositionChangedEventArgs changeArgs)
+        {
+            Dictionary<ListTreeNode, BranchLine> lines = DrawLines(changeArgs.HorizontalOrdering, changeArgs.VerticalOrdering);
+
+            Children.Clear();
+
+            foreach (KeyValuePair<ListTreeNode, BranchLine> kvp in lines)
+            {
+                ListTreeNode node = kvp.Key;
+                BranchLine line = kvp.Value;
+
+                Polyline polyline = new Polyline
+                {
+                    StrokeThickness = 2,
+                    Stroke = Brushes.DarkBlue,
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    UseLayoutRounding = true
+                };
+
+                foreach (Point p in line.Points)
+                {
+                    double x = 16 * (p.X + 0.5);
+                    double y = 16 * (p.Y + 0.5);
+                    polyline.Points.Add(new System.Windows.Point(x, y));
+                }
+
+                Children.Add(polyline);
+
+                // Ensure lines are never "on top" of dots.
+                Canvas.SetZIndex(polyline, 1);
+
+                Point lastPoint = line.Points[line.Points.Count - 1];
+
+                bool filled = _history.CurrentEvent != node.HistoryEvent;
+                Ellipse circle = new Ellipse
+                {
+                    Stroke = Brushes.DarkBlue,
+                    Fill = filled ? Brushes.DarkBlue : Brushes.White,
+                    StrokeThickness = 2,
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    UseLayoutRounding = true,
+                    Margin = new Thickness((lastPoint.X + 0.5) * 16 - 5, (lastPoint.Y + 0.5) * 16 - 5, 0, 0),
+                    Width = 10,
+                    Height = 10
+                };
+
+                // Ensure the dot is always "on top".
+                Canvas.SetZIndex(circle, 100);
+
+                Children.Add(circle);
+
+
+
+
+
+            }
+        }
+
+        private void UpdateCanvasListTree(NotifyPositionChangedEventArgs changeArgs)
         {
             if (_listTree == null)
             {
@@ -546,9 +675,9 @@ namespace CPvC
         //}
 
 
+        private Dictionary<History, BranchLine> _branchLines;
 
-
-        //private List<Row> _rows;
+        private List<Row> _rows;
 
         private class Row
         {
@@ -650,6 +779,57 @@ namespace CPvC
 
             private BranchInfo _branch;
             private OrderedList<UInt64, BranchInfo> _branchBits;
+        }
+
+        private class BranchShapes
+        {
+            public BranchShapes()
+            {
+
+            }
+
+            public Polyline Polyline
+            {
+                get;
+                set;
+            }
+
+            public Ellipse Dot
+            {
+                get;
+                set;
+            }
+
+        }
+
+        private struct Point
+        {
+            public Point(int x, int y)
+            {
+                X = x;
+                Y = y;
+            }
+
+            public int X { get; }
+            public int Y { get; }
+        }
+
+        private class BranchLine
+        {
+            public BranchLine()
+            {
+                _points = new List<Point>();
+            }
+
+            public List<Point> Points
+            {
+                get
+                {
+                    return _points;
+                }
+            }
+
+            private List<Point> _points;
         }
 
         private class BranchInfo
