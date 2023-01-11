@@ -803,8 +803,6 @@ namespace CPvC
                             ListTreeNode node = _listTree.GetNode(args.HistoryEvent);
 
                             changed = _listTree.Update(node);
-
-                            // Todo: Notify!
                         }
                         break;
                     case HistoryChangedAction.DeleteBranch:
@@ -814,8 +812,6 @@ namespace CPvC
                             _listTree.RemoveRecursive(node);
 
                             changed = true;
-
-                            // Todo: Notify!
                         }
                         break;
                     case HistoryChangedAction.DeleteBookmark:
@@ -825,8 +821,6 @@ namespace CPvC
                             _listTree.RemoveNonRecursive(node);
 
                             changed = true;
-
-                            // Todo: Notify!
                         }
                         break;
                 }

@@ -202,7 +202,7 @@ namespace CPvC
 
                     polyline.Points.Add(new System.Windows.Point(x, y));
 
-                    if (lastPoint2 && !firstPoint)
+                    //if (lastPoint2 && !firstPoint)
                     {
                         x = 16 * (p.X + 0.5);
                         y = 16 * (p.Y + 0.5);
