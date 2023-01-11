@@ -98,7 +98,7 @@ namespace CPvC
                 // Start with the parent!
                 if (parentLine != null)
                 {
-                    line.Points.Add(parentPoint);
+                    //line.Points.Add(parentPoint);
                 }
 
                 int maxLeft = 0;
@@ -111,6 +111,7 @@ namespace CPvC
                     }
 
                     maxLeft = Math.Max(maxLeft, left);
+
                     line.Points.Add(new Point(maxLeft, v));
 
                     leftmost[v] = maxLeft + 1;
@@ -168,6 +169,21 @@ namespace CPvC
                     UseLayoutRounding = true
                 };
 
+                int xx = 0;
+                BranchLine parentLine = null;
+                if (node.Parent != null && lines.TryGetValue(node.Parent, out parentLine))
+                {
+                    Point pp = parentLine.Points[parentLine.Points.Count - 1];
+                    double x = 16 * (pp.X + 0.5);
+                    double y = 16 * (pp.Y + 0.5);
+
+                    polyline.Points.Add(new System.Windows.Point(x, y));
+
+                    x = 16 * (line.Points[0].X + 0.5);
+                    y = 16 * line.Points[0].Y;
+                    polyline.Points.Add(new System.Windows.Point(x, y));
+                }
+
                 foreach (Point p in line.Points)
                 {
                     double x = 16 * (p.X + 0.5);
@@ -207,6 +223,8 @@ namespace CPvC
                 Canvas.SetZIndex(circle, 100);
 
                 Children.Add(circle);
+
+                Height = 16 * (_listTree?.VerticalOrdering.Count ?? 0);
             }
         }
 
