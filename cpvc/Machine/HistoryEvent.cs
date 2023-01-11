@@ -88,36 +88,37 @@ namespace CPvC
         /// <returns></returns>
         public UInt64 GetMaxDescendentTicks()
         {
-            List<HistoryEvent> events = new List<HistoryEvent>();
-            events.Add(this);
-            UInt64 maxTicks = Ticks;
+            //List<HistoryEvent> events = new List<HistoryEvent>();
+            //events.Add(this);
+            //UInt64 maxTicks = Ticks;
 
-            int i = 0;
-            while (i < events.Count)
-            {
-                HistoryEvent e = events[0];
-                events.RemoveAt(0);
+            //int i = 0;
+            //while (i < events.Count)
+            //{
+            //    HistoryEvent e = events[0];
+            //    events.RemoveAt(0);
 
-                if (e.Children.Count == 0)
-                {
-                    if (e.Ticks > maxTicks)
-                    {
-                        maxTicks = e.Ticks;
-                    }
-                }
-                else
-                {
-                    events.AddRange(e.Children);
-                }
-            }
+            //    if (e.Children.Count == 0)
+            //    {
+            //        if (e.Ticks > maxTicks)
+            //        {
+            //            maxTicks = e.Ticks;
+            //        }
+            //    }
+            //    else
+            //    {
+            //        events.AddRange(e.Children);
+            //    }
+            //}
 
             UInt64 compare = Node.GetCachedMDT();
-            if (compare != maxTicks)
-            {
-                string h = "";
-            }
+            return compare;
+            //if (compare != maxTicks)
+            //{
+            //    string h = "";
+            //}
 
-            return maxTicks;
+            //return maxTicks;
         }
     }
 
