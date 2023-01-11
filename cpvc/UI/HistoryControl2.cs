@@ -169,6 +169,8 @@ namespace CPvC
                     UseLayoutRounding = true
                 };
 
+                bool firstPoint = true;
+
                 int xx = 0;
                 BranchLine parentLine = null;
                 if (node.Parent != null && lines.TryGetValue(node.Parent, out parentLine))
@@ -179,16 +181,34 @@ namespace CPvC
 
                     polyline.Points.Add(new System.Windows.Point(x, y));
 
-                    x = 16 * (line.Points[0].X + 0.5);
-                    y = 16 * line.Points[0].Y;
-                    polyline.Points.Add(new System.Windows.Point(x, y));
+                    //x = 16 * (line.Points[0].X + 0.5);
+                    //y = 16 * line.Points[0].Y;
+                    //polyline.Points.Add(new System.Windows.Point(x, y));
+
+                    firstPoint = false;
                 }
 
-                foreach (Point p in line.Points)
+                for (int pindex = 0; pindex < line.Points.Count; pindex++)
                 {
+                    Point p = line.Points[pindex];
+
+                    bool lastPoint2 = (pindex == line.Points.Count - 1);
                     double x = 16 * (p.X + 0.5);
                     double y = 16 * (p.Y + 0.5);
+                    if (!firstPoint)
+                    {
+                        y = 16 * (p.Y + 0.0);
+                    }
+
                     polyline.Points.Add(new System.Windows.Point(x, y));
+
+                    if (lastPoint2 && !firstPoint)
+                    {
+                        x = 16 * (p.X + 0.5);
+                        y = 16 * (p.Y + 0.5);
+
+                        polyline.Points.Add(new System.Windows.Point(x, y));
+                    }
                 }
 
                 Children.Add(polyline);
