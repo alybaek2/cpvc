@@ -101,7 +101,7 @@ namespace CPvC
                     //line.Points.Add(parentPoint);
                 }
 
-                int maxLeft = 0;
+                int maxLeft = parentPoint.X;
                 for (int v = parentPoint.Y + 1; v <= verticalIndex; v++)
                 {
                     if (!leftmost.TryGetValue(v, out int left))
@@ -171,19 +171,13 @@ namespace CPvC
 
                 bool firstPoint = true;
 
-                int xx = 0;
-                BranchLine parentLine = null;
-                if (node.Parent != null && lines.TryGetValue(node.Parent, out parentLine))
+                if (node.Parent != null && lines.TryGetValue(node.Parent, out BranchLine parentLine))
                 {
                     Point pp = parentLine.Points[parentLine.Points.Count - 1];
                     double x = 16 * (pp.X + 0.5);
                     double y = 16 * (pp.Y + 0.5);
 
                     polyline.Points.Add(new System.Windows.Point(x, y));
-
-                    //x = 16 * (line.Points[0].X + 0.5);
-                    //y = 16 * line.Points[0].Y;
-                    //polyline.Points.Add(new System.Windows.Point(x, y));
 
                     firstPoint = false;
                 }
@@ -192,21 +186,22 @@ namespace CPvC
                 {
                     Point p = line.Points[pindex];
 
-                    bool lastPoint2 = (pindex == line.Points.Count - 1);
                     double x = 16 * (p.X + 0.5);
-                    double y = 16 * (p.Y + 0.5);
-                    if (!firstPoint)
-                    {
-                        y = 16 * (p.Y + 0.0);
-                    }
+                    double y = 16 * (p.Y + (firstPoint ? 0.5 : 0.0));
 
                     polyline.Points.Add(new System.Windows.Point(x, y));
 
-                    //if (lastPoint2 && !firstPoint)
+                    if (!firstPoint)
                     {
-                        x = 16 * (p.X + 0.5);
-                        y = 16 * (p.Y + 0.5);
+                        y = 16 * p.Y;
+                        polyline.Points.Add(new System.Windows.Point(x, y));
 
+                        y = 16 * (p.Y + 0.5);
+                        polyline.Points.Add(new System.Windows.Point(x, y));
+                    }
+                    else
+                    {
+                        y = 16 * (p.Y + 0.5);
                         polyline.Points.Add(new System.Windows.Point(x, y));
                     }
                 }
@@ -219,7 +214,7 @@ namespace CPvC
                 Point lastPoint = line.Points[line.Points.Count - 1];
 
                 double radius = 0.25;
-                double top = 0.5 - radius;
+                //double top = 0.5 - radius;
 
                 const double _scalingX = 16;
                 const double _scalingY = 16;
