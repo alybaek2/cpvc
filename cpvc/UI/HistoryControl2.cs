@@ -95,12 +95,6 @@ namespace CPvC
                 // Draw!
                 BranchLine line = new BranchLine();
 
-                // Start with the parent!
-                if (parentLine != null)
-                {
-                    //line.Points.Add(parentPoint);
-                }
-
                 int maxLeft = parentPoint.X;
                 for (int v = parentPoint.Y + 1; v <= verticalIndex; v++)
                 {
@@ -112,7 +106,28 @@ namespace CPvC
 
                     maxLeft = Math.Max(maxLeft, left);
 
-                    line.Points.Add(new Point(maxLeft, v));
+                    // Don't add more points than we need!
+                    bool replace = false;
+                    if (line.Points.Count >= 2)
+                    {
+                        Point x = line.Points[line.Points.Count - 1];
+                        Point y = line.Points[line.Points.Count - 2];
+
+                        if (x.X == y.X && y.X == maxLeft)
+                        {
+                            replace = true;
+                        }
+                    }
+
+                    if (replace)
+                    {
+                        line.Points[line.Points.Count - 1] = new Point(maxLeft, v);
+                    }
+                    else
+                    {
+                        line.Points.Add(new Point(maxLeft, v));
+                    }
+
 
                     leftmost[v] = maxLeft + 1;
                 }
@@ -171,13 +186,15 @@ namespace CPvC
 
                 bool firstPoint = true;
 
+                Line linepoints = new Line();
+
                 if (node.Parent != null && lines.TryGetValue(node.Parent, out BranchLine parentLine))
                 {
                     Point pp = parentLine.Points[parentLine.Points.Count - 1];
                     double x = 16 * (pp.X + 0.5);
                     double y = 16 * (pp.Y + 0.5);
 
-                    polyline.Points.Add(new System.Windows.Point(x, y));
+                    linepoints.Add(x, y);
 
                     firstPoint = false;
                 }
@@ -189,22 +206,19 @@ namespace CPvC
                     double x = 16 * (p.X + 0.5);
                     double y = 16 * (p.Y + (firstPoint ? 0.5 : 0.0));
 
-                    polyline.Points.Add(new System.Windows.Point(x, y));
+                    //polyline.Points.Add(new System.Windows.Point(x, y));
 
                     if (!firstPoint)
                     {
                         y = 16 * p.Y;
-                        polyline.Points.Add(new System.Windows.Point(x, y));
+                        linepoints.Add(x, y);
+                    }
 
-                        y = 16 * (p.Y + 0.5);
-                        polyline.Points.Add(new System.Windows.Point(x, y));
-                    }
-                    else
-                    {
-                        y = 16 * (p.Y + 0.5);
-                        polyline.Points.Add(new System.Windows.Point(x, y));
-                    }
+                    y = 16 * (p.Y + 0.5);
+                    linepoints.Add(x, y);
                 }
+
+                polyline.Points = new PointCollection(linepoints._points);
 
                 Children.Add(polyline);
 
@@ -214,7 +228,6 @@ namespace CPvC
                 Point lastPoint = line.Points[line.Points.Count - 1];
 
                 double radius = 0.25;
-                //double top = 0.5 - radius;
 
                 const double _scalingX = 16;
                 const double _scalingY = 16;
@@ -262,6 +275,33 @@ namespace CPvC
                 get;
                 set;
             }
+        }
+
+        private class Line
+        {
+            public Line()
+            {
+                _points = new List<System.Windows.Point>();
+            }
+
+            public void Add(double x, double y)
+            {
+                if (_points.Count >= 2)
+                {
+                    System.Windows.Point lastPoint = _points[_points.Count - 1];
+                    System.Windows.Point penultimatePoint = _points[_points.Count - 2];
+
+                    if (penultimatePoint.X == lastPoint.X && lastPoint.X == x)
+                    {
+                        _points[_points.Count - 1] = new System.Windows.Point(x, y);
+                        return;
+                    }
+                }
+
+                _points.Add(new System.Windows.Point(x, y));
+            }
+
+            public List<System.Windows.Point> _points;
         }
 
         private struct Point
