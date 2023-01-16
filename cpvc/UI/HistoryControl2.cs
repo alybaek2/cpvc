@@ -121,25 +121,25 @@ namespace CPvC
 
                     maxLeft = Math.Max(maxLeft, left);
 
-                    // Don't add more points than we need!
-                    bool replace = false;
-                    if (linepoints._points.Count >= 2)
-                    {
-                        Point x = linepoints._points[linepoints._points.Count - 1];
-                        Point y = linepoints._points[linepoints._points.Count - 2];
+                    //// Don't add more points than we need!
+                    //bool replace = false;
+                    //if (linepoints._points.Count >= 2)
+                    //{
+                    //    Point x = linepoints._points[linepoints._points.Count - 1];
+                    //    Point y = linepoints._points[linepoints._points.Count - 2];
 
-                        if (x.X == y.X && y.X == maxLeft)
-                        {
-                            replace = true;
-                        }
-                    }
+                    //    if (x.X == y.X && y.X == maxLeft)
+                    //    {
+                    //        replace = true;
+                    //    }
+                    //}
 
-                    if (replace)
+                    //if (replace)
                     {
-                        linepoints._points[linepoints._points.Count - 1] = new Point(maxLeft, v);
+                        //linepoints._points[linepoints._points.Count - 1] = new Point(maxLeft, v);
                         //line.Points[line.Points.Count - 1] = new Point(maxLeft, v);
                     }
-                    else
+                    //else
                     {
                         //linepoints._points.Add(new Point(maxLeft, v));
                         AddPoint(new Point(maxLeft, v));
