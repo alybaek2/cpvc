@@ -107,9 +107,11 @@ namespace CPvC
 
                 // What's our vertical ordering?
                 int verticalIndex = verticalOrdering.FindIndex(x => ReferenceEquals(x, node));
+                int parentVerticalIndex = verticalOrdering.FindIndex(x => ReferenceEquals(x, parentNode));
 
                 int maxLeft = parentPoint.X;
-                for (int v = parentPoint.Y + 2; v <= 2 * verticalIndex; v += 2)
+                //for (int v = parentPoint.Y + 2; v <= 2 * verticalIndex; v += 2)
+                for (int v = parentVerticalIndex + 1; v <= verticalIndex; v += 1)
                 {
                     if (!leftmost.TryGetValue(v, out int left))
                     {
@@ -119,7 +121,7 @@ namespace CPvC
 
                     maxLeft = Math.Max(maxLeft, left);
 
-                    AddPoint(new Point(maxLeft, v));
+                    AddPoint(new Point(maxLeft, v * 2));
 
                     leftmost[v] = maxLeft + 2;
                 }
