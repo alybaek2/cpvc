@@ -84,10 +84,9 @@ namespace CPvC
                 }
 
                 // Draw!
-                //BranchLine line = new BranchLine();
                 Line linepoints = new Line();
 
-                void AddPoint(Point p) //System.Windows.Point point, System.Windows.Point previousPoint)
+                void AddPoint(Point p)
                 {
                     int pindex = linepoints._points.Count;
                     if (pindex > 0 && linepoints._points[pindex - 1].X != p.X)
@@ -95,14 +94,13 @@ namespace CPvC
                         linepoints.Add(p.X, p.Y - 1);
                     }
 
-                    linepoints.Add(p.X, p.Y); // 8 * (2 * p.X + 1), 8 * (2 * p.Y + 1));
+                    linepoints.Add(p.X, p.Y);
                 }
 
                 Point parentPoint = new Point(1, -2);
                 if (parentLine != null)
                 {
                     parentPoint = parentLine._points[parentLine._points.Count - 1];
-                    //line.Points.Add(new System.Windows.Point(parentPoint.X, parentPoint.Y));
 
                     AddPoint(new Point(parentPoint.X, parentPoint.Y));
                 }
@@ -121,31 +119,7 @@ namespace CPvC
 
                     maxLeft = Math.Max(maxLeft, left);
 
-                    //// Don't add more points than we need!
-                    //bool replace = false;
-                    //if (linepoints._points.Count >= 2)
-                    //{
-                    //    Point x = linepoints._points[linepoints._points.Count - 1];
-                    //    Point y = linepoints._points[linepoints._points.Count - 2];
-
-                    //    if (x.X == y.X && y.X == maxLeft)
-                    //    {
-                    //        replace = true;
-                    //    }
-                    //}
-
-                    //if (replace)
-                    {
-                        //linepoints._points[linepoints._points.Count - 1] = new Point(maxLeft, v);
-                        //line.Points[line.Points.Count - 1] = new Point(maxLeft, v);
-                    }
-                    //else
-                    {
-                        //linepoints._points.Add(new Point(maxLeft, v));
-                        AddPoint(new Point(maxLeft, v));
-                        //line.Points.Add(new Point(maxLeft, v));
-                    }
-
+                    AddPoint(new Point(maxLeft, v));
 
                     leftmost[v] = maxLeft + 2;
                 }
