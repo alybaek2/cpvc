@@ -24,7 +24,7 @@ namespace CPvC
         {
             _updatePending = false;
 
-            _branchLines = new Dictionary<History, BranchLine>();
+            //_branchLines = new Dictionary<History, BranchLine>();
 
             DataContextChanged += HistoryControl2_DataContextChanged;
         }
@@ -67,9 +67,9 @@ namespace CPvC
             ScheduleUpdateCanvas(e);
         }
 
-        private Dictionary<ListTreeNode, BranchLine> DrawLines(List<ListTreeNode> horizontalOrdering, List<ListTreeNode> verticalOrdering)
+        private Dictionary<ListTreeNode, Line> DrawLines(List<ListTreeNode> horizontalOrdering, List<ListTreeNode> verticalOrdering)
         {
-            Dictionary<ListTreeNode, BranchLine> lines = new Dictionary<ListTreeNode, BranchLine>();
+            Dictionary<ListTreeNode, Line> lines = new Dictionary<ListTreeNode, Line>();
 
             Dictionary<int, int> leftmost = new Dictionary<int, int>();
 
@@ -77,30 +77,45 @@ namespace CPvC
             {
                 // Find the parent!
                 ListTreeNode parentNode = node.Parent;
-                BranchLine parentLine = null;
+                Line parentLine = null;
                 if (parentNode != null)
                 {
                     parentLine = lines[parentNode];
                 }
 
-                Point parentPoint = new Point(0, -1);
+                // Draw!
+                //BranchLine line = new BranchLine();
+                Line linepoints = new Line();
+
+                void AddPoint(Point p) //System.Windows.Point point, System.Windows.Point previousPoint)
+                {
+                    int pindex = linepoints._points.Count;
+                    if (pindex > 0 && linepoints._points[pindex - 1].X != p.X)
+                    {
+                        linepoints.Add(p.X, p.Y - 1);
+                    }
+
+                    linepoints.Add(p.X, p.Y); // 8 * (2 * p.X + 1), 8 * (2 * p.Y + 1));
+                }
+
+                Point parentPoint = new Point(1, -2);
                 if (parentLine != null)
                 {
-                    parentPoint = parentLine.Points[parentLine.Points.Count - 1];
+                    parentPoint = parentLine._points[parentLine._points.Count - 1];
+                    //line.Points.Add(new System.Windows.Point(parentPoint.X, parentPoint.Y));
+
+                    AddPoint(new Point(parentPoint.X, parentPoint.Y));
                 }
 
                 // What's our vertical ordering?
                 int verticalIndex = verticalOrdering.FindIndex(x => ReferenceEquals(x, node));
 
-                // Draw!
-                BranchLine line = new BranchLine();
-
                 int maxLeft = parentPoint.X;
-                for (int v = parentPoint.Y + 1; v <= verticalIndex; v++)
+                for (int v = parentPoint.Y + 2; v <= 2 * verticalIndex; v += 2)
                 {
                     if (!leftmost.TryGetValue(v, out int left))
                     {
-                        left = 0;
+                        left = 1;
                         leftmost.Add(v, left);
                     }
 
@@ -108,10 +123,10 @@ namespace CPvC
 
                     // Don't add more points than we need!
                     bool replace = false;
-                    if (line.Points.Count >= 2)
+                    if (linepoints._points.Count >= 2)
                     {
-                        Point x = line.Points[line.Points.Count - 1];
-                        Point y = line.Points[line.Points.Count - 2];
+                        Point x = linepoints._points[linepoints._points.Count - 1];
+                        Point y = linepoints._points[linepoints._points.Count - 2];
 
                         if (x.X == y.X && y.X == maxLeft)
                         {
@@ -121,18 +136,21 @@ namespace CPvC
 
                     if (replace)
                     {
-                        line.Points[line.Points.Count - 1] = new Point(maxLeft, v);
+                        linepoints._points[linepoints._points.Count - 1] = new Point(maxLeft, v);
+                        //line.Points[line.Points.Count - 1] = new Point(maxLeft, v);
                     }
                     else
                     {
-                        line.Points.Add(new Point(maxLeft, v));
+                        //linepoints._points.Add(new Point(maxLeft, v));
+                        AddPoint(new Point(maxLeft, v));
+                        //line.Points.Add(new Point(maxLeft, v));
                     }
 
 
-                    leftmost[v] = maxLeft + 1;
+                    leftmost[v] = maxLeft + 2;
                 }
 
-                lines.Add(node, line);
+                lines.Add(node, linepoints);
             }
 
             return lines;
@@ -166,14 +184,14 @@ namespace CPvC
 
         private void UpdateCanvasListTree2(NotifyPositionChangedEventArgs changeArgs)
         {
-            Dictionary<ListTreeNode, BranchLine> lines = DrawLines(changeArgs.HorizontalOrdering, changeArgs.VerticalOrdering);
+            Dictionary<ListTreeNode, Line> lines = DrawLines(changeArgs.HorizontalOrdering, changeArgs.VerticalOrdering);
 
             Children.Clear();
 
-            foreach (KeyValuePair<ListTreeNode, BranchLine> kvp in lines)
+            foreach (KeyValuePair<ListTreeNode, Line> kvp in lines)
             {
                 ListTreeNode node = kvp.Key;
-                BranchLine line = kvp.Value;
+                Line line = kvp.Value;
 
                 Polyline polyline = new Polyline
                 {
@@ -184,53 +202,23 @@ namespace CPvC
                     UseLayoutRounding = true
                 };
 
-                bool firstPoint = true;
+                const double _scalingX = 8;
+                const double _scalingY = 8;
 
-                Line linepoints = new Line();
 
-                if (node.Parent != null && lines.TryGetValue(node.Parent, out BranchLine parentLine))
+                for (int pindex = 0; pindex < line._points.Count; pindex++)
                 {
-                    Point pp = parentLine.Points[parentLine.Points.Count - 1];
-                    double x = 16 * (pp.X + 0.5);
-                    double y = 16 * (pp.Y + 0.5);
-
-                    linepoints.Add(x, y);
-
-                    firstPoint = false;
+                    polyline.Points.Add(new System.Windows.Point(_scalingX * line._points[pindex].X, _scalingY * line._points[pindex].Y));
                 }
-
-                for (int pindex = 0; pindex < line.Points.Count; pindex++)
-                {
-                    Point p = line.Points[pindex];
-
-                    double x = 16 * (p.X + 0.5);
-                    double y = 16 * (p.Y + (firstPoint ? 0.5 : 0.0));
-
-                    //polyline.Points.Add(new System.Windows.Point(x, y));
-
-                    if (!firstPoint)
-                    {
-                        y = 16 * p.Y;
-                        linepoints.Add(x, y);
-                    }
-
-                    y = 16 * (p.Y + 0.5);
-                    linepoints.Add(x, y);
-                }
-
-                polyline.Points = new PointCollection(linepoints._points);
 
                 Children.Add(polyline);
 
                 // Ensure lines are never "on top" of dots.
                 Canvas.SetZIndex(polyline, 1);
 
-                Point lastPoint = line.Points[line.Points.Count - 1];
+                Point lastPoint = line._points[line._points.Count - 1];
 
-                double radius = 0.25;
-
-                const double _scalingX = 16;
-                const double _scalingY = 16;
+                double radius = 0.5;
 
                 bool filled = !ReferenceEquals(_history?.CurrentEvent, node.HistoryEvent);
                 Ellipse circle = new Ellipse
@@ -242,7 +230,7 @@ namespace CPvC
                     VerticalAlignment = VerticalAlignment.Top,
                     UseLayoutRounding = true,
                     //Margin = new Thickness((lastPoint.X + 0.5) * 16 - 5, (lastPoint.Y + 0.5) * 16 - 5, 0, 0),
-                    Margin = new Thickness(_scalingX * (lastPoint.X - radius + 0.5), _scalingY * (lastPoint.Y - radius + 0.5) , 0, 0),
+                    Margin = new Thickness(_scalingX * (lastPoint.X - radius), _scalingY * (lastPoint.Y - radius) , 0, 0),
                     Width = _scalingX * 2 * radius,
                     Height = _scalingY * 2 * radius
                 };
@@ -256,7 +244,7 @@ namespace CPvC
             }
         }
 
-        private Dictionary<History, BranchLine> _branchLines;
+        //private Dictionary<History, BranchLine> _branchLines;
 
         private class BranchShapes
         {
@@ -281,27 +269,27 @@ namespace CPvC
         {
             public Line()
             {
-                _points = new List<System.Windows.Point>();
+                _points = new List<Point>();
             }
 
-            public void Add(double x, double y)
+            public void Add(int x, int y)
             {
                 if (_points.Count >= 2)
                 {
-                    System.Windows.Point lastPoint = _points[_points.Count - 1];
-                    System.Windows.Point penultimatePoint = _points[_points.Count - 2];
+                    Point lastPoint = _points[_points.Count - 1];
+                    Point penultimatePoint = _points[_points.Count - 2];
 
                     if (penultimatePoint.X == lastPoint.X && lastPoint.X == x)
                     {
-                        _points[_points.Count - 1] = new System.Windows.Point(x, y);
+                        _points[_points.Count - 1] = new Point(x, y);
                         return;
                     }
                 }
 
-                _points.Add(new System.Windows.Point(x, y));
+                _points.Add(new Point(x, y));
             }
 
-            public List<System.Windows.Point> _points;
+            public List<Point> _points;
         }
 
         private struct Point
@@ -316,22 +304,22 @@ namespace CPvC
             public int Y { get; }
         }
 
-        private class BranchLine
-        {
-            public BranchLine()
-            {
-                _points = new List<Point>();
-            }
+        //private class BranchLine
+        //{
+        //    public BranchLine()
+        //    {
+        //        _points = new List<Point>();
+        //    }
 
-            public List<Point> Points
-            {
-                get
-                {
-                    return _points;
-                }
-            }
+        //    public List<Point> Points
+        //    {
+        //        get
+        //        {
+        //            return _points;
+        //        }
+        //    }
 
-            private List<Point> _points;
-        }
+        //    private List<Point> _points;
+        //}
     }
 }
