@@ -20,11 +20,15 @@ namespace CPvC
 
         private bool _updatePending;
 
+        private const int _scalingX = 8;
+        private const int _scalingY = 8;
+
         public HistoryControl2()
         {
             _updatePending = false;
 
             //_branchLines = new Dictionary<History, BranchLine>();
+            _branchShapes = new Dictionary<ListTreeNode, Tuple<Line, BranchShapes>>();
 
             DataContextChanged += HistoryControl2_DataContextChanged;
         }
@@ -85,45 +89,42 @@ namespace CPvC
 
                 // Draw!
                 Line linepoints = new Line();
-
-                void AddPoint(Point p)
+                linepoints._current = ReferenceEquals(node.HistoryEvent, _history?.CurrentEvent);
+                linepoints._type = LinePointType.None;
+                if (node.HistoryEvent is BookmarkHistoryEvent bookmarkEvent)
                 {
-                    int pindex = linepoints._points.Count;
-                    if (pindex > 0 && linepoints._points[pindex - 1].X != p.X)
-                    {
-                        linepoints.Add(p.X, p.Y - 1);
-                    }
-
-                    linepoints.Add(p.X, p.Y);
+                    linepoints._type = bookmarkEvent.Bookmark.System ? LinePointType.SystemBookmark : LinePointType.UserBookmark;
+                }
+                else if (node.HistoryEvent.Children.Count == 0 || node.HistoryEvent is RootHistoryEvent)
+                {
+                    linepoints._type = LinePointType.Terminus;
                 }
 
-                Point parentPoint = new Point(1, -2);
+                int maxLeft = 1;
                 if (parentLine != null)
                 {
-                    parentPoint = parentLine._points[parentLine._points.Count - 1];
-
-                    AddPoint(new Point(parentPoint.X, parentPoint.Y));
+                    Point parentPoint = parentLine.LastPoint(); // ._points[parentLine._points.Count - 1];
+                    linepoints.Add(parentPoint.X, parentPoint.Y);
+                    maxLeft = parentPoint.X;
                 }
 
                 // What's our vertical ordering?
                 int verticalIndex = verticalOrdering.FindIndex(x => ReferenceEquals(x, node));
                 int parentVerticalIndex = verticalOrdering.FindIndex(x => ReferenceEquals(x, parentNode));
 
-                int maxLeft = parentPoint.X;
-                //for (int v = parentPoint.Y + 2; v <= 2 * verticalIndex; v += 2)
-                for (int v = parentVerticalIndex + 1; v <= verticalIndex; v += 1)
+                for (int v = parentVerticalIndex + 1; v <= verticalIndex; v++)
                 {
                     if (!leftmost.TryGetValue(v, out int left))
                     {
-                        left = 1;
+                        left = 1 * _scalingX;
                         leftmost.Add(v, left);
                     }
 
                     maxLeft = Math.Max(maxLeft, left);
 
-                    AddPoint(new Point(maxLeft, v * 2));
+                    linepoints.Add(maxLeft, v * 2 * _scalingY);
 
-                    leftmost[v] = maxLeft + 2;
+                    leftmost[v] = maxLeft + 2 * _scalingX;
                 }
 
                 lines.Add(node, linepoints);
@@ -149,7 +150,7 @@ namespace CPvC
                 _updatePending = false;
 
                 Stopwatch sw = Stopwatch.StartNew();
-                UpdateCanvasListTree2(changeArgs);
+                UpdateCanvasListTree(changeArgs);
                 sw.Stop();
 
                 CPvC.Diagnostics.Trace("Update items took {0}ms", sw.ElapsedMilliseconds);
@@ -158,69 +159,148 @@ namespace CPvC
             timer.Start();
         }
 
-        private void UpdateCanvasListTree2(NotifyPositionChangedEventArgs changeArgs)
+        private void UpdateCanvasListTree(NotifyPositionChangedEventArgs changeArgs)
         {
             Dictionary<ListTreeNode, Line> lines = DrawLines(changeArgs.HorizontalOrdering, changeArgs.VerticalOrdering);
 
-            Children.Clear();
+            Dictionary<ListTreeNode, Tuple<Line, BranchShapes>> newShapes = new Dictionary<ListTreeNode, Tuple<Line, BranchShapes>>();
+
+            //Children.Clear();
+
+            int reused = 0;
+            double radius = 0.5 * _scalingX;
 
             foreach (KeyValuePair<ListTreeNode, Line> kvp in lines)
             {
                 ListTreeNode node = kvp.Key;
                 Line line = kvp.Value;
 
-                Polyline polyline = new Polyline
+                bool current = ReferenceEquals(_history?.CurrentEvent, node.HistoryEvent);
+
+                // Check the old ones!
+                if (_branchShapes.TryGetValue(node, out Tuple<Line, BranchShapes> oldStuff))
                 {
-                    StrokeThickness = 2,
-                    Stroke = Brushes.DarkBlue,
-                    HorizontalAlignment = HorizontalAlignment.Left,
-                    VerticalAlignment = VerticalAlignment.Top,
-                    UseLayoutRounding = true
-                };
+                    Line oldLine = oldStuff.Item1;
 
-                const double _scalingX = 8;
-                const double _scalingY = 8;
+                    if (oldLine._current == current && oldLine._type == line._type)
+                    {
+                        if (oldLine._points.Count == line._points.Count)
+                        {
+                            bool same = true;
+                            for (int i = 0; i < line._points.Count; i++)
+                            {
+                                if (oldLine._points[i].X != line._points[i].X ||
+                                    oldLine._points[i].Y != line._points[i].Y)
+                                {
+                                    same = false;
+                                    break;
+                                }
+                            }
 
-
-                for (int pindex = 0; pindex < line._points.Count; pindex++)
-                {
-                    polyline.Points.Add(new System.Windows.Point(_scalingX * line._points[pindex].X, _scalingY * line._points[pindex].Y));
+                            if (same)
+                            {
+                                // Just use the old one
+                                reused++;
+                                newShapes.Add(node, oldStuff);
+                                continue;
+                            }
+                        }
+                    }
                 }
 
-                Children.Add(polyline);
-
                 // Ensure lines are never "on top" of dots.
-                Canvas.SetZIndex(polyline, 1);
+                Point lastPoint = line.LastPoint();
 
-                Point lastPoint = line._points[line._points.Count - 1];
-
-                double radius = 0.5;
-
-                bool filled = !ReferenceEquals(_history?.CurrentEvent, node.HistoryEvent);
-                Ellipse circle = new Ellipse
-                {
-                    Stroke = Brushes.DarkBlue,
-                    Fill = filled ? Brushes.DarkBlue : Brushes.White,
-                    StrokeThickness = 2,
-                    HorizontalAlignment = HorizontalAlignment.Left,
-                    VerticalAlignment = VerticalAlignment.Top,
-                    UseLayoutRounding = true,
-                    //Margin = new Thickness((lastPoint.X + 0.5) * 16 - 5, (lastPoint.Y + 0.5) * 16 - 5, 0, 0),
-                    Margin = new Thickness(_scalingX * (lastPoint.X - radius), _scalingY * (lastPoint.Y - radius) , 0, 0),
-                    Width = _scalingX * 2 * radius,
-                    Height = _scalingY * 2 * radius
-                };
+                Polyline polyline = CreatePolyline(line);
+                Ellipse circle = (line._type == LinePointType.None) ? null : CreateCircle(lastPoint, radius, current, line._type);
 
                 // Ensure the dot is always "on top".
-                Canvas.SetZIndex(circle, 100);
+                Canvas.SetZIndex(polyline, 1);
+                Children.Add(polyline);
 
-                Children.Add(circle);
+                if (circle != null)
+                {
+                    Canvas.SetZIndex(circle, 100);
+                    Children.Add(circle);
+                }
 
-                Height = 16 * (_listTree?.VerticalOrdering.Count ?? 0);
+                Height = _scalingY * 2 * (_listTree?.VerticalOrdering.Count ?? 0);
+
+                BranchShapes bs = new BranchShapes();
+                bs.Dot = circle;
+                bs.Polyline = polyline;
+                newShapes.Add(node, new Tuple<Line, BranchShapes>(line, bs));
             }
+
+            // Remove any shapes!
+            int del = 0;
+            foreach (KeyValuePair<ListTreeNode, Tuple<Line, BranchShapes>> kvp in _branchShapes)
+            {
+                if (newShapes.ContainsValue(kvp.Value))
+                {
+                    continue;
+                }
+
+                BranchShapes bs = kvp.Value.Item2;
+                Children.Remove(bs.Dot);
+                Children.Remove(bs.Polyline);
+                del++;
+            }
+
+            CPvC.Diagnostics.Trace("UpdateCanvas: {0} reused {1} deleted {2} total", reused, del, lines.Count);
+            _branchShapes = newShapes;
         }
 
-        //private Dictionary<History, BranchLine> _branchLines;
+        private Ellipse CreateCircle(Point centre, double radius, bool current, LinePointType type)
+        {
+            Brush brush;
+            switch (type)
+            {
+                case LinePointType.SystemBookmark:
+                    brush = Brushes.DarkRed;
+                    break;
+                case LinePointType.UserBookmark:
+                    brush = Brushes.Red;
+                    break;
+                default:
+                    brush = Brushes.DarkBlue;
+                    break;
+            }
+
+            Ellipse circle = new Ellipse
+            {
+                Stroke = brush,
+                Fill = current ? Brushes.White : brush,
+                StrokeThickness = 2,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top,
+                UseLayoutRounding = true,
+                Margin = new Thickness(centre.X - radius, centre.Y - radius, 0, 0),
+                Width = 2 * radius,
+                Height = 2 * radius
+            };
+
+            return circle;
+        }
+
+        private Polyline CreatePolyline(Line line)
+        {
+            Polyline polyline = new Polyline
+            {
+                StrokeThickness = 2,
+                Stroke = Brushes.DarkBlue,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top,
+                UseLayoutRounding = true
+            };
+
+            for (int pindex = 0; pindex < line._points.Count; pindex++)
+            {
+                polyline.Points.Add(new System.Windows.Point(line._points[pindex].X, line._points[pindex].Y));
+            }
+
+            return polyline;
+        }
 
         private class BranchShapes
         {
@@ -241,31 +321,62 @@ namespace CPvC
             }
         }
 
+        public enum LinePointType
+        {
+            None,
+            Terminus,
+            SystemBookmark,
+            UserBookmark
+        }
+
         private class Line
         {
             public Line()
             {
                 _points = new List<Point>();
+                _type = LinePointType.None;
+                _current = false;
+            }
+
+            public void Start(int x, int y)
+            {
+                _points.Clear();
+                _points.Add(new Point(x, y));
             }
 
             public void Add(int x, int y)
             {
-                if (_points.Count >= 2)
+                if (_points.Any())
                 {
                     Point lastPoint = _points[_points.Count - 1];
-                    Point penultimatePoint = _points[_points.Count - 2];
-
-                    if (penultimatePoint.X == lastPoint.X && lastPoint.X == x)
+                    if (_points.Count >= 2)
                     {
-                        _points[_points.Count - 1] = new Point(x, y);
-                        return;
+                        Point penultimatePoint = _points[_points.Count - 2];
+
+                        if (penultimatePoint.X == lastPoint.X && lastPoint.X == x)
+                        {
+                            _points[_points.Count - 1] = new Point(x, y);
+                            return;
+                        }
+                    }
+
+                    if (lastPoint.X != x)
+                    {
+                        _points.Add(new Point(x, y - 1 * _scalingY));
                     }
                 }
 
                 _points.Add(new Point(x, y));
             }
 
+            public Point LastPoint()
+            {
+                return _points[_points.Count - 1];
+            }
+
             public List<Point> _points;
+            public LinePointType _type;
+            public bool _current;
         }
 
         private struct Point
@@ -279,6 +390,8 @@ namespace CPvC
             public int X { get; }
             public int Y { get; }
         }
+
+        private Dictionary<ListTreeNode, Tuple<Line, BranchShapes>> _branchShapes;
 
         //private class BranchLine
         //{

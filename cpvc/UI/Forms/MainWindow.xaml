@@ -381,7 +381,7 @@
                 <Grid>
                     <cpvc:HistoryControl2 x:Name="_historyControl2"
                                   DataContext="{Binding ActiveMachine.History, Mode=OneWay}"
-                                  Width="300"
+                                  Width="500"
                                   HorizontalAlignment="Left"
                                   VerticalAlignment="Top"
                                   Height="200"
