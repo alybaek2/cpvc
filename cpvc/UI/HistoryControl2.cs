@@ -167,11 +167,8 @@ namespace CPvC
         {
             Dictionary<ListTreeNode<HistoryEvent>, Line> lines = DrawLines(changeArgs.HorizontalOrdering, changeArgs.VerticalOrdering);
 
-            //Dictionary<ListTreeNode, Tuple<Line, BranchShapes>> newShapes = new Dictionary<ListTreeNode, Tuple<Line, BranchShapes>>();
             Dictionary<ListTreeNode<HistoryEvent>, Line> newNodesToLines = new Dictionary<ListTreeNode<HistoryEvent>, Line>();
             Dictionary<Line, BranchShapes> newLinesToShapes = new Dictionary<Line, BranchShapes>();
-
-            //Children.Clear();
 
             int reused = 0;
             double radius = 0.5 * _scalingX;
@@ -185,7 +182,6 @@ namespace CPvC
 
                 // Check the old ones!
                 if (_nodesToLines.TryGetValue(node, out Line oldLine))
-                //if (_branchShapes.TryGetValue(node, out Tuple<Line, BranchShapes> oldStuff))
                 {
                     if (line.IsSame(oldLine))
                     {
@@ -193,44 +189,15 @@ namespace CPvC
                         reused++;
                         newNodesToLines.Add(node, oldLine);
                         newLinesToShapes.Add(oldLine, _linesToBranchShapes[oldLine]);
-                        //newShapes.Add(node, oldStuff);
                         continue;
                     }
-                    //Line oldLine = oldStuff.Item1;
-
-                    //if (oldLine._current == current && oldLine._type == line._type)
-                    //{
-                    //    if (oldLine._points.Count == line._points.Count)
-                    //    {
-                    //        bool same = true;
-                    //        for (int i = 0; i < line._points.Count; i++)
-                    //        {
-                    //            if (oldLine._points[i].X != line._points[i].X ||
-                    //                oldLine._points[i].Y != line._points[i].Y)
-                    //            {
-                    //                same = false;
-                    //                break;
-                    //            }
-                    //        }
-
-                    //        if (same)
-                    //        {
-                    //            // Just use the old one
-                    //            reused++;
-                    //            newNodesToLines.Add(node, oldLine);
-                    //            newLinesToShapes.Add(oldLine, _linesToBranchShapes[oldLine]);
-                    //            //newShapes.Add(node, oldStuff);
-                    //            continue;
-                    //        }
-                    //    }
-                    //}
                 }
 
                 // Ensure lines are never "on top" of dots.
                 Point lastPoint = line.LastPoint();
 
                 Polyline polyline = CreatePolyline(line);
-                Ellipse circle = (line._type == LinePointType.None) ? null : CreateCircle(lastPoint, radius, current, line._type);
+                Ellipse circle = CreateCircle(lastPoint, radius, current, line._type);
 
                 // Ensure the dot is always "on top".
                 Canvas.SetZIndex(polyline, 1);
@@ -286,6 +253,8 @@ namespace CPvC
             Brush brush;
             switch (type)
             {
+                case LinePointType.None:
+                    return null;
                 case LinePointType.SystemBookmark:
                     brush = Brushes.DarkRed;
                     break;
