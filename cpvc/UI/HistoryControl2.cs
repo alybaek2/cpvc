@@ -107,7 +107,7 @@ namespace CPvC
                 int maxLeft = 1;
                 if (parentLine != null)
                 {
-                    Point parentPoint = parentLine.LastPoint(); // ._points[parentLine._points.Count - 1];
+                    Point parentPoint = parentLine.LastPoint();
                     linepoints.Add(parentPoint.X, parentPoint.Y);
                     maxLeft = parentPoint.X;
                 }
@@ -216,7 +216,6 @@ namespace CPvC
                 bs.Polyline = polyline;
                 newNodesToLines.Add(node, line);
                 newLinesToShapes.Add(line, bs);
-                //newShapes.Add(node, new Tuple<Line, BranchShapes>(line, bs));
             }
 
             // Remove any shapes!
@@ -419,26 +418,7 @@ namespace CPvC
             public int Y { get; }
         }
 
-        //private Dictionary<ListTreeNode, Tuple<Line, BranchShapes>> _branchShapes;
         private Dictionary<ListTreeNode<HistoryEvent>, Line> _nodesToLines;
         private Dictionary<Line, BranchShapes> _linesToBranchShapes;
-
-        //private class BranchLine
-        //{
-        //    public BranchLine()
-        //    {
-        //        _points = new List<Point>();
-        //    }
-
-        //    public List<Point> Points
-        //    {
-        //        get
-        //        {
-        //            return _points;
-        //        }
-        //    }
-
-        //    private List<Point> _points;
-        //}
     }
 }
