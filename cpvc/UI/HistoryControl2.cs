@@ -28,7 +28,11 @@ namespace CPvC
             _updatePending = false;
 
             //_branchLines = new Dictionary<History, BranchLine>();
-            _branchShapes = new Dictionary<ListTreeNode, Tuple<Line, BranchShapes>>();
+            //_branchShapes = new Dictionary<ListTreeNode, Tuple<Line, BranchShapes>>();
+            _linesToBranchShapes = new Dictionary<Line, BranchShapes>();
+            //_branchShapes = new Dictionary<ListTreeNode, Tuple<Line, BranchShapes>>();
+            _nodesToLines = new Dictionary<ListTreeNode<HistoryEvent>, Line>();
+            _linesToBranchShapes = new Dictionary<Line, BranchShapes>();
 
             DataContextChanged += HistoryControl2_DataContextChanged;
         }
@@ -58,7 +62,7 @@ namespace CPvC
 
                     _listTree.PositionChanged += ListTree_PositionChanged;
 
-                    NotifyPositionChangedEventArgs changeArgs = new NotifyPositionChangedEventArgs(_listTree.HorizontalOrdering, _listTree.VerticalOrdering);
+                    NotifyPositionChangedEventArgs<HistoryEvent> changeArgs = new NotifyPositionChangedEventArgs<HistoryEvent>(_listTree.HorizontalOrdering(), _listTree.VerticalOrdering());
 
                     ScheduleUpdateCanvas(changeArgs);
                 }
@@ -66,21 +70,21 @@ namespace CPvC
             }
         }
 
-        private void ListTree_PositionChanged(object sender, NotifyPositionChangedEventArgs e)
+        private void ListTree_PositionChanged(object sender, NotifyPositionChangedEventArgs<HistoryEvent> e)
         {
             ScheduleUpdateCanvas(e);
         }
 
-        private Dictionary<ListTreeNode, Line> DrawLines(List<ListTreeNode> horizontalOrdering, List<ListTreeNode> verticalOrdering)
+        private Dictionary<ListTreeNode<HistoryEvent>, Line> DrawLines(List<ListTreeNode<HistoryEvent>> horizontalOrdering, List<ListTreeNode<HistoryEvent>> verticalOrdering)
         {
-            Dictionary<ListTreeNode, Line> lines = new Dictionary<ListTreeNode, Line>();
+            Dictionary<ListTreeNode<HistoryEvent>, Line> lines = new Dictionary<ListTreeNode<HistoryEvent>, Line>();
 
             Dictionary<int, int> leftmost = new Dictionary<int, int>();
 
-            foreach (ListTreeNode node in horizontalOrdering)
+            foreach (ListTreeNode<HistoryEvent> node in horizontalOrdering)
             {
                 // Find the parent!
-                ListTreeNode parentNode = node.Parent;
+                ListTreeNode<HistoryEvent> parentNode = node.Parent;
                 Line parentLine = null;
                 if (parentNode != null)
                 {
@@ -133,7 +137,7 @@ namespace CPvC
             return lines;
         }
 
-        private void ScheduleUpdateCanvas(NotifyPositionChangedEventArgs changeArgs)
+        private void ScheduleUpdateCanvas(NotifyPositionChangedEventArgs<HistoryEvent> changeArgs)
         {
             if (_updatePending)
             {
@@ -159,53 +163,67 @@ namespace CPvC
             timer.Start();
         }
 
-        private void UpdateCanvasListTree(NotifyPositionChangedEventArgs changeArgs)
+        private void UpdateCanvasListTree(NotifyPositionChangedEventArgs<HistoryEvent> changeArgs)
         {
-            Dictionary<ListTreeNode, Line> lines = DrawLines(changeArgs.HorizontalOrdering, changeArgs.VerticalOrdering);
+            Dictionary<ListTreeNode<HistoryEvent>, Line> lines = DrawLines(changeArgs.HorizontalOrdering, changeArgs.VerticalOrdering);
 
-            Dictionary<ListTreeNode, Tuple<Line, BranchShapes>> newShapes = new Dictionary<ListTreeNode, Tuple<Line, BranchShapes>>();
+            //Dictionary<ListTreeNode, Tuple<Line, BranchShapes>> newShapes = new Dictionary<ListTreeNode, Tuple<Line, BranchShapes>>();
+            Dictionary<ListTreeNode<HistoryEvent>, Line> newNodesToLines = new Dictionary<ListTreeNode<HistoryEvent>, Line>();
+            Dictionary<Line, BranchShapes> newLinesToShapes = new Dictionary<Line, BranchShapes>();
 
             //Children.Clear();
 
             int reused = 0;
             double radius = 0.5 * _scalingX;
 
-            foreach (KeyValuePair<ListTreeNode, Line> kvp in lines)
+            foreach (KeyValuePair<ListTreeNode<HistoryEvent>, Line> kvp in lines)
             {
-                ListTreeNode node = kvp.Key;
+                ListTreeNode<HistoryEvent> node = kvp.Key;
                 Line line = kvp.Value;
 
                 bool current = ReferenceEquals(_history?.CurrentEvent, node.HistoryEvent);
 
                 // Check the old ones!
-                if (_branchShapes.TryGetValue(node, out Tuple<Line, BranchShapes> oldStuff))
+                if (_nodesToLines.TryGetValue(node, out Line oldLine))
+                //if (_branchShapes.TryGetValue(node, out Tuple<Line, BranchShapes> oldStuff))
                 {
-                    Line oldLine = oldStuff.Item1;
-
-                    if (oldLine._current == current && oldLine._type == line._type)
+                    if (line.IsSame(oldLine))
                     {
-                        if (oldLine._points.Count == line._points.Count)
-                        {
-                            bool same = true;
-                            for (int i = 0; i < line._points.Count; i++)
-                            {
-                                if (oldLine._points[i].X != line._points[i].X ||
-                                    oldLine._points[i].Y != line._points[i].Y)
-                                {
-                                    same = false;
-                                    break;
-                                }
-                            }
-
-                            if (same)
-                            {
-                                // Just use the old one
-                                reused++;
-                                newShapes.Add(node, oldStuff);
-                                continue;
-                            }
-                        }
+                        // Just use the old one
+                        reused++;
+                        newNodesToLines.Add(node, oldLine);
+                        newLinesToShapes.Add(oldLine, _linesToBranchShapes[oldLine]);
+                        //newShapes.Add(node, oldStuff);
+                        continue;
                     }
+                    //Line oldLine = oldStuff.Item1;
+
+                    //if (oldLine._current == current && oldLine._type == line._type)
+                    //{
+                    //    if (oldLine._points.Count == line._points.Count)
+                    //    {
+                    //        bool same = true;
+                    //        for (int i = 0; i < line._points.Count; i++)
+                    //        {
+                    //            if (oldLine._points[i].X != line._points[i].X ||
+                    //                oldLine._points[i].Y != line._points[i].Y)
+                    //            {
+                    //                same = false;
+                    //                break;
+                    //            }
+                    //        }
+
+                    //        if (same)
+                    //        {
+                    //            // Just use the old one
+                    //            reused++;
+                    //            newNodesToLines.Add(node, oldLine);
+                    //            newLinesToShapes.Add(oldLine, _linesToBranchShapes[oldLine]);
+                    //            //newShapes.Add(node, oldStuff);
+                    //            continue;
+                    //        }
+                    //    }
+                    //}
                 }
 
                 // Ensure lines are never "on top" of dots.
@@ -224,31 +242,43 @@ namespace CPvC
                     Children.Add(circle);
                 }
 
-                Height = _scalingY * 2 * (_listTree?.VerticalOrdering.Count ?? 0);
+                Height = _scalingY * 2 * (_listTree?.VerticalOrdering().Count ?? 0);
 
                 BranchShapes bs = new BranchShapes();
                 bs.Dot = circle;
                 bs.Polyline = polyline;
-                newShapes.Add(node, new Tuple<Line, BranchShapes>(line, bs));
+                newNodesToLines.Add(node, line);
+                newLinesToShapes.Add(line, bs);
+                //newShapes.Add(node, new Tuple<Line, BranchShapes>(line, bs));
             }
 
             // Remove any shapes!
             int del = 0;
-            foreach (KeyValuePair<ListTreeNode, Tuple<Line, BranchShapes>> kvp in _branchShapes)
+            foreach (KeyValuePair<ListTreeNode<HistoryEvent>, Line> kvp in _nodesToLines)
             {
-                if (newShapes.ContainsValue(kvp.Value))
+                if (newNodesToLines.ContainsValue(kvp.Value))
                 {
                     continue;
                 }
 
-                BranchShapes bs = kvp.Value.Item2;
-                Children.Remove(bs.Dot);
-                Children.Remove(bs.Polyline);
-                del++;
+                if (_linesToBranchShapes.TryGetValue(kvp.Value, out BranchShapes bs))
+                {
+                    //BranchShapes bs = kvp.Value.Item2;
+                    Children.Remove(bs.Dot);
+                    Children.Remove(bs.Polyline);
+
+                    _linesToBranchShapes.Remove(kvp.Value);
+                    del++;
+                }
+                else
+                {
+                    throw new Exception();
+                }
             }
 
             CPvC.Diagnostics.Trace("UpdateCanvas: {0} reused {1} deleted {2} total", reused, del, lines.Count);
-            _branchShapes = newShapes;
+            _nodesToLines = newNodesToLines;
+            _linesToBranchShapes = newLinesToShapes;
         }
 
         private Ellipse CreateCircle(Point centre, double radius, bool current, LinePointType type)
@@ -369,6 +399,35 @@ namespace CPvC
                 _points.Add(new Point(x, y));
             }
 
+            public bool IsSame(Line line)
+            {
+                if (_current != line._current)
+                {
+                    return false;
+                }
+
+                if (_type != line._type)
+                {
+                    return false;
+                }
+
+                if (_points.Count != line._points.Count)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < line._points.Count; i++)
+                {
+                    if (_points[i].X != line._points[i].X ||
+                        _points[i].Y != line._points[i].Y)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
             public Point LastPoint()
             {
                 return _points[_points.Count - 1];
@@ -391,7 +450,9 @@ namespace CPvC
             public int Y { get; }
         }
 
-        private Dictionary<ListTreeNode, Tuple<Line, BranchShapes>> _branchShapes;
+        //private Dictionary<ListTreeNode, Tuple<Line, BranchShapes>> _branchShapes;
+        private Dictionary<ListTreeNode<HistoryEvent>, Line> _nodesToLines;
+        private Dictionary<Line, BranchShapes> _linesToBranchShapes;
 
         //private class BranchLine
         //{
