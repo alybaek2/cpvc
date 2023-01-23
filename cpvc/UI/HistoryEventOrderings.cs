@@ -890,8 +890,9 @@ namespace CPvC
     {
         public NotifyPositionChangedEventArgs(List<ListTreeNode<T>> horizontalOrdering, List<ListTreeNode<T>> verticalOrdering)
         {
-            HorizontalOrdering = horizontalOrdering;
-            VerticalOrdering = verticalOrdering;
+            // Make copies of the orderings... don't use the "live" copies of them!
+            HorizontalOrdering = horizontalOrdering.ToList();
+            VerticalOrdering = verticalOrdering.ToList();
         }
 
         public List<ListTreeNode<T>> HorizontalOrdering { get; }
