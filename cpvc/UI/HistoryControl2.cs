@@ -20,7 +20,7 @@ namespace CPvC
         private HistoryListTree _listTree;
 
         private int _updatePending;
-        private NotifyPositionChangedEventArgs<HistoryEvent> _updateArgs;
+        private PositionChangedEventArgs<HistoryEvent> _updateArgs;
 
         private const int _scalingX = 8;
         private const int _scalingY = 8;
@@ -65,7 +65,7 @@ namespace CPvC
 
                     _listTree.PositionChanged += ListTree_PositionChanged;
 
-                    NotifyPositionChangedEventArgs<HistoryEvent> changeArgs = new NotifyPositionChangedEventArgs<HistoryEvent>(_listTree.HorizontalOrdering(), _listTree.VerticalOrdering());
+                    PositionChangedEventArgs<HistoryEvent> changeArgs = new PositionChangedEventArgs<HistoryEvent>(_listTree.HorizontalOrdering(), _listTree.VerticalOrdering());
 
                     ScheduleUpdateCanvas(changeArgs);
                 }
@@ -73,7 +73,7 @@ namespace CPvC
             }
         }
 
-        private void ListTree_PositionChanged(object sender, NotifyPositionChangedEventArgs<HistoryEvent> e)
+        private void ListTree_PositionChanged(object sender, PositionChangedEventArgs<HistoryEvent> e)
         {
             ScheduleUpdateCanvas(e);
         }
@@ -312,7 +312,7 @@ namespace CPvC
             Height = _scalingY * 2 * (_listTree?.VerticalOrdering().Count ?? 0);
         }
 
-        private void ScheduleUpdateCanvas(NotifyPositionChangedEventArgs<HistoryEvent> changeArgs)
+        private void ScheduleUpdateCanvas(PositionChangedEventArgs<HistoryEvent> changeArgs)
         {
             _updateArgs = changeArgs;
             if (Interlocked.Exchange(ref _updatePending, 1) != 0)
@@ -343,7 +343,7 @@ namespace CPvC
             timer.Start();
         }
 
-        private void UpdateCanvasListTree(NotifyPositionChangedEventArgs<HistoryEvent> changeArgs)
+        private void UpdateCanvasListTree(PositionChangedEventArgs<HistoryEvent> changeArgs)
         {
             UpdateLines(changeArgs.HorizontalOrdering, changeArgs.VerticalOrdering);
 
