@@ -45,6 +45,7 @@ namespace CPvC
             _verticalPositions = new Dictionary<ListTreeNode<T>, int>();
             _horizontalPositions = new Dictionary<ListTreeNode<T>, int>();
             _eventsToNodes = new Dictionary<T, ListTreeNode<T>>();
+            _verticalTies = new HashSet<Tuple<T, T>>(); // new Dictionary<T, T>();
         }
 
         public ListTreeNode<T> Root
@@ -425,7 +426,13 @@ namespace CPvC
         {
             if (verticalIndex > 0)
             {
+                bool previouslyTied = _verticalTies.Any() && _verticalTies.Contains(new Tuple<T, T>(node.HistoryEvent, _verticalNodes[verticalIndex - 1].HistoryEvent));
                 if (VerticalSort(_verticalNodes[verticalIndex - 1].HistoryEvent, node.HistoryEvent) >= 0)
+                {
+                    return true;
+                }
+
+                if (previouslyTied)
                 {
                     return true;
                 }
@@ -433,7 +440,13 @@ namespace CPvC
 
             if (verticalIndex + 1 < _verticalNodes.Count)
             {
+                bool previouslyTied = _verticalTies.Any() && _verticalTies.Contains(new Tuple<T, T>(node.HistoryEvent, _verticalNodes[verticalIndex + 1].HistoryEvent));
                 if (VerticalSort(node.HistoryEvent, _verticalNodes[verticalIndex + 1].HistoryEvent) >= 0)
+                {
+                    return true;
+                }
+
+                if (previouslyTied)
                 {
                     return true;
                 }
@@ -526,6 +539,9 @@ namespace CPvC
         protected Dictionary<ListTreeNode<T>, int> _verticalPositions;
         protected Dictionary<ListTreeNode<T>, int> _horizontalPositions;
         protected Dictionary<T, ListTreeNode<T>> _eventsToNodes;
+
+        //protected HashSet<T> _horizontalTies;
+        protected HashSet<Tuple<T, T>> _verticalTies;
     }
 
     public class HistoryListTree : ListTree<HistoryEvent>
@@ -827,6 +843,12 @@ namespace CPvC
 
         protected override int VerticalSort(HistoryEvent x, HistoryEvent y)
         {
+            if (_verticalTies.Any())
+            {
+                _verticalTies.Remove(new Tuple<HistoryEvent, HistoryEvent>(x, y));
+                _verticalTies.Remove(new Tuple<HistoryEvent, HistoryEvent>(y, x));
+            }
+
             if (x.Ticks < y.Ticks)
             {
                 return -1;
@@ -850,6 +872,9 @@ namespace CPvC
                     return 1;
                 }
             }
+
+            _verticalTies.Add(new Tuple<HistoryEvent, HistoryEvent>(x, y));
+            _verticalTies.Add(new Tuple<HistoryEvent, HistoryEvent>(y, x));
 
             return x.Id.CompareTo(y.Id);
         }
