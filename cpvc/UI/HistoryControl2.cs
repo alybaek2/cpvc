@@ -30,16 +30,12 @@ namespace CPvC
             _updatePending = 0;
             _updateArgs = null;
 
-            //_branchLines = new Dictionary<History, BranchLine>();
-            //_branchShapes = new Dictionary<ListTreeNode, Tuple<Line, BranchShapes>>();
             _linesToBranchShapes = new Dictionary<Line, BranchShapes>();
-            //_branchShapes = new Dictionary<ListTreeNode, Tuple<Line, BranchShapes>>();
             _nodesToLines = new Dictionary<ListTreeNode<HistoryEvent>, Line>();
             _linesToBranchShapes = new Dictionary<Line, BranchShapes>();
 
             DataContextChanged += HistoryControl2_DataContextChanged;
         }
-
 
 
         private void HistoryControl2_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -78,72 +74,8 @@ namespace CPvC
             ScheduleUpdateCanvas(e);
         }
 
-        private Dictionary<ListTreeNode<HistoryEvent>, Line> DrawLines(List<ListTreeNode<HistoryEvent>> horizontalOrdering, List<ListTreeNode<HistoryEvent>> verticalOrdering)
-        {
-            Dictionary<ListTreeNode<HistoryEvent>, Line> lines = new Dictionary<ListTreeNode<HistoryEvent>, Line>();
-
-            Dictionary<int, int> leftmost = new Dictionary<int, int>();
-
-            foreach (ListTreeNode<HistoryEvent> node in horizontalOrdering)
-            {
-                // Find the parent!
-                ListTreeNode<HistoryEvent> parentNode = node.Parent;
-                Line parentLine = null;
-                if (parentNode != null)
-                {
-                    parentLine = lines[parentNode];
-                }
-
-                // Draw!
-                Line linepoints = new Line();
-                linepoints._current = ReferenceEquals(node.HistoryEvent, _history?.CurrentEvent);
-                linepoints._type = LinePointType.None;
-                if (node.HistoryEvent is BookmarkHistoryEvent bookmarkEvent)
-                {
-                    linepoints._type = bookmarkEvent.Bookmark.System ? LinePointType.SystemBookmark : LinePointType.UserBookmark;
-                }
-                else if (node.HistoryEvent.Children.Count == 0 || node.HistoryEvent is RootHistoryEvent)
-                {
-                    linepoints._type = LinePointType.Terminus;
-                }
-
-                int maxLeft = 1;
-                if (parentLine != null)
-                {
-                    Point parentPoint = parentLine.LastPoint();
-                    linepoints.Add(parentPoint.X, parentPoint.Y);
-                    maxLeft = parentPoint.X;
-                }
-
-                // What's our vertical ordering?
-                int verticalIndex = verticalOrdering.FindIndex(x => ReferenceEquals(x, node));
-                int parentVerticalIndex = verticalOrdering.FindIndex(x => ReferenceEquals(x, parentNode));
-
-                for (int v = parentVerticalIndex + 1; v <= verticalIndex; v++)
-                {
-                    if (!leftmost.TryGetValue(v, out int left))
-                    {
-                        left = 1 * _scalingX;
-                        leftmost.Add(v, left);
-                    }
-
-                    maxLeft = Math.Max(maxLeft, left);
-
-                    linepoints.Add(maxLeft, v * 2 * _scalingY);
-
-                    leftmost[v] = maxLeft + 2 * _scalingX;
-                }
-
-                lines.Add(node, linepoints);
-            }
-
-            return lines;
-        }
-
         private void UpdateLines(List<ListTreeNode<HistoryEvent>> horizontalOrdering, List<ListTreeNode<HistoryEvent>> verticalOrdering)
         {
-            //Dictionary<ListTreeNode<HistoryEvent>, Line> lines = new Dictionary<ListTreeNode<HistoryEvent>, Line>();
-
             Dictionary<int, int> leftmost = new Dictionary<int, int>();
 
             foreach (ListTreeNode<HistoryEvent> node in horizontalOrdering)
@@ -168,7 +100,7 @@ namespace CPvC
 
                 //Line linepoints = new Line();
                 // Need to set _changed to true if the following two things are different!
-                bool current = ReferenceEquals(node.HistoryEvent, _history?.CurrentEvent);
+                bool current = ReferenceEquals(node.Data, _history?.CurrentEvent);
                 if (line._current != current)
                 {
                     line._changed = true;
@@ -177,11 +109,11 @@ namespace CPvC
 
                 LinePointType oldType = line._type;
                 line._type = LinePointType.None;
-                if (node.HistoryEvent is BookmarkHistoryEvent bookmarkEvent)
+                if (node.Data is BookmarkHistoryEvent bookmarkEvent)
                 {
                     line._type = bookmarkEvent.Bookmark.System ? LinePointType.SystemBookmark : LinePointType.UserBookmark;
                 }
-                else if (node.HistoryEvent.Children.Count == 0 || node.HistoryEvent is RootHistoryEvent)
+                else if (node.Data.Children.Count == 0 || node.Data is RootHistoryEvent)
                 {
                     line._type = LinePointType.Terminus;
                 }
@@ -219,29 +151,14 @@ namespace CPvC
                 }
 
                 line.End();
-
-                //lines.Add(node, linepoints);
             }
-
 
             // Remove deleted lines
-            List<ListTreeNode<HistoryEvent>> deletedNodes = new List<ListTreeNode<HistoryEvent>>();
-            foreach (ListTreeNode<HistoryEvent> node in _nodesToLines.Keys)
-            {
-                if (horizontalOrdering.Contains(node))
-                {
-                    continue;
-                }
-
-                deletedNodes.Add(node);
-            }
-
+            List<ListTreeNode<HistoryEvent>> deletedNodes = _nodesToLines.Keys.Where(x => !horizontalOrdering.Contains(x)).ToList();
             foreach (ListTreeNode<HistoryEvent> node in deletedNodes)
             {
                 _nodesToLines.Remove(node);
             }
-
-            //return lines;
         }
 
         private void SyncLinesToShapes()
@@ -263,11 +180,8 @@ namespace CPvC
                     continue;
                 }
 
-                // Ensure lines are never "on top" of dots.
-                Point lastPoint = line.LastPoint();
-
                 Polyline polyline = CreatePolyline(line);
-                Ellipse circle = CreateCircle(lastPoint, radius, line._current, line._type);
+                Ellipse circle = CreateCircle(line.LastPoint(), radius, line._current, line._type);
 
                 // Ensure the dot is always "on top".
                 Canvas.SetZIndex(polyline, 1);

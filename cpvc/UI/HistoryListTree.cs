@@ -13,24 +13,6 @@ namespace CPvC
             SetHistory(history);
         }
 
-        //public ListTreeNode<HistoryEvent> Root
-        //{
-        //    get
-        //    {
-        //        return Root;
-        //    }
-
-        //    protected set
-        //    {
-        //        Root = value;
-        //    }
-        //}
-
-        //public System.Drawing.Point GetPosition(ListTreeNode<HistoryEvent> node)
-        //{
-        //    return GetPosition(node);
-        //}
-
         public void SetHistory(History history)
         {
             if (_history != null)
@@ -49,8 +31,6 @@ namespace CPvC
 
         private void Init()
         {
-            //_listTree = new ListTree<HistoryEvent>(_history.RootEvent);
-
             InitRoot(_history.RootEvent);
 
             List<HistoryEvent> nodes = new List<HistoryEvent>();
@@ -69,7 +49,6 @@ namespace CPvC
 
         public void ProcessHistoryChange(object sender, HistoryChangedEventArgs args)
         {
-
             PositionChangedEventArgs<HistoryEvent> changeArgs = UpdateListTree(args);
             if (changeArgs != null)
             {
@@ -103,7 +82,7 @@ namespace CPvC
             int descendentChildIndex = 0;
             while (descendentChildIndex < parent.Children.Count)
             {
-                if (child.HistoryEvent.IsEqualToOrAncestorOf(parent.Children[descendentChildIndex].HistoryEvent))
+                if (child.Data.IsEqualToOrAncestorOf(parent.Children[descendentChildIndex].Data))
                 {
                     break;
                 }
@@ -111,7 +90,7 @@ namespace CPvC
                 descendentChildIndex++;
             }
 
-            int childIndex = 0;
+            int childIndex;
             if (descendentChildIndex < parent.Children.Count)
             {
                 ListTreeNode<HistoryEvent> descendentChild = parent.Children[descendentChildIndex];
@@ -129,7 +108,7 @@ namespace CPvC
 
             parent.Children.Insert(childIndex, child);
             child.Parent = parent;
-            _eventsToNodes.Add(child.HistoryEvent, child);
+            _eventsToNodes.Add(child.Data, child);
 
             // Insert into horizontal events!
             int newHorizontalIndex = GetHorizontalInsertionIndex(parent, childIndex);
@@ -143,10 +122,6 @@ namespace CPvC
             _verticalNodes.Insert(verticalIndex, child);
 
             RefreshVerticalPositions(verticalIndex);
-
-
-            // Raise some kind of event here!
-
 
             return child;
         }
@@ -180,7 +155,7 @@ namespace CPvC
                 // Need to add the parent!
 
                 // But first, find the child who will share this new parent!
-                ListTreeNode<HistoryEvent> cousinNode = null;
+                ListTreeNode<HistoryEvent> cousinNode;
                 HistoryEvent he = parentHistoryEvent;
                 while (true)
                 {
@@ -215,8 +190,6 @@ namespace CPvC
                 // Replace the parent node with the child!
                 Update(parentHistoryEvent, historyEvent);
                 add = false;
-
-                // Todo: Notify!
             }
             else if (wasParentInteresting && isParentInteresting)
             {
@@ -226,8 +199,6 @@ namespace CPvC
             if (add && InterestingEvent(historyEvent))
             {
                 Add(parentNode, historyEvent);
-
-                // Todo: Notify!
             }
 
             return true;
@@ -235,48 +206,40 @@ namespace CPvC
 
         private PositionChangedEventArgs<HistoryEvent> UpdateListTree(HistoryChangedEventArgs args)
         {
-            //if (_listTree == null)
-            //{
-            //    return null;
-            //}
-
             bool changed = false;
 
-            //lock (_listTree)
+            switch (args.Action)
             {
-                switch (args.Action)
-                {
-                    case HistoryChangedAction.Add:
-                        {
-                            changed = AddEventToListTree(args.HistoryEvent);
-                        }
-                        break;
-                    case HistoryChangedAction.UpdateCurrent:
-                        {
-                            ListTreeNode<HistoryEvent> node = GetNode(args.HistoryEvent);
+                case HistoryChangedAction.Add:
+                    {
+                        changed = AddEventToListTree(args.HistoryEvent);
+                    }
+                    break;
+                case HistoryChangedAction.UpdateCurrent:
+                    {
+                        ListTreeNode<HistoryEvent> node = GetNode(args.HistoryEvent);
 
-                            changed = Update(node);
-                        }
-                        break;
-                    case HistoryChangedAction.DeleteBranch:
-                        {
-                            ListTreeNode<HistoryEvent> node = GetNode(args.HistoryEvent);
+                        changed = Update(node);
+                    }
+                    break;
+                case HistoryChangedAction.DeleteBranch:
+                    {
+                        ListTreeNode<HistoryEvent> node = GetNode(args.HistoryEvent);
 
-                            RemoveRecursive(node);
+                        RemoveRecursive(node);
 
-                            changed = true;
-                        }
-                        break;
-                    case HistoryChangedAction.DeleteBookmark:
-                        {
-                            ListTreeNode<HistoryEvent> node = GetNode(args.HistoryEvent);
+                        changed = true;
+                    }
+                    break;
+                case HistoryChangedAction.DeleteBookmark:
+                    {
+                        ListTreeNode<HistoryEvent> node = GetNode(args.HistoryEvent);
 
-                            RemoveNonRecursive(node);
+                        RemoveNonRecursive(node);
 
-                            changed = true;
-                        }
-                        break;
-                }
+                        changed = true;
+                    }
+                    break;
             }
 
             if (changed)
@@ -341,26 +304,8 @@ namespace CPvC
             return x.Id.CompareTo(y.Id);
         }
 
-
-        //public List<ListTreeNode<HistoryEvent>> HorizontalOrdering
-        //{
-        //    get
-        //    {
-        //        return HorizontalOrdering();
-        //    }
-        //}
-
-        //public List<ListTreeNode<HistoryEvent>> VerticalOrdering
-        //{
-        //    get
-        //    {
-        //        return VerticalOrdering();
-        //    }
-        //}
+        private History _history;
 
         public event NotifyPositionChangedEventHandler<HistoryEvent> PositionChanged;
-
-        private History _history;
-        //private ListTree<HistoryEvent> _listTree;
     }
 }

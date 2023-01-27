@@ -8,9 +8,9 @@ namespace CPvC
 {
     public class ListTreeNode<T>
     {
-        public ListTreeNode(T historyEvent)
+        public ListTreeNode(T data)
         {
-            HistoryEvent = historyEvent;
+            Data = data;
             Children = new List<ListTreeNode<T>>();
         }
 
@@ -25,7 +25,21 @@ namespace CPvC
             get;
         }
 
-        public T HistoryEvent
+        public ListTreeNode<T> RightmostDescendent
+        {
+            get
+            {
+                ListTreeNode<T> node = this;
+                while (node.Children.Count > 0)
+                {
+                    node = node.Children.Last();
+                }
+
+                return node;
+            }
+        }
+
+        public T Data
         {
             get;
             set;

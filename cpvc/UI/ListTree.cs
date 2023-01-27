@@ -54,7 +54,7 @@ namespace CPvC
             ListTreeNode<T> node = GetNode(oldHistoryEvent);
 
             _eventsToNodes.Remove(oldHistoryEvent);
-            node.HistoryEvent = newHistoryEvent;
+            node.Data = newHistoryEvent;
             bool changed = Update(node);
             _eventsToNodes.Add(newHistoryEvent, node);
 
@@ -78,7 +78,7 @@ namespace CPvC
             if (childIndex > 0)
             {
                 // Find the "right"-most descendent of the previous child!
-                ListTreeNode<T> node = RightmostDescendent(parent.Children[childIndex - 1]);
+                ListTreeNode<T> node = parent.Children[childIndex - 1].RightmostDescendent;
                 previousHorizontalIndex = _horizontalPositions[node];
             }
 
@@ -107,10 +107,9 @@ namespace CPvC
 
             int childIndex = GetChildIndex(oldParentNode, newParentNode);
             int newHorizontalIndex = GetHorizontalInsertionIndex(oldParentNode, childIndex);
-            ListTreeNode<T> rightmostDescendentNode = RightmostDescendent(node);
 
             int leftmostHorizontalIndex = _horizontalPositions[node];
-            int rightmostHorizontalIndex = _horizontalPositions[rightmostDescendentNode];
+            int rightmostHorizontalIndex = _horizontalPositions[node.RightmostDescendent];
 
             // Shift the horizontal indexes over...
             MoveHorizontal(leftmostHorizontalIndex, newHorizontalIndex, rightmostHorizontalIndex - leftmostHorizontalIndex + 1);
@@ -170,7 +169,6 @@ namespace CPvC
             }
 
             RefreshHorizontalPositions(refreshIndex);
-
         }
 
         public void RemoveRecursive(ListTreeNode<T> child)
@@ -181,14 +179,10 @@ namespace CPvC
             int childIndex = ChildIndex(child);
             parent.Children.RemoveAt(childIndex);
             child.Parent = null;
-            _eventsToNodes.Remove(child.HistoryEvent);
-
-
-            // Figure out the right-most descendent...
-            ListTreeNode<T> node = RightmostDescendent(child);
+            _eventsToNodes.Remove(child.Data);
 
             int leftmostHorizontalIndex = _horizontalPositions[child];
-            int rightmostHorizontalIndex = _horizontalPositions[node];
+            int rightmostHorizontalIndex = _horizontalPositions[child.RightmostDescendent];
 
             // Before removing these from the horizontal ordering, use this to delete from the vertical first!
             int childVertical = _verticalPositions[child];
@@ -265,7 +259,7 @@ namespace CPvC
             int verticalIndex = 0;
             while (verticalIndex < _verticalNodes.Count)
             {
-                if (VerticalSort(_verticalNodes[verticalIndex].HistoryEvent, node.HistoryEvent) > 0)
+                if (VerticalSort(_verticalNodes[verticalIndex].Data, node.Data) > 0)
                 {
                     break;
                 }
@@ -281,7 +275,7 @@ namespace CPvC
             int childIndex = 0;
             while (childIndex < parent.Children.Count)
             {
-                if (HorizontalSort(child.HistoryEvent, parent.Children[childIndex].HistoryEvent) < 0)
+                if (HorizontalSort(child.Data, parent.Children[childIndex].Data) < 0)
                 {
                     break;
                 }
@@ -308,16 +302,6 @@ namespace CPvC
             return -1;
         }
 
-        private ListTreeNode<T> RightmostDescendent(ListTreeNode<T> node)
-        {
-            while (node.Children.Count > 0)
-            {
-                node = node.Children[node.Children.Count - 1];
-            }
-
-            return node;
-        }
-
         private bool AdjustHorizontalOrderIfNeeded(ListTreeNode<T> node)
         {
             if (node.Parent == null)
@@ -326,9 +310,7 @@ namespace CPvC
             }
 
             int childIndex = ChildIndex(node);
-
-            bool horizontalPositionChanged = HorizontalPositionChanged(node, childIndex);
-            if (!horizontalPositionChanged)
+            if (!HorizontalPositionChanged(node, childIndex))
             {
                 return false;
             }
@@ -339,7 +321,7 @@ namespace CPvC
             int newChildIndex = 0;
             while (newChildIndex < node.Parent.Children.Count)
             {
-                if (HorizontalSort(node.HistoryEvent, node.Parent.Children[newChildIndex].HistoryEvent) < 0)
+                if (HorizontalSort(node.Data, node.Parent.Children[newChildIndex].Data) < 0)
                 {
                     break;
                 }
@@ -352,16 +334,15 @@ namespace CPvC
             // Fix up the horizontal ordering!
 
             // Figure out the right-most descendent...
-            ListTreeNode<T> node2 = RightmostDescendent(node);
             int leftmostHorizontalIndex = _horizontalPositions[node];
-            int rightmostHorizontalIndex = _horizontalPositions[node2];
+            int rightmostHorizontalIndex = _horizontalPositions[node.RightmostDescendent];
 
             // Where is the new leftmost horizontal index?
             int previousHorizontalIndex = _horizontalPositions[node.Parent];
             if (newChildIndex > 0)
             {
-                ListTreeNode<T> r = RightmostDescendent(node.Parent.Children[newChildIndex - 1]);
-                previousHorizontalIndex = _horizontalPositions[r];
+                ListTreeNode<T> rightmostDescendentNode = node.Parent.Children[newChildIndex - 1].RightmostDescendent;
+                previousHorizontalIndex = _horizontalPositions[rightmostDescendentNode];
             }
 
             // Move them!
@@ -375,7 +356,7 @@ namespace CPvC
             bool horizontalPositionChanged = false;
             if (childIndex > 0)
             {
-                if (HorizontalSort(node.Parent.Children[childIndex - 1].HistoryEvent, node.HistoryEvent) >= 0)
+                if (HorizontalSort(node.Parent.Children[childIndex - 1].Data, node.Data) >= 0)
                 {
                     return true;
                 }
@@ -383,7 +364,7 @@ namespace CPvC
 
             if (!horizontalPositionChanged && (childIndex + 1 < node.Parent.Children.Count))
             {
-                if (HorizontalSort(node.HistoryEvent, node.Parent.Children[childIndex + 1].HistoryEvent) >= 0)
+                if (HorizontalSort(node.Data, node.Parent.Children[childIndex + 1].Data) >= 0)
                 {
                     return true;
                 }
@@ -396,8 +377,8 @@ namespace CPvC
         {
             if (verticalIndex > 0)
             {
-                bool previouslyTied = _verticalTies.Any() && _verticalTies.Contains(new Tuple<T, T>(node.HistoryEvent, _verticalNodes[verticalIndex - 1].HistoryEvent));
-                if (VerticalSort(_verticalNodes[verticalIndex - 1].HistoryEvent, node.HistoryEvent) >= 0)
+                bool previouslyTied = _verticalTies.Any() && _verticalTies.Contains(new Tuple<T, T>(node.Data, _verticalNodes[verticalIndex - 1].Data));
+                if (VerticalSort(_verticalNodes[verticalIndex - 1].Data, node.Data) >= 0)
                 {
                     return true;
                 }
@@ -410,8 +391,8 @@ namespace CPvC
 
             if (verticalIndex + 1 < _verticalNodes.Count)
             {
-                bool previouslyTied = _verticalTies.Any() && _verticalTies.Contains(new Tuple<T, T>(node.HistoryEvent, _verticalNodes[verticalIndex + 1].HistoryEvent));
-                if (VerticalSort(node.HistoryEvent, _verticalNodes[verticalIndex + 1].HistoryEvent) >= 0)
+                bool previouslyTied = _verticalTies.Any() && _verticalTies.Contains(new Tuple<T, T>(node.Data, _verticalNodes[verticalIndex + 1].Data));
+                if (VerticalSort(node.Data, _verticalNodes[verticalIndex + 1].Data) >= 0)
                 {
                     return true;
                 }
@@ -440,7 +421,7 @@ namespace CPvC
             int newVerticalIndex = 0;
             while (newVerticalIndex < _verticalNodes.Count)
             {
-                if (VerticalSort(node.HistoryEvent, _verticalNodes[newVerticalIndex].HistoryEvent) < 0)
+                if (VerticalSort(node.Data, _verticalNodes[newVerticalIndex].Data) < 0)
                 {
                     break;
                 }
@@ -456,51 +437,7 @@ namespace CPvC
         }
 
         protected abstract int HorizontalSort(T x, T y);
-
         protected abstract int VerticalSort(T x, T y);
-
-        //public void DebugDump()
-        //{
-        //    CPvC.Diagnostics.Trace("Horizontal/Vertical tree:\n");
-
-        //    for (int v = 0; v < _verticalNodes.Count; v++)
-        //    {
-        //        int h = _horizontalPositions[_verticalNodes[v]];
-
-        //        string str = new string(' ', h * 2);
-
-        //        str += String.Format("{0}", _verticalNodes[v].HistoryEvent.Id);
-
-        //        CPvC.Diagnostics.Trace(str);
-        //    }
-
-        //    CPvC.Diagnostics.Trace("Tree hierarchy:\n");
-
-        //    List<ListTreeNode> nodes = new List<ListTreeNode>();
-        //    nodes.Add(Root);
-        //    while (nodes.Any())
-        //    {
-        //        ListTreeNode node = nodes[0];
-        //        nodes.RemoveAt(0);
-
-        //        int indent = 0;
-        //        ListTreeNode p = node.Parent;
-        //        while (p != null)
-        //        {
-        //            p = p.Parent;
-        //            indent++;
-        //        }
-
-        //        string str = new string(' ', indent * 2);
-        //        str += String.Format("{0}", node.HistoryEvent.Id);
-
-        //        CPvC.Diagnostics.Trace(str);
-
-        //        indent++;
-
-        //        nodes.InsertRange(0, node.Children);
-        //    }
-        //}
 
         protected List<ListTreeNode<T>> _verticalNodes;
         protected List<ListTreeNode<T>> _horizontalNodes;
@@ -510,7 +447,6 @@ namespace CPvC
         protected Dictionary<ListTreeNode<T>, int> _horizontalPositions;
         protected Dictionary<T, ListTreeNode<T>> _eventsToNodes;
 
-        //protected HashSet<T> _horizontalTies;
         protected HashSet<Tuple<T, T>> _verticalTies;
     }
 }
