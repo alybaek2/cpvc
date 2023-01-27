@@ -125,7 +125,7 @@ namespace CPvC
                 int maxLeft = 1;
                 if (parentLine != null)
                 {
-                    Point parentPoint = parentLine.LastPoint();
+                    Point parentPoint = parentLine._points.Last();
                     line.Add(parentPoint.X, parentPoint.Y);
                     maxLeft = parentPoint.X;
                 }
@@ -180,7 +180,7 @@ namespace CPvC
                 }
 
                 Polyline polyline = CreatePolyline(line);
-                Ellipse circle = CreateCircle(line.LastPoint(), radius, line._current, line._type);
+                Ellipse circle = CreateCircle(line._points.Last(), radius, line._current, line._type);
 
                 // Ensure the dot is always "on top".
                 Canvas.SetZIndex(polyline, 1);
@@ -457,24 +457,6 @@ namespace CPvC
 
             public void Add(int x, int y)
             {
-                //if (_points.Count == 0)
-                //{
-                //    _points.Add(new Point(x, y));
-                //    _changed = true;
-                //    _currentPointIndex = 1;
-                //    return;
-                //}
-                //else if (_points.Count == 1)
-                //{
-                //    if (_points[0].X != x || _points[0].Y != y)
-                //    {
-                //        _changed = true;
-                //        _points[0] = new Point(x, y);
-                //        _currentPointIndex = 1;
-                //        return;
-                //    }
-                //}
-
                 if (_currentPointIndex < _points.Count)
                 {
                     if (_points[_currentPointIndex].X == x && _points[_currentPointIndex].Y == y)
@@ -482,76 +464,11 @@ namespace CPvC
                         _currentPointIndex++;
                         return;
                     }
-
-                    //_points[_currentPointIndex] = new Point(x, y);
-                    //_changed = true;
-                    //return;
                 }
 
                 _points.Insert(_currentPointIndex, new Point(x, y));
                 _currentPointIndex++;
                 _changed = true;
-
-                //Point currPoint = _points[_currentPointIndex];
-
-                //if (currPoint.X == x && currPoint.Y == y)
-                //{
-                //    _currentPointIndex++;
-                //    return;
-                //}
-
-                //Point prevPoint = _points[_currentPointIndex - 1];
-                //if (currPoint.X == prevPoint.X && currPoint.X == x && prevPoint.Y <= y && y < currPoint.Y)
-                //{
-                //    return;
-                //}
-
-                //// Add a new point
-                //if (_currentPointIndex >= 2)
-                //{
-                //    Point prevPrevPoint = _points[_currentPointIndex - 2];
-
-                //    if (prevPrevPoint.X == prevPoint.X && prevPoint.X == x)
-                //    {
-                //        _points[_currentPointIndex - 1] = new Point(x, y);
-                //        _changed = true;
-                //        return;
-                //    }
-                //}
-
-                //if (prevPoint.X != x)
-                //{
-                //    _points.Insert(_currentPointIndex, new Point(x, y - 1 * _scalingY));
-                //    _currentPointIndex++;
-                //}
-
-                //_points.Insert(_currentPointIndex, new Point(x, y));
-                //_currentPointIndex++;
-
-                //_changed = true;
-
-                //////if (_points.Count)
-                ////if (_points.Any())
-                ////{
-                ////    Point lastPoint = _points[_points.Count - 1];
-                ////    if (_points.Count >= 2)
-                ////    {
-                ////        Point penultimatePoint = _points[_points.Count - 2];
-
-                ////        if (penultimatePoint.X == lastPoint.X && lastPoint.X == x)
-                ////        {
-                ////            _points[_points.Count - 1] = new Point(x, y);
-                ////            return;
-                ////        }
-                ////    }
-
-                ////    if (lastPoint.X != x)
-                ////    {
-                ////        _points.Add(new Point(x, y - 1 * _scalingY));
-                ////    }
-                ////}
-
-                ////_points.Add(new Point(x, y));
             }
 
             public void End()
@@ -595,11 +512,6 @@ namespace CPvC
                 }
 
                 return true;
-            }
-
-            public Point LastPoint()
-            {
-                return _points[_points.Count - 1];
             }
 
             public List<Point> _points;
