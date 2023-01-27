@@ -78,7 +78,7 @@ namespace CPvC
             // But! We must either add a new child, or inject this child inbetween the parent and an existing child!
             // Which case are we?
 
-            // This class should not be doing this! HistoryControl2 should be... ListTree should be made to be generic at some point!
+            // This class should not be doing this! HistoryControl should be... ListTree should be made to be generic at some point!
             int descendentChildIndex = 0;
             while (descendentChildIndex < parent.Children.Count)
             {

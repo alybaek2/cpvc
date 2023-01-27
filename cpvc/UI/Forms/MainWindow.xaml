@@ -379,17 +379,17 @@
                     Margin="220, 0, 0, 0" Click="JumpButton_Click"/>
             <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="250" Margin="0,40,0,0">
                 <Grid>
-                    <cpvc:HistoryControl2 x:Name="_historyControl2"
+                    <cpvc:HistoryControl x:Name="_historyControl"
                                   DataContext="{Binding ActiveMachine.History, Mode=OneWay}"
                                   Width="500"
                                   HorizontalAlignment="Left"
                                   VerticalAlignment="Top"
                                   Height="200"
                                   RenderTransformOrigin="0.5,0.5">
-                        <cpvc:HistoryControl2.RenderTransform>
+                        <cpvc:HistoryControl.RenderTransform>
                             <ScaleTransform ScaleY="-1" />
-                        </cpvc:HistoryControl2.RenderTransform>
-                    </cpvc:HistoryControl2>
+                        </cpvc:HistoryControl.RenderTransform>
+                    </cpvc:HistoryControl>
                 </Grid>
             </ScrollViewer>
         </Grid>

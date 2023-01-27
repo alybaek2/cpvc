@@ -13,7 +13,7 @@ using System.Windows.Threading;
 
 namespace CPvC
 {
-    public class HistoryControl2 : Canvas
+    public class HistoryControl : Canvas
     {
         private History _history;
 
@@ -25,20 +25,19 @@ namespace CPvC
         private const int _scalingX = 8;
         private const int _scalingY = 8;
 
-        public HistoryControl2()
+        public HistoryControl()
         {
             _updatePending = 0;
             _updateArgs = null;
 
             _linesToBranchShapes = new Dictionary<Line, BranchShapes>();
             _nodesToLines = new Dictionary<ListTreeNode<HistoryEvent>, Line>();
-            _linesToBranchShapes = new Dictionary<Line, BranchShapes>();
 
-            DataContextChanged += HistoryControl2_DataContextChanged;
+            DataContextChanged += HistoryControl_DataContextChanged;
         }
 
 
-        private void HistoryControl2_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        private void HistoryControl_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (ReferenceEquals(e.OldValue, e.NewValue))
             {
