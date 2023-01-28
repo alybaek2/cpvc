@@ -171,7 +171,17 @@ namespace CPvC
 
                 Polyline polyline;
                 Ellipse circle;
-                if (!_linesToBranchShapes.TryGetValue(line, out BranchShapes bs))
+                if (_linesToBranchShapes.TryGetValue(line, out BranchShapes bs))
+                {
+                    if (bs.LineVersion == line._version)
+                    {
+                        continue;
+                    }
+
+                    polyline = bs.Polyline;
+                    circle = bs.Dot;
+                }
+                else
                 {
                     polyline = CreatePolyline();
                     Canvas.SetZIndex(polyline, 1);
@@ -181,20 +191,8 @@ namespace CPvC
                     Canvas.SetZIndex(circle, 100);
                     Children.Add(circle);
 
-                    bs = new BranchShapes();
+                    bs = new BranchShapes(polyline, circle);
                     _linesToBranchShapes.Add(line, bs);
-
-                    bs.Dot = circle;
-                    bs.Polyline = polyline;
-                }
-                else if (bs.LineVersion == line._version)
-                {
-                    continue;
-                }
-                else
-                {
-                    polyline = bs.Polyline;
-                    circle = bs.Dot;
                 }
 
                 UpdatePolyline(polyline, line);
@@ -353,20 +351,21 @@ namespace CPvC
 
         private class BranchShapes
         {
-            public BranchShapes()
+            public BranchShapes(Polyline polyline, Ellipse dot)
             {
+                Polyline = polyline;
+                Dot = dot;
+                LineVersion = -1;
             }
 
             public Polyline Polyline
             {
                 get;
-                set;
             }
 
             public Ellipse Dot
             {
                 get;
-                set;
             }
 
             public int LineVersion
