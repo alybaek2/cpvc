@@ -19,7 +19,6 @@ namespace CPvC
 
         private HistoryListTree _listTree;
 
-        private int _updatePending;
         private PositionChangedEventArgs<HistoryEvent> _updateArgs;
 
         private const int _scalingX = 8;
@@ -27,7 +26,6 @@ namespace CPvC
 
         public HistoryControl()
         {
-            _updatePending = 0;
             _updateArgs = null;
 
             _linesToBranchShapes = new Dictionary<Line, BranchShapes>();
@@ -219,8 +217,8 @@ namespace CPvC
 
         private void ScheduleUpdateCanvas(PositionChangedEventArgs<HistoryEvent> changeArgs)
         {
-            _updateArgs = changeArgs;
-            if (Interlocked.Exchange(ref _updatePending, 1) != 0)
+            CPvC.Diagnostics.Trace("Setting updateARgs to something!");
+            if (Interlocked.Exchange(ref _updateArgs, changeArgs) != null)
             {
                 return;
             }
@@ -231,11 +229,9 @@ namespace CPvC
             {
                 timer.Stop();
 
-                Interlocked.Exchange(ref _updatePending, 0);
-
                 Stopwatch sw = Stopwatch.StartNew();
-                UpdateCanvasListTree(_updateArgs);
-                _updateArgs = null;
+                UpdateCanvasListTree();
+                CPvC.Diagnostics.Trace("Setting updateARgs to null");
                 sw.Stop();
 
                 CPvC.Diagnostics.Trace("Update items took {0}ms", sw.ElapsedMilliseconds);
@@ -244,8 +240,10 @@ namespace CPvC
             timer.Start();
         }
 
-        private void UpdateCanvasListTree(PositionChangedEventArgs<HistoryEvent> changeArgs)
+        private void UpdateCanvasListTree()
         {
+            PositionChangedEventArgs<HistoryEvent> changeArgs = Interlocked.Exchange(ref _updateArgs, null);
+
             UpdateLines(changeArgs.HorizontalOrdering, changeArgs.VerticalOrdering);
 
             SyncLinesToShapes();
