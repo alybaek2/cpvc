@@ -73,6 +73,7 @@ namespace CPvC
 
         private void UpdateLines(List<ListTreeNode<HistoryEvent>> horizontalOrdering, List<ListTreeNode<HistoryEvent>> verticalOrdering)
         {
+            Dictionary<ListTreeNode<HistoryEvent>, Line> newNodesToLines = new Dictionary<ListTreeNode<HistoryEvent>, Line>();
             Dictionary<int, int> leftmost = new Dictionary<int, int>();
 
             foreach (ListTreeNode<HistoryEvent> node in horizontalOrdering)
@@ -82,20 +83,18 @@ namespace CPvC
                 Line parentLine = null;
                 if (parentNode != null)
                 {
-                    parentLine = _nodesToLines[parentNode];
+                    parentLine = newNodesToLines[parentNode];
                 }
 
                 if (!_nodesToLines.TryGetValue(node, out Line line))
                 {
                     line = new Line();
-                    _nodesToLines.Add(node, line);
                 }
 
                 // Draw!
 
                 line.Start();
 
-                //Line linepoints = new Line();
                 // Need to set _changed to true if the following two things are different!
                 bool current = ReferenceEquals(node.Data, _history?.CurrentEvent);
                 if (line._current != current)
@@ -148,18 +147,21 @@ namespace CPvC
                 }
 
                 line.End();
+
+                newNodesToLines.Add(node, line);
             }
 
-            // Remove deleted lines
-            List<ListTreeNode<HistoryEvent>> deletedNodes = _nodesToLines.Keys.Where(x => !horizontalOrdering.Contains(x)).ToList();
-            foreach (ListTreeNode<HistoryEvent> node in deletedNodes)
-            {
-                _nodesToLines.Remove(node);
-            }
+            _nodesToLines = newNodesToLines;
         }
 
         private void SyncLinesToShapes()
         {
+            HashSet<Line> oldLines = new HashSet<Line>();
+            foreach (Line line in _linesToBranchShapes.Keys)
+            {
+                oldLines.Add(line);
+            }
+
             double radius = 0.5 * _scalingX;
 
             foreach (KeyValuePair<ListTreeNode<HistoryEvent>, Line> kvp in _nodesToLines)
@@ -167,42 +169,26 @@ namespace CPvC
                 ListTreeNode<HistoryEvent> node = kvp.Key;
                 Line line = kvp.Value;
 
-                Polyline polyline;
-                Ellipse circle;
-                if (_linesToBranchShapes.TryGetValue(line, out BranchShapes bs))
-                {
-                    if (bs.LineVersion == line._version)
-                    {
-                        continue;
-                    }
+                oldLines.Remove(line);
 
-                    polyline = bs.Polyline;
-                    circle = bs.Dot;
+                if (!_linesToBranchShapes.TryGetValue(line, out BranchShapes branchShapes))
+                {
+                    branchShapes = CreateShapes();
+                    _linesToBranchShapes.Add(line, branchShapes);
                 }
-                else
+                else if (branchShapes.LineVersion == line._version)
                 {
-                    polyline = CreatePolyline();
-                    Canvas.SetZIndex(polyline, 1);
-                    Children.Add(polyline);
-
-                    circle = CreateCircle();
-                    Canvas.SetZIndex(circle, 100);
-                    Children.Add(circle);
-
-                    bs = new BranchShapes(polyline, circle);
-                    _linesToBranchShapes.Add(line, bs);
+                    continue;
                 }
 
-                UpdatePolyline(polyline, line);
-                UpdateCircle(circle, line._points.Last(), radius, line._current, line._type);
+                UpdatePolyline(branchShapes.Polyline, line);
+                UpdateCircle(branchShapes.Dot, line._points.Last(), radius, line._current, line._type);
 
-                bs.LineVersion = line._version;
+                branchShapes.LineVersion = line._version;
             }
 
             // Delete non-existant lines!
-            List<Line> deleteLines = _linesToBranchShapes.Keys.Where(x => !_nodesToLines.Values.Contains(x)).ToList();
-
-            foreach (Line line in deleteLines)
+            foreach (Line line in oldLines)
             {
                 if (_linesToBranchShapes.TryGetValue(line, out BranchShapes bs))
                 {
@@ -290,6 +276,20 @@ namespace CPvC
             circle.Width = 2 * radius;
             circle.Height = 2 * radius;
             circle.Visibility = (type == LinePointType.None) ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private BranchShapes CreateShapes()
+        {
+            Polyline polyline = CreatePolyline();
+            Canvas.SetZIndex(polyline, 1);
+            Children.Add(polyline);
+
+            Ellipse circle = CreateCircle();
+            Canvas.SetZIndex(circle, 100);
+            Children.Add(circle);
+
+            BranchShapes branchShapes = new BranchShapes(polyline, circle);
+            return branchShapes;
         }
 
         private Polyline CreatePolyline()
