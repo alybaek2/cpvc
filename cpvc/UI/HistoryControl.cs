@@ -24,6 +24,8 @@ namespace CPvC
         private const int _scalingX = 8;
         private const int _scalingY = 8;
 
+        private double _dotRadius = 0.5 * _scalingX;
+
         public HistoryControl()
         {
             _updateArgs = null;
@@ -156,17 +158,10 @@ namespace CPvC
 
         private void SyncLinesToShapes()
         {
-            HashSet<Line> oldLines = new HashSet<Line>();
-            foreach (Line line in _linesToBranchShapes.Keys)
-            {
-                oldLines.Add(line);
-            }
-
-            double radius = 0.5 * _scalingX;
+            HashSet<Line> oldLines = new HashSet<Line>(_linesToBranchShapes.Keys);
 
             foreach (KeyValuePair<ListTreeNode<HistoryEvent>, Line> kvp in _nodesToLines)
             {
-                ListTreeNode<HistoryEvent> node = kvp.Key;
                 Line line = kvp.Value;
 
                 oldLines.Remove(line);
@@ -182,7 +177,7 @@ namespace CPvC
                 }
 
                 UpdatePolyline(branchShapes.Polyline, line);
-                UpdateCircle(branchShapes.Dot, line._points.Last(), radius, line._current, line._type);
+                UpdateCircle(branchShapes.Dot, line._points.Last(), line._current, line._type);
 
                 branchShapes.LineVersion = line._version;
             }
@@ -254,7 +249,7 @@ namespace CPvC
             return circle;
         }
 
-        private void UpdateCircle(Ellipse circle, Point centre, double radius, bool current, LinePointType type)
+        private void UpdateCircle(Ellipse circle, Point centre, bool current, LinePointType type)
         {
             Brush brush;
             switch (type)
@@ -272,9 +267,9 @@ namespace CPvC
 
             circle.Stroke = brush;
             circle.Fill = current ? Brushes.White : brush;
-            circle.Margin = new Thickness(centre.X - radius, centre.Y - radius, 0, 0);
-            circle.Width = 2 * radius;
-            circle.Height = 2 * radius;
+            circle.Margin = new Thickness(centre.X - _dotRadius, centre.Y - _dotRadius, 0, 0);
+            circle.Width = 2 * _dotRadius;
+            circle.Height = 2 * _dotRadius;
             circle.Visibility = (type == LinePointType.None) ? Visibility.Collapsed : Visibility.Visible;
         }
 
@@ -323,27 +318,27 @@ namespace CPvC
                 }
             }
 
-            int pp = 0;
+            int addedPointsCount = 0;
             int lastX = -1;
             for (int pindex = 0; pindex < line._points.Count; pindex++)
             {
                 Point point = line._points[pindex];
-                if (lastX >= 0)
+                if (lastX >= 0 && lastX != point.X)
                 {
-                    AddPoint(polyline.Points, pp, point.X, point.Y - 1 * _scalingY);
-                    pp++;
+                    AddPoint(polyline.Points, addedPointsCount, point.X, point.Y - 1 * _scalingY);
+                    addedPointsCount++;
                 }
 
-                AddPoint(polyline.Points, pp, point.X, point.Y);
-                pp++;
+                AddPoint(polyline.Points, addedPointsCount, point.X, point.Y);
+                addedPointsCount++;
 
-                lastX = line._points[pindex].X;
+                lastX = point.X;
             }
 
             // Trim any extra points.
-            while (polyline.Points.Count > pp)
+            while (polyline.Points.Count > addedPointsCount)
             {
-                polyline.Points.RemoveAt(pp);
+                polyline.Points.RemoveAt(addedPointsCount);
             }
         }
 
