@@ -36,7 +36,6 @@ namespace CPvC
             DataContextChanged += HistoryControl_DataContextChanged;
         }
 
-
         private void HistoryControl_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (ReferenceEquals(e.OldValue, e.NewValue))
@@ -64,7 +63,6 @@ namespace CPvC
 
                     ScheduleUpdateCanvas(changeArgs);
                 }
-
             }
         }
 
@@ -76,7 +74,7 @@ namespace CPvC
         private void UpdateLines(List<ListTreeNode<HistoryEvent>> horizontalOrdering, List<ListTreeNode<HistoryEvent>> verticalOrdering)
         {
             Dictionary<ListTreeNode<HistoryEvent>, Line> newNodesToLines = new Dictionary<ListTreeNode<HistoryEvent>, Line>();
-            Dictionary<int, int> maxXPerLine = new Dictionary<int, int>();
+            Dictionary<int, int> maxXPerY = new Dictionary<int, int>();
 
             foreach (ListTreeNode<HistoryEvent> node in horizontalOrdering)
             {
@@ -126,7 +124,7 @@ namespace CPvC
                 }
 
                 int previousX = -1;
-                int x = 0;
+                int x = 1;
                 if (parentLine != null)
                 {
                     Point parentPoint = parentLine._points.Last();
@@ -141,10 +139,10 @@ namespace CPvC
 
                 for (int y = parentVerticalIndex + 1; y <= verticalIndex; y++)
                 {
-                    if (!maxXPerLine.TryGetValue(y, out int maxX))
+                    if (!maxXPerY.TryGetValue(y, out int maxX))
                     {
                         maxX = 1;
-                        maxXPerLine.Add(y, maxX);
+                        maxXPerY.Add(y, maxX);
                     }
 
                     x = Math.Max(x, maxX);
@@ -158,7 +156,7 @@ namespace CPvC
                     line.Add(x, y * 2);
                     previousX = x;
 
-                    maxXPerLine[y] = x + 2;
+                    maxXPerY[y] = x + 2;
                 }
 
                 line.End();
@@ -208,7 +206,6 @@ namespace CPvC
 
         private void ScheduleUpdateCanvas(PositionChangedEventArgs<HistoryEvent> changeArgs)
         {
-            CPvC.Diagnostics.Trace("Setting updateARgs to something!");
             if (Interlocked.Exchange(ref _updateArgs, changeArgs) != null)
             {
                 return;
@@ -220,26 +217,13 @@ namespace CPvC
             {
                 timer.Stop();
 
-                Stopwatch sw = Stopwatch.StartNew();
-                UpdateCanvasListTree();
-                CPvC.Diagnostics.Trace("Setting updateARgs to null");
-                sw.Stop();
-
-                CPvC.Diagnostics.Trace("Update items took {0}ms", sw.ElapsedMilliseconds);
+                PositionChangedEventArgs<HistoryEvent> updateArgs = Interlocked.Exchange(ref _updateArgs, null);
+                UpdateLines(updateArgs.HorizontalOrdering, updateArgs.VerticalOrdering);
+                SyncLinesToShapes();
             };
 
             timer.Start();
         }
-
-        private void UpdateCanvasListTree()
-        {
-            PositionChangedEventArgs<HistoryEvent> changeArgs = Interlocked.Exchange(ref _updateArgs, null);
-
-            UpdateLines(changeArgs.HorizontalOrdering, changeArgs.VerticalOrdering);
-
-            SyncLinesToShapes();
-        }
-
 
         private BranchShapes CreateShapes()
         {
