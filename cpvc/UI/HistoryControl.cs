@@ -94,7 +94,6 @@ namespace CPvC
                 }
 
                 // Draw!
-
                 line.Start();
 
                 // Need to set _changed to true if the following two things are different!
@@ -107,7 +106,11 @@ namespace CPvC
 
                 LinePointType oldType = line._type;
                 line._type = LinePointType.None;
-                if (node.Data is BookmarkHistoryEvent bookmarkEvent)
+                if (node.Data is RootHistoryEvent)
+                {
+                    line._type = LinePointType.None;
+                }
+                else if (node.Data is BookmarkHistoryEvent bookmarkEvent)
                 {
                     line._type = bookmarkEvent.Bookmark.System ? LinePointType.SystemBookmark : LinePointType.UserBookmark;
                 }
@@ -120,13 +123,15 @@ namespace CPvC
                 {
                     line._changed = true;
                 }
-                
+
+                int previousLeft = -1;
                 int maxLeft = 1;
                 if (parentLine != null)
                 {
                     Point parentPoint = parentLine._points.Last();
                     line.Add(parentPoint.X, parentPoint.Y);
                     maxLeft = parentPoint.X;
+                    previousLeft = maxLeft;
                 }
 
                 // What's our vertical ordering?
@@ -143,7 +148,13 @@ namespace CPvC
 
                     maxLeft = Math.Max(maxLeft, left);
 
+                    if (previousLeft >= 0 && previousLeft != maxLeft)
+                    {
+                        line.Add(maxLeft, (v * 2 - 1) * _scalingY);
+                    }
+
                     line.Add(maxLeft, v * 2 * _scalingY);
+                    previousLeft = maxLeft;
 
                     leftmost[v] = maxLeft + 2 * _scalingX;
                 }
@@ -311,36 +322,23 @@ namespace CPvC
 
             private void UpdatePolyline(Line line)
             {
-                void AddPoint(PointCollection pointCollection, int index, int x, int y)
+                int addedPointsCount = 0;
+                for (int pindex = 0; pindex < line._points.Count; pindex++)
                 {
-                    if (index < pointCollection.Count)
+                    Point point = line._points[pindex];
+                    if (addedPointsCount < Polyline.Points.Count)
                     {
-                        if (pointCollection[index].X != x || pointCollection[index].Y != y)
+                        if (Polyline.Points[addedPointsCount].X != point.X || Polyline.Points[addedPointsCount].Y != point.Y)
                         {
-                            pointCollection[index] = new System.Windows.Point(x, y);
+                            Polyline.Points[addedPointsCount] = new System.Windows.Point(point.X, point.Y);
                         }
                     }
                     else
                     {
-                        pointCollection.Add(new System.Windows.Point(x, y));
-                    }
-                }
-
-                int addedPointsCount = 0;
-                int lastX = -1;
-                for (int pindex = 0; pindex < line._points.Count; pindex++)
-                {
-                    Point point = line._points[pindex];
-                    if (lastX >= 0 && lastX != point.X)
-                    {
-                        AddPoint(Polyline.Points, addedPointsCount, point.X, point.Y - 1 * _scalingY);
-                        addedPointsCount++;
+                        Polyline.Points.Add(new System.Windows.Point(point.X, point.Y));
                     }
 
-                    AddPoint(Polyline.Points, addedPointsCount, point.X, point.Y);
                     addedPointsCount++;
-
-                    lastX = point.X;
                 }
 
                 // Trim any extra points.
@@ -351,7 +349,7 @@ namespace CPvC
             }
         }
 
-        public enum LinePointType
+        private enum LinePointType
         {
             None,
             Terminus,
