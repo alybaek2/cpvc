@@ -143,7 +143,7 @@ namespace CPvC
                 {
                     if (!maxXPerLine.TryGetValue(y, out int maxX))
                     {
-                        maxX = 1 * _scalingX;
+                        maxX = 1;
                         maxXPerLine.Add(y, maxX);
                     }
 
@@ -152,13 +152,13 @@ namespace CPvC
                     // If the x position has shifted, draw over to below the point, then up to the point. This looks nicer!
                     if (previousX >= 0 && previousX != x)
                     {
-                        line.Add(x, (2 * y - 1) * _scalingY);
+                        line.Add(x, 2 * y - 1);
                     }
 
-                    line.Add(x, y * 2 * _scalingY);
+                    line.Add(x, y * 2);
                     previousX = x;
 
-                    maxXPerLine[y] = x + 2 * _scalingX;
+                    maxXPerLine[y] = x + 2;
                 }
 
                 line.End();
@@ -316,7 +316,7 @@ namespace CPvC
 
                 Dot.Stroke = brush;
                 Dot.Fill = line._current ? Brushes.White : brush;
-                Dot.Margin = new Thickness(centre.X - _dotRadius, centre.Y - _dotRadius, 0, 0);
+                Dot.Margin = new Thickness((centre.X * _scalingX) - _dotRadius, (centre.Y * _scalingY) - _dotRadius, 0, 0);
                 Dot.Width = 2 * _dotRadius;
                 Dot.Height = 2 * _dotRadius;
                 Dot.Visibility = (type == LinePointType.None) ? Visibility.Collapsed : Visibility.Visible;
@@ -328,16 +328,18 @@ namespace CPvC
                 for (int pindex = 0; pindex < line._points.Count; pindex++)
                 {
                     Point point = line._points[pindex];
+                    int scaledX = point.X * _scalingX;
+                    int scaledY = point.Y * _scalingY;
                     if (addedPointsCount < Polyline.Points.Count)
                     {
-                        if (Polyline.Points[addedPointsCount].X != point.X || Polyline.Points[addedPointsCount].Y != point.Y)
+                        if (Polyline.Points[addedPointsCount].X != scaledX || Polyline.Points[addedPointsCount].Y != scaledY)
                         {
-                            Polyline.Points[addedPointsCount] = new System.Windows.Point(point.X, point.Y);
+                            Polyline.Points[addedPointsCount] = new System.Windows.Point(scaledX, scaledY);
                         }
                     }
                     else
                     {
-                        Polyline.Points.Add(new System.Windows.Point(point.X, point.Y));
+                        Polyline.Points.Add(new System.Windows.Point(scaledX, scaledY));
                     }
 
                     addedPointsCount++;
