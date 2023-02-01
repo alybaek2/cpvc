@@ -381,10 +381,10 @@
                 <Grid>
                     <cpvc:HistoryControl x:Name="_historyControl"
                                   DataContext="{Binding ActiveMachine.History, Mode=OneWay}"
-                                  Width="500"
+                                  Width="0"
                                   HorizontalAlignment="Left"
                                   VerticalAlignment="Top"
-                                  Height="200"
+                                  Height="0"
                                   RenderTransformOrigin="0.5,0.5">
                         <cpvc:HistoryControl.RenderTransform>
                             <ScaleTransform ScaleY="-1" />

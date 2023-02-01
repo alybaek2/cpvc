@@ -171,6 +171,8 @@ namespace CPvC
         {
             HashSet<Line> oldLines = new HashSet<Line>(_linesToBranchShapes.Keys);
 
+            int maxX = 0;
+
             foreach (KeyValuePair<ListTreeNode<HistoryEvent>, Line> kvp in _nodesToLines)
             {
                 Line line = kvp.Value;
@@ -184,10 +186,14 @@ namespace CPvC
                 }
                 else if (branchShapes.LineVersion == line._version)
                 {
+                    maxX = Math.Max(maxX, line._points.Last().X);
+
                     continue;
                 }
 
                 branchShapes.Update(line);
+
+                maxX = Math.Max(maxX, line._points.Last().X);
             }
 
             // Delete non-existant lines!
@@ -202,6 +208,7 @@ namespace CPvC
             }
 
             Height = _scalingY * 2 * (_listTree?.VerticalOrdering().Count ?? 0);
+            Width = (maxX + 1) * _scalingX;
         }
 
         private void ScheduleUpdateCanvas(PositionChangedEventArgs<HistoryEvent> changeArgs)
