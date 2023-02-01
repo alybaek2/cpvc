@@ -76,7 +76,7 @@ namespace CPvC
         private void UpdateLines(List<ListTreeNode<HistoryEvent>> horizontalOrdering, List<ListTreeNode<HistoryEvent>> verticalOrdering)
         {
             Dictionary<ListTreeNode<HistoryEvent>, Line> newNodesToLines = new Dictionary<ListTreeNode<HistoryEvent>, Line>();
-            Dictionary<int, int> leftmost = new Dictionary<int, int>();
+            Dictionary<int, int> maxXPerLine = new Dictionary<int, int>();
 
             foreach (ListTreeNode<HistoryEvent> node in horizontalOrdering)
             {
@@ -102,6 +102,7 @@ namespace CPvC
                 {
                     line._changed = true;
                 }
+
                 line._current = current;
 
                 LinePointType oldType = line._type;
@@ -124,39 +125,40 @@ namespace CPvC
                     line._changed = true;
                 }
 
-                int previousLeft = -1;
-                int maxLeft = 1;
+                int previousX = -1;
+                int x = 0;
                 if (parentLine != null)
                 {
                     Point parentPoint = parentLine._points.Last();
                     line.Add(parentPoint.X, parentPoint.Y);
-                    maxLeft = parentPoint.X;
-                    previousLeft = maxLeft;
+                    x = parentPoint.X;
+                    previousX = x;
                 }
 
                 // What's our vertical ordering?
-                int verticalIndex = verticalOrdering.FindIndex(x => ReferenceEquals(x, node));
-                int parentVerticalIndex = verticalOrdering.FindIndex(x => ReferenceEquals(x, parentNode));
+                int verticalIndex = verticalOrdering.FindIndex(n => ReferenceEquals(n, node));
+                int parentVerticalIndex = verticalOrdering.FindIndex(n => ReferenceEquals(n, parentNode));
 
-                for (int v = parentVerticalIndex + 1; v <= verticalIndex; v++)
+                for (int y = parentVerticalIndex + 1; y <= verticalIndex; y++)
                 {
-                    if (!leftmost.TryGetValue(v, out int left))
+                    if (!maxXPerLine.TryGetValue(y, out int maxX))
                     {
-                        left = 1 * _scalingX;
-                        leftmost.Add(v, left);
+                        maxX = 1 * _scalingX;
+                        maxXPerLine.Add(y, maxX);
                     }
 
-                    maxLeft = Math.Max(maxLeft, left);
+                    x = Math.Max(x, maxX);
 
-                    if (previousLeft >= 0 && previousLeft != maxLeft)
+                    // If the x position has shifted, draw over to below the point, then up to the point. This looks nicer!
+                    if (previousX >= 0 && previousX != x)
                     {
-                        line.Add(maxLeft, (v * 2 - 1) * _scalingY);
+                        line.Add(x, (2 * y - 1) * _scalingY);
                     }
 
-                    line.Add(maxLeft, v * 2 * _scalingY);
-                    previousLeft = maxLeft;
+                    line.Add(x, y * 2 * _scalingY);
+                    previousX = x;
 
-                    leftmost[v] = maxLeft + 2 * _scalingX;
+                    maxXPerLine[y] = x + 2 * _scalingX;
                 }
 
                 line.End();
