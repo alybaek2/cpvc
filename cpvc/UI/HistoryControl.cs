@@ -24,7 +24,7 @@ namespace CPvC
         private const int _scalingX = 8;
         private const int _scalingY = 8;
 
-        private double _dotRadius = 0.5 * _scalingX;
+        private const double _dotRadius = 0.5 * _scalingX;
 
         public HistoryControl()
         {
@@ -176,10 +176,7 @@ namespace CPvC
                     continue;
                 }
 
-                UpdatePolyline(branchShapes.Polyline, line);
-                UpdateCircle(branchShapes.Dot, line._points.Last(), line._current, line._type);
-
-                branchShapes.LineVersion = line._version;
+                branchShapes.Update(line);
             }
 
             // Delete non-existant lines!
@@ -230,141 +227,127 @@ namespace CPvC
             SyncLinesToShapes();
         }
 
-        private Ellipse CreateCircle()
-        {
-            Ellipse circle = new Ellipse
-            {
-                Stroke = Brushes.DarkBlue,
-                Fill = Brushes.DarkBlue,
-                StrokeThickness = 2,
-                HorizontalAlignment = HorizontalAlignment.Left,
-                VerticalAlignment = VerticalAlignment.Top,
-                UseLayoutRounding = true,
-                Margin = new Thickness(0, 0, 0, 0),
-                Width = 0,
-                Height = 0,
-                Visibility = Visibility.Collapsed
-            };
-
-            return circle;
-        }
-
-        private void UpdateCircle(Ellipse circle, Point centre, bool current, LinePointType type)
-        {
-            Brush brush;
-            switch (type)
-            {
-                case LinePointType.SystemBookmark:
-                    brush = Brushes.DarkRed;
-                    break;
-                case LinePointType.UserBookmark:
-                    brush = Brushes.Crimson;
-                    break;
-                default:
-                    brush = Brushes.DarkBlue;
-                    break;
-            }
-
-            circle.Stroke = brush;
-            circle.Fill = current ? Brushes.White : brush;
-            circle.Margin = new Thickness(centre.X - _dotRadius, centre.Y - _dotRadius, 0, 0);
-            circle.Width = 2 * _dotRadius;
-            circle.Height = 2 * _dotRadius;
-            circle.Visibility = (type == LinePointType.None) ? Visibility.Collapsed : Visibility.Visible;
-        }
 
         private BranchShapes CreateShapes()
         {
-            Polyline polyline = CreatePolyline();
-            Canvas.SetZIndex(polyline, 1);
-            Children.Add(polyline);
+            BranchShapes branchShapes = new BranchShapes();
+            Canvas.SetZIndex(branchShapes.Polyline, 1);
+            Children.Add(branchShapes.Polyline);
+            Canvas.SetZIndex(branchShapes.Dot, 100);
+            Children.Add(branchShapes.Dot);
 
-            Ellipse circle = CreateCircle();
-            Canvas.SetZIndex(circle, 100);
-            Children.Add(circle);
-
-            BranchShapes branchShapes = new BranchShapes(polyline, circle);
             return branchShapes;
-        }
-
-        private Polyline CreatePolyline()
-        {
-            Polyline polyline = new Polyline
-            {
-                StrokeThickness = 2,
-                Stroke = Brushes.DarkBlue,
-                HorizontalAlignment = HorizontalAlignment.Left,
-                VerticalAlignment = VerticalAlignment.Top,
-                UseLayoutRounding = true
-            };
-
-            return polyline;
-        }
-
-        private void UpdatePolyline(Polyline polyline, Line line)
-        {
-            void AddPoint(PointCollection pointCollection, int index, int x, int y)
-            {
-                if (index < pointCollection.Count)
-                {
-                    if (pointCollection[index].X != x || pointCollection[index].Y != y)
-                    {
-                        pointCollection[index] = new System.Windows.Point(x, y);
-                    }
-                }
-                else
-                {
-                    pointCollection.Add(new System.Windows.Point(x, y));
-                }
-            }
-
-            int addedPointsCount = 0;
-            int lastX = -1;
-            for (int pindex = 0; pindex < line._points.Count; pindex++)
-            {
-                Point point = line._points[pindex];
-                if (lastX >= 0 && lastX != point.X)
-                {
-                    AddPoint(polyline.Points, addedPointsCount, point.X, point.Y - 1 * _scalingY);
-                    addedPointsCount++;
-                }
-
-                AddPoint(polyline.Points, addedPointsCount, point.X, point.Y);
-                addedPointsCount++;
-
-                lastX = point.X;
-            }
-
-            // Trim any extra points.
-            while (polyline.Points.Count > addedPointsCount)
-            {
-                polyline.Points.RemoveAt(addedPointsCount);
-            }
         }
 
         private class BranchShapes
         {
-            public BranchShapes(Polyline polyline, Ellipse dot)
+            public BranchShapes()
             {
+                Ellipse circle = new Ellipse
+                {
+                    Stroke = Brushes.DarkBlue,
+                    Fill = Brushes.DarkBlue,
+                    StrokeThickness = 2,
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    UseLayoutRounding = true,
+                    Margin = new Thickness(0, 0, 0, 0),
+                    Width = 0,
+                    Height = 0,
+                    Visibility = Visibility.Collapsed
+                };
+
+                Polyline polyline = new Polyline
+                {
+                    StrokeThickness = 2,
+                    Stroke = Brushes.DarkBlue,
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    UseLayoutRounding = true
+                };
+
                 Polyline = polyline;
-                Dot = dot;
+                Dot = circle;
                 LineVersion = -1;
             }
 
-            public Polyline Polyline
+            public Polyline Polyline { get; }
+            public Ellipse Dot { get; }
+            public int LineVersion { get; private set; }
+
+            public void Update(Line line)
             {
-                get;
+                UpdatePolyline(line);
+                UpdateCircle(line);
+                LineVersion = line._version;
             }
 
-            public Ellipse Dot
+            private void UpdateCircle(Line line)
             {
-                get;
+                Point centre = line._points.Last();
+                LinePointType type = line._type;
+
+                Brush brush;
+                switch (type)
+                {
+                    case LinePointType.SystemBookmark:
+                        brush = Brushes.DarkRed;
+                        break;
+                    case LinePointType.UserBookmark:
+                        brush = Brushes.Crimson;
+                        break;
+                    default:
+                        brush = Brushes.DarkBlue;
+                        break;
+                }
+
+                Dot.Stroke = brush;
+                Dot.Fill = line._current ? Brushes.White : brush;
+                Dot.Margin = new Thickness(centre.X - _dotRadius, centre.Y - _dotRadius, 0, 0);
+                Dot.Width = 2 * _dotRadius;
+                Dot.Height = 2 * _dotRadius;
+                Dot.Visibility = (type == LinePointType.None) ? Visibility.Collapsed : Visibility.Visible;
             }
 
-            public int LineVersion
+            private void UpdatePolyline(Line line)
             {
-                get;
-                set;
+                void AddPoint(PointCollection pointCollection, int index, int x, int y)
+                {
+                    if (index < pointCollection.Count)
+                    {
+                        if (pointCollection[index].X != x || pointCollection[index].Y != y)
+                        {
+                            pointCollection[index] = new System.Windows.Point(x, y);
+                        }
+                    }
+                    else
+                    {
+                        pointCollection.Add(new System.Windows.Point(x, y));
+                    }
+                }
+
+                int addedPointsCount = 0;
+                int lastX = -1;
+                for (int pindex = 0; pindex < line._points.Count; pindex++)
+                {
+                    Point point = line._points[pindex];
+                    if (lastX >= 0 && lastX != point.X)
+                    {
+                        AddPoint(Polyline.Points, addedPointsCount, point.X, point.Y - 1 * _scalingY);
+                        addedPointsCount++;
+                    }
+
+                    AddPoint(Polyline.Points, addedPointsCount, point.X, point.Y);
+                    addedPointsCount++;
+
+                    lastX = point.X;
+                }
+
+                // Trim any extra points.
+                while (Polyline.Points.Count > addedPointsCount)
+                {
+                    Polyline.Points.RemoveAt(addedPointsCount);
+                }
             }
         }
 
