@@ -60,6 +60,11 @@ namespace CPvC
             return Node.IsEqualToOrAncestorOf(ancestor?.Node);
         }
 
+        public void Sort(Comparison<HistoryEvent> comparison)
+        {
+           Node.Children.Sort((x, y) => comparison(x.HistoryEvent, y.HistoryEvent));
+        }
+
         public T MostRecent<T>() where T : HistoryEvent
         {
             HistoryEvent historyEvent = this;
@@ -83,30 +88,37 @@ namespace CPvC
         /// <returns></returns>
         public UInt64 GetMaxDescendentTicks()
         {
-            List<HistoryEvent> events = new List<HistoryEvent>();
-            events.Add(this);
-            UInt64 maxTicks = Ticks;
+            //List<HistoryEvent> events = new List<HistoryEvent>();
+            //events.Add(this);
+            //UInt64 maxTicks = Ticks;
 
-            int i = 0;
-            while (i < events.Count)
-            {
-                HistoryEvent e = events[0];
-                events.RemoveAt(0);
+            //int i = 0;
+            //while (i < events.Count)
+            //{
+            //    HistoryEvent e = events[0];
+            //    events.RemoveAt(0);
 
-                if (e.Children.Count == 0)
-                {
-                    if (e.Ticks > maxTicks)
-                    {
-                        maxTicks = e.Ticks;
-                    }
-                }
-                else
-                {
-                    events.AddRange(e.Children);
-                }
-            }
+            //    if (e.Children.Count == 0)
+            //    {
+            //        if (e.Ticks > maxTicks)
+            //        {
+            //            maxTicks = e.Ticks;
+            //        }
+            //    }
+            //    else
+            //    {
+            //        events.AddRange(e.Children);
+            //    }
+            //}
 
-            return maxTicks;
+            UInt64 compare = Node.GetCachedMDT();
+            return compare;
+            //if (compare != maxTicks)
+            //{
+            //    string h = "";
+            //}
+
+            //return maxTicks;
         }
     }
 
@@ -171,6 +183,15 @@ namespace CPvC
         {
             if (e.PropertyName == nameof(RunUntilRequest.StopTicks))
             {
+                Node.InvalidateCachedMDT();
+
+                //HistoryEvent h = this;
+                //while (h != null)
+                //{
+                //    h.Node.InvalidateCachedMDT();
+                //    h = h.Parent;
+                //}
+
                 OnPropertyChanged(nameof(Ticks));
             }
         }
@@ -196,18 +217,18 @@ namespace CPvC
             }
         }
 
-        public override UInt64 Ticks
-        {
-            get
-            {
-                if (_node.CoreAction is RunUntilAction runUntilAction)
-                {
-                    return runUntilAction.StopTicks;
-                }
+        //public override UInt64 Ticks
+        //{
+        //    get
+        //    {
+        //        if (_node.CoreAction is RunUntilAction runUntilAction)
+        //        {
+        //            return runUntilAction.StopTicks;
+        //        }
 
-                return _node.Ticks;
-            }
-        }
+        //        return _node.Ticks;
+        //    }
+        //}
 
         public event PropertyChangedEventHandler PropertyChanged;
 

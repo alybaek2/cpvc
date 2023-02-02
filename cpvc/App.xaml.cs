@@ -14,7 +14,7 @@ namespace CPvC
 
         private void OnUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
-            string message = string.Format("An error occurred:\n\n{0}", e.Exception.Message);
+            string message = string.Format("An error occurred:\n\n{0}\n\nStack Trace:\n\n{1}", e.Exception.Message, e.Exception.StackTrace);
 
             MessageBox.Show(message, "CPvC", MessageBoxButton.OK, MessageBoxImage.Error);
 

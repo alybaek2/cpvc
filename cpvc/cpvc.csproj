@@ -207,10 +207,13 @@
       <DependentUpon>StartServerWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="UI\HistoryControl.cs" />
-    <Compile Include="UI\HistoryEventOrderings.cs" />
+    <Compile Include="UI\HistoryListTree.cs" />
     <Compile Include="UI\HistoryViewItem.cs" />
+    <Compile Include="UI\ListTree.cs" />
+    <Compile Include="UI\ListTreeNode.cs" />
     <Compile Include="UI\MainModel.cs" />
     <Compile Include="UI\MainViewModel.cs" />
+    <Compile Include="UI\PositionChangedEvent.cs" />
     <Compile Include="UI\RemoteViewModel.cs" />
     <Page Include="UI\Forms\ConnectWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
