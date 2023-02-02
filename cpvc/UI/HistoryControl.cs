@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -30,8 +31,8 @@ namespace CPvC
         {
             _updateArgs = null;
 
-            _linesToBranchShapes = new Dictionary<Line, BranchShapes>();
-            _nodesToLines = new Dictionary<ListTreeNode<HistoryEvent>, Line>();
+            _linesToBranchShapes = new Dictionary<HistoryLineViewModel, BranchShapes>();
+            _nodesToLines = new Dictionary<ListTreeNode<HistoryEvent>, HistoryLineViewModel>();
 
             DataContextChanged += HistoryControl_DataContextChanged;
         }
@@ -73,61 +74,51 @@ namespace CPvC
 
         private void UpdateLines(List<ListTreeNode<HistoryEvent>> horizontalOrdering, List<ListTreeNode<HistoryEvent>> verticalOrdering)
         {
-            Dictionary<ListTreeNode<HistoryEvent>, Line> newNodesToLines = new Dictionary<ListTreeNode<HistoryEvent>, Line>();
+            Dictionary<ListTreeNode<HistoryEvent>, HistoryLineViewModel> newNodesToLines = new Dictionary<ListTreeNode<HistoryEvent>, HistoryLineViewModel>();
             Dictionary<int, int> maxXPerY = new Dictionary<int, int>();
 
             foreach (ListTreeNode<HistoryEvent> node in horizontalOrdering)
             {
                 // Find the parent!
                 ListTreeNode<HistoryEvent> parentNode = node.Parent;
-                Line parentLine = null;
+                HistoryLineViewModel parentLine = null;
                 if (parentNode != null)
                 {
                     parentLine = newNodesToLines[parentNode];
                 }
 
-                if (!_nodesToLines.TryGetValue(node, out Line line))
+                if (!_nodesToLines.TryGetValue(node, out HistoryLineViewModel line))
                 {
-                    line = new Line();
+                    line = new HistoryLineViewModel();
                 }
 
                 // Draw!
                 line.Start();
 
                 // Need to set _changed to true if the following two things are different!
-                bool current = ReferenceEquals(node.Data, _history?.CurrentEvent);
-                if (line._current != current)
-                {
-                    line._changed = true;
-                }
-
-                line._current = current;
-
-                LinePointType oldType = line._type;
-                line._type = LinePointType.None;
+                line.Current = ReferenceEquals(node.Data, _history?.CurrentEvent);
                 if (node.Data is RootHistoryEvent)
                 {
-                    line._type = LinePointType.None;
+                    line.Type = LinePointType.None;
                 }
                 else if (node.Data is BookmarkHistoryEvent bookmarkEvent)
                 {
-                    line._type = bookmarkEvent.Bookmark.System ? LinePointType.SystemBookmark : LinePointType.UserBookmark;
+                    line.Type = bookmarkEvent.Bookmark.System ? LinePointType.SystemBookmark : LinePointType.UserBookmark;
                 }
                 else if (node.Data.Children.Count == 0 || node.Data is RootHistoryEvent)
                 {
-                    line._type = LinePointType.Terminus;
+                    line.Type = LinePointType.Terminus;
                 }
-
-                if (oldType != line._type)
+                else
                 {
-                    line._changed = true;
+                    line.Type = LinePointType.None;
                 }
 
                 int previousX = -1;
                 int x = 1;
                 if (parentLine != null)
                 {
-                    Point parentPoint = parentLine._points.Last();
+                    Point parentPoint = parentLine.Points.Last();
                     line.Add(parentPoint.X, parentPoint.Y);
                     x = parentPoint.X;
                     previousX = x;
@@ -169,13 +160,13 @@ namespace CPvC
 
         private void SyncLinesToShapes()
         {
-            HashSet<Line> oldLines = new HashSet<Line>(_linesToBranchShapes.Keys);
+            HashSet<HistoryLineViewModel> oldLines = new HashSet<HistoryLineViewModel>(_linesToBranchShapes.Keys);
 
             int maxX = 0;
 
-            foreach (KeyValuePair<ListTreeNode<HistoryEvent>, Line> kvp in _nodesToLines)
+            foreach (KeyValuePair<ListTreeNode<HistoryEvent>, HistoryLineViewModel> kvp in _nodesToLines)
             {
-                Line line = kvp.Value;
+                HistoryLineViewModel line = kvp.Value;
 
                 oldLines.Remove(line);
 
@@ -186,18 +177,18 @@ namespace CPvC
                 }
                 else if (branchShapes.LineVersion == line._version)
                 {
-                    maxX = Math.Max(maxX, line._points.Last().X);
+                    maxX = Math.Max(maxX, line.Points.Last().X);
 
                     continue;
                 }
 
                 branchShapes.Update(line);
 
-                maxX = Math.Max(maxX, line._points.Last().X);
+                maxX = Math.Max(maxX, line.Points.Last().X);
             }
 
             // Delete non-existant lines!
-            foreach (Line line in oldLines)
+            foreach (HistoryLineViewModel line in oldLines)
             {
                 if (_linesToBranchShapes.TryGetValue(line, out BranchShapes bs))
                 {
@@ -279,17 +270,17 @@ namespace CPvC
             public Ellipse Dot { get; }
             public int LineVersion { get; private set; }
 
-            public void Update(Line line)
+            public void Update(HistoryLineViewModel line)
             {
                 UpdatePolyline(line);
                 UpdateCircle(line);
                 LineVersion = line._version;
             }
 
-            private void UpdateCircle(Line line)
+            private void UpdateCircle(HistoryLineViewModel line)
             {
-                Point centre = line._points.Last();
-                LinePointType type = line._type;
+                Point centre = line.Points.Last();
+                LinePointType type = line.Type;
 
                 Brush brush;
                 switch (type)
@@ -306,19 +297,19 @@ namespace CPvC
                 }
 
                 Dot.Stroke = brush;
-                Dot.Fill = line._current ? Brushes.White : brush;
+                Dot.Fill = line.Current ? Brushes.White : brush;
                 Dot.Margin = new Thickness((centre.X * _scalingX) - _dotRadius, (centre.Y * _scalingY) - _dotRadius, 0, 0);
                 Dot.Width = 2 * _dotRadius;
                 Dot.Height = 2 * _dotRadius;
                 Dot.Visibility = (type == LinePointType.None) ? Visibility.Collapsed : Visibility.Visible;
             }
 
-            private void UpdatePolyline(Line line)
+            private void UpdatePolyline(HistoryLineViewModel line)
             {
                 int addedPointsCount = 0;
-                for (int pindex = 0; pindex < line._points.Count; pindex++)
+                foreach (Point point in line.Points) // int pindex = 0; pindex < line._points.Count; pindex++)
                 {
-                    Point point = line._points[pindex];
+                    //Point point = line._points[pindex];
                     int scaledX = point.X * _scalingX;
                     int scaledY = point.Y * _scalingY;
                     if (addedPointsCount < Polyline.Points.Count)
@@ -352,9 +343,9 @@ namespace CPvC
             UserBookmark
         }
 
-        private class Line
+        private class HistoryLineViewModel
         {
-            public Line()
+            public HistoryLineViewModel()
             {
                 _points = new List<Point>();
                 _type = LinePointType.None;
@@ -400,38 +391,55 @@ namespace CPvC
                 }
             }
 
-            public bool IsSame(Line line)
+            public ReadOnlyCollection<Point> Points
             {
-                if (_current != line._current)
+                get
                 {
-                    return false;
+                    return _points.AsReadOnly();
                 }
-
-                if (_type != line._type)
-                {
-                    return false;
-                }
-
-                if (_points.Count != line._points.Count)
-                {
-                    return false;
-                }
-
-                for (int i = 0; i < line._points.Count; i++)
-                {
-                    if (_points[i].X != line._points[i].X ||
-                        _points[i].Y != line._points[i].Y)
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
             }
 
-            public List<Point> _points;
-            public LinePointType _type;
-            public bool _current;
+            public LinePointType Type
+            {
+                get
+                {
+                    return _type;
+                }
+
+                set
+                {
+                    if (_type == value)
+                    {
+                        return;
+                    }
+
+                    _type = value;
+                    _changed = true;
+                }
+            }
+
+            public bool Current
+            {
+                get
+                {
+                    return _current;
+                }
+
+                set
+                {
+                    if (_current == value)
+                    {
+                        return;
+                    }
+
+                    _current = value;
+                    _changed = true;
+                }
+            }
+
+            private List<Point> _points;
+            private LinePointType _type;
+            private bool _current;
             public int _version;
             private int _currentPointIndex;
             public bool _changed;
@@ -449,7 +457,7 @@ namespace CPvC
             public int Y { get; }
         }
 
-        private Dictionary<ListTreeNode<HistoryEvent>, Line> _nodesToLines;
-        private Dictionary<Line, BranchShapes> _linesToBranchShapes;
+        private Dictionary<ListTreeNode<HistoryEvent>, HistoryLineViewModel> _nodesToLines;
+        private Dictionary<HistoryLineViewModel, BranchShapes> _linesToBranchShapes;
     }
 }
