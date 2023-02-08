@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,7 +36,7 @@ namespace CPvC
             _linesToBranchShapes = new Dictionary<HistoryLineViewModel, BranchShapes>();
             _nodesToLines = new Dictionary<ListTreeNode<HistoryEvent>, HistoryLineViewModel>();
 
-            DataContextChanged += HistoryControl_DataContextChanged;
+            //DataContextChanged += HistoryControl_DataContextChanged;
         }
 
         private void HistoryControl_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -174,6 +176,7 @@ namespace CPvC
                 {
                     branchShapes = CreateShapes();
                     _linesToBranchShapes.Add(line, branchShapes);
+                    //_history._lines.Add(line);
                 }
                 else if (branchShapes.LineVersion == line._version)
                 {
@@ -195,6 +198,7 @@ namespace CPvC
                     Children.Remove(bs.Dot);
                     Children.Remove(bs.Polyline);
                     _linesToBranchShapes.Remove(line);
+                    //_history._lines.Remove(line);
                 }
             }
 
@@ -317,6 +321,7 @@ namespace CPvC
                         if (Polyline.Points[addedPointsCount].X != scaledX || Polyline.Points[addedPointsCount].Y != scaledY)
                         {
                             Polyline.Points[addedPointsCount] = new System.Windows.Point(scaledX, scaledY);
+                            
                         }
                     }
                     else
@@ -335,7 +340,7 @@ namespace CPvC
             }
         }
 
-        private enum LinePointType
+        public enum LinePointType
         {
             None,
             Terminus,
@@ -343,7 +348,7 @@ namespace CPvC
             UserBookmark
         }
 
-        private class HistoryLineViewModel
+        public class HistoryLineViewModel : INotifyPropertyChanged
         {
             public HistoryLineViewModel()
             {
@@ -353,6 +358,7 @@ namespace CPvC
                 _version = 0;
                 _currentPointIndex = 0;
                 _changed = false;
+                _shapePoints = new PointCollection();
             }
 
             public void Start()
@@ -375,6 +381,17 @@ namespace CPvC
                 _points.Insert(_currentPointIndex, new Point(x, y));
                 _currentPointIndex++;
                 _changed = true;
+
+                if (_shapePoints.Count <= _currentPointIndex)
+                {
+                    _shapePoints.Add(new System.Windows.Point(_scalingX * x, _scalingY * y));
+                }
+                else
+                {
+                    _shapePoints.Insert(_currentPointIndex, new System.Windows.Point(_scalingX * x, _scalingY * y));
+                }
+
+                //OnPropertyChanged(nameof(Points));
             }
 
             public void End()
@@ -383,11 +400,44 @@ namespace CPvC
                 {
                     _changed = true;
                     _points.RemoveRange(_currentPointIndex, _points.Count - _currentPointIndex);
+
+                    while (_shapePoints.Count > _currentPointIndex)
+                    {
+                        _shapePoints.RemoveAt(_currentPointIndex);
+                    }
                 }
 
                 if (_changed)
                 {
+                    PointCollection pc = new PointCollection(_points.Select(p => new System.Windows.Point(_scalingX * p.X, _scalingY * p.Y)));
+                    _shapePoints = pc;
+                    OnPropertyChanged(nameof(ShapePoints));
+
                     _version++;
+                }
+
+                OnPropertyChanged(nameof(DotMargin));
+                //OnPropertyChanged(nameof(ShapePoints));
+            }
+
+            protected virtual void OnPropertyChanged([CallerMemberName] string name = null)
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            }
+
+            public Thickness DotMargin
+            {
+                get
+                {
+                    return new Thickness(_points.Last().X * _scalingX - _dotRadius, _points.Last().Y * _scalingY - _dotRadius, 0, 0);
+                }
+            }
+
+            public PointCollection ShapePoints
+            {
+                get
+                {
+                    return _shapePoints;
                 }
             }
 
@@ -415,6 +465,8 @@ namespace CPvC
 
                     _type = value;
                     _changed = true;
+
+                    OnPropertyChanged();
                 }
             }
 
@@ -434,6 +486,8 @@ namespace CPvC
 
                     _current = value;
                     _changed = true;
+
+                    OnPropertyChanged();
                 }
             }
 
@@ -443,9 +497,12 @@ namespace CPvC
             public int _version;
             private int _currentPointIndex;
             public bool _changed;
+            private PointCollection _shapePoints;
+
+            public event PropertyChangedEventHandler PropertyChanged;
         }
 
-        private struct Point
+        public class Point : INotifyPropertyChanged
         {
             public Point(int x, int y)
             {
@@ -455,6 +512,13 @@ namespace CPvC
 
             public int X { get; }
             public int Y { get; }
+
+            protected virtual void OnPropertyChanged([CallerMemberName] string name = null)
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            }
+
+            public event PropertyChangedEventHandler PropertyChanged;
         }
 
         private Dictionary<ListTreeNode<HistoryEvent>, HistoryLineViewModel> _nodesToLines;

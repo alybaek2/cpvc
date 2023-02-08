@@ -14,6 +14,7 @@
         <converters:RunningIcon x:Key="runningIconConverter" />
         <converters:BooleanInverter x:Key="booleanInverterConverter" />
         <converters:MachineBitmap x:Key="machineBitmapConverter" />
+        <converters:MultiplyConverter x:Key="multiplyConverter" />
         <BooleanToVisibilityConverter x:Key="BoolToVisConverter" />
         <DataTemplate x:Key="cellTemplate">
             <Canvas Width="{Binding ActualWidth, ElementName=_graphColumn, Mode=OneWay}" Height="16" ClipToBounds="True">
@@ -57,6 +58,31 @@
                 </Style>
             </Style.Resources>
             <Setter Property="IsEnabled" Value="{Binding ActivePausableMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
+        </Style>
+        <Style x:Key="HistoryDot" TargetType="Ellipse">
+            <Setter Property="Stroke" Value="DarkBlue"/>
+            <Setter Property="Fill" Value="DarkBlue"/>
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Type}" Value="Terminus">
+                    <Setter Property="Stroke" Value="DarkBlue"/>
+                    <Setter Property="Fill" Value="DarkBlue"/>
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="SystemBookmark">
+                    <Setter Property="Stroke" Value="DarkRed"/>
+                    <Setter Property="Fill" Value="DarkRed"/>
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="UserBookmark">
+                    <Setter Property="Stroke" Value="Crimson"/>
+                    <Setter Property="Fill" Value="Crimson"/>
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Current}" Value="true">
+                    <Setter Property="Fill" Value="White"/>
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
         <CollectionViewSource x:Key="Machines" Source="{Binding Machines}"/>
         <CollectionViewSource x:Key="OpenMachines" Source="{Binding Machines}" Filter="CollectionViewSource_Filter" IsLiveFilteringRequested="True">
@@ -377,7 +403,76 @@
                     HorizontalAlignment="Left"
                     VerticalAlignment="Top"
                     Margin="220, 0, 0, 0" Click="JumpButton_Click"/>
-            <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="250" Margin="0,40,0,0">
+            <!--<TextBlock Text="{Binding ActiveMachine.History.ViewModel.Lines.Count, Mode=OneWay}" Margin="0,40,0,0" Width="200" Height="40" HorizontalAlignment="Left" VerticalAlignment="Top"/>-->
+
+            <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="250" Height="300" Margin="0,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <Grid DataContext="{Binding ActiveMachine.History.ViewModel, Mode=OneWay}" Background="Pink">
+                    <ItemsControl ItemsSource="{Binding Lines}"
+                                  Margin="0,0,0,0"
+                                  Width="{Binding Width, Converter={StaticResource multiplyConverter}}"
+                                  Height="{Binding Lines.Count, Converter={StaticResource multiplyConverter}}"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Top"
+                                  Canvas.ZIndex="100">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas RenderTransformOrigin="0.5,0.5">
+                                    <Canvas.RenderTransform>
+                                        <ScaleTransform ScaleY="-1" />
+                                    </Canvas.RenderTransform>
+                                </Canvas>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Ellipse StrokeThickness="2"
+                                 Margin="{Binding DotMargin}"
+                                 Width="8"
+                                 Height="8"
+                                 HorizontalAlignment="Left"
+                                 VerticalAlignment="Top"
+                                 UseLayoutRounding="True"
+                                 Canvas.ZIndex="100"
+                                 Style="{StaticResource HistoryDot}">
+                                </Ellipse>
+                                <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <ItemsControl ItemsSource="{Binding Lines}"
+                                  Margin="0,0,0,0"
+                                  Height="{Binding Lines.Count, Converter={StaticResource multiplyConverter}}"
+                                  Width="{Binding Width, Converter={StaticResource multiplyConverter}}"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Top"
+                                  Canvas.ZIndex="1">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas RenderTransformOrigin="0.5,0.5">
+                                    <Canvas.RenderTransform>
+                                        <ScaleTransform ScaleY="-1" />
+                                    </Canvas.RenderTransform>
+                                </Canvas>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Polyline Stroke="DarkBlue"
+                                            StrokeThickness="2"
+                                            Points="{Binding ShapePoints}"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Top"
+                                            UseLayoutRounding="True"
+                                            Canvas.ZIndex="1">
+                                </Polyline>
+                                <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+            </ScrollViewer>
+            <!--<ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="250" Margin="0,300,0,0">
                 <Grid>
                     <cpvc:HistoryControl x:Name="_historyControl"
                                   DataContext="{Binding ActiveMachine.History, Mode=OneWay}"
@@ -391,7 +486,7 @@
                         </cpvc:HistoryControl.RenderTransform>
                     </cpvc:HistoryControl>
                 </Grid>
-            </ScrollViewer>
+            </ScrollViewer>-->
         </Grid>
         <StatusBar Height="30" Grid.Row="3" VerticalAlignment="Top">
             <TextBlock TextWrapping="Wrap" Text="{Binding ActiveMachine.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>

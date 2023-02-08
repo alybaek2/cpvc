@@ -13,6 +13,8 @@
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WarningLevel>4</WarningLevel>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -25,10 +27,8 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>x64</PlatformTarget>
@@ -177,6 +177,7 @@
     <Compile Include="UI\Converters\BooleanInverter.cs" />
     <Compile Include="UI\Converters\LocalDateTime.cs" />
     <Compile Include="UI\Converters\MachineBitmap.cs" />
+    <Compile Include="UI\Converters\MultiplyConverter.cs" />
     <Compile Include="UI\FileTypes.cs" />
     <Compile Include="IO\FileSystem.cs" />
     <Compile Include="IO\IFileSystem.cs" />
@@ -209,6 +210,7 @@
     <Compile Include="UI\HistoryControl.cs" />
     <Compile Include="UI\HistoryListTree.cs" />
     <Compile Include="UI\HistoryViewItem.cs" />
+    <Compile Include="UI\HistoryViewModel.cs" />
     <Compile Include="UI\ListTree.cs" />
     <Compile Include="UI\ListTreeNode.cs" />
     <Compile Include="UI\MainModel.cs" />
