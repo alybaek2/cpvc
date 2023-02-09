@@ -403,9 +403,8 @@
                     HorizontalAlignment="Left"
                     VerticalAlignment="Top"
                     Margin="220, 0, 0, 0" Click="JumpButton_Click"/>
-            <!--<TextBlock Text="{Binding ActiveMachine.History.ViewModel.Lines.Count, Mode=OneWay}" Margin="0,40,0,0" Width="200" Height="40" HorizontalAlignment="Left" VerticalAlignment="Top"/>-->
 
-            <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="250" Height="300" Margin="0,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="270" Height="528" Margin="0,37,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
                 <Grid DataContext="{Binding ActiveMachine.History.ViewModel, Mode=OneWay}" Background="Pink">
                     <ItemsControl ItemsSource="{Binding Lines}"
                                   Margin="0,0,0,0"
@@ -426,14 +425,14 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Ellipse StrokeThickness="2"
-                                 Margin="{Binding DotMargin}"
-                                 Width="8"
-                                 Height="8"
-                                 HorizontalAlignment="Left"
-                                 VerticalAlignment="Top"
-                                 UseLayoutRounding="True"
-                                 Canvas.ZIndex="100"
-                                 Style="{StaticResource HistoryDot}">
+                                         Margin="{Binding DotMargin}"
+                                         Width="8"
+                                         Height="8"
+                                         HorizontalAlignment="Left"
+                                         VerticalAlignment="Top"
+                                         UseLayoutRounding="True"
+                                         Canvas.ZIndex="100"
+                                         Style="{StaticResource HistoryDot}">
                                 </Ellipse>
                                 <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
                             </DataTemplate>
@@ -459,12 +458,12 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Polyline Stroke="DarkBlue"
-                                            StrokeThickness="2"
-                                            Points="{Binding ShapePoints}"
-                                            HorizontalAlignment="Left"
-                                            VerticalAlignment="Top"
-                                            UseLayoutRounding="True"
-                                            Canvas.ZIndex="1">
+                                          StrokeThickness="2"
+                                          Points="{Binding ShapePoints}"
+                                          HorizontalAlignment="Left"
+                                          VerticalAlignment="Top"
+                                          UseLayoutRounding="True"
+                                          Canvas.ZIndex="1">
                                 </Polyline>
                                 <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
                             </DataTemplate>
