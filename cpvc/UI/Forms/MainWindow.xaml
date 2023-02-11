@@ -405,7 +405,17 @@
                     Margin="220, 0, 0, 0" Click="JumpButton_Click"/>
 
             <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="270" Height="528" Margin="0,37,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
-                <Grid DataContext="{Binding ActiveMachine.History.ViewModel, Mode=OneWay}" Background="Pink">
+                <Grid DataContext="{Binding ActiveMachine.History.ViewModel, Mode=OneWay}">
+                    <Grid.Background>
+                        <DrawingBrush Viewport="0,0,10,32" ViewportUnits="Absolute" TileMode="Tile">
+                            <DrawingBrush.Drawing>
+                                <DrawingGroup>
+                                    <GeometryDrawing Geometry="M0,0 L10,0 10,16 0,16 0,0Z" Brush="White" />
+                                    <GeometryDrawing Geometry="M0,16 L10,16 10,32 0,32 0,16Z" Brush="#F5F5F5" />
+                                </DrawingGroup>
+                            </DrawingBrush.Drawing>
+                        </DrawingBrush>
+                    </Grid.Background>
                     <ItemsControl ItemsSource="{Binding Lines}"
                                   Margin="0,0,0,0"
                                   Width="{Binding Width, Converter={StaticResource multiplyConverter}}"
@@ -459,7 +469,7 @@
                             <DataTemplate>
                                 <Polyline Stroke="DarkBlue"
                                           StrokeThickness="2"
-                                          Points="{Binding ShapePoints}"
+                                          Points="{Binding PolyLinePoints}"
                                           HorizontalAlignment="Left"
                                           VerticalAlignment="Top"
                                           UseLayoutRounding="True"

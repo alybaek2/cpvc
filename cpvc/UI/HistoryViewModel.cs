@@ -30,12 +30,8 @@ namespace CPvC
             _version = 0;
             _currentPointIndex = 0;
             _changed = false;
-            _shapePoints = new PointCollection();
-            _firstGet = true;
-            _tempPoints = new List<System.Windows.Point>();
         }
 
-        private bool _firstGet;
         private const int _scalingX = 8;
         private const int _scalingY = 8;
         private const double _dotRadius = 0.5 * _scalingX;
@@ -60,17 +56,6 @@ namespace CPvC
             _points.Insert(_currentPointIndex, new Point(x, y));
             _currentPointIndex++;
             _changed = true;
-
-            if (_tempPoints.Count <= _currentPointIndex)
-            {
-                _tempPoints.Add(new System.Windows.Point(_scalingX * x, _scalingY * y));
-            }
-            else
-            {
-                _tempPoints.Insert(_currentPointIndex, new System.Windows.Point(_scalingX * x, _scalingY * y));
-            }
-
-            //OnPropertyChanged(nameof(Points));
         }
 
         public void End()
@@ -79,25 +64,15 @@ namespace CPvC
             {
                 _changed = true;
                 _points.RemoveRange(_currentPointIndex, _points.Count - _currentPointIndex);
-
-                while (_tempPoints.Count > _currentPointIndex)
-                {
-                    _tempPoints.RemoveAt(_currentPointIndex);
-                }
             }
 
             if (_changed)
             {
-                _tempPoints = _points.Select(p => new System.Windows.Point(_scalingX * p.X, _scalingY * p.Y)).ToList();
-                //PointCollection pc = new PointCollection(_points.Select(p => new System.Windows.Point(_scalingX * p.X, _scalingY * p.Y)));
-                //_shapePoints = pc;
-                OnPropertyChanged(nameof(ShapePoints));
+                OnPropertyChanged(nameof(PolyLinePoints));
+                OnPropertyChanged(nameof(DotMargin));
 
                 _version++;
             }
-
-            OnPropertyChanged(nameof(DotMargin));
-            //OnPropertyChanged(nameof(ShapePoints));
         }
 
         protected virtual void OnPropertyChanged([CallerMemberName] string name = null)
@@ -113,25 +88,19 @@ namespace CPvC
             }
         }
 
-        public PointCollection ShapePoints
+        public PointCollection PolyLinePoints
         {
             get
             {
-                if (_firstGet)
-                {
-                    //_firstGet = false;
-                    _shapePoints = new PointCollection(_tempPoints);
-                    //_shapePoints = new PointCollection(_shapePoints);
-                }
-                return _shapePoints;
+                return new PointCollection(_points.Select(p => new System.Windows.Point(_scalingX * p.X, _scalingY * p.Y)));
             }
         }
 
-        public ReadOnlyCollection<Point> Points
+        public Point LastPoint
         {
             get
             {
-                return _points.AsReadOnly();
+                return _points.Last();
             }
         }
 
@@ -183,8 +152,6 @@ namespace CPvC
         public int _version;
         private int _currentPointIndex;
         public bool _changed;
-        private PointCollection _shapePoints;
-        private List<System.Windows.Point> _tempPoints;
 
         public event PropertyChangedEventHandler PropertyChanged;
     }
@@ -222,6 +189,7 @@ namespace CPvC
             _lines = new ObservableCollection<HistoryLineViewModel>();
             BindingOperations.EnableCollectionSynchronization(_lines, _lines);
         }
+
         private void ListTree_PositionChanged(object sender, PositionChangedEventArgs<HistoryEvent> e)
         {
             UpdateLines(e.HorizontalOrdering, e.VerticalOrdering);
@@ -283,7 +251,7 @@ namespace CPvC
                 int x = 1;
                 if (parentLine != null)
                 {
-                    Point parentPoint = parentLine.Points.Last();
+                    Point parentPoint = parentLine.LastPoint;
                     line.Add(parentPoint.X, parentPoint.Y);
                     x = parentPoint.X;
                     previousX = x;
@@ -307,10 +275,10 @@ namespace CPvC
                     // If the x position has shifted, draw over to below the point, then up to the point. This looks nicer!
                     if (previousX >= 0 && previousX != x)
                     {
-                        line.Add(x, 2 * y - 1);
+                        line.Add(x, 2 * y);
                     }
 
-                    line.Add(x, y * 2);
+                    line.Add(x, y * 2 + 1);
                     previousX = x;
 
                     globalMaxX = Math.Max(globalMaxX, x);
@@ -349,13 +317,11 @@ namespace CPvC
         {
             lock (_viewModels)
             {
-                if (_viewModels.TryGetValue(history, out HistoryViewModel viewModel))
+                if (!_viewModels.TryGetValue(history, out HistoryViewModel viewModel))
                 {
-                    return viewModel;
+                    viewModel = new HistoryViewModel(history);
+                    _viewModels.Add(history, viewModel);
                 }
-
-                viewModel = new HistoryViewModel(history);
-                _viewModels.Add(history, viewModel);
 
                 return viewModel;
             }
