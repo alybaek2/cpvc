@@ -435,7 +435,7 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Ellipse StrokeThickness="2"
-                                         Margin="{Binding DotMargin}"
+                                         Margin="{Binding CircleMargin}"
                                          Width="8"
                                          Height="8"
                                          HorizontalAlignment="Left"

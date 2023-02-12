@@ -69,7 +69,7 @@ namespace CPvC
             if (_changed)
             {
                 OnPropertyChanged(nameof(PolyLinePoints));
-                OnPropertyChanged(nameof(DotMargin));
+                OnPropertyChanged(nameof(CircleMargin));
 
                 _version++;
             }
@@ -80,7 +80,7 @@ namespace CPvC
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        public Thickness DotMargin
+        public Thickness CircleMargin
         {
             get
             {
@@ -275,7 +275,7 @@ namespace CPvC
                     // If the x position has shifted, draw over to below the point, then up to the point. This looks nicer!
                     if (previousX >= 0 && previousX != x)
                     {
-                        line.Add(x, 2 * y);
+                        line.Add(x, y * 2);
                     }
 
                     line.Add(x, y * 2 + 1);
@@ -291,13 +291,13 @@ namespace CPvC
                 newNodesToLines.Add(node, line);
             }
 
-            foreach (HistoryLineViewModel vm in _nodesToLines.Values)
+            foreach (HistoryLineViewModel viewModel in _nodesToLines.Values)
             {
-                if (!newNodesToLines.Values.Contains(vm))
+                if (!newNodesToLines.Values.Contains(viewModel))
                 {
                     lock (_lines)
                     {
-                        _lines.Remove(vm);
+                        _lines.Remove(viewModel);
                     }
                 }
             }
