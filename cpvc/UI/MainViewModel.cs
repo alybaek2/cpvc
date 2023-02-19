@@ -549,7 +549,7 @@ namespace CPvC
         {
             get
             {
-                return _activeItem as MachineViewModel ?? _emptyMachineViewModel;
+                return _activeItem as MachineViewModel; //?? _emptyMachineViewModel;
             }
 
             set

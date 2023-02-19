@@ -53,6 +53,8 @@ namespace CPvC.UI.Forms
 
             InitializeComponent();
 
+            _items.Insert(0, _mainViewModel);
+
             _audio = new Audio(_mainViewModel.ReadAudio);
 
             // Create audio device

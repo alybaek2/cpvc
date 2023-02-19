@@ -24,6 +24,13 @@
         <Style x:Key="GridViewColumnHeaderStyle" TargetType="{x:Type GridViewColumnHeader}">
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
         </Style>
+        <Style TargetType="{x:Type Button}" x:Key="DisablerButton">
+            <Style.Triggers>
+                <Trigger Property="Command" Value="{x:Null}">
+                    <Setter Property="IsEnabled" Value="False" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
         <Style x:Key="MachineButtonStyle" TargetType="{x:Type Button}">
             <Style.Resources>
                 <Style TargetType="{x:Type Image}">
@@ -42,13 +49,6 @@
                     <Style.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.5" />
-                        </Trigger>
-                    </Style.Triggers>
-                </Style>
-                <Style TargetType="{x:Type Button}">
-                    <Style.Triggers>
-                        <Trigger Property="Command" Value="{x:Null}">
-                            <Setter Property="IsEnabled" Value="False"/>
                         </Trigger>
                     </Style.Triggers>
                 </Style>
@@ -97,6 +97,113 @@
                 <System:String>Machine.IsOpen</System:String>
             </CollectionViewSource.LiveFilteringProperties>
         </CollectionViewSource>
+        <DataTemplate x:Key="HomeTemplate">
+            <ScrollViewer>
+                <Grid>
+                    <StackPanel>
+                        <Label Content="Machines" FontWeight="Bold" FontSize="14" />
+                        <ItemsControl ItemsSource="{Binding Source={StaticResource Machines}}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid MouseLeftButtonUp="MachinePreviewGrid_MouseLeftButtonUp">
+                                        <Grid.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Pause" Command="{Binding PauseCommand}"/>
+                                                <MenuItem Header="Resume" Command="{Binding ResumeCommand}"/>
+                                                <MenuItem Header="Open" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.OpenCommand}" CommandParameter="{Binding}"/>
+                                                <MenuItem Header="Close" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.CloseCommand}" CommandParameter="{Binding}"/>
+                                                <MenuItem Header="Persist..." Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.PersistCommand}" CommandParameter="{Binding}"/>
+                                                <MenuItem Header="Remove" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.RemoveCommand}" CommandParameter="{Binding}"/>
+                                                <MenuItem Header="Compact" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.CompactCommand}" CommandParameter="{Binding}"/>
+                                            </ContextMenu>
+                                        </Grid.ContextMenu>
+                                        <StackPanel Margin="5">
+                                            <Image Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Source="{Binding Path=Machine, Converter={StaticResource machineBitmapConverter}}" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" ToolTip="{Binding Machine.PersistentFilepath, Mode=OneWay}" Cursor="Hand"/>
+                                            <Label Content="{Binding Machine.Name}" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+        </DataTemplate>
+        <DataTemplate x:Key="MachineTemplate">
+            <Grid MouseLeftButtonUp="ScreenGrid_MouseLeftButtonUp">
+                <Grid.Resources>
+                    <converters:Ticks x:Key="ticksConverter" />
+                    <converters:LocalDateTime x:Key="localDateTimeConverter" />
+                    <!--<Style x:Key="GridViewColumnHeaderStyle" TargetType="{x:Type GridViewColumnHeader}">
+                                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                            </Style>-->
+                    <!--<DataTemplate x:Key="cellTemplate">
+                                <Canvas Width="{Binding ActualWidth, ElementName=_graphColumn, Mode=OneWay}" Height="16" ClipToBounds="True">
+                                    <ContentPresenter Content="{Binding Canvas}" />
+                                </Canvas>
+                            </DataTemplate>-->
+                </Grid.Resources>
+                <Rectangle Fill="#7F000000" Stroke="#7F000000" Width="768" Height="576" VerticalAlignment="Top" HorizontalAlignment="Left" Panel.ZIndex="1">
+                    <Rectangle.Style>
+                        <Style TargetType="Rectangle">
+                            <Setter Property="Visibility" Value="Hidden"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Machine.RunningState}" Value="{x:Static cpvc:RunningState.Paused}">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Rectangle.Style>
+                </Rectangle>
+                <Image Width="768" Height="576" Source="{Binding Path=Machine, Converter={StaticResource machineBitmapConverter}}" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill"/>
+                <Grid Margin="0,0,20,20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Panel.ZIndex="2" Opacity="1.0">
+                    <Rectangle HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.7" Panel.ZIndex="0" Fill="Black" RadiusX="8" RadiusY="8"/>
+                    <Label Content="{Binding Machine.Status, NotifyOnTargetUpdated=True}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="24" Panel.ZIndex="1">
+                        <Label.Effect>
+                            <DropShadowEffect Direction="315" ShadowDepth="4" Color="Black" Opacity="1.0" BlurRadius="0.0"/>
+                        </Label.Effect>
+                    </Label>
+                    <Grid.Style>
+                        <Style TargetType="{x:Type Grid}">
+                            <Setter Property="Opacity" Value="1.0"/>
+                            <Style.Triggers>
+                                <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                                    <BeginStoryboard>
+                                        <Storyboard AutoReverse="False">
+                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity">
+                                                <LinearDoubleKeyFrame Value="1.0" KeyTime="0:0:0"/>
+                                                <LinearDoubleKeyFrame Value="1.0" KeyTime="0:0:2"/>
+                                                <LinearDoubleKeyFrame Value="0.0" KeyTime="0:0:2.5"/>
+                                            </DoubleAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
+                </Grid>
+            </Grid>
+        </DataTemplate>
+        <DataTemplate x:Key="TabItemTemplate">
+            <StackPanel Orientation="Horizontal">
+                <Image Width="16" Height="16" Stretch="None" Source="{Binding Machine.RunningState, Converter={StaticResource runningIconConverter}, Mode=OneWay}"/>
+                <TextBlock Text="{Binding Machine.Name, Mode=OneWay}"/>
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="TabItemHomeTemplate">
+            <TextBlock Text="Home"/>
+        </DataTemplate>
+        <cpvc:MachineDataTemplateSelector x:Key="MachineTemplateSelector"
+                                          HomeTemplate="{StaticResource HomeTemplate}"
+                                          MachineTemplate="{StaticResource MachineTemplate}"/>
+        <cpvc:MachineDataTemplateSelector x:Key="TabItemTemplateSelector"
+                                          HomeTemplate="{StaticResource TabItemHomeTemplate}"
+                                          MachineTemplate="{StaticResource TabItemTemplate}"/>
     </Window.Resources>
     <Grid AllowDrop="True" Margin="0,0,0,0" Background="#FFF0F0F0">
         <Grid.ColumnDefinitions>
@@ -227,7 +334,7 @@
                     </StackPanel>
                 </Button>
                 <Separator/>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.PauseCommand}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource DisablerButton}" Command="{Binding ActiveMachineViewModel.PauseCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/pause16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
@@ -266,29 +373,28 @@
                 </ToggleButton>
             </ToolBar>
         </ToolBarTray>
-        <TabControl x:Name="_machines" Margin="5,5,5,5" Grid.Row="2" Height="576" Width="768" SelectedItem="{Binding ActiveItem, Mode=TwoWay}">
-            <TabControl.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Orientation="Horizontal">
-                        <Image Width="16" Height="16" Stretch="None" Source="{Binding Machine.RunningState, Converter={StaticResource runningIconConverter}, Mode=OneWay}"/>
-                        <TextBlock Text="{Binding Machine.Name, Mode=OneWay}"/>
-                    </StackPanel>
-                </DataTemplate>
-            </TabControl.ItemTemplate>
-            <TabControl.ContentTemplate>
+        <TabControl x:Name="_machines"
+                    Margin="5,5,5,5"
+                    Grid.Row="2"
+                    Height="576"
+                    Width="768"
+                    SelectedItem="{Binding ActiveItem, Mode=TwoWay}"
+                    ContentTemplateSelector="{StaticResource MachineTemplateSelector}"
+                    ItemTemplateSelector="{StaticResource TabItemTemplateSelector}">
+            <!--<TabControl.ContentTemplate>
                 <DataTemplate>
                     <Grid MouseLeftButtonUp="ScreenGrid_MouseLeftButtonUp">
                         <Grid.Resources>
                             <converters:Ticks x:Key="ticksConverter" />
                             <converters:LocalDateTime x:Key="localDateTimeConverter" />
-                            <!--<Style x:Key="GridViewColumnHeaderStyle" TargetType="{x:Type GridViewColumnHeader}">
+                            --><!--<Style x:Key="GridViewColumnHeaderStyle" TargetType="{x:Type GridViewColumnHeader}">
                                 <Setter Property="HorizontalContentAlignment" Value="Left"/>
                             </Style>-->
                             <!--<DataTemplate x:Key="cellTemplate">
                                 <Canvas Width="{Binding ActualWidth, ElementName=_graphColumn, Mode=OneWay}" Height="16" ClipToBounds="True">
                                     <ContentPresenter Content="{Binding Canvas}" />
                                 </Canvas>
-                            </DataTemplate>-->
+                            </DataTemplate>--><!--
                         </Grid.Resources>
                         <Rectangle Fill="#7F000000" Stroke="#7F000000" Width="768" Height="576" VerticalAlignment="Top" HorizontalAlignment="Left" Panel.ZIndex="1">
                             <Rectangle.Style>
@@ -331,10 +437,11 @@
                         </Grid>
                     </Grid>
                 </DataTemplate>
-            </TabControl.ContentTemplate>
+            </TabControl.ContentTemplate>-->
             <TabControl.ItemsSource>
-                <CompositeCollection>
-                    <TabItem Header="Home">
+                <CompositeCollection x:Name="_items">
+                    <!--<CollectionContainer Collection="{Binding MainViewModel}"/>-->
+                    <!--<TabItem Header="Home">
                         <TabItem.HeaderTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
@@ -381,7 +488,9 @@
                                 </ScrollViewer>
                             </DataTemplate>
                         </TabItem.ContentTemplate>
-                    </TabItem>
+                    </TabItem>-->
+                    <!--<ObjectDataProvider ObjectInstance="{Binding MainViewModel}"/>-->
+                    
                     <CollectionContainer Collection="{Binding Source={StaticResource OpenMachines}}" />
                 </CompositeCollection>
             </TabControl.ItemsSource>
