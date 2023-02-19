@@ -28,8 +28,6 @@ namespace CPvC
         /// </summary>
         private object _activeItem;
 
-        private MachineViewModel _emptyMachineViewModel;
-
         private IFileSystem _fileSystem;
 
         private Action<Action> _canExecuteChangedInvoker;
@@ -90,8 +88,6 @@ namespace CPvC
             _fileSystem = fileSystem;
             _canExecuteChangedInvoker = canExecuteChangedInvoker;
 
-            _emptyMachineViewModel = new MachineViewModel(null, null, null);
-
             InitModel(new MainModel(settings, fileSystem));
 
             _machineServer = new MachineServerListener(Machines);
@@ -102,7 +98,7 @@ namespace CPvC
 
             ViewModelFactory<IMachine, MachineViewModel> factory = new ViewModelFactory<IMachine, MachineViewModel>(machine => { return new MachineViewModel(machine, fileSystem, canExecuteChangedInvoker); });
             _machineViewModels = new ViewModelObservableCollection<IMachine, MachineViewModel>(_model.Machines, factory);
-            ActiveMachineViewModel = _emptyMachineViewModel;
+            ActiveMachineViewModel = null;
 
             _openMachineCommand = CreateCommand(
                 p => OpenMachine(),
@@ -282,14 +278,6 @@ namespace CPvC
             get
             {
                 return _model;
-            }
-        }
-
-        public MachineViewModel EmptyMachineViewModel
-        {
-            get
-            {
-                return _emptyMachineViewModel;
             }
         }
 
@@ -698,7 +686,7 @@ namespace CPvC
             {
                 // Play audio only from the currently active machine; for the rest, just
                 // advance the audio playback position.
-                if (machine == ActiveMachineViewModel)
+                if (ReferenceEquals(machine, ActiveMachineViewModel?.Machine))
                 {
                     samplesWritten = machine.ReadAudio(buffer, offset, samplesRequested);
                 }

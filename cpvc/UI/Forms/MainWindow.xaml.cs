@@ -55,6 +55,8 @@ namespace CPvC.UI.Forms
 
             _items.Insert(0, _mainViewModel);
 
+            _mainViewModel.PropertyChanged += MainViewModel_PropertyChanged;
+
             _audio = new Audio(_mainViewModel.ReadAudio);
 
             // Create audio device
@@ -66,6 +68,23 @@ namespace CPvC.UI.Forms
 
             waveOut.Init(_audio);
             _wavePlayer = waveOut;
+        }
+
+        private void MainViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(MainViewModel.ActiveMachineViewModel))
+            {
+                object newValue = _mainViewModel;
+                if (_mainViewModel.ActiveMachineViewModel != null)
+                {
+                    newValue = _mainViewModel.ActiveMachineViewModel;
+                }
+
+                if (!ReferenceEquals(_machines.SelectedItem, newValue))
+                {
+                    _machines.SelectedItem = newValue;
+                }
+            }
         }
 
         public void Dispose()
@@ -607,6 +626,18 @@ namespace CPvC.UI.Forms
             //        historyMachine.JumpToBookmark(bookmarkEvent);
             //    }
             //}
+        }
+
+        private void Machines_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ReferenceEquals(_machines.SelectedItem, _mainViewModel))
+            {
+                _mainViewModel.ActiveMachineViewModel = null;
+            }
+            else if (_machines.SelectedItem is MachineViewModel machineViewModel)
+            {
+                _mainViewModel.ActiveMachineViewModel = machineViewModel;
+            }
         }
     }
 }
