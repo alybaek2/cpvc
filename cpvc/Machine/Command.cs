@@ -31,7 +31,10 @@ namespace CPvC
 
         public void InvokeCanExecuteChanged(object sender, EventArgs e)
         {
-            _canExecuteChangedInvoker(new Action(() => CanExecuteChanged?.Invoke(sender, e)));
+            if (_canExecuteChangedInvoker != null)
+            {
+                _canExecuteChangedInvoker(new Action(() => CanExecuteChanged?.Invoke(sender, e)));
+            }
         }
     }
 }

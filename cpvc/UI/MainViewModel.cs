@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 
@@ -26,6 +27,8 @@ namespace CPvC
         /// The currently active item. Will be either null (the Home tab) or a Machine.
         /// </summary>
         private object _activeItem;
+
+        private MachineViewModel _emptyMachineViewModel;
 
         private IFileSystem _fileSystem;
 
@@ -79,11 +82,15 @@ namespace CPvC
 
         private ISettings _settings;
 
+        private ViewModelObservableCollection<IMachine, MachineViewModel> _machineViewModels;
+
         public MainViewModel(ISettings settings, IFileSystem fileSystem, Action<Action> canExecuteChangedInvoker)
         {
             _settings = settings;
             _fileSystem = fileSystem;
             _canExecuteChangedInvoker = canExecuteChangedInvoker;
+
+            _emptyMachineViewModel = new MachineViewModel(null, null, null);
 
             InitModel(new MainModel(settings, fileSystem));
 
@@ -93,7 +100,9 @@ namespace CPvC
 
             _allCommands = new List<Command>();
 
-            ActiveMachine = null;
+            ViewModelFactory<IMachine, MachineViewModel> factory = new ViewModelFactory<IMachine, MachineViewModel>(machine => { return new MachineViewModel(machine, fileSystem, canExecuteChangedInvoker); });
+            _machineViewModels = new ViewModelObservableCollection<IMachine, MachineViewModel>(_model.Machines, factory);
+            ActiveMachineViewModel = _emptyMachineViewModel;
 
             _openMachineCommand = CreateCommand(
                 p => OpenMachine(),
@@ -273,6 +282,22 @@ namespace CPvC
             get
             {
                 return _model;
+            }
+        }
+
+        public MachineViewModel EmptyMachineViewModel
+        {
+            get
+            {
+                return _emptyMachineViewModel;
+            }
+        }
+
+        public ViewModelObservableCollection<IMachine, MachineViewModel> MachineViewModels
+        {
+            get
+            {
+                return _machineViewModels;
             }
         }
 
@@ -502,18 +527,29 @@ namespace CPvC
             set
             {
                 _activeItem = value;
+                //if (value is MachineViewModel)
+                //{
+                //    _activeItem = value;
+                //}
+                //else if (value is TabItem tabItem)
+                //{
+                //    _activeItem = null; // tabItem.DataContext;
+                //}
+
+                //_activeItem = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(ActiveMachine));
+                OnPropertyChanged(nameof(ActiveMachineViewModel));
 
                 UpdateCommands(this, null);
+                ActiveMachineViewModel?.UpdateCommands(this, null);
             }
         }
 
-        public IMachine ActiveMachine
+        public MachineViewModel ActiveMachineViewModel
         {
             get
             {
-                return _activeItem as IMachine;
+                return _activeItem as MachineViewModel ?? _emptyMachineViewModel;
             }
 
             set
@@ -524,6 +560,7 @@ namespace CPvC
                 OnPropertyChanged(nameof(ActiveItem));
 
                 UpdateCommands(this, null);
+                value?.UpdateCommands(this, null);
             }
         }
 
@@ -533,7 +570,7 @@ namespace CPvC
             replayMachine.Name = name;
             _model.AddMachine(replayMachine);
 
-            ActiveMachine = replayMachine;
+            ActiveMachineViewModel = _machineViewModels.Get(replayMachine);
             replayMachine.Start();
         }
 
@@ -542,7 +579,7 @@ namespace CPvC
             LocalMachine machine = LocalMachine.New("Untitled", null);
             _model.AddMachine(machine);
 
-            ActiveMachine = machine;
+            ActiveMachineViewModel = _machineViewModels.Get(machine);
             machine.Start().Wait();
         }
 
@@ -661,7 +698,7 @@ namespace CPvC
             {
                 // Play audio only from the currently active machine; for the rest, just
                 // advance the audio playback position.
-                if (machine == ActiveMachine)
+                if (machine == ActiveMachineViewModel)
                 {
                     samplesWritten = machine.ReadAudio(buffer, offset, samplesRequested);
                 }
@@ -892,7 +929,7 @@ namespace CPvC
             _model.AddMachine(remoteMachine);
             UpdateRecentServersSettings();
 
-            ActiveMachine = remoteMachine;
+            ActiveMachineViewModel = _machineViewModels.Get(remoteMachine);
         }
 
         private void UpdateRecentServersSettings()

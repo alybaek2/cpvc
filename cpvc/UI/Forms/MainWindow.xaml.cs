@@ -197,11 +197,11 @@ namespace CPvC.UI.Forms
         {
             if (e.Key == Key.F1)
             {
-                _mainViewModel.ReverseStartCommand.Execute(_mainViewModel.ActiveMachine);
+                _mainViewModel.ReverseStartCommand.Execute(_mainViewModel.ActiveMachineViewModel);
             }
             else if (e.Key == Key.F2)
             {
-                if (_mainViewModel.ActiveMachine is ITurboableMachine machine)
+                if (_mainViewModel.ActiveMachineViewModel?.Machine is ITurboableMachine machine)
                 {
                     _mainViewModel.EnableTurbo(machine, true);
                 }
@@ -210,7 +210,7 @@ namespace CPvC.UI.Forms
             byte? cpcKey = _keyMap.GetKey(e.Key);
             if (cpcKey.HasValue)
             {
-                if (_mainViewModel.ActiveMachine is IInteractiveMachine machine)
+                if (_mainViewModel.ActiveMachineViewModel?.Machine is IInteractiveMachine machine)
                 {
                     _mainViewModel.KeyPress(machine, cpcKey.Value, true);
                 }
@@ -221,11 +221,11 @@ namespace CPvC.UI.Forms
         {
             if (e.Key == Key.F1)
             {
-                _mainViewModel.ResumeCommand.Execute(_mainViewModel.ActiveMachine);
+                _mainViewModel.ResumeCommand.Execute(_mainViewModel.ActiveMachineViewModel);
             }
             else if (e.Key == Key.F2)
             {
-                if (_mainViewModel.ActiveMachine is ITurboableMachine machine)
+                if (_mainViewModel.ActiveMachineViewModel?.Machine is ITurboableMachine machine)
                 {
                     _mainViewModel.EnableTurbo(machine, false);
                 }
@@ -234,7 +234,7 @@ namespace CPvC.UI.Forms
             byte? cpcKey = _keyMap.GetKey(e.Key);
             if (cpcKey.HasValue)
             {
-                if (_mainViewModel.ActiveMachine is IInteractiveMachine machine)
+                if (_mainViewModel.ActiveMachineViewModel?.Machine is IInteractiveMachine machine)
                 {
                     _mainViewModel.KeyPress(machine, cpcKey.Value, false);
                 }
@@ -305,7 +305,7 @@ namespace CPvC.UI.Forms
 
         private HistoryEvent PromptForBookmark()
         {
-            LocalMachine machine = _mainViewModel?.ActiveMachine as LocalMachine;
+            LocalMachine machine = _mainViewModel?.ActiveMachineViewModel?.Machine as LocalMachine;
 
             using (machine.Lock())
             {
@@ -390,26 +390,26 @@ namespace CPvC.UI.Forms
 
         private void MachinePreviewGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is IMachine machine)
+            if (sender is FrameworkElement element && element.DataContext is MachineViewModel machineViewModel)
             {
-                _mainViewModel.OpenCommand.Execute(machine);
-                _mainViewModel.ActiveMachine = machine;
+                _mainViewModel.OpenCommand.Execute(machineViewModel.Machine);
+                _mainViewModel.ActiveMachineViewModel = machineViewModel;
             }
         }
 
         private void ScreenGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is IMachine machine)
+            if (sender is FrameworkElement element && element.DataContext is MachineViewModel machineViewModel)
             {
-                _mainViewModel.ToggleRunningCommand.Execute(machine);
+                _mainViewModel.ActiveMachineViewModel.ToggleRunningCommand.Execute(machineViewModel.Machine);
             }
         }
 
         private void CollectionViewSource_Filter(object sender, System.Windows.Data.FilterEventArgs e)
         {
-            if (e.Item is IMachine machine)
+            if (e.Item is MachineViewModel machineViewModel)
             {
-                e.Accepted = !(machine is IPersistableMachine persistableMachine) || persistableMachine.IsOpen;
+                e.Accepted = !(machineViewModel.Machine is IPersistableMachine persistableMachine) || persistableMachine.IsOpen;
             }
             else
             {
@@ -542,7 +542,7 @@ namespace CPvC.UI.Forms
         // Consider bringing MachineViewModel back!
         private void DeleteBookmarkButton_Click(object sender, RoutedEventArgs e)
         {
-            IHistoricalMachine historyMachine = _mainViewModel.ActiveMachine as IHistoricalMachine;
+            IHistoricalMachine historyMachine = _mainViewModel.ActiveMachineViewModel as IHistoricalMachine;
             if (historyMachine == null)
             {
                 return;
@@ -566,7 +566,7 @@ namespace CPvC.UI.Forms
 
         private void DeleteBranchButton_Click(object sender, RoutedEventArgs e)
         {
-            IHistoricalMachine historyMachine = _mainViewModel.ActiveMachine as IHistoricalMachine;
+            IHistoricalMachine historyMachine = _mainViewModel.ActiveMachineViewModel as IHistoricalMachine;
             if (historyMachine == null)
             {
                 return;

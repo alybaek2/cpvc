@@ -212,6 +212,7 @@
     <Compile Include="UI\HistoryViewModel.cs" />
     <Compile Include="UI\ListTree.cs" />
     <Compile Include="UI\ListTreeNode.cs" />
+    <Compile Include="UI\MachineViewModel.cs" />
     <Compile Include="UI\MainModel.cs" />
     <Compile Include="UI\MainViewModel.cs" />
     <Compile Include="UI\PositionChangedEvent.cs" />

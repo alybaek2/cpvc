@@ -34,7 +34,7 @@
                     </Style.Triggers>
                 </Style>
             </Style.Resources>
-            <Setter Property="IsEnabled" Value="{Binding ActiveMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
+            <Setter Property="IsEnabled" Value="{Binding ActiveMachineViewModel, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
         </Style>
         <Style x:Key="RegularMachineButtonStyle" TargetType="{x:Type Button}">
             <Style.Resources>
@@ -42,6 +42,13 @@
                     <Style.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+                <Style TargetType="{x:Type Button}">
+                    <Style.Triggers>
+                        <Trigger Property="Command" Value="{x:Null}">
+                            <Setter Property="IsEnabled" Value="False"/>
                         </Trigger>
                     </Style.Triggers>
                 </Style>
@@ -84,10 +91,10 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
-        <CollectionViewSource x:Key="Machines" Source="{Binding Machines}"/>
-        <CollectionViewSource x:Key="OpenMachines" Source="{Binding Machines}" Filter="CollectionViewSource_Filter" IsLiveFilteringRequested="True">
+        <CollectionViewSource x:Key="Machines" Source="{Binding MachineViewModels}"/>
+        <CollectionViewSource x:Key="OpenMachines" Source="{Binding MachineViewModels}" Filter="CollectionViewSource_Filter" IsLiveFilteringRequested="True">
             <CollectionViewSource.LiveFilteringProperties>
-                <System:String>IsOpen</System:String>
+                <System:String>Machine.IsOpen</System:String>
             </CollectionViewSource.LiveFilteringProperties>
         </CollectionViewSource>
     </Window.Resources>
@@ -106,9 +113,9 @@
             <MenuItem Header="File">
                 <MenuItem Header="New" Command="{Binding NewMachineCommand}" />
                 <MenuItem Header="Open..." Command="{Binding OpenMachineCommand}"/>
-                <MenuItem Header="Persist..." Command="{Binding PersistCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
+                <MenuItem Header="Persist..." Command="{Binding PersistCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
                 <Separator/>
-                <MenuItem Header="Close" Command="{Binding CloseCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
+                <MenuItem Header="Close" Command="{Binding CloseCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
                 <Separator/>
                 <MenuItem Header="Exit" Click="ExitMenuItem_Click"/>
             </MenuItem>
@@ -117,66 +124,66 @@
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
-                    <MenuItem Header="Load..." Command="{Binding DriveACommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
-                    <MenuItem Header="Eject" Command="{Binding DriveAEjectCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
+                    <MenuItem Header="Load..." Command="{Binding DriveACommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
+                    <MenuItem Header="Eject" Command="{Binding DriveAEjectCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
                 </MenuItem>
                 <MenuItem Header="Drive B:">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
-                    <MenuItem Header="Load..." Command="{Binding DriveBCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
-                    <MenuItem Header="Eject" Command="{Binding DriveBEjectCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
+                    <MenuItem Header="Load..." Command="{Binding DriveBCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
+                    <MenuItem Header="Eject" Command="{Binding DriveBEjectCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
                 </MenuItem>
                 <MenuItem Header="Tape">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/tape16.png" />
                     </MenuItem.Icon>
-                    <MenuItem Header="Load..." Command="{Binding TapeCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
-                    <MenuItem Header="Eject" Command="{Binding TapeEjectCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
+                    <MenuItem Header="Load..." Command="{Binding TapeCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
+                    <MenuItem Header="Eject" Command="{Binding TapeEjectCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Pause" Command="{Binding PauseCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <MenuItem Header="Pause" Command="{Binding ActiveMachineViewModel.PauseCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/pause16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Resume" Command="{Binding ResumeCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <MenuItem Header="Resume" Command="{Binding ActiveMachineViewModel.ResumeCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/running16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Reset" Command="{Binding ResetCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <MenuItem Header="Reset" Command="{Binding ActiveMachineViewModel.ResetCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/reset16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Add Bookmark" Command="{Binding AddBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <MenuItem Header="Add Bookmark" Command="{Binding AddBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmarkadd16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Jump to Most Recent Bookmark" Command="{Binding JumpToMostRecentBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <MenuItem Header="Jump to Most Recent Bookmark" Command="{Binding JumpToMostRecentBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmarkprev16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Bookmarks..." Command="{Binding BrowseBookmarksCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <MenuItem Header="Bookmarks..." Command="{Binding BrowseBookmarksCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmark16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Rename machine..." Command="{Binding RenameCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
-                <MenuItem Header="Compact machine file" Command="{Binding CompactCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
+                <MenuItem Header="Rename machine..." Command="{Binding RenameCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
+                <MenuItem Header="Compact machine file" Command="{Binding CompactCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
                 <Separator/>
-                <MenuItem Header="Reversible" Command="{Binding ToggleReversibility}" CommandParameter="{Binding Path=ActiveMachine}" IsCheckable="True">
+                <MenuItem Header="Reversible" Command="{Binding ToggleReversibility}" CommandParameter="{Binding Path=ActiveMachineViewModel}" IsCheckable="True">
                     <MenuItem.Style>
                         <Style TargetType="MenuItem">
                             <Setter Property="IsChecked" Value="True"/>
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding Machine.SnapshotLimit}" Value="0">
+                                <DataTrigger Binding="{Binding ActiveMachineViewModel.Machine.SnapshotLimit}" Value="0">
                                     <Setter Property="IsChecked" Value="False"/>
                                 </DataTrigger>
                             </Style.Triggers>
@@ -202,51 +209,51 @@
         </Menu>
         <ToolBarTray Margin="0" VerticalAlignment="Top" Grid.Row="1" Background="#FFF0F0F0">
             <ToolBar ToolBarTray.IsLocked="True" HorizontalContentAlignment="Left" VerticalAlignment="Center" VerticalContentAlignment="Center" Background="#FFF0F0F0">
-                <Button Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding DriveACommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding DriveACommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/floppy.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                         <TextBlock><Run Text="A:"/></TextBlock>
                     </StackPanel>
                 </Button>
-                <Button Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding DriveBCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding DriveBCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/floppy.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                         <TextBlock><Run Text="B:"/></TextBlock>
                     </StackPanel>
                 </Button>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding TapeCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding TapeCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/tape16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
                 <Separator/>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding PauseCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.PauseCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/pause16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ResumeCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.ResumeCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/running16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ResetCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ActiveMachineViewModel.ResetCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/reset16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
                 <Separator/>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding AddBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding AddBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmarkadd16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding JumpToMostRecentBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding JumpToMostRecentBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmarkprev16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding BrowseBookmarksCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding BrowseBookmarksCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmark16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
@@ -263,8 +270,8 @@
             <TabControl.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                        <Image Width="16" Height="16" Stretch="None" Source="{Binding RunningState, Converter={StaticResource runningIconConverter}, Mode=OneWay}"/>
-                        <TextBlock Text="{Binding Name, Mode=OneWay}"/>
+                        <Image Width="16" Height="16" Stretch="None" Source="{Binding Machine.RunningState, Converter={StaticResource runningIconConverter}, Mode=OneWay}"/>
+                        <TextBlock Text="{Binding Machine.Name, Mode=OneWay}"/>
                     </StackPanel>
                 </DataTemplate>
             </TabControl.ItemTemplate>
@@ -288,17 +295,17 @@
                                 <Style TargetType="Rectangle">
                                     <Setter Property="Visibility" Value="Hidden"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding RunningState}" Value="{x:Static cpvc:RunningState.Paused}">
+                                        <DataTrigger Binding="{Binding Machine.RunningState}" Value="{x:Static cpvc:RunningState.Paused}">
                                             <Setter Property="Visibility" Value="Visible"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Rectangle.Style>
                         </Rectangle>
-                        <Image Width="768" Height="576" Source="{Binding Path=., Converter={StaticResource machineBitmapConverter}}" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill"/>
+                        <Image Width="768" Height="576" Source="{Binding Path=Machine, Converter={StaticResource machineBitmapConverter}}" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill"/>
                         <Grid Margin="0,0,20,20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Panel.ZIndex="2" Opacity="1.0">
                             <Rectangle HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.7" Panel.ZIndex="0" Fill="Black" RadiusX="8" RadiusY="8"/>
-                            <Label Content="{Binding Status, NotifyOnTargetUpdated=True}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="24" Panel.ZIndex="1">
+                            <Label Content="{Binding Machine.Status, NotifyOnTargetUpdated=True}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="24" Panel.ZIndex="1">
                                 <Label.Effect>
                                     <DropShadowEffect Direction="315" ShadowDepth="4" Color="Black" Opacity="1.0" BlurRadius="0.0"/>
                                 </Label.Effect>
@@ -352,8 +359,8 @@
                                                         <Grid MouseLeftButtonUp="MachinePreviewGrid_MouseLeftButtonUp">
                                                             <Grid.ContextMenu>
                                                                 <ContextMenu>
-                                                                    <MenuItem Header="Pause" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.PauseCommand}" CommandParameter="{Binding}"/>
-                                                                    <MenuItem Header="Resume" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.ResumeCommand}" CommandParameter="{Binding}"/>
+                                                                    <MenuItem Header="Pause" Command="{Binding PauseCommand}"/>
+                                                                    <MenuItem Header="Resume" Command="{Binding ResumeCommand}"/>
                                                                     <MenuItem Header="Open" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.OpenCommand}" CommandParameter="{Binding}"/>
                                                                     <MenuItem Header="Close" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.CloseCommand}" CommandParameter="{Binding}"/>
                                                                     <MenuItem Header="Persist..." Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.PersistCommand}" CommandParameter="{Binding}"/>
@@ -362,8 +369,8 @@
                                                                 </ContextMenu>
                                                             </Grid.ContextMenu>
                                                             <StackPanel Margin="5">
-                                                                <Image Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Source="{Binding Path=., Converter={StaticResource machineBitmapConverter}}" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" ToolTip="{Binding PersistentFilepath, Mode=OneWay}" Cursor="Hand"/>
-                                                                <Label Content="{Binding Name}" HorizontalAlignment="Center"/>
+                                                                <Image Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Source="{Binding Path=Machine, Converter={StaticResource machineBitmapConverter}}" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" ToolTip="{Binding Machine.PersistentFilepath, Mode=OneWay}" Cursor="Hand"/>
+                                                                <Label Content="{Binding Machine.Name}" HorizontalAlignment="Center"/>
                                                             </StackPanel>
                                                         </Grid>
                                                     </DataTemplate>
@@ -405,7 +412,7 @@
                     Margin="220, 0, 0, 0" Click="JumpButton_Click"/>
 
             <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="270" Height="528" Margin="0,37,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
-                <Grid DataContext="{Binding ActiveMachine.History.ViewModel, Mode=OneWay}">
+                <Grid DataContext="{Binding ActiveMachineViewModel.Machine.History.ViewModel, Mode=OneWay}">
                     <Grid.Background>
                         <DrawingBrush Viewport="0,0,10,32" ViewportUnits="Absolute" TileMode="Tile">
                             <DrawingBrush.Drawing>
@@ -483,13 +490,13 @@
             </ScrollViewer>
         </Grid>
         <StatusBar Height="30" Grid.Row="3" VerticalAlignment="Top">
-            <TextBlock TextWrapping="Wrap" Text="{Binding ActiveMachine.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
+            <TextBlock TextWrapping="Wrap" Text="{Binding ActiveMachineViewModel.Machine.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
             <Separator/>
-            <Slider Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding ActiveMachine.Volume, Mode=TwoWay}" ToolTip="{Binding ActiveMachine.Volume}" />
-            <Button Content="&lt;&lt;" Command="{Binding SeekToPrevBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
-            <Button Content=">>" Command="{Binding SeekToNextBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
-            <Button Content=" |&lt; " Command="{Binding SeekToStartCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
-            <Slider Width="300" VerticalAlignment="Center" HorizontalAlignment="Right" Minimum="0" Maximum="{Binding ActiveMachine.EndTicks, Mode=OneWay}" Value="{Binding ActiveMachine.Ticks, Mode=OneWay}"/>
+            <Slider Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding ActiveMachineViewModel.Machine.Volume, Mode=TwoWay}" ToolTip="{Binding ActiveMachineViewModel.Machine.Volume}" />
+            <Button Content="&lt;&lt;" Command="{Binding SeekToPrevBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
+            <Button Content=">>" Command="{Binding SeekToNextBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
+            <Button Content=" |&lt; " Command="{Binding SeekToStartCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
+            <Slider Width="300" VerticalAlignment="Center" HorizontalAlignment="Right" Minimum="0" Maximum="{Binding ActiveMachineViewModel.Machine.EndTicks, Mode=OneWay}" Value="{Binding ActiveMachineViewModel.Machine.Ticks, Mode=OneWay}"/>
         </StatusBar>
     </Grid>
 </Window>
