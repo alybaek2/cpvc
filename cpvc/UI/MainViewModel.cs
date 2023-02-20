@@ -51,28 +51,28 @@ namespace CPvC
         private readonly Command _removeCommand;
         private readonly Command _closeCommand;
 
-        private readonly Command _driveACommand;
-        private readonly Command _driveAEjectCommand;
-        private readonly Command _driveBCommand;
-        private readonly Command _driveBEjectCommand;
-        private readonly Command _tapeCommand;
-        private readonly Command _tapeEjectCommand;
-        private readonly Command _resetCommand;
-        private readonly Command _persistCommand;
+        //private readonly Command _driveACommand;
+        //private readonly Command _driveAEjectCommand;
+        //private readonly Command _driveBCommand;
+        //private readonly Command _driveBEjectCommand;
+        //private readonly Command _tapeCommand;
+        //private readonly Command _tapeEjectCommand;
+        //private readonly Command _resetCommand;
+        //private readonly Command _persistCommand;
         private readonly Command _openCommand;
-        private readonly Command _pauseCommand;
-        private readonly Command _resumeCommand;
-        private readonly Command _toggleRunningCommand;
-        private readonly Command _addBookmarkCommand;
-        private readonly Command _jumpToMostRecentBookmarkCommand;
-        private readonly Command _browseBookmarksCommand;
-        private readonly Command _compactCommand;
-        private readonly Command _renameCommand;
-        private readonly Command _seekToNextBookmarkCommand;
-        private readonly Command _seekToPrevBookmarkCommand;
-        private readonly Command _seekToStartCommand;
-        private readonly Command _reverseStartCommand;
-        private readonly Command _toggleSnapshotCommand;
+        //private readonly Command _pauseCommand;
+        //private readonly Command _resumeCommand;
+        //private readonly Command _toggleRunningCommand;
+        //private readonly Command _addBookmarkCommand;
+        //private readonly Command _jumpToMostRecentBookmarkCommand;
+        //private readonly Command _browseBookmarksCommand;
+        //private readonly Command _compactCommand;
+        //private readonly Command _renameCommand;
+        //private readonly Command _seekToNextBookmarkCommand;
+        //private readonly Command _seekToPrevBookmarkCommand;
+        //private readonly Command _seekToStartCommand;
+        //private readonly Command _reverseStartCommand;
+        //private readonly Command _toggleSnapshotCommand;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -82,7 +82,7 @@ namespace CPvC
 
         private ViewModelObservableCollection<IMachine, MachineViewModel> _machineViewModels;
 
-        public MainViewModel(ISettings settings, IFileSystem fileSystem, Action<Action> canExecuteChangedInvoker)
+        public MainViewModel(ISettings settings, IFileSystem fileSystem, ViewModelFactory<IMachine, MachineViewModel> machineViewModelFactory, Action<Action> canExecuteChangedInvoker)
         {
             _settings = settings;
             _fileSystem = fileSystem;
@@ -96,8 +96,8 @@ namespace CPvC
 
             _allCommands = new List<Command>();
 
-            ViewModelFactory<IMachine, MachineViewModel> factory = new ViewModelFactory<IMachine, MachineViewModel>(machine => { return new MachineViewModel(machine, fileSystem, canExecuteChangedInvoker); });
-            _machineViewModels = new ViewModelObservableCollection<IMachine, MachineViewModel>(_model.Machines, factory);
+            //ViewModelFactory<IMachine, MachineViewModel> factory = new ViewModelFactory<IMachine, MachineViewModel>(machine => { return new MachineViewModel(machine, fileSystem, canExecuteChangedInvoker); });
+            _machineViewModels = new ViewModelObservableCollection<IMachine, MachineViewModel>(_model.Machines, machineViewModelFactory);
             ActiveMachineViewModel = null;
 
             _openMachineCommand = CreateCommand(
@@ -137,7 +137,7 @@ namespace CPvC
                 p =>
                 {
                     IPersistableMachine pm = p as IPersistableMachine;
-                    return pm?.PersistantFilepath != null;
+                    return pm?.PersistentFilepath != null;
                 }
             );
 
@@ -151,117 +151,117 @@ namespace CPvC
                 p => !(p as IPersistableMachine)?.IsOpen ?? false
             );
 
-            _persistCommand = CreateCommand(
-                p => Persist(p as IPersistableMachine),
-                p =>
-                {
-                    if (p is IPersistableMachine pm)
-                    {
-                        return pm.PersistantFilepath == null;
-                    }
+            //_persistCommand = CreateCommand(
+            //    p => Persist(p as IPersistableMachine),
+            //    p =>
+            //    {
+            //        if (p is IPersistableMachine pm)
+            //        {
+            //            return pm.PersistentFilepath == null;
+            //        }
 
-                    return false;
-                });
+            //        return false;
+            //    });
 
-            _pauseCommand = CreateCommand(
-                p => (p as IPausableMachine)?.Stop(),
-                p => (p as IPausableMachine)?.CanStop ?? false
-            );
+            //_pauseCommand = CreateCommand(
+            //    p => (p as IPausableMachine)?.Stop(),
+            //    p => (p as IPausableMachine)?.CanStop ?? false
+            //);
 
-            _resumeCommand = CreateCommand(
-                p => (p as IPausableMachine)?.Start(),
-                p => (p as IPausableMachine)?.CanStart ?? false
-            );
+            //_resumeCommand = CreateCommand(
+            //    p => (p as IPausableMachine)?.Start(),
+            //    p => (p as IPausableMachine)?.CanStart ?? false
+            //);
 
-            _resetCommand = CreateCommand(
-                p => (p as IInteractiveMachine)?.Reset(),
-                p => p is IInteractiveMachine
-            );
+            //_resetCommand = CreateCommand(
+            //    p => (p as IInteractiveMachine)?.Reset(),
+            //    p => p is IInteractiveMachine
+            //);
 
-            _driveACommand = CreateCommand(
-                p => LoadDisc(p as IInteractiveMachine, 0),
-                p => p is IInteractiveMachine
-            );
+            //_driveACommand = CreateCommand(
+            //    p => LoadDisc(p as IInteractiveMachine, 0),
+            //    p => p is IInteractiveMachine
+            //);
 
-            _driveAEjectCommand = CreateCommand(
-                p => (p as IInteractiveMachine)?.LoadDisc(0, null),
-                p => p is IInteractiveMachine
-            );
+            //_driveAEjectCommand = CreateCommand(
+            //    p => (p as IInteractiveMachine)?.LoadDisc(0, null),
+            //    p => p is IInteractiveMachine
+            //);
 
-            _driveBCommand = CreateCommand(
-                p => LoadDisc(p as IInteractiveMachine, 1),
-                p => p is IInteractiveMachine
-            );
+            //_driveBCommand = CreateCommand(
+            //    p => LoadDisc(p as IInteractiveMachine, 1),
+            //    p => p is IInteractiveMachine
+            //);
 
-            _driveBEjectCommand = CreateCommand(
-                p => (p as IInteractiveMachine)?.LoadDisc(1, null),
-                p => p is IInteractiveMachine
-            );
+            //_driveBEjectCommand = CreateCommand(
+            //    p => (p as IInteractiveMachine)?.LoadDisc(1, null),
+            //    p => p is IInteractiveMachine
+            //);
 
-            _tapeCommand = CreateCommand(
-                p => LoadTape(p as IInteractiveMachine),
-                p => p is IInteractiveMachine
-            );
+            //_tapeCommand = CreateCommand(
+            //    p => LoadTape(p as IInteractiveMachine),
+            //    p => p is IInteractiveMachine
+            //);
 
-            _tapeEjectCommand = CreateCommand(
-                p => (p as IInteractiveMachine)?.LoadTape(null),
-                p => p is IInteractiveMachine
-            );
+            //_tapeEjectCommand = CreateCommand(
+            //    p => (p as IInteractiveMachine)?.LoadTape(null),
+            //    p => p is IInteractiveMachine
+            //);
 
-            _toggleRunningCommand = CreateCommand(
-                p => (p as IPausableMachine)?.ToggleRunning(),
-                p => p is IPausableMachine
-            );
+            //_toggleRunningCommand = CreateCommand(
+            //    p => (p as IPausableMachine)?.ToggleRunning(),
+            //    p => p is IPausableMachine
+            //);
 
-            _addBookmarkCommand = CreateCommand(
-                p => (p as IBookmarkableMachine)?.AddBookmark(false),
-                p => p is IBookmarkableMachine
-            );
+            //_addBookmarkCommand = CreateCommand(
+            //    p => (p as IBookmarkableMachine)?.AddBookmark(false),
+            //    p => p is IBookmarkableMachine
+            //);
 
-            _jumpToMostRecentBookmarkCommand = CreateCommand(
-                p => (p as IJumpableMachine)?.JumpToMostRecentBookmark(),
-                p => p is IJumpableMachine
-            );
+            //_jumpToMostRecentBookmarkCommand = CreateCommand(
+            //    p => (p as IJumpableMachine)?.JumpToMostRecentBookmark(),
+            //    p => p is IJumpableMachine
+            //);
 
-            _browseBookmarksCommand = CreateCommand(
-                p => SelectBookmark(p as IJumpableMachine),
-                p => p is IJumpableMachine
-            );
+            //_browseBookmarksCommand = CreateCommand(
+            //    p => SelectBookmark(p as IJumpableMachine),
+            //    p => p is IJumpableMachine
+            //);
 
-            _compactCommand = CreateCommand(
-                p => (p as ICompactableMachine)?.Compact(_fileSystem),
-                p => (p as ICompactableMachine)?.CanCompact ?? false
-            );
+            //_compactCommand = CreateCommand(
+            //    p => (p as ICompactableMachine)?.Compact(_fileSystem),
+            //    p => (p as ICompactableMachine)?.CanCompact ?? false
+            //);
 
-            _renameCommand = CreateCommand(
-                p => RenameMachine(p as IMachine),
-                p => p is IMachine
-            );
+            //_renameCommand = CreateCommand(
+            //    p => RenameMachine(p as IMachine),
+            //    p => p is IMachine
+            //);
 
-            _seekToNextBookmarkCommand = CreateCommand(
-                p => (p as IPrerecordedMachine)?.SeekToNextBookmark(),
-                p => p is IPrerecordedMachine
-            );
+            //_seekToNextBookmarkCommand = CreateCommand(
+            //    p => (p as IPrerecordedMachine)?.SeekToNextBookmark(),
+            //    p => p is IPrerecordedMachine
+            //);
 
-            _seekToPrevBookmarkCommand = CreateCommand(
-                p => (p as IPrerecordedMachine)?.SeekToPreviousBookmark(),
-                p => p is IPrerecordedMachine
-            );
+            //_seekToPrevBookmarkCommand = CreateCommand(
+            //    p => (p as IPrerecordedMachine)?.SeekToPreviousBookmark(),
+            //    p => p is IPrerecordedMachine
+            //);
 
-            _seekToStartCommand = CreateCommand(
-                p => (p as IPrerecordedMachine)?.SeekToStart(),
-                p => p is IPrerecordedMachine
-            );
+            //_seekToStartCommand = CreateCommand(
+            //    p => (p as IPrerecordedMachine)?.SeekToStart(),
+            //    p => p is IPrerecordedMachine
+            //);
 
-            _reverseStartCommand = CreateCommand(
-                p => (p as IReversibleMachine)?.Reverse(),
-                p => p is IReversibleMachine
-            );
+            //_reverseStartCommand = CreateCommand(
+            //    p => (p as IReversibleMachine)?.Reverse(),
+            //    p => p is IReversibleMachine
+            //);
 
-            _toggleSnapshotCommand = CreateCommand(
-                p => (p as IReversibleMachine)?.ToggleReversibilityEnabled(),
-                p => p is IReversibleMachine
-            );
+            //_toggleSnapshotCommand = CreateCommand(
+            //    p => (p as IReversibleMachine)?.ToggleReversibilityEnabled(),
+            //    p => p is IReversibleMachine
+            //);
         }
 
         private Command CreateCommand(Action<object> execute, Predicate<object> canExecute)
@@ -391,115 +391,115 @@ namespace CPvC
             get { return _closeCommand; }
         }
 
-        public Command ResetCommand
-        {
-            get { return _resetCommand; }
-        }
+        //public Command ResetCommand
+        //{
+        //    get { return _resetCommand; }
+        //}
 
-        public Command DriveACommand
-        {
-            get { return _driveACommand; }
-        }
+        //public Command DriveACommand
+        //{
+        //    get { return _driveACommand; }
+        //}
 
-        public Command DriveBCommand
-        {
-            get { return _driveBCommand; }
-        }
+        //public Command DriveBCommand
+        //{
+        //    get { return _driveBCommand; }
+        //}
 
-        public Command DriveAEjectCommand
-        {
-            get { return _driveAEjectCommand; }
-        }
+        //public Command DriveAEjectCommand
+        //{
+        //    get { return _driveAEjectCommand; }
+        //}
 
-        public Command DriveBEjectCommand
-        {
-            get { return _driveBEjectCommand; }
-        }
+        //public Command DriveBEjectCommand
+        //{
+        //    get { return _driveBEjectCommand; }
+        //}
 
-        public Command TapeCommand
-        {
-            get { return _tapeCommand; }
-        }
+        //public Command TapeCommand
+        //{
+        //    get { return _tapeCommand; }
+        //}
 
-        public Command TapeEjectCommand
-        {
-            get { return _tapeEjectCommand; }
-        }
+        //public Command TapeEjectCommand
+        //{
+        //    get { return _tapeEjectCommand; }
+        //}
 
-        public Command PersistCommand
-        {
-            get { return _persistCommand; }
-        }
+        //public Command PersistCommand
+        //{
+        //    get { return _persistCommand; }
+        //}
 
         public Command OpenCommand
         {
             get { return _openCommand; }
         }
 
-        public Command PauseCommand
-        {
-            get { return _pauseCommand; }
-        }
+        //public Command PauseCommand
+        //{
+        //    get { return _pauseCommand; }
+        //}
 
-        public Command ResumeCommand
-        {
-            get { return _resumeCommand; }
-        }
+        //public Command ResumeCommand
+        //{
+        //    get { return _resumeCommand; }
+        //}
 
-        public Command ToggleRunningCommand
-        {
-            get { return _toggleRunningCommand; }
-        }
+        //public Command ToggleRunningCommand
+        //{
+        //    get { return _toggleRunningCommand; }
+        //}
 
-        public Command AddBookmarkCommand
-        {
-            get { return _addBookmarkCommand; }
-        }
+        //public Command AddBookmarkCommand
+        //{
+        //    get { return _addBookmarkCommand; }
+        //}
 
-        public Command JumpToMostRecentBookmarkCommand
-        {
-            get { return _jumpToMostRecentBookmarkCommand; }
-        }
+        //public Command JumpToMostRecentBookmarkCommand
+        //{
+        //    get { return _jumpToMostRecentBookmarkCommand; }
+        //}
 
-        public Command BrowseBookmarksCommand
-        {
-            get { return _browseBookmarksCommand; }
-        }
+        //public Command BrowseBookmarksCommand
+        //{
+        //    get { return _browseBookmarksCommand; }
+        //}
 
-        public Command CompactCommand
-        {
-            get { return _compactCommand; }
-        }
+        //public Command CompactCommand
+        //{
+        //    get { return _compactCommand; }
+        //}
 
-        public Command RenameCommand
-        {
-            get { return _renameCommand; }
-        }
+        //public Command RenameCommand
+        //{
+        //    get { return _renameCommand; }
+        //}
 
-        public Command SeekToNextBookmarkCommand
-        {
-            get { return _seekToNextBookmarkCommand; }
-        }
+        //public Command SeekToNextBookmarkCommand
+        //{
+        //    get { return _seekToNextBookmarkCommand; }
+        //}
 
-        public Command SeekToPrevBookmarkCommand
-        {
-            get { return _seekToPrevBookmarkCommand; }
-        }
+        //public Command SeekToPrevBookmarkCommand
+        //{
+        //    get { return _seekToPrevBookmarkCommand; }
+        //}
 
-        public Command SeekToStartCommand
-        {
-            get { return _seekToStartCommand; }
-        }
+        //public Command SeekToStartCommand
+        //{
+        //    get { return _seekToStartCommand; }
+        //}
 
-        public Command ReverseStartCommand
-        {
-            get { return _reverseStartCommand; }
-        }
+        //public Command ReverseStartCommand
+        //{
+        //    get { return _reverseStartCommand; }
+        //}
 
-        public Command ToggleReversibility
-        {
-            get { return _toggleSnapshotCommand; }
-        }
+        //public Command ToggleReversibility
+        //{
+        //    get { return _toggleSnapshotCommand; }
+        //}
 
         ///// <summary>
         ///// Represents the currently active item in the main window. Corresponds to the DataContext associated with the currently
@@ -590,7 +590,7 @@ namespace CPvC
                 {
                     if (m is IPersistableMachine pm)
                     {
-                        return String.Compare(pm.PersistantFilepath, fullFilepath, true) == 0;
+                        return String.Compare(pm.PersistentFilepath, fullFilepath, true) == 0;
                     }
 
                     return false;
@@ -613,7 +613,7 @@ namespace CPvC
 
             foreach (IMachine machine in machines)
             {
-                if (!(machine is IPersistableMachine persistableMachine) || persistableMachine.PersistantFilepath != null)
+                if (!(machine is IPersistableMachine persistableMachine) || persistableMachine.PersistentFilepath != null)
                 {
                     continue;
                 }
@@ -646,7 +646,7 @@ namespace CPvC
 
             IPersistableMachine pm = coreMachine as IPersistableMachine;
             bool remove = pm == null;
-            if (pm != null && pm.PersistantFilepath == null)
+            if (pm != null && pm.PersistentFilepath == null)
             {
                 if (prompt)
                 {
@@ -709,118 +709,25 @@ namespace CPvC
             machine.EnableTurbo(enable);
         }
 
-        private void LoadDisc(IInteractiveMachine machine, byte drive)
-        {
-            if (machine == null)
-            {
-                return;
-            }
+        //public void Persist(IPersistableMachine machine)
+        //{
+        //    if (machine == null)
+        //    {
+        //        throw new ArgumentNullException(nameof(machine));
+        //    }
 
-            using (machine.Lock())
-            {
-                byte[] image = PromptForMedia(true);
-                if (image != null)
-                {
-                    machine.LoadDisc(drive, image);
-                }
-            }
-        }
+        //    if (!String.IsNullOrEmpty(machine.PersistentFilepath))
+        //    {
+        //        // Should throw exception here?
+        //        return;
+        //    }
 
-        private void LoadTape(IInteractiveMachine machine)
-        {
-            if (machine == null)
-            {
-                return;
-            }
+        //    PromptForFileEventArgs args = new PromptForFileEventArgs(FileTypes.Machine, false);
+        //    PromptForFile?.Invoke(this, args);
 
-            using (machine.Lock())
-            {
-                byte[] image = PromptForMedia(false);
-                if (image != null)
-                {
-                    machine.LoadTape(image);
-                }
-            }
-        }
-
-        private byte[] PromptForMedia(bool disc)
-        {
-            string expectedExt = disc ? ".dsk" : ".cdt";
-            FileTypes type = disc ? FileTypes.Disc : FileTypes.Tape;
-
-            PromptForFileEventArgs promptForFileArgs = new PromptForFileEventArgs(type, true);
-            PromptForFile?.Invoke(this, promptForFileArgs);
-
-            string filename = promptForFileArgs.Filepath;
-            if (filename == null)
-            {
-                // Action was cancelled by the user.
-                return null;
-            }
-
-            byte[] buffer = null;
-            string ext = System.IO.Path.GetExtension(filename);
-            if (ext.ToLower() == ".zip")
-            {
-                string entry = null;
-                List<string> entries = _fileSystem.GetZipFileEntryNames(filename);
-                List<string> extEntries = entries.Where(x => System.IO.Path.GetExtension(x).ToLower() == expectedExt).ToList();
-                if (extEntries.Count == 0)
-                {
-                    // No images available.
-                    Diagnostics.Trace("No files with the extension \"{0}\" found in zip archive \"{1}\".", expectedExt, filename);
-
-                    return null;
-                }
-                else if (extEntries.Count == 1)
-                {
-                    // Don't bother prompting the user, since there's only one!
-                    entry = extEntries[0];
-                }
-                else
-                {
-                    SelectItemEventArgs selectItemArgs = new SelectItemEventArgs(extEntries);
-                    SelectItem?.Invoke(this, selectItemArgs);
-
-                    entry = selectItemArgs.SelectedItem;
-                    if (entry == null)
-                    {
-                        // Action was cancelled by the user.
-                        return null;
-                    }
-                }
-
-                Diagnostics.Trace("Loading \"{0}\" from zip archive \"{1}\"", entry, filename);
-                buffer = _fileSystem.GetZipFileEntry(filename, entry);
-            }
-            else
-            {
-                Diagnostics.Trace("Loading \"{0}\"", filename);
-                buffer = _fileSystem.ReadBytes(filename);
-            }
-
-            return buffer;
-        }
-
-        public void Persist(IPersistableMachine machine)
-        {
-            if (machine == null)
-            {
-                throw new ArgumentNullException(nameof(machine));
-            }
-
-            if (!String.IsNullOrEmpty(machine.PersistantFilepath))
-            {
-                // Should throw exception here?
-                return;
-            }
-
-            PromptForFileEventArgs args = new PromptForFileEventArgs(FileTypes.Machine, false);
-            PromptForFile?.Invoke(this, args);
-
-            string filepath = args.Filepath;
-            machine.Persist(_fileSystem, filepath);
-        }
+        //    string filepath = args.Filepath;
+        //    machine.Persist(_fileSystem, filepath);
+        //}
 
         private void SelectBookmark(IJumpableMachine jumpableMachine)
         {

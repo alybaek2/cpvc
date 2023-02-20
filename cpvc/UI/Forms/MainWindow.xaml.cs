@@ -40,7 +40,19 @@ namespace CPvC.UI.Forms
 
             _settings = new Settings();
             _fileSystem = new FileSystem();
-            _mainViewModel = new MainViewModel(_settings, _fileSystem, canExecuteChangedInvoker);
+
+            ViewModelFactory<IMachine, MachineViewModel> factory =
+                new ViewModelFactory<IMachine, MachineViewModel>(
+                    machine => {
+                        MachineViewModel machineViewModel = new MachineViewModel(machine, _fileSystem, canExecuteChangedInvoker);
+
+                        machineViewModel.PromptForFile += MainViewModel_PromptForFile;
+                        machineViewModel.PromptForBookmark += MainViewModel_PromptForBookmark;
+
+                        return machineViewModel;
+                    });
+
+            _mainViewModel = new MainViewModel(_settings, _fileSystem, factory, canExecuteChangedInvoker);
 
             _mainViewModel.PromptForFile += MainViewModel_PromptForFile;
             _mainViewModel.SelectItem += MainViewModel_SelectItem;
@@ -218,7 +230,7 @@ namespace CPvC.UI.Forms
         {
             if (e.Key == Key.F1)
             {
-                _mainViewModel.ReverseStartCommand.Execute(_mainViewModel.ActiveMachineViewModel);
+                _mainViewModel.ActiveMachineViewModel?.ReverseStartCommand.Execute(null);
             }
             else if (e.Key == Key.F2)
             {
@@ -242,7 +254,7 @@ namespace CPvC.UI.Forms
         {
             if (e.Key == Key.F1)
             {
-                _mainViewModel.ResumeCommand.Execute(_mainViewModel.ActiveMachineViewModel);
+                _mainViewModel.ActiveMachineViewModel?.ResumeCommand.Execute(_mainViewModel.ActiveMachineViewModel);
             }
             else if (e.Key == Key.F2)
             {
@@ -420,9 +432,9 @@ namespace CPvC.UI.Forms
 
         private void ScreenGrid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is MachineViewModel machineViewModel)
+            if (sender is FrameworkElement element)
             {
-                _mainViewModel.ActiveMachineViewModel.ToggleRunningCommand.Execute(machineViewModel.Machine);
+                _mainViewModel.ActiveMachineViewModel.ToggleRunningCommand.Execute(null);
             }
         }
 
@@ -532,14 +544,16 @@ namespace CPvC.UI.Forms
         // seem to trigger any calls to CanExecute to correctly enable/disable the menu's items.
         private void MainWindow_ContextMenuOpening(object sender, System.Windows.Controls.ContextMenuEventArgs e)
         {
+            _mainViewModel.ActiveMachineViewModel?.UpdateCommands(sender, e);
+
             EventArgs args = new EventArgs();
-            _mainViewModel.PauseCommand.InvokeCanExecuteChanged(sender, args);
-            _mainViewModel.ResumeCommand.InvokeCanExecuteChanged(sender, args);
+            //_mainViewModel.PauseCommand.InvokeCanExecuteChanged(sender, args);
+            //_mainViewModel.ResumeCommand.InvokeCanExecuteChanged(sender, args);
             _mainViewModel.OpenCommand.InvokeCanExecuteChanged(sender, args);
             _mainViewModel.CloseCommand.InvokeCanExecuteChanged(sender, args);
-            _mainViewModel.PersistCommand.InvokeCanExecuteChanged(sender, args);
+            //_mainViewModel.PersistCommand.InvokeCanExecuteChanged(sender, args);
             _mainViewModel.RemoveCommand.InvokeCanExecuteChanged(sender, args);
-            _mainViewModel.CompactCommand.InvokeCanExecuteChanged(sender, args);
+            //_mainViewModel.CompactCommand.InvokeCanExecuteChanged(sender, args);
         }
 
         private WriteableBitmap GetBitmap(Machine machine)

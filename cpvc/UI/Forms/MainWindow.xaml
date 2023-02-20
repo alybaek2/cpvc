@@ -91,9 +91,9 @@
                                                 <MenuItem Header="Resume" Command="{Binding ResumeCommand}"/>
                                                 <MenuItem Header="Open" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.OpenCommand}" CommandParameter="{Binding}"/>
                                                 <MenuItem Header="Close" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.CloseCommand}" CommandParameter="{Binding}"/>
-                                                <MenuItem Header="Persist..." Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.PersistCommand}" CommandParameter="{Binding}"/>
+                                                <MenuItem Header="Persist..." Command="{Binding PersistCommand}"/>
                                                 <MenuItem Header="Remove" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.RemoveCommand}" CommandParameter="{Binding}"/>
-                                                <MenuItem Header="Compact" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.CompactCommand}" CommandParameter="{Binding}"/>
+                                                <MenuItem Header="Compact" Command="{Binding CompactCommand}"/>
                                             </ContextMenu>
                                         </Grid.ContextMenu>
                                         <StackPanel Margin="5">
@@ -205,22 +205,22 @@
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
-                    <MenuItem Header="Load..." Command="{Binding DriveACommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
-                    <MenuItem Header="Eject" Command="{Binding DriveAEjectCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
+                    <MenuItem Header="Load..." Command="{Binding ActiveMachineViewModel.DriveACommand}"/>
+                    <MenuItem Header="Eject" Command="{Binding ActiveMachineViewModel.DriveAEjectCommand}"/>
                 </MenuItem>
                 <MenuItem Header="Drive B:">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
-                    <MenuItem Header="Load..." Command="{Binding DriveBCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
-                    <MenuItem Header="Eject" Command="{Binding DriveBEjectCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
+                    <MenuItem Header="Load..." Command="{Binding ActiveMachineViewModel.DriveBCommand}"/>
+                    <MenuItem Header="Eject" Command="{Binding ActiveMachineViewModel.DriveBEjectCommand}"/>
                 </MenuItem>
                 <MenuItem Header="Tape">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/tape16.png" />
                     </MenuItem.Icon>
-                    <MenuItem Header="Load..." Command="{Binding TapeCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
-                    <MenuItem Header="Eject" Command="{Binding TapeEjectCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
+                    <MenuItem Header="Load..." Command="{Binding ActiveMachineViewModel.TapeCommand}"/>
+                    <MenuItem Header="Eject" Command="{Binding ActiveMachineViewModel.TapeEjectCommand}"/>
                 </MenuItem>
                 <Separator/>
                 <MenuItem Header="Pause" Command="{Binding ActiveMachineViewModel.PauseCommand}">
@@ -240,26 +240,26 @@
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Add Bookmark" Command="{Binding AddBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
+                <MenuItem Header="Add Bookmark" Command="{Binding ActiveMachineViewModel.AddBookmarkCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmarkadd16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Jump to Most Recent Bookmark" Command="{Binding JumpToMostRecentBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
+                <MenuItem Header="Jump to Most Recent Bookmark" Command="{Binding ActiveMachineViewModel.JumpToMostRecentBookmarkCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmarkprev16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Bookmarks..." Command="{Binding BrowseBookmarksCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
+                <MenuItem Header="Bookmarks..." Command="{Binding ActiveMachineViewModel.BrowseBookmarksCommand}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmark16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Rename machine..." Command="{Binding RenameCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
-                <MenuItem Header="Compact machine file" Command="{Binding CompactCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
+                <MenuItem Header="Rename machine..." Command="{Binding ActiveMachineViewModel.RenameCommand}"/>
+                <MenuItem Header="Compact machine file" Command="{Binding ActiveMachineViewModel.CompactCommand}"/>
                 <Separator/>
-                <MenuItem Header="Reversible" Command="{Binding ToggleReversibility}" CommandParameter="{Binding Path=ActiveMachineViewModel}" IsCheckable="True">
+                <MenuItem Header="Reversible" Command="{Binding ActiveMachineViewModel.ToggleReversibility}" IsCheckable="True">
                     <MenuItem.Style>
                         <Style TargetType="MenuItem">
                             <Setter Property="IsChecked" Value="True"/>
@@ -290,19 +290,19 @@
         </Menu>
         <ToolBarTray Margin="0" VerticalAlignment="Top" Grid.Row="1" Background="#FFF0F0F0">
             <ToolBar ToolBarTray.IsLocked="True" HorizontalContentAlignment="Left" VerticalAlignment="Center" VerticalContentAlignment="Center" Background="#FFF0F0F0">
-                <Button Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource CommandButtonStyle}" Command="{Binding DriveACommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
+                <Button Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource CommandButtonStyle}" Command="{Binding ActiveMachineViewModel.DriveACommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/floppy.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                         <TextBlock><Run Text="A:"/></TextBlock>
                     </StackPanel>
                 </Button>
-                <Button Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource CommandButtonStyle}" Command="{Binding DriveBCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
+                <Button Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource CommandButtonStyle}" Command="{Binding ActiveMachineViewModel.DriveBCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/floppy.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                         <TextBlock><Run Text="B:"/></TextBlock>
                     </StackPanel>
                 </Button>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource CommandButtonStyle}" Command="{Binding TapeCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource CommandButtonStyle}" Command="{Binding ActiveMachineViewModel.TapeCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/tape16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
@@ -324,17 +324,17 @@
                     </StackPanel>
                 </Button>
                 <Separator/>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource CommandButtonStyle}" Command="{Binding AddBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource CommandButtonStyle}" Command="{Binding ActiveMachineViewModel.AddBookmarkCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmarkadd16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource CommandButtonStyle}" Command="{Binding JumpToMostRecentBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource CommandButtonStyle}" Command="{Binding ActiveMachineViewModel.JumpToMostRecentBookmarkCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmarkprev16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource CommandButtonStyle}" Command="{Binding BrowseBookmarksCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource CommandButtonStyle}" Command="{Binding ActiveMachineViewModel.BrowseBookmarksCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmark16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>

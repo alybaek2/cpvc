@@ -24,6 +24,18 @@ namespace CPvC
 
             _allCommands = new List<Command>();
 
+            _persistCommand = CreateCommand(
+                p => Persist(fileSystem, p as IPersistableMachine),
+                p =>
+                {
+                    if (p is IPersistableMachine pm)
+                    {
+                        return pm.PersistentFilepath == null;
+                    }
+
+                    return false;
+                });
+
             _pauseCommand = CreateCommand(
                 p => (_machine as IPausableMachine)?.Stop(),
                 p => (_machine as IPausableMachine)?.CanStop ?? false
@@ -40,33 +52,33 @@ namespace CPvC
             );
 
             _driveACommand = CreateCommand(
-                p => LoadDisc(fileSystem, p as IInteractiveMachine, 0),
-                p => p is IInteractiveMachine
+                p => LoadDisc(fileSystem, _machine as IInteractiveMachine, 0),
+                p => _machine is IInteractiveMachine
             );
 
             _driveAEjectCommand = CreateCommand(
-                p => (p as IInteractiveMachine)?.LoadDisc(0, null),
-                p => p is IInteractiveMachine
+                p => (_machine as IInteractiveMachine)?.LoadDisc(0, null),
+                p => _machine is IInteractiveMachine
             );
 
             _driveBCommand = CreateCommand(
-                p => LoadDisc(fileSystem, p as IInteractiveMachine, 1),
-                p => p is IInteractiveMachine
+                p => LoadDisc(fileSystem, _machine as IInteractiveMachine, 1),
+                p => _machine is IInteractiveMachine
             );
 
             _driveBEjectCommand = CreateCommand(
-                p => (p as IInteractiveMachine)?.LoadDisc(1, null),
-                p => p is IInteractiveMachine
+                p => (_machine as IInteractiveMachine)?.LoadDisc(1, null),
+                p => _machine is IInteractiveMachine
             );
 
             _tapeCommand = CreateCommand(
-                p => LoadTape(fileSystem, p as IInteractiveMachine),
-                p => p is IInteractiveMachine
+                p => LoadTape(fileSystem, _machine as IInteractiveMachine),
+                p => _machine is IInteractiveMachine
             );
 
             _tapeEjectCommand = CreateCommand(
-                p => (p as IInteractiveMachine)?.LoadTape(null),
-                p => p is IInteractiveMachine
+                p => (_machine as IInteractiveMachine)?.LoadTape(null),
+                p => _machine is IInteractiveMachine
             );
 
             _toggleRunningCommand = CreateCommand(
@@ -75,53 +87,53 @@ namespace CPvC
             );
 
             _addBookmarkCommand = CreateCommand(
-                p => (p as IBookmarkableMachine)?.AddBookmark(false),
-                p => p is IBookmarkableMachine
+                p => (_machine as IBookmarkableMachine)?.AddBookmark(false),
+                p => _machine is IBookmarkableMachine
             );
 
             _jumpToMostRecentBookmarkCommand = CreateCommand(
-                p => (p as IJumpableMachine)?.JumpToMostRecentBookmark(),
-                p => p is IJumpableMachine
+                p => (_machine as IJumpableMachine)?.JumpToMostRecentBookmark(),
+                p => _machine is IJumpableMachine
             );
 
             _browseBookmarksCommand = CreateCommand(
-                p => SelectBookmark(p as IJumpableMachine),
-                p => p is IJumpableMachine
+                p => SelectBookmark(_machine as IJumpableMachine),
+                p => _machine is IJumpableMachine
             );
 
             _compactCommand = CreateCommand(
-                p => (p as ICompactableMachine)?.Compact(fileSystem),
-                p => (p as ICompactableMachine)?.CanCompact ?? false
+                p => (_machine as ICompactableMachine)?.Compact(fileSystem),
+                p => (_machine as ICompactableMachine)?.CanCompact ?? false
             );
 
             _renameCommand = CreateCommand(
-                p => RenameMachine(p as IMachine),
-                p => p is IMachine
+                p => RenameMachine(_machine),
+                p => _machine is IMachine
             );
 
             _seekToNextBookmarkCommand = CreateCommand(
-                p => (p as IPrerecordedMachine)?.SeekToNextBookmark(),
-                p => p is IPrerecordedMachine
+                p => (_machine as IPrerecordedMachine)?.SeekToNextBookmark(),
+                p => _machine is IPrerecordedMachine
             );
 
             _seekToPrevBookmarkCommand = CreateCommand(
-                p => (p as IPrerecordedMachine)?.SeekToPreviousBookmark(),
-                p => p is IPrerecordedMachine
+                p => (_machine as IPrerecordedMachine)?.SeekToPreviousBookmark(),
+                p => _machine is IPrerecordedMachine
             );
 
             _seekToStartCommand = CreateCommand(
-                p => (p as IPrerecordedMachine)?.SeekToStart(),
-                p => p is IPrerecordedMachine
+                p => (_machine as IPrerecordedMachine)?.SeekToStart(),
+                p => _machine is IPrerecordedMachine
             );
 
             _reverseStartCommand = CreateCommand(
-                p => (p as IReversibleMachine)?.Reverse(),
-                p => p is IReversibleMachine
+                p => (_machine as IReversibleMachine)?.Reverse(),
+                p => _machine is IReversibleMachine
             );
 
             _toggleSnapshotCommand = CreateCommand(
-                p => (p as IReversibleMachine)?.ToggleReversibilityEnabled(),
-                p => p is IReversibleMachine
+                p => (_machine as IReversibleMachine)?.ToggleReversibilityEnabled(),
+                p => _machine is IReversibleMachine
             );
         }
 
@@ -256,6 +268,41 @@ namespace CPvC
             get { return _toggleSnapshotCommand; }
         }
 
+
+        private void LoadDisc(IFileSystem fileSystem, IInteractiveMachine machine, byte drive)
+        {
+            if (machine == null)
+            {
+                return;
+            }
+
+            using (machine.Lock())
+            {
+                byte[] image = PromptForMedia(fileSystem, true);
+                if (image != null)
+                {
+                    machine.LoadDisc(drive, image);
+                }
+            }
+        }
+
+        private void LoadTape(IFileSystem fileSystem, IInteractiveMachine machine)
+        {
+            if (machine == null)
+            {
+                return;
+            }
+
+            using (machine.Lock())
+            {
+                byte[] image = PromptForMedia(fileSystem, false);
+                if (image != null)
+                {
+                    machine.LoadTape(image);
+                }
+            }
+        }
+
         private Command CreateCommand(Action<object> execute, Predicate<object> canExecute)
         {
             Command command = new Command(execute, canExecute, _canExecuteChangedInvoker);
@@ -271,6 +318,25 @@ namespace CPvC
             {
                 command.InvokeCanExecuteChanged(sender, e);
             }
+        }
+        public void Persist(IFileSystem fileSystem, IPersistableMachine machine)
+        {
+            if (machine == null)
+            {
+                throw new ArgumentNullException(nameof(machine));
+            }
+
+            if (!String.IsNullOrEmpty(machine.PersistentFilepath))
+            {
+                // Should throw exception here?
+                return;
+            }
+
+            PromptForFileEventArgs args = new PromptForFileEventArgs(FileTypes.Machine, false);
+            PromptForFile?.Invoke(this, args);
+
+            string filepath = args.Filepath;
+            machine.Persist(fileSystem, filepath);
         }
 
         private void SelectBookmark(IJumpableMachine jumpableMachine)
@@ -324,40 +390,6 @@ namespace CPvC
                 if (newName != null)
                 {
                     machine.Name = newName;
-                }
-            }
-        }
-
-        private void LoadDisc(IFileSystem fileSystem, IInteractiveMachine machine, byte drive)
-        {
-            if (machine == null)
-            {
-                return;
-            }
-
-            using (machine.Lock())
-            {
-                byte[] image = PromptForMedia(fileSystem, true);
-                if (image != null)
-                {
-                    machine.LoadDisc(drive, image);
-                }
-            }
-        }
-
-        private void LoadTape(IFileSystem fileSystem, IInteractiveMachine machine)
-        {
-            if (machine == null)
-            {
-                return;
-            }
-
-            using (machine.Lock())
-            {
-                byte[] image = PromptForMedia(fileSystem, false);
-                if (image != null)
-                {
-                    machine.LoadTape(image);
                 }
             }
         }
