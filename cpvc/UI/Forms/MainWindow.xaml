@@ -40,6 +40,25 @@
                 </Style>
             </Style.Resources>
         </Style>
+        <Style x:Key="CommandMenuItemStyle" TargetType="{x:Type MenuItem}">
+            <Style.Triggers>
+                <Trigger Property="Command" Value="{x:Null}">
+                    <Setter Property="IsEnabled" Value="False" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Foreground" Value="#FF707070" />
+                </Trigger>
+            </Style.Triggers>
+            <Style.Resources>
+                <Style TargetType="{x:Type Image}">
+                    <Style.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Style.Resources>
+        </Style>
         <Style x:Key="HistoryDot" TargetType="Ellipse">
             <Setter Property="Stroke" Value="DarkBlue"/>
             <Setter Property="Fill" Value="DarkBlue"/>
@@ -194,7 +213,7 @@
             <MenuItem Header="File">
                 <MenuItem Header="New" Command="{Binding NewMachineCommand}" />
                 <MenuItem Header="Open..." Command="{Binding OpenMachineCommand}"/>
-                <MenuItem Header="Persist..." Command="{Binding PersistCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
+                <MenuItem Header="Persist..." Command="{Binding ActiveMachineViewModel.PersistCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
                 <Separator/>
                 <MenuItem Header="Close" Command="{Binding CloseCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
                 <Separator/>
@@ -205,59 +224,59 @@
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
-                    <MenuItem Header="Load..." Command="{Binding ActiveMachineViewModel.DriveACommand}"/>
-                    <MenuItem Header="Eject" Command="{Binding ActiveMachineViewModel.DriveAEjectCommand}"/>
+                    <MenuItem Header="Load..." Command="{Binding ActiveMachineViewModel.DriveACommand}" Style="{StaticResource CommandMenuItemStyle}"/>
+                    <MenuItem Header="Eject" Command="{Binding ActiveMachineViewModel.DriveAEjectCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
                 </MenuItem>
                 <MenuItem Header="Drive B:">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
-                    <MenuItem Header="Load..." Command="{Binding ActiveMachineViewModel.DriveBCommand}"/>
-                    <MenuItem Header="Eject" Command="{Binding ActiveMachineViewModel.DriveBEjectCommand}"/>
+                    <MenuItem Header="Load..." Command="{Binding ActiveMachineViewModel.DriveBCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
+                    <MenuItem Header="Eject" Command="{Binding ActiveMachineViewModel.DriveBEjectCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
                 </MenuItem>
                 <MenuItem Header="Tape">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/tape16.png" />
                     </MenuItem.Icon>
-                    <MenuItem Header="Load..." Command="{Binding ActiveMachineViewModel.TapeCommand}"/>
-                    <MenuItem Header="Eject" Command="{Binding ActiveMachineViewModel.TapeEjectCommand}"/>
+                    <MenuItem Header="Load..." Command="{Binding ActiveMachineViewModel.TapeCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
+                    <MenuItem Header="Eject" Command="{Binding ActiveMachineViewModel.TapeEjectCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Pause" Command="{Binding ActiveMachineViewModel.PauseCommand}">
+                <MenuItem Header="Pause" Command="{Binding ActiveMachineViewModel.PauseCommand}" Style="{StaticResource CommandMenuItemStyle}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/pause16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Resume" Command="{Binding ActiveMachineViewModel.ResumeCommand}">
+                <MenuItem Header="Resume" Command="{Binding ActiveMachineViewModel.ResumeCommand}" Style="{StaticResource CommandMenuItemStyle}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/running16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Reset" Command="{Binding ActiveMachineViewModel.ResetCommand}">
+                <MenuItem Header="Reset" Command="{Binding ActiveMachineViewModel.ResetCommand}" Style="{StaticResource CommandMenuItemStyle}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/reset16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Add Bookmark" Command="{Binding ActiveMachineViewModel.AddBookmarkCommand}">
+                <MenuItem Header="Add Bookmark" Command="{Binding ActiveMachineViewModel.AddBookmarkCommand}" Style="{StaticResource CommandMenuItemStyle}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmarkadd16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Jump to Most Recent Bookmark" Command="{Binding ActiveMachineViewModel.JumpToMostRecentBookmarkCommand}">
+                <MenuItem Header="Jump to Most Recent Bookmark" Command="{Binding ActiveMachineViewModel.JumpToMostRecentBookmarkCommand}" Style="{StaticResource CommandMenuItemStyle}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmarkprev16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Bookmarks..." Command="{Binding ActiveMachineViewModel.BrowseBookmarksCommand}">
+                <MenuItem Header="Bookmarks..." Command="{Binding ActiveMachineViewModel.BrowseBookmarksCommand}" Style="{StaticResource CommandMenuItemStyle}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmark16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Rename machine..." Command="{Binding ActiveMachineViewModel.RenameCommand}"/>
-                <MenuItem Header="Compact machine file" Command="{Binding ActiveMachineViewModel.CompactCommand}"/>
+                <MenuItem Header="Rename machine..." Command="{Binding ActiveMachineViewModel.RenameCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
+                <MenuItem Header="Compact machine file" Command="{Binding ActiveMachineViewModel.CompactCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
                 <Separator/>
                 <MenuItem Header="Reversible" Command="{Binding ActiveMachineViewModel.ToggleReversibility}" IsCheckable="True">
                     <MenuItem.Style>
@@ -267,7 +286,22 @@
                                 <DataTrigger Binding="{Binding ActiveMachineViewModel.Machine.SnapshotLimit}" Value="0">
                                     <Setter Property="IsChecked" Value="False"/>
                                 </DataTrigger>
+                                <Trigger Property="Command" Value="{x:Null}">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="#FF707070" />
+                                </Trigger>
                             </Style.Triggers>
+                            <Style.Resources>
+                                <Style TargetType="{x:Type Image}">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.5" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Style.Resources>
                         </Style>
                     </MenuItem.Style>
                 </MenuItem>
@@ -352,6 +386,7 @@
                     Grid.Row="2"
                     Height="576"
                     Width="768"
+                    VerticalAlignment="Top"
                     ContentTemplateSelector="{StaticResource MachineTemplateSelector}"
                     ItemTemplateSelector="{StaticResource TabItemTemplateSelector}" SelectionChanged="Machines_SelectionChanged">
             <TabControl.ItemsSource>
@@ -360,109 +395,111 @@
                 </CompositeCollection>
             </TabControl.ItemsSource>
         </TabControl>
-        <Grid x:Name="_historyCell"
-              Grid.Row="2"
-              Grid.Column="1"
-              Visibility="{Binding ElementName=_showHistoryToggleButton, Path=IsChecked, Converter={StaticResource BoolToVisConverter}}" Height="575" VerticalAlignment="Top">
-            <Button x:Name="_deleteBookmarkButton"
-                    Content="Delete Bookmark"
-                    Width="100"
-                    Height="32"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Top" Click="DeleteBookmarkButton_Click"/>
-            <Button x:Name="_deleteBranchButton"
-                    Content="Delete Branches"
-                    Width="100"
-                    Height="32"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Top"
-                    Margin="110, 0, 0, 0" Click="DeleteBranchButton_Click"/>
-            <Button x:Name="_jumpButton"
-                    Content="Jump"
-                    Width="60"
-                    Height="32"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Top"
-                    Margin="220, 0, 0, 0" Click="JumpButton_Click"/>
+        <TabControl Grid.Row="2" Grid.Column="1" Height="535" VerticalAlignment="Top">
+            <TabItem Header="History">
+                <Grid x:Name="_historyCell"
+                      Visibility="{Binding ElementName=_showHistoryToggleButton, Path=IsChecked, Converter={StaticResource BoolToVisConverter}}" VerticalAlignment="Top">
+                    <Button x:Name="_deleteBookmarkButton"
+                            Content="Delete Bookmark"
+                            Width="100"
+                            Height="32"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top" Click="DeleteBookmarkButton_Click"/>
+                    <Button x:Name="_deleteBranchButton"
+                            Content="Delete Branches"
+                            Width="100"
+                            Height="32"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            Margin="110, 0, 0, 0" Click="DeleteBranchButton_Click"/>
+                    <Button x:Name="_jumpButton"
+                            Content="Jump"
+                            Width="60"
+                            Height="32"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            Margin="220, 0, 0, 0" Click="JumpButton_Click"/>
 
-            <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="270" Height="528" Margin="0,37,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
-                <Grid DataContext="{Binding ActiveMachineViewModel.Machine.History.ViewModel, Mode=OneWay}">
-                    <Grid.Background>
-                        <DrawingBrush Viewport="0,0,10,32" ViewportUnits="Absolute" TileMode="Tile">
-                            <DrawingBrush.Drawing>
-                                <DrawingGroup>
-                                    <GeometryDrawing Geometry="M0,0 L10,0 10,16 0,16 0,0Z" Brush="White" />
-                                    <GeometryDrawing Geometry="M0,16 L10,16 10,32 0,32 0,16Z" Brush="#F5F5F5" />
-                                </DrawingGroup>
-                            </DrawingBrush.Drawing>
-                        </DrawingBrush>
-                    </Grid.Background>
-                    <ItemsControl ItemsSource="{Binding Lines}"
-                                  Margin="0,0,0,0"
-                                  Width="{Binding Width, Converter={StaticResource multiplyConverter}}"
-                                  Height="{Binding Lines.Count, Converter={StaticResource multiplyConverter}}"
-                                  HorizontalAlignment="Left"
-                                  VerticalAlignment="Top"
-                                  Canvas.ZIndex="100">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <Canvas RenderTransformOrigin="0.5,0.5">
-                                    <Canvas.RenderTransform>
-                                        <ScaleTransform ScaleY="-1" />
-                                    </Canvas.RenderTransform>
-                                </Canvas>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Ellipse StrokeThickness="2"
-                                         Margin="{Binding CircleMargin}"
-                                         Width="8"
-                                         Height="8"
-                                         HorizontalAlignment="Left"
-                                         VerticalAlignment="Top"
-                                         UseLayoutRounding="True"
-                                         Canvas.ZIndex="100"
-                                         Style="{StaticResource HistoryDot}">
-                                </Ellipse>
-                                <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                    <ItemsControl ItemsSource="{Binding Lines}"
-                                  Margin="0,0,0,0"
-                                  Height="{Binding Lines.Count, Converter={StaticResource multiplyConverter}}"
-                                  Width="{Binding Width, Converter={StaticResource multiplyConverter}}"
-                                  HorizontalAlignment="Left"
-                                  VerticalAlignment="Top"
-                                  Canvas.ZIndex="1">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <Canvas RenderTransformOrigin="0.5,0.5">
-                                    <Canvas.RenderTransform>
-                                        <ScaleTransform ScaleY="-1" />
-                                    </Canvas.RenderTransform>
-                                </Canvas>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Polyline Stroke="DarkBlue"
-                                          StrokeThickness="2"
-                                          Points="{Binding PolyLinePoints}"
+                    <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="270" Height="480" Margin="0,37,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                        <Grid DataContext="{Binding ActiveMachineViewModel.Machine.History.ViewModel, Mode=OneWay}">
+                            <Grid.Background>
+                                <DrawingBrush Viewport="0,0,10,32" ViewportUnits="Absolute" TileMode="Tile">
+                                    <DrawingBrush.Drawing>
+                                        <DrawingGroup>
+                                            <GeometryDrawing Geometry="M0,0 L10,0 10,16 0,16 0,0Z" Brush="White" />
+                                            <GeometryDrawing Geometry="M0,16 L10,16 10,32 0,32 0,16Z" Brush="#F5F5F5" />
+                                        </DrawingGroup>
+                                    </DrawingBrush.Drawing>
+                                </DrawingBrush>
+                            </Grid.Background>
+                            <ItemsControl ItemsSource="{Binding Lines}"
+                                          Margin="0,0,0,0"
+                                          Width="{Binding Width, Converter={StaticResource multiplyConverter}}"
+                                          Height="{Binding Lines.Count, Converter={StaticResource multiplyConverter}}"
                                           HorizontalAlignment="Left"
                                           VerticalAlignment="Top"
-                                          UseLayoutRounding="True"
+                                          Canvas.ZIndex="100">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas RenderTransformOrigin="0.5,0.5">
+                                            <Canvas.RenderTransform>
+                                                <ScaleTransform ScaleY="-1" />
+                                            </Canvas.RenderTransform>
+                                        </Canvas>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Ellipse StrokeThickness="2"
+                                                 Margin="{Binding CircleMargin}"
+                                                 Width="8"
+                                                 Height="8"
+                                                 HorizontalAlignment="Left"
+                                                 VerticalAlignment="Top"
+                                                 UseLayoutRounding="True"
+                                                 Canvas.ZIndex="100"
+                                                 Style="{StaticResource HistoryDot}">
+                                        </Ellipse>
+                                        <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <ItemsControl ItemsSource="{Binding Lines}"
+                                          Margin="0,0,0,0"
+                                          Height="{Binding Lines.Count, Converter={StaticResource multiplyConverter}}"
+                                          Width="{Binding Width, Converter={StaticResource multiplyConverter}}"
+                                          HorizontalAlignment="Left"
+                                          VerticalAlignment="Top"
                                           Canvas.ZIndex="1">
-                                </Polyline>
-                                <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas RenderTransformOrigin="0.5,0.5">
+                                            <Canvas.RenderTransform>
+                                                <ScaleTransform ScaleY="-1" />
+                                            </Canvas.RenderTransform>
+                                        </Canvas>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Polyline Stroke="DarkBlue"
+                                                  StrokeThickness="2"
+                                                  Points="{Binding PolyLinePoints}"
+                                                  HorizontalAlignment="Left"
+                                                  VerticalAlignment="Top"
+                                                  UseLayoutRounding="True"
+                                                  Canvas.ZIndex="1">
+                                        </Polyline>
+                                        <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
+                    </ScrollViewer>
                 </Grid>
-            </ScrollViewer>
-        </Grid>
+            </TabItem>
+        </TabControl>
         <StatusBar Height="30" Grid.Row="3" VerticalAlignment="Top">
             <TextBlock TextWrapping="Wrap" Text="{Binding ActiveMachineViewModel.Machine.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
             <Separator/>

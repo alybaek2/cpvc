@@ -25,10 +25,10 @@ namespace CPvC
             _allCommands = new List<Command>();
 
             _persistCommand = CreateCommand(
-                p => Persist(fileSystem, p as IPersistableMachine),
-                p =>
+                _ => Persist(fileSystem, _machine as IPersistableMachine),
+                _ =>
                 {
-                    if (p is IPersistableMachine pm)
+                    if (_machine is IPersistableMachine pm)
                     {
                         return pm.PersistentFilepath == null;
                     }
@@ -37,103 +37,103 @@ namespace CPvC
                 });
 
             _pauseCommand = CreateCommand(
-                p => (_machine as IPausableMachine)?.Stop(),
-                p => (_machine as IPausableMachine)?.CanStop ?? false
+                _ => (_machine as IPausableMachine)?.Stop(),
+                _ => (_machine as IPausableMachine)?.CanStop ?? false
             );
 
             _resumeCommand = CreateCommand(
-                p => (_machine as IPausableMachine)?.Start(),
-                p => (_machine as IPausableMachine)?.CanStart ?? false
+                _ => (_machine as IPausableMachine)?.Start(),
+                _ => (_machine as IPausableMachine)?.CanStart ?? false
             );
 
             _resetCommand = CreateCommand(
-                p => (_machine as IInteractiveMachine)?.Reset(),
-                p => _machine is IInteractiveMachine
+                _ => (_machine as IInteractiveMachine)?.Reset(),
+                _ => _machine is IInteractiveMachine
             );
 
             _driveACommand = CreateCommand(
-                p => LoadDisc(fileSystem, _machine as IInteractiveMachine, 0),
-                p => _machine is IInteractiveMachine
+                _ => LoadDisc(fileSystem, _machine as IInteractiveMachine, 0),
+                _ => _machine is IInteractiveMachine
             );
 
             _driveAEjectCommand = CreateCommand(
-                p => (_machine as IInteractiveMachine)?.LoadDisc(0, null),
-                p => _machine is IInteractiveMachine
+                _ => (_machine as IInteractiveMachine)?.LoadDisc(0, null),
+                _ => _machine is IInteractiveMachine
             );
 
             _driveBCommand = CreateCommand(
-                p => LoadDisc(fileSystem, _machine as IInteractiveMachine, 1),
-                p => _machine is IInteractiveMachine
+                _ => LoadDisc(fileSystem, _machine as IInteractiveMachine, 1),
+                _ => _machine is IInteractiveMachine
             );
 
             _driveBEjectCommand = CreateCommand(
-                p => (_machine as IInteractiveMachine)?.LoadDisc(1, null),
-                p => _machine is IInteractiveMachine
+                _ => (_machine as IInteractiveMachine)?.LoadDisc(1, null),
+                _ => _machine is IInteractiveMachine
             );
 
             _tapeCommand = CreateCommand(
-                p => LoadTape(fileSystem, _machine as IInteractiveMachine),
-                p => _machine is IInteractiveMachine
+                _ => LoadTape(fileSystem, _machine as IInteractiveMachine),
+                _ => _machine is IInteractiveMachine
             );
 
             _tapeEjectCommand = CreateCommand(
-                p => (_machine as IInteractiveMachine)?.LoadTape(null),
-                p => _machine is IInteractiveMachine
+                _ => (_machine as IInteractiveMachine)?.LoadTape(null),
+                _ => _machine is IInteractiveMachine
             );
 
             _toggleRunningCommand = CreateCommand(
-                p => (_machine as IPausableMachine)?.ToggleRunning(),
-                p => _machine is IPausableMachine
+                _ => (_machine as IPausableMachine)?.ToggleRunning(),
+                _ => _machine is IPausableMachine
             );
 
             _addBookmarkCommand = CreateCommand(
-                p => (_machine as IBookmarkableMachine)?.AddBookmark(false),
-                p => _machine is IBookmarkableMachine
+                _ => (_machine as IBookmarkableMachine)?.AddBookmark(false),
+                _ => _machine is IBookmarkableMachine
             );
 
             _jumpToMostRecentBookmarkCommand = CreateCommand(
-                p => (_machine as IJumpableMachine)?.JumpToMostRecentBookmark(),
-                p => _machine is IJumpableMachine
+                _ => (_machine as IJumpableMachine)?.JumpToMostRecentBookmark(),
+                _ => _machine is IJumpableMachine
             );
 
             _browseBookmarksCommand = CreateCommand(
-                p => SelectBookmark(_machine as IJumpableMachine),
-                p => _machine is IJumpableMachine
+                _ => SelectBookmark(_machine as IJumpableMachine),
+                _ => _machine is IJumpableMachine
             );
 
             _compactCommand = CreateCommand(
-                p => (_machine as ICompactableMachine)?.Compact(fileSystem),
-                p => (_machine as ICompactableMachine)?.CanCompact ?? false
+                _ => (_machine as ICompactableMachine)?.Compact(fileSystem),
+                _ => (_machine as ICompactableMachine)?.CanCompact ?? false
             );
 
             _renameCommand = CreateCommand(
-                p => RenameMachine(_machine),
-                p => _machine is IMachine
+                _ => RenameMachine(_machine),
+                _ => _machine is IMachine
             );
 
             _seekToNextBookmarkCommand = CreateCommand(
-                p => (_machine as IPrerecordedMachine)?.SeekToNextBookmark(),
-                p => _machine is IPrerecordedMachine
+                _ => (_machine as IPrerecordedMachine)?.SeekToNextBookmark(),
+                _ => _machine is IPrerecordedMachine
             );
 
             _seekToPrevBookmarkCommand = CreateCommand(
-                p => (_machine as IPrerecordedMachine)?.SeekToPreviousBookmark(),
-                p => _machine is IPrerecordedMachine
+                _ => (_machine as IPrerecordedMachine)?.SeekToPreviousBookmark(),
+                _ => _machine is IPrerecordedMachine
             );
 
             _seekToStartCommand = CreateCommand(
-                p => (_machine as IPrerecordedMachine)?.SeekToStart(),
-                p => _machine is IPrerecordedMachine
+                _ => (_machine as IPrerecordedMachine)?.SeekToStart(),
+                _ => _machine is IPrerecordedMachine
             );
 
             _reverseStartCommand = CreateCommand(
-                p => (_machine as IReversibleMachine)?.Reverse(),
-                p => _machine is IReversibleMachine
+                _ => (_machine as IReversibleMachine)?.Reverse(),
+                _ => _machine is IReversibleMachine
             );
 
             _toggleSnapshotCommand = CreateCommand(
-                p => (_machine as IReversibleMachine)?.ToggleReversibilityEnabled(),
-                p => _machine is IReversibleMachine
+                _ => (_machine as IReversibleMachine)?.ToggleReversibilityEnabled(),
+                _ => _machine is IReversibleMachine
             );
         }
 

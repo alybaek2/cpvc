@@ -48,6 +48,7 @@ namespace CPvC.UI.Forms
 
                         machineViewModel.PromptForFile += MainViewModel_PromptForFile;
                         machineViewModel.PromptForBookmark += MainViewModel_PromptForBookmark;
+                        machineViewModel.SelectItem += MainViewModel_SelectItem;
 
                         return machineViewModel;
                     });
