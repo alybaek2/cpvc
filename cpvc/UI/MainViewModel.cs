@@ -28,10 +28,6 @@ namespace CPvC
         /// </summary>
         private MachineViewModel _activeMachine;
 
-        private IFileSystem _fileSystem;
-
-        private Action<Action> _canExecuteChangedInvoker;
-
         public event PromptForFileEventHandler PromptForFile;
         public event SelectRemoteMachineEventHandler SelectRemoteMachine;
         public event SelectServerPortEventHandler SelectServerPort;
@@ -58,9 +54,16 @@ namespace CPvC
 
         public MainViewModel(ISettings settings, IFileSystem fileSystem, ViewModelFactory<IMachine, MachineViewModel> machineViewModelFactory, Action<Action> canExecuteChangedInvoker)
         {
+            Command CreateCommand(Action<object> execute, Predicate<object> canExecute)
+            {
+                Command command = new Command(execute, canExecute, canExecuteChangedInvoker);
+
+                _allCommands.Add(command);
+
+                return command;
+            }
+
             _settings = settings;
-            _fileSystem = fileSystem;
-            _canExecuteChangedInvoker = canExecuteChangedInvoker;
 
             InitModel(new MainModel(settings, fileSystem));
 
@@ -74,7 +77,7 @@ namespace CPvC
             ActiveMachineViewModel = null;
 
             _openMachineCommand = CreateCommand(
-                p => OpenMachine(),
+                p => OpenMachine(fileSystem),
                 p => true
             );
 
@@ -118,15 +121,6 @@ namespace CPvC
                 p => Close(p as IMachine, true),
                 p => (p as IMachine)?.CanClose ?? false
             );
-        }
-
-        private Command CreateCommand(Action<object> execute, Predicate<object> canExecute)
-        {
-            Command command = new Command(execute, canExecute, _canExecuteChangedInvoker);
-
-            _allCommands.Add(command);
-
-            return command;
         }
 
         public MainModel Model
@@ -284,7 +278,7 @@ namespace CPvC
             machine.Start().Wait();
         }
 
-        private IMachine OpenMachine()
+        private IMachine OpenMachine(IFileSystem fileSystem)
         {
             PromptForFileEventArgs args = new PromptForFileEventArgs(FileTypes.Machine, true);
             PromptForFile?.Invoke(this, args);
@@ -308,7 +302,7 @@ namespace CPvC
                 });
             if (machine == null)
             {
-                machine = _model.AddMachine(fullFilepath, _fileSystem, true);
+                machine = _model.AddMachine(fullFilepath, fileSystem, true);
             }
 
             return machine;

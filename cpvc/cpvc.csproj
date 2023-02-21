@@ -218,6 +218,8 @@
     <Compile Include="UI\MainViewModel.cs" />
     <Compile Include="UI\PositionChangedEvent.cs" />
     <Compile Include="UI\RemoteViewModel.cs" />
+    <Compile Include="ViewModelFactory.cs" />
+    <Compile Include="ViewModelObservableCollection.cs" />
     <Page Include="UI\Forms\ConnectWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
