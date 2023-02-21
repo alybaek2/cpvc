@@ -224,11 +224,25 @@ namespace CPvC
                     break;
                 case HistoryChangedAction.DeleteBranch:
                     {
-                        ListTreeNode<HistoryEvent> node = GetNode(args.HistoryEvent);
+                        List<HistoryEvent> eventsToDelete = new List<HistoryEvent>();
+                        eventsToDelete.Add(args.HistoryEvent);
 
-                        RemoveRecursive(node);
+                        while (eventsToDelete.Any())
+                        {
+                            HistoryEvent historyEvent = eventsToDelete[0];
+                            eventsToDelete.RemoveAt(0);
 
-                        changed = true;
+                            ListTreeNode<HistoryEvent> node = GetNode(historyEvent);
+                            if (node == null)
+                            {
+                                eventsToDelete.AddRange(historyEvent.Children);
+                            }
+                            else
+                            {
+                                RemoveRecursive(node);
+                                changed = true;
+                            }
+                        }
                     }
                     break;
                 case HistoryChangedAction.DeleteBookmark:

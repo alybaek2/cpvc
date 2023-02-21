@@ -275,7 +275,7 @@
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Rename machine..." Command="{Binding ActiveMachineViewModel.RenameCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
+                <MenuItem Header="Rename..." Command="{Binding ActiveMachineViewModel.RenameCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
                 <MenuItem Header="Compact machine file" Command="{Binding ActiveMachineViewModel.CompactCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
                 <Separator/>
                 <MenuItem Header="Reversible" Command="{Binding ActiveMachineViewModel.ToggleReversibility}" IsCheckable="True">
