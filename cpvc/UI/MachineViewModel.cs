@@ -24,6 +24,11 @@ namespace CPvC
 
             _allCommands = new List<Command>();
 
+            _openCommand = CreateCommand(
+                _ => (_machine as IPersistableMachine)?.OpenFromFile(fileSystem),
+                _ => !(_machine as IPersistableMachine)?.IsOpen ?? false
+            );
+
             _persistCommand = CreateCommand(
                 _ => Persist(fileSystem, _machine as IPersistableMachine),
                 _ =>
@@ -155,6 +160,20 @@ namespace CPvC
             get
             {
                 return _machine;
+            }
+        }
+
+        public HistoryViewModel History
+        {
+            get
+            {
+                IHistoricalMachine historicalMachine = _machine as IHistoricalMachine;
+                if (historicalMachine == null)
+                {
+                    return null;
+                }
+
+                return HistoryViewModel.GetViewModel(historicalMachine.History);
             }
         }
 
@@ -454,6 +473,7 @@ namespace CPvC
         }
 
         private IMachine _machine;
+        //private HistoryViewModel _historyViewModel;
         //private IFileSystem _fileSystem;
 
         private Action<Action> _canExecuteChangedInvoker;

@@ -108,10 +108,10 @@
                                             <ContextMenu>
                                                 <MenuItem Header="Pause" Command="{Binding PauseCommand}"/>
                                                 <MenuItem Header="Resume" Command="{Binding ResumeCommand}"/>
-                                                <MenuItem Header="Open" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.OpenCommand}" CommandParameter="{Binding}"/>
-                                                <MenuItem Header="Close" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.CloseCommand}" CommandParameter="{Binding}"/>
+                                                <MenuItem Header="Open" Command="{Binding OpenCommand}"/>
+                                                <MenuItem Header="Close" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.CloseCommand}" CommandParameter="{Binding Machine}"/>
                                                 <MenuItem Header="Persist..." Command="{Binding PersistCommand}"/>
-                                                <MenuItem Header="Remove" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.RemoveCommand}" CommandParameter="{Binding}"/>
+                                                <MenuItem Header="Remove" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.RemoveCommand}" CommandParameter="{Binding Machine}"/>
                                                 <MenuItem Header="Compact" Command="{Binding CompactCommand}"/>
                                             </ContextMenu>
                                         </Grid.ContextMenu>
@@ -215,7 +215,7 @@
                 <MenuItem Header="Open..." Command="{Binding OpenMachineCommand}"/>
                 <MenuItem Header="Persist..." Command="{Binding ActiveMachineViewModel.PersistCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
                 <Separator/>
-                <MenuItem Header="Close" Command="{Binding CloseCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
+                <MenuItem Header="Close" Command="{Binding CloseCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel.Machine}"/>
                 <Separator/>
                 <MenuItem Header="Exit" Click="ExitMenuItem_Click"/>
             </MenuItem>
@@ -395,33 +395,26 @@
                 </CompositeCollection>
             </TabControl.ItemsSource>
         </TabControl>
-        <TabControl Grid.Row="2" Grid.Column="1" Height="535" VerticalAlignment="Top">
+        <TabControl Grid.Row="2" Grid.Column="1" Height="535" VerticalAlignment="Top" Visibility="{Binding ElementName=_showHistoryToggleButton, Path=IsChecked, Converter={StaticResource BoolToVisConverter}}">
             <TabItem Header="History">
-                <Grid x:Name="_historyCell"
-                      Visibility="{Binding ElementName=_showHistoryToggleButton, Path=IsChecked, Converter={StaticResource BoolToVisConverter}}" VerticalAlignment="Top">
-                    <Button x:Name="_deleteBookmarkButton"
-                            Content="Delete Bookmark"
-                            Width="100"
-                            Height="32"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Top" Click="DeleteBookmarkButton_Click"/>
-                    <Button x:Name="_deleteBranchButton"
-                            Content="Delete Branches"
-                            Width="100"
-                            Height="32"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Top"
-                            Margin="110, 0, 0, 0" Click="DeleteBranchButton_Click"/>
-                    <Button x:Name="_jumpButton"
-                            Content="Jump"
-                            Width="60"
-                            Height="32"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Top"
-                            Margin="220, 0, 0, 0" Click="JumpButton_Click"/>
-
-                    <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="270" Height="480" Margin="0,37,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
-                        <Grid DataContext="{Binding ActiveMachineViewModel.Machine.History.ViewModel, Mode=OneWay}">
+                <Grid x:Name="_historyCell">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="_deleteBookmarkButton"
+                                Content="Delete Bookmark"
+                                Click="DeleteBookmarkButton_Click" Margin="5"/>
+                        <Button x:Name="_deleteBranchButton"
+                                Content="Delete Branches"
+                                Click="DeleteBranchButton_Click" Margin="5"/>
+                        <Button x:Name="_jumpButton"
+                                Content="Jump"
+                                Click="JumpButton_Click" Margin="5"/>
+                    </StackPanel>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="270" Height="480" HorizontalAlignment="Left" VerticalAlignment="Top">
+                        <Grid DataContext="{Binding ActiveMachineViewModel.History, Mode=OneWay}">
                             <Grid.Background>
                                 <DrawingBrush Viewport="0,0,10,32" ViewportUnits="Absolute" TileMode="Tile">
                                     <DrawingBrush.Drawing>

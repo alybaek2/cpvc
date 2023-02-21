@@ -43,14 +43,14 @@ namespace CPvC
             //_lines = new ObservableCollection<HistoryControl.HistoryLineViewModel>();
         }
 
-        // Hacky temporary thing until MachineViewModel is brought back...
-        public HistoryViewModel ViewModel
-        {
-            get
-            {
-                return HistoryViewModel.GetViewModel(this);
-            }
-        }
+        //// Hacky temporary thing until MachineViewModel is brought back...
+        //public HistoryViewModel ViewModel
+        //{
+        //    get
+        //    {
+        //        return HistoryViewModel.GetViewModel(this);
+        //    }
+        //}
 
 
         //public ObservableCollection<HistoryControl.HistoryLineViewModel> Lines

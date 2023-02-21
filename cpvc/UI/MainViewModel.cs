@@ -24,9 +24,9 @@ namespace CPvC
         private ObservableCollection<ServerInfo> _recentServers;
 
         /// <summary>
-        /// The currently active item. Will be either null (the Home tab) or a Machine.
+        /// The currently active machine view model.
         /// </summary>
-        private object _activeItem;
+        private MachineViewModel _activeMachine;
 
         private IFileSystem _fileSystem;
 
@@ -59,7 +59,7 @@ namespace CPvC
         //private readonly Command _tapeEjectCommand;
         //private readonly Command _resetCommand;
         //private readonly Command _persistCommand;
-        private readonly Command _openCommand;
+        //private readonly Command _openCommand;
         //private readonly Command _pauseCommand;
         //private readonly Command _resumeCommand;
         //private readonly Command _toggleRunningCommand;
@@ -146,10 +146,10 @@ namespace CPvC
                 p => (p as IMachine)?.CanClose ?? false
             );
 
-            _openCommand = CreateCommand(
-                p => (p as IPersistableMachine)?.OpenFromFile(_fileSystem),
-                p => !(p as IPersistableMachine)?.IsOpen ?? false
-            );
+            //_openCommand = CreateCommand(
+            //    p => (p as IPersistableMachine)?.OpenFromFile(_fileSystem),
+            //    p => !(p as IPersistableMachine)?.IsOpen ?? false
+            //);
 
             //_persistCommand = CreateCommand(
             //    p => Persist(p as IPersistableMachine),
@@ -431,10 +431,10 @@ namespace CPvC
         //    get { return _persistCommand; }
         //}
 
-        public Command OpenCommand
-        {
-            get { return _openCommand; }
-        }
+        //public Command OpenCommand
+        //{
+        //    get { return _openCommand; }
+        //}
 
         //public Command PauseCommand
         //{
@@ -501,51 +501,18 @@ namespace CPvC
         //    get { return _toggleSnapshotCommand; }
         //}
 
-        ///// <summary>
-        ///// Represents the currently active item in the main window. Corresponds to the DataContext associated with the currently
-        ///// selected tab in the main window.
-        ///// </summary>
-        public object ActiveItem
-        {
-            get
-            {
-                return _activeItem;
-            }
-
-            set
-            {
-                _activeItem = value;
-                //if (value is MachineViewModel)
-                //{
-                //    _activeItem = value;
-                //}
-                //else if (value is TabItem tabItem)
-                //{
-                //    _activeItem = null; // tabItem.DataContext;
-                //}
-
-                //_activeItem = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(ActiveMachineViewModel));
-
-                UpdateCommands(this, null);
-                ActiveMachineViewModel?.UpdateCommands(this, null);
-            }
-        }
-
         public MachineViewModel ActiveMachineViewModel
         {
             get
             {
-                return _activeItem as MachineViewModel; //?? _emptyMachineViewModel;
+                return _activeMachine;
             }
 
             set
             {
-                _activeItem = value;
+                _activeMachine = value;
 
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(ActiveItem));
 
                 UpdateCommands(this, null);
                 value?.UpdateCommands(this, null);
@@ -574,8 +541,6 @@ namespace CPvC
         private IMachine OpenMachine()
         {
             PromptForFileEventArgs args = new PromptForFileEventArgs(FileTypes.Machine, true);
-            //args.FileType = FileTypes.Machine;
-            //args.Existing = true;
             PromptForFile?.Invoke(this, args);
 
             string filepath = args.Filepath;
@@ -707,81 +672,6 @@ namespace CPvC
         public void EnableTurbo(ITurboableMachine machine, bool enable)
         {
             machine.EnableTurbo(enable);
-        }
-
-        //public void Persist(IPersistableMachine machine)
-        //{
-        //    if (machine == null)
-        //    {
-        //        throw new ArgumentNullException(nameof(machine));
-        //    }
-
-        //    if (!String.IsNullOrEmpty(machine.PersistentFilepath))
-        //    {
-        //        // Should throw exception here?
-        //        return;
-        //    }
-
-        //    PromptForFileEventArgs args = new PromptForFileEventArgs(FileTypes.Machine, false);
-        //    PromptForFile?.Invoke(this, args);
-
-        //    string filepath = args.Filepath;
-        //    machine.Persist(_fileSystem, filepath);
-        //}
-
-        private void SelectBookmark(IJumpableMachine jumpableMachine)
-        {
-            if (jumpableMachine == null)
-            {
-                return;
-            }
-
-            using (jumpableMachine.Lock())
-            {
-                PromptForBookmarkEventArgs args = new PromptForBookmarkEventArgs();
-                PromptForBookmark?.Invoke(this, args);
-
-                bool updateStatus = true;
-                HistoryEvent historyEvent = args.SelectedBookmark;
-                switch (historyEvent)
-                {
-                    case BookmarkHistoryEvent bookmarkHistoryEvent:
-                        jumpableMachine.JumpToBookmark(bookmarkHistoryEvent);
-                        break;
-                    case RootHistoryEvent _:
-                        jumpableMachine.JumpToRoot();
-                        break;
-                    default:
-                        updateStatus = false;
-                        break;
-                }
-
-                // This should really be done in the call to JumpToBookmark/Root...
-                if (updateStatus)
-                {
-                    (jumpableMachine as IMachine).Status = String.Format("Jumped to {0}", Helpers.GetTimeSpanFromTicks(historyEvent.Ticks).ToString(@"hh\:mm\:ss"));
-                }
-            }
-        }
-
-        private void RenameMachine(IMachine machine)
-        {
-            if (machine == null)
-            {
-                return;
-            }
-
-            using (machine.Lock())
-            {
-                PromptForNameEventArgs args = new PromptForNameEventArgs(machine.Name);
-                PromptForName?.Invoke(this, args);
-
-                string newName = args.SelectedName;
-                if (newName != null)
-                {
-                    machine.Name = newName;
-                }
-            }
         }
 
         protected void OnPropertyChanged([CallerMemberName] string name = null)

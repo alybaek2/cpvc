@@ -426,7 +426,7 @@ namespace CPvC.UI.Forms
         {
             if (sender is FrameworkElement element && element.DataContext is MachineViewModel machineViewModel)
             {
-                _mainViewModel.OpenCommand.Execute(machineViewModel.Machine);
+                machineViewModel.OpenCommand.Execute(null);
                 _mainViewModel.ActiveMachineViewModel = machineViewModel;
             }
         }
@@ -550,7 +550,7 @@ namespace CPvC.UI.Forms
             EventArgs args = new EventArgs();
             //_mainViewModel.PauseCommand.InvokeCanExecuteChanged(sender, args);
             //_mainViewModel.ResumeCommand.InvokeCanExecuteChanged(sender, args);
-            _mainViewModel.OpenCommand.InvokeCanExecuteChanged(sender, args);
+            //_mainViewModel.OpenCommand.InvokeCanExecuteChanged(sender, args);
             _mainViewModel.CloseCommand.InvokeCanExecuteChanged(sender, args);
             //_mainViewModel.PersistCommand.InvokeCanExecuteChanged(sender, args);
             _mainViewModel.RemoveCommand.InvokeCanExecuteChanged(sender, args);
