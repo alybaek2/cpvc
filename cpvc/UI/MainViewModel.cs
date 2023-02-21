@@ -33,9 +33,6 @@ namespace CPvC
         private Action<Action> _canExecuteChangedInvoker;
 
         public event PromptForFileEventHandler PromptForFile;
-        public event SelectItemEventHandler SelectItem;
-        public event PromptForBookmarkEventHandler PromptForBookmark;
-        public event PromptForNameEventHandler PromptForName;
         public event SelectRemoteMachineEventHandler SelectRemoteMachine;
         public event SelectServerPortEventHandler SelectServerPort;
         public event ConfirmCloseEventHandler ConfirmClose;
@@ -50,29 +47,6 @@ namespace CPvC
         private readonly Command _connectCommand;
         private readonly Command _removeCommand;
         private readonly Command _closeCommand;
-
-        //private readonly Command _driveACommand;
-        //private readonly Command _driveAEjectCommand;
-        //private readonly Command _driveBCommand;
-        //private readonly Command _driveBEjectCommand;
-        //private readonly Command _tapeCommand;
-        //private readonly Command _tapeEjectCommand;
-        //private readonly Command _resetCommand;
-        //private readonly Command _persistCommand;
-        //private readonly Command _openCommand;
-        //private readonly Command _pauseCommand;
-        //private readonly Command _resumeCommand;
-        //private readonly Command _toggleRunningCommand;
-        //private readonly Command _addBookmarkCommand;
-        //private readonly Command _jumpToMostRecentBookmarkCommand;
-        //private readonly Command _browseBookmarksCommand;
-        //private readonly Command _compactCommand;
-        //private readonly Command _renameCommand;
-        //private readonly Command _seekToNextBookmarkCommand;
-        //private readonly Command _seekToPrevBookmarkCommand;
-        //private readonly Command _seekToStartCommand;
-        //private readonly Command _reverseStartCommand;
-        //private readonly Command _toggleSnapshotCommand;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -96,7 +70,6 @@ namespace CPvC
 
             _allCommands = new List<Command>();
 
-            //ViewModelFactory<IMachine, MachineViewModel> factory = new ViewModelFactory<IMachine, MachineViewModel>(machine => { return new MachineViewModel(machine, fileSystem, canExecuteChangedInvoker); });
             _machineViewModels = new ViewModelObservableCollection<IMachine, MachineViewModel>(_model.Machines, machineViewModelFactory);
             ActiveMachineViewModel = null;
 
@@ -145,123 +118,6 @@ namespace CPvC
                 p => Close(p as IMachine, true),
                 p => (p as IMachine)?.CanClose ?? false
             );
-
-            //_openCommand = CreateCommand(
-            //    p => (p as IPersistableMachine)?.OpenFromFile(_fileSystem),
-            //    p => !(p as IPersistableMachine)?.IsOpen ?? false
-            //);
-
-            //_persistCommand = CreateCommand(
-            //    p => Persist(p as IPersistableMachine),
-            //    p =>
-            //    {
-            //        if (p is IPersistableMachine pm)
-            //        {
-            //            return pm.PersistentFilepath == null;
-            //        }
-
-            //        return false;
-            //    });
-
-            //_pauseCommand = CreateCommand(
-            //    p => (p as IPausableMachine)?.Stop(),
-            //    p => (p as IPausableMachine)?.CanStop ?? false
-            //);
-
-            //_resumeCommand = CreateCommand(
-            //    p => (p as IPausableMachine)?.Start(),
-            //    p => (p as IPausableMachine)?.CanStart ?? false
-            //);
-
-            //_resetCommand = CreateCommand(
-            //    p => (p as IInteractiveMachine)?.Reset(),
-            //    p => p is IInteractiveMachine
-            //);
-
-            //_driveACommand = CreateCommand(
-            //    p => LoadDisc(p as IInteractiveMachine, 0),
-            //    p => p is IInteractiveMachine
-            //);
-
-            //_driveAEjectCommand = CreateCommand(
-            //    p => (p as IInteractiveMachine)?.LoadDisc(0, null),
-            //    p => p is IInteractiveMachine
-            //);
-
-            //_driveBCommand = CreateCommand(
-            //    p => LoadDisc(p as IInteractiveMachine, 1),
-            //    p => p is IInteractiveMachine
-            //);
-
-            //_driveBEjectCommand = CreateCommand(
-            //    p => (p as IInteractiveMachine)?.LoadDisc(1, null),
-            //    p => p is IInteractiveMachine
-            //);
-
-            //_tapeCommand = CreateCommand(
-            //    p => LoadTape(p as IInteractiveMachine),
-            //    p => p is IInteractiveMachine
-            //);
-
-            //_tapeEjectCommand = CreateCommand(
-            //    p => (p as IInteractiveMachine)?.LoadTape(null),
-            //    p => p is IInteractiveMachine
-            //);
-
-            //_toggleRunningCommand = CreateCommand(
-            //    p => (p as IPausableMachine)?.ToggleRunning(),
-            //    p => p is IPausableMachine
-            //);
-
-            //_addBookmarkCommand = CreateCommand(
-            //    p => (p as IBookmarkableMachine)?.AddBookmark(false),
-            //    p => p is IBookmarkableMachine
-            //);
-
-            //_jumpToMostRecentBookmarkCommand = CreateCommand(
-            //    p => (p as IJumpableMachine)?.JumpToMostRecentBookmark(),
-            //    p => p is IJumpableMachine
-            //);
-
-            //_browseBookmarksCommand = CreateCommand(
-            //    p => SelectBookmark(p as IJumpableMachine),
-            //    p => p is IJumpableMachine
-            //);
-
-            //_compactCommand = CreateCommand(
-            //    p => (p as ICompactableMachine)?.Compact(_fileSystem),
-            //    p => (p as ICompactableMachine)?.CanCompact ?? false
-            //);
-
-            //_renameCommand = CreateCommand(
-            //    p => RenameMachine(p as IMachine),
-            //    p => p is IMachine
-            //);
-
-            //_seekToNextBookmarkCommand = CreateCommand(
-            //    p => (p as IPrerecordedMachine)?.SeekToNextBookmark(),
-            //    p => p is IPrerecordedMachine
-            //);
-
-            //_seekToPrevBookmarkCommand = CreateCommand(
-            //    p => (p as IPrerecordedMachine)?.SeekToPreviousBookmark(),
-            //    p => p is IPrerecordedMachine
-            //);
-
-            //_seekToStartCommand = CreateCommand(
-            //    p => (p as IPrerecordedMachine)?.SeekToStart(),
-            //    p => p is IPrerecordedMachine
-            //);
-
-            //_reverseStartCommand = CreateCommand(
-            //    p => (p as IReversibleMachine)?.Reverse(),
-            //    p => p is IReversibleMachine
-            //);
-
-            //_toggleSnapshotCommand = CreateCommand(
-            //    p => (p as IReversibleMachine)?.ToggleReversibilityEnabled(),
-            //    p => p is IReversibleMachine
-            //);
         }
 
         private Command CreateCommand(Action<object> execute, Predicate<object> canExecute)
@@ -390,116 +246,6 @@ namespace CPvC
         {
             get { return _closeCommand; }
         }
-
-        //public Command ResetCommand
-        //{
-        //    get { return _resetCommand; }
-        //}
-
-        //public Command DriveACommand
-        //{
-        //    get { return _driveACommand; }
-        //}
-
-        //public Command DriveBCommand
-        //{
-        //    get { return _driveBCommand; }
-        //}
-
-        //public Command DriveAEjectCommand
-        //{
-        //    get { return _driveAEjectCommand; }
-        //}
-
-        //public Command DriveBEjectCommand
-        //{
-        //    get { return _driveBEjectCommand; }
-        //}
-
-        //public Command TapeCommand
-        //{
-        //    get { return _tapeCommand; }
-        //}
-
-        //public Command TapeEjectCommand
-        //{
-        //    get { return _tapeEjectCommand; }
-        //}
-
-        //public Command PersistCommand
-        //{
-        //    get { return _persistCommand; }
-        //}
-
-        //public Command OpenCommand
-        //{
-        //    get { return _openCommand; }
-        //}
-
-        //public Command PauseCommand
-        //{
-        //    get { return _pauseCommand; }
-        //}
-
-        //public Command ResumeCommand
-        //{
-        //    get { return _resumeCommand; }
-        //}
-
-        //public Command ToggleRunningCommand
-        //{
-        //    get { return _toggleRunningCommand; }
-        //}
-
-        //public Command AddBookmarkCommand
-        //{
-        //    get { return _addBookmarkCommand; }
-        //}
-
-        //public Command JumpToMostRecentBookmarkCommand
-        //{
-        //    get { return _jumpToMostRecentBookmarkCommand; }
-        //}
-
-        //public Command BrowseBookmarksCommand
-        //{
-        //    get { return _browseBookmarksCommand; }
-        //}
-
-        //public Command CompactCommand
-        //{
-        //    get { return _compactCommand; }
-        //}
-
-        //public Command RenameCommand
-        //{
-        //    get { return _renameCommand; }
-        //}
-
-        //public Command SeekToNextBookmarkCommand
-        //{
-        //    get { return _seekToNextBookmarkCommand; }
-        //}
-
-        //public Command SeekToPrevBookmarkCommand
-        //{
-        //    get { return _seekToPrevBookmarkCommand; }
-        //}
-
-        //public Command SeekToStartCommand
-        //{
-        //    get { return _seekToStartCommand; }
-        //}
-
-        //public Command ReverseStartCommand
-        //{
-        //    get { return _reverseStartCommand; }
-        //}
-
-        //public Command ToggleReversibility
-        //{
-        //    get { return _toggleSnapshotCommand; }
-        //}
 
         public MachineViewModel ActiveMachineViewModel
         {

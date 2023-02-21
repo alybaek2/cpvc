@@ -27,8 +27,6 @@ namespace CPvC
 
         private int _nextId;
 
-        //public ObservableCollection<HistoryControl.HistoryLineViewModel> _lines;
-
         public History()
         {
             _nodes = new HashSet<HistoryNode>();
@@ -39,27 +37,7 @@ namespace CPvC
             _nodes.Add(_rootNode);
 
             _currentNode = _rootNode;
-
-            //_lines = new ObservableCollection<HistoryControl.HistoryLineViewModel>();
         }
-
-        //// Hacky temporary thing until MachineViewModel is brought back...
-        //public HistoryViewModel ViewModel
-        //{
-        //    get
-        //    {
-        //        return HistoryViewModel.GetViewModel(this);
-        //    }
-        //}
-
-
-        //public ObservableCollection<HistoryControl.HistoryLineViewModel> Lines
-        //{
-        //    get
-        //    {
-        //        return _lines;
-        //    }
-        //}
 
         public bool IsClosedEvent(HistoryEvent historyEvent)
         {

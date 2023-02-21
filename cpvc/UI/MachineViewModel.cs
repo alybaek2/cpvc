@@ -13,14 +13,20 @@ namespace CPvC
     {
         public MachineViewModel(IMachine machine, IFileSystem fileSystem, Action<Action> canExecuteChangedInvoker)
         {
+            Command CreateCommand(Action<object> execute, Predicate<object> canExecute)
+            {
+                Command command = new Command(execute, canExecute, canExecuteChangedInvoker);
+
+                _allCommands.Add(command);
+
+                return command;
+            }
+
             _machine = machine;
             if (_machine != null)
             {
                 _machine.PropertyChanged += Machine_PropertyChanged;
             }
-
-            //_fileSystem = fileSystem;
-            _canExecuteChangedInvoker = canExecuteChangedInvoker;
 
             _allCommands = new List<Command>();
 
@@ -322,15 +328,6 @@ namespace CPvC
             }
         }
 
-        private Command CreateCommand(Action<object> execute, Predicate<object> canExecute)
-        {
-            Command command = new Command(execute, canExecute, _canExecuteChangedInvoker);
-
-            _allCommands.Add(command);
-
-            return command;
-        }
-
         public void UpdateCommands(object sender, EventArgs e)
         {
             foreach (Command command in _allCommands)
@@ -473,10 +470,6 @@ namespace CPvC
         }
 
         private IMachine _machine;
-        //private HistoryViewModel _historyViewModel;
-        //private IFileSystem _fileSystem;
-
-        private Action<Action> _canExecuteChangedInvoker;
 
         private readonly Command _driveACommand;
         private readonly Command _driveAEjectCommand;
@@ -501,7 +494,7 @@ namespace CPvC
         private readonly Command _reverseStartCommand;
         private readonly Command _toggleSnapshotCommand;
 
-        private List<Command> _allCommands;
+        private readonly List<Command> _allCommands;
     }
 
     public class ViewModelFactory<D, V>

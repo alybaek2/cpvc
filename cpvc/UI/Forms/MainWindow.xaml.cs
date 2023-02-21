@@ -56,9 +56,6 @@ namespace CPvC.UI.Forms
             _mainViewModel = new MainViewModel(_settings, _fileSystem, factory, canExecuteChangedInvoker);
 
             _mainViewModel.PromptForFile += MainViewModel_PromptForFile;
-            _mainViewModel.SelectItem += MainViewModel_SelectItem;
-            _mainViewModel.PromptForBookmark += MainViewModel_PromptForBookmark;
-            _mainViewModel.PromptForName += MainViewModel_PromptForName;
             _mainViewModel.SelectRemoteMachine += MainViewModel_SelectRemoteMachine;
             _mainViewModel.SelectServerPort += MainViewModel_SelectServerPort;
             _mainViewModel.ConfirmClose += MainViewModel_ConfirmClose;
@@ -548,13 +545,8 @@ namespace CPvC.UI.Forms
             _mainViewModel.ActiveMachineViewModel?.UpdateCommands(sender, e);
 
             EventArgs args = new EventArgs();
-            //_mainViewModel.PauseCommand.InvokeCanExecuteChanged(sender, args);
-            //_mainViewModel.ResumeCommand.InvokeCanExecuteChanged(sender, args);
-            //_mainViewModel.OpenCommand.InvokeCanExecuteChanged(sender, args);
             _mainViewModel.CloseCommand.InvokeCanExecuteChanged(sender, args);
-            //_mainViewModel.PersistCommand.InvokeCanExecuteChanged(sender, args);
             _mainViewModel.RemoveCommand.InvokeCanExecuteChanged(sender, args);
-            //_mainViewModel.CompactCommand.InvokeCanExecuteChanged(sender, args);
         }
 
         private WriteableBitmap GetBitmap(Machine machine)

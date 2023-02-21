@@ -497,10 +497,6 @@
             <TextBlock TextWrapping="Wrap" Text="{Binding ActiveMachineViewModel.Machine.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
             <Separator/>
             <Slider Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding ActiveMachineViewModel.Machine.Volume, Mode=TwoWay}" ToolTip="{Binding ActiveMachineViewModel.Machine.Volume}" />
-            <Button Content="&lt;&lt;" Command="{Binding SeekToPrevBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
-            <Button Content=">>" Command="{Binding SeekToNextBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
-            <Button Content=" |&lt; " Command="{Binding SeekToStartCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel}"/>
-            <Slider Width="300" VerticalAlignment="Center" HorizontalAlignment="Right" Minimum="0" Maximum="{Binding ActiveMachineViewModel.Machine.EndTicks, Mode=OneWay}" Value="{Binding ActiveMachineViewModel.Machine.Ticks, Mode=OneWay}"/>
         </StatusBar>
     </Grid>
 </Window>
