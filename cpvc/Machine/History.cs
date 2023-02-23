@@ -78,7 +78,7 @@ namespace CPvC
                 {
                     currentCoreAction.StopTicks = runUntilAction.StopTicks;
 
-                    HistoryChangedEventArgs args = new HistoryChangedEventArgs(this, _currentNode.HistoryEvent, HistoryChangedAction.UpdateCurrent);
+                    HistoryChangedEventArgs args = new HistoryChangedEventArgs(this, _currentNode.HistoryEvent, HistoryChangedAction.UpdateCurrent, null);
                     Auditors?.Invoke(this, args);
 
                     return currentCoreActionNode.HistoryEvent as CoreActionHistoryEvent;
@@ -157,7 +157,7 @@ namespace CPvC
 
             parent.InvalidateCachedMDT();
 
-            Notify(historyEvent, HistoryChangedAction.DeleteBranch);
+            Notify(historyEvent, HistoryChangedAction.DeleteBranch, parent.HistoryEvent);
 
             return true;
         }
@@ -192,7 +192,7 @@ namespace CPvC
             HistoryEvent oldParentEvent = historyNode.Parent.HistoryEvent;
             historyNode.Parent = null;
 
-            Notify(historyEvent, HistoryChangedAction.DeleteBookmark);
+            Notify(historyEvent, HistoryChangedAction.DeleteBookmark, oldParentEvent);
 
             return true;
         }
@@ -235,7 +235,7 @@ namespace CPvC
                 }
 
 
-                Notify(_currentNode.HistoryEvent, HistoryChangedAction.SetCurrent);
+                Notify(_currentNode.HistoryEvent, HistoryChangedAction.SetCurrent, null);
             }
         }
 
@@ -255,14 +255,14 @@ namespace CPvC
 
             _currentNode = historyNode;
 
-            Notify(historyNode.HistoryEvent, HistoryChangedAction.Add);
+            Notify(historyNode.HistoryEvent, HistoryChangedAction.Add, null);
         }
 
-        private void Notify(HistoryEvent historyEvent, HistoryChangedAction action)
+        private void Notify(HistoryEvent historyEvent, HistoryChangedAction action, HistoryEvent originalParentHistoryEvent)
         {
             //if (IsClosedEvent(historyEvent))
             {
-                HistoryChangedEventArgs args = new HistoryChangedEventArgs(this, historyEvent, action);
+                HistoryChangedEventArgs args = new HistoryChangedEventArgs(this, historyEvent, action, originalParentHistoryEvent);
                 Auditors?.Invoke(this, args);
             }
         }

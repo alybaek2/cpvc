@@ -72,6 +72,12 @@ namespace CPvC
         {
             ListTreeNode<HistoryEvent> child = new ListTreeNode<HistoryEvent>(historyEvent);
 
+            return Add(parent, child);
+        }
+
+        private ListTreeNode<HistoryEvent> Add(ListTreeNode<HistoryEvent> parent, ListTreeNode<HistoryEvent> child)
+        {
+
             // Check first if child already exists in the tree! And that parent exists in the tree!
 
             // Insert into children of parent first!
@@ -240,6 +246,36 @@ namespace CPvC
                             else
                             {
                                 RemoveRecursive(node);
+                                changed = true;
+                            }
+                        }
+
+                        ListTreeNode<HistoryEvent> parentNode = GetNode(args.OriginalParentEvent);
+                        if (parentNode != null)
+                        {
+                            if (!InterestingEvent(args.OriginalParentEvent))
+                            {
+                                RemoveNonRecursive(parentNode);
+                                //List<ListTreeNode<T>> children = node.Children;
+                                //ListTreeNode<T> parentNode = node.Parent;
+                                //node.Parent = null;
+                                //parentNode.Children.Remove(node);
+
+                                //// Reinsert children.
+                                //foreach (ListTreeNode<T> childNode in children)
+                                //{
+                                //    int newChildIndex = GetChildIndex(parentNode, childNode);
+                                //    parentNode.Children.Insert(newChildIndex, childNode);
+                                //    childNode.Parent = parentNode;
+                                //}
+                            }
+
+                            changed |= true;
+                        }
+                        else
+                        {
+                            if (AddEventToListTree(args.OriginalParentEvent))
+                            {
                                 changed = true;
                             }
                         }
