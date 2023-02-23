@@ -188,6 +188,8 @@ namespace CPvC
 
             _lines = new ObservableCollection<HistoryLineViewModel>();
             BindingOperations.EnableCollectionSynchronization(_lines, _lines);
+
+            UpdateLines(_listTree.HorizontalOrdering().ToList(), _listTree.VerticalOrdering().ToList());
         }
 
         private void ListTree_PositionChanged(object sender, PositionChangedEventArgs<HistoryEvent> e)
