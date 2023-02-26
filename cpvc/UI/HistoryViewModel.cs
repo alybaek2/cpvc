@@ -22,7 +22,7 @@ namespace CPvC
 
     public class HistoryLineViewModel : INotifyPropertyChanged
     {
-        public HistoryLineViewModel()
+        public HistoryLineViewModel(ListTreeNode<HistoryEvent> historyEvent)
         {
             _points = new List<Point>();
             _type = LinePointType.None;
@@ -30,11 +30,14 @@ namespace CPvC
             _version = 0;
             _currentPointIndex = 0;
             _changed = false;
+            _historyEvent = historyEvent;
         }
 
         private const int _scalingX = 8;
         private const int _scalingY = 8;
         private const double _dotRadius = 0.5 * _scalingX;
+
+        private ListTreeNode<HistoryEvent> _historyEvent;
 
         public void Start()
         {
@@ -69,6 +72,7 @@ namespace CPvC
             if (_changed)
             {
                 OnPropertyChanged(nameof(PolyLinePoints));
+                OnPropertyChanged(nameof(YMargin));
                 OnPropertyChanged(nameof(CircleMargin));
 
                 _version++;
@@ -78,6 +82,22 @@ namespace CPvC
         protected virtual void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
+        public ListTreeNode<HistoryEvent> Node
+        {
+            get
+            {
+                return _historyEvent;
+            }
+        }
+
+        public Thickness YMargin
+        {
+            get
+            {
+                return new Thickness(0, (_points.Last().Y - 1) * _scalingY, 0, 0);
+            }
         }
 
         public Thickness CircleMargin
@@ -220,10 +240,11 @@ namespace CPvC
 
                 if (!_nodesToLines.TryGetValue(node, out HistoryLineViewModel line))
                 {
-                    line = new HistoryLineViewModel();
+                    line = new HistoryLineViewModel(node);
                     lock (_lines)
                     {
                         _lines.Add(line);
+                        OnPropertyChanged(nameof(Height));
                     }
                 }
 
@@ -277,10 +298,10 @@ namespace CPvC
                     // If the x position has shifted, draw over to below the point, then up to the point. This looks nicer!
                     if (previousX >= 0 && previousX != x)
                     {
-                        line.Add(x, y * 2);
+                        line.Add(x, -y * 2);
                     }
 
-                    line.Add(x, y * 2 + 1);
+                    line.Add(x, - (y * 2 + 1));
                     previousX = x;
 
                     globalMaxX = Math.Max(globalMaxX, x);
@@ -300,6 +321,7 @@ namespace CPvC
                     lock (_lines)
                     {
                         _lines.Remove(viewModel);
+                        OnPropertyChanged(nameof(Height));
                     }
                 }
             }
@@ -334,6 +356,14 @@ namespace CPvC
             get
             {
                 return (_globalMaxX + 1) / 2;
+            }
+        }
+
+        public int Height
+        {
+            get
+            {
+                return _lines.Count;
             }
         }
 

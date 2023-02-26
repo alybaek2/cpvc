@@ -14,7 +14,12 @@ namespace CPvC.UI.Converters
             object parameter, CultureInfo culture)
         {
             int number = (int)value;
-            return number * 16;
+            if (parameter is string factorStr && Int32.TryParse(factorStr, out int factor))
+            {
+                return number * factor;
+            }
+
+            return number;
         }
 
         public object ConvertBack(object value, Type targetType,

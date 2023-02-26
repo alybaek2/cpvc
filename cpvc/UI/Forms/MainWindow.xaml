@@ -397,10 +397,14 @@
         </TabControl>
         <TabControl Grid.Row="2" Grid.Column="1" Height="535" VerticalAlignment="Top" Visibility="{Binding ElementName=_showHistoryToggleButton, Path=IsChecked, Converter={StaticResource BoolToVisConverter}}">
             <TabItem Header="History">
-                <Grid x:Name="_historyCell">
+                <Grid Grid.IsSharedSizeScope="True">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <StackPanel Orientation="Horizontal">
                         <Button x:Name="_deleteBookmarkButton"
@@ -413,82 +417,143 @@
                                 Content="Jump"
                                 Click="JumpButton_Click" Margin="5"/>
                     </StackPanel>
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="270" Height="480" HorizontalAlignment="Left" VerticalAlignment="Top">
-                        <Grid DataContext="{Binding ActiveMachineViewModel.History, Mode=OneWay}">
-                            <Grid.Background>
-                                <DrawingBrush Viewport="0,0,10,32" ViewportUnits="Absolute" TileMode="Tile">
-                                    <DrawingBrush.Drawing>
-                                        <DrawingGroup>
-                                            <GeometryDrawing Geometry="M0,0 L10,0 10,16 0,16 0,0Z" Brush="White" />
-                                            <GeometryDrawing Geometry="M0,16 L10,16 10,32 0,32 0,16Z" Brush="#F5F5F5" />
-                                        </DrawingGroup>
-                                    </DrawingBrush.Drawing>
-                                </DrawingBrush>
-                            </Grid.Background>
-                            <ItemsControl ItemsSource="{Binding Lines}"
-                                          Margin="0,0,0,0"
-                                          Width="{Binding Width, Converter={StaticResource multiplyConverter}}"
-                                          Height="{Binding Lines.Count, Converter={StaticResource multiplyConverter}}"
-                                          HorizontalAlignment="Left"
-                                          VerticalAlignment="Top"
-                                          Canvas.ZIndex="100">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <Canvas RenderTransformOrigin="0.5,0.5">
-                                            <Canvas.RenderTransform>
-                                                <ScaleTransform ScaleY="-1" />
-                                            </Canvas.RenderTransform>
-                                        </Canvas>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Ellipse StrokeThickness="2"
-                                                 Margin="{Binding CircleMargin}"
-                                                 Width="8"
-                                                 Height="8"
-                                                 HorizontalAlignment="Left"
-                                                 VerticalAlignment="Top"
-                                                 UseLayoutRounding="True"
-                                                 Canvas.ZIndex="100"
-                                                 Style="{StaticResource HistoryDot}">
-                                        </Ellipse>
-                                        <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100" SharedSizeGroup="A"/>
+                            <ColumnDefinition Width="0" />
+                            <ColumnDefinition Width="100" SharedSizeGroup="B"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <GridSplitter Grid.Column="1" 
+                                      Grid.Row="0" 
+                                      Panel.ZIndex="100"
+                                      Margin="-3,0"
+                                      BorderThickness="3,0"
+                                      BorderBrush="Transparent"
+                                      ResizeBehavior="PreviousAndCurrent"
+                                      HorizontalAlignment="Left" 
+                                      VerticalAlignment="Stretch"
+                                      ResizeDirection="Columns"/>
+                        <Button Grid.Row="0" Grid.Column="0" Content="History"/>
+                        <Button Grid.Row="0" Grid.Column="2" Content="Time"/>
+                    </Grid>
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="270" Height="480" HorizontalAlignment="Left" VerticalAlignment="Top">
+                        <StackPanel Orientation="Vertical">
+                            <Grid DataContext="{Binding ActiveMachineViewModel.History, Mode=OneWay}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition SharedSizeGroup="A"/>
+                                    <ColumnDefinition Width="0" />
+                                    <ColumnDefinition SharedSizeGroup="B"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.Background>
+                                    <DrawingBrush Viewport="0,0,10,32" ViewportUnits="Absolute" TileMode="Tile">
+                                        <DrawingBrush.Drawing>
+                                            <DrawingGroup>
+                                                <GeometryDrawing Geometry="M0,0 L10,0 10,16 0,16 0,0Z" Brush="White" />
+                                                <GeometryDrawing Geometry="M0,16 L10,16 10,32 0,32 0,16Z" Brush="#F5F5F5" />
+                                            </DrawingGroup>
+                                        </DrawingBrush.Drawing>
+                                    </DrawingBrush>
+                                </Grid.Background>
+                                <ItemsControl Grid.Row="1" 
+                                              ItemsSource="{Binding Lines}"
+                                              Margin="0,0,0,0"
+                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"
+                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Top"
+                                              Canvas.ZIndex="100">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas>
+                                                <Canvas.RenderTransform>
+                                                    <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"/>
+                                                </Canvas.RenderTransform>
+                                            </Canvas>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Ellipse StrokeThickness="2"
+                                                     Margin="{Binding CircleMargin}"
+                                                     Width="8"
+                                                     Height="8"
+                                                     HorizontalAlignment="Left"
+                                                     VerticalAlignment="Top"
+                                                     UseLayoutRounding="True"
+                                                     Canvas.ZIndex="100"
+                                                     Style="{StaticResource HistoryDot}">
+                                            </Ellipse>
+                                            <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
 
-                            <ItemsControl ItemsSource="{Binding Lines}"
-                                          Margin="0,0,0,0"
-                                          Height="{Binding Lines.Count, Converter={StaticResource multiplyConverter}}"
-                                          Width="{Binding Width, Converter={StaticResource multiplyConverter}}"
-                                          HorizontalAlignment="Left"
-                                          VerticalAlignment="Top"
-                                          Canvas.ZIndex="1">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <Canvas RenderTransformOrigin="0.5,0.5">
-                                            <Canvas.RenderTransform>
-                                                <ScaleTransform ScaleY="-1" />
-                                            </Canvas.RenderTransform>
-                                        </Canvas>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Polyline Stroke="DarkBlue"
-                                                  StrokeThickness="2"
-                                                  Points="{Binding PolyLinePoints}"
-                                                  HorizontalAlignment="Left"
-                                                  VerticalAlignment="Top"
-                                                  UseLayoutRounding="True"
-                                                  Canvas.ZIndex="1">
-                                        </Polyline>
-                                        <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </Grid>
+                                <ItemsControl Grid.Row="1"
+                                              ItemsSource="{Binding Lines}"
+                                              Margin="0,0,0,0"
+                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"
+                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Top"
+                                              Canvas.ZIndex="1">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas>
+                                                <Canvas.RenderTransform>
+                                                    <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"/>
+                                                </Canvas.RenderTransform>
+                                            </Canvas>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Polyline Stroke="DarkBlue"
+                                                      StrokeThickness="2"
+                                                      Points="{Binding PolyLinePoints}"
+                                                      HorizontalAlignment="Left"
+                                                      VerticalAlignment="Top"
+                                                      UseLayoutRounding="True"
+                                                      Canvas.ZIndex="1">
+                                            </Polyline>
+                                            <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <ItemsControl Grid.Row="1"
+                                              Grid.Column="2"
+                                              ItemsSource="{Binding Lines}"
+                                              Margin="0,0,0,0"
+                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"
+                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Top"
+                                              Canvas.ZIndex="100">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas>
+                                                <Canvas.RenderTransform>
+                                                    <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"/>
+                                                </Canvas.RenderTransform>
+                                            </Canvas>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Node.Data.Ticks, Converter={StaticResource ticksConverter}, StringFormat=\{0:h\\:mm\\:ss\}}" Margin="{Binding YMargin}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                            <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+                        </StackPanel>
                     </ScrollViewer>
                 </Grid>
             </TabItem>
