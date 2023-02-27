@@ -473,7 +473,7 @@
                                       VerticalAlignment="Stretch"
                                       ResizeDirection="Columns"/>
                         <Button Grid.Row="0" Grid.Column="0" Content="History" Padding="0"/>
-                        <Button Grid.Row="0" Grid.Column="2" Content="Time" Padding="0"/>
+                        <Button Grid.Row="0" Grid.Column="2" Content="Time" Padding="0" Margin="-1,0,0,0"/>
                     </Grid>
                     <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="270" Height="480" HorizontalAlignment="Left" VerticalAlignment="Top">
                         <StackPanel Orientation="Vertical">
@@ -540,6 +540,22 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
+                                            <!--<Path StrokeThickness="2"
+                                                  Stroke="DarkBlue"
+                                                  
+                                                  Canvas.ZIndex="1">
+                                                <Path.Data>
+                                                    <PathGeometry>
+                                                        <PathGeometry.Figures>
+                                                            <PathFigure StartPoint="{Binding PolyLinePoints[0]}">
+                                                                <PathFigure.Segments>
+                                                                    <PolyLineSegment Points="{Binding PolyLinePoints}"/>
+                                                                </PathFigure.Segments>
+                                                            </PathFigure>
+                                                        </PathGeometry.Figures>
+                                                    </PathGeometry>
+                                                </Path.Data>
+                                            </Path>-->
                                             <Polyline Stroke="DarkBlue"
                                                       StrokeThickness="2"
                                                       Points="{Binding PolyLinePoints}"

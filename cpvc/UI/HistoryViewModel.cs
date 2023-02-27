@@ -35,7 +35,6 @@ namespace CPvC
 
         private const int _scalingX = 8;
         private const int _scalingY = 8;
-        private const double _dotRadius = 0.5 * _scalingX;
 
         private ListTreeNode<HistoryEvent> _historyEvent;
 
@@ -72,7 +71,7 @@ namespace CPvC
             if (_changed)
             {
                 OnPropertyChanged(nameof(PolyLinePoints));
-                OnPropertyChanged(nameof(YMargin));
+                //OnPropertyChanged(nameof(YMargin));
                 //OnPropertyChanged(nameof(X));
                 //OnPropertyChanged(nameof(Y));
                 OnPropertyChanged(nameof(Center));
@@ -95,30 +94,6 @@ namespace CPvC
             }
         }
 
-        public Thickness YMargin
-        {
-            get
-            {
-                return new Thickness(0, (_points.Last().Y - 1) * _scalingY, 0, 0);
-            }
-        }
-
-        //public int X
-        //{
-        //    get
-        //    {
-        //        return _points.Last().X * _scalingX;
-        //    }
-        //}
-
-        //public int Y
-        //{
-        //    get
-        //    {
-        //        return -_points.Last().Y * _scalingY;
-        //    }
-        //}
-
         public System.Windows.Point Center
         {
             get
@@ -126,14 +101,6 @@ namespace CPvC
                 return new System.Windows.Point(_points.Last().X, _points.Last().Y);
             }
         }
-
-        //public Thickness CircleMargin
-        //{
-        //    get
-        //    {
-        //        return new Thickness(_points.Last().X * _scalingX - _dotRadius, _points.Last().Y * _scalingY - _dotRadius, 0, 0);
-        //    }
-        //}
 
         public PointCollection PolyLinePoints
         {
