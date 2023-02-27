@@ -73,7 +73,10 @@ namespace CPvC
             {
                 OnPropertyChanged(nameof(PolyLinePoints));
                 OnPropertyChanged(nameof(YMargin));
-                OnPropertyChanged(nameof(CircleMargin));
+                //OnPropertyChanged(nameof(X));
+                //OnPropertyChanged(nameof(Y));
+                OnPropertyChanged(nameof(Center));
+                //OnPropertyChanged(nameof(CircleMargin));
 
                 _version++;
             }
@@ -100,13 +103,37 @@ namespace CPvC
             }
         }
 
-        public Thickness CircleMargin
+        //public int X
+        //{
+        //    get
+        //    {
+        //        return _points.Last().X * _scalingX;
+        //    }
+        //}
+
+        //public int Y
+        //{
+        //    get
+        //    {
+        //        return -_points.Last().Y * _scalingY;
+        //    }
+        //}
+
+        public System.Windows.Point Center
         {
             get
             {
-                return new Thickness(_points.Last().X * _scalingX - _dotRadius, _points.Last().Y * _scalingY - _dotRadius, 0, 0);
+                return new System.Windows.Point(_points.Last().X, _points.Last().Y);
             }
         }
+
+        //public Thickness CircleMargin
+        //{
+        //    get
+        //    {
+        //        return new Thickness(_points.Last().X * _scalingX - _dotRadius, _points.Last().Y * _scalingY - _dotRadius, 0, 0);
+        //    }
+        //}
 
         public PointCollection PolyLinePoints
         {

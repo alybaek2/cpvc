@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:converters="clr-namespace:CPvC.UI.Converters"
         xmlns:cpvc="clr-namespace:CPvC"
+        xmlns:cpvcui="clr-namespace:CPvC.UI"
         xmlns:System="clr-namespace:System;assembly=mscorlib" x:Name="_mainWindow" x:Class="CPvC.UI.Forms.MainWindow"
         mc:Ignorable="d"
         Title="CPvC" Height="705.125" Closing="Window_Closing" Loaded="Window_Loaded" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp" SizeToContent="WidthAndHeight" ResizeMode="NoResize" Icon="../Resources/cpvc.png" ContextMenuOpening="MainWindow_ContextMenuOpening">
@@ -63,6 +64,41 @@
             <Setter Property="Stroke" Value="DarkBlue"/>
             <Setter Property="Fill" Value="DarkBlue"/>
             <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Type}" Value="Terminus">
+                    <Setter Property="Stroke" Value="DarkBlue"/>
+                    <Setter Property="Fill" Value="DarkBlue"/>
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="SystemBookmark">
+                    <Setter Property="Stroke" Value="DarkRed"/>
+                    <Setter Property="Fill" Value="DarkRed"/>
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="UserBookmark">
+                    <Setter Property="Stroke" Value="Crimson"/>
+                    <Setter Property="Fill" Value="Crimson"/>
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Current}" Value="true">
+                    <Setter Property="Fill" Value="White"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="HistoryDotPath" TargetType="Path">
+            <Setter Property="StrokeThickness" Value="2"/>
+            <Setter Property="Stroke" Value="DarkBlue"/>
+            <Setter Property="Fill" Value="DarkBlue"/>
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Setter Property="Data">
+                <Setter.Value>
+                    <GeometryGroup>
+                        <EllipseGeometry Center="{Binding Center, Converter={StaticResource multiplyConverter}, ConverterParameter=8}"
+                                         RadiusX="3"
+                                         RadiusY="3"/>
+                    </GeometryGroup>
+                </Setter.Value>
+            </Setter>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding Type}" Value="Terminus">
                     <Setter Property="Stroke" Value="DarkBlue"/>
@@ -436,8 +472,8 @@
                                       HorizontalAlignment="Left" 
                                       VerticalAlignment="Stretch"
                                       ResizeDirection="Columns"/>
-                        <Button Grid.Row="0" Grid.Column="0" Content="History"/>
-                        <Button Grid.Row="0" Grid.Column="2" Content="Time"/>
+                        <Button Grid.Row="0" Grid.Column="0" Content="History" Padding="0"/>
+                        <Button Grid.Row="0" Grid.Column="2" Content="Time" Padding="0"/>
                     </Grid>
                     <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="270" Height="480" HorizontalAlignment="Left" VerticalAlignment="Top">
                         <StackPanel Orientation="Vertical">
@@ -480,17 +516,7 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Ellipse StrokeThickness="2"
-                                                     Margin="{Binding CircleMargin}"
-                                                     Width="8"
-                                                     Height="8"
-                                                     HorizontalAlignment="Left"
-                                                     VerticalAlignment="Top"
-                                                     UseLayoutRounding="True"
-                                                     Canvas.ZIndex="100"
-                                                     Style="{StaticResource HistoryDot}">
-                                            </Ellipse>
-                                            <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
+                                            <Path Style="{StaticResource HistoryDotPath}"/>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
@@ -547,7 +573,15 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding Node.Data.Ticks, Converter={StaticResource ticksConverter}, StringFormat=\{0:h\\:mm\\:ss\}}" Margin="{Binding YMargin}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                            <TextBlock Text="{Binding Node.Data.Ticks, Converter={StaticResource ticksConverter}, StringFormat=\{0:h\\:mm\\:ss\}}"
+                                                       HorizontalAlignment="Left" VerticalAlignment="Top">
+                                                <TextBlock.RenderTransform>
+                                                    <TransformGroup>
+                                                        <TranslateTransform X="0" Y="{Binding Path=Center.Y, Converter={StaticResource multiplyConverter}, ConverterParameter=8}"/>
+                                                        <TranslateTransform X="0" Y="-8"/>
+                                                    </TransformGroup>
+                                                </TextBlock.RenderTransform>
+                                            </TextBlock>
                                             <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
