@@ -508,8 +508,13 @@
                                         Panel.ZIndex="101"
                                         Content="History"
                                         Height="16"
+                                        Margin="0,-3,0,0"
+                                        HorizontalContentAlignment="Left"
+                                        VerticalContentAlignment="Center"
                                         HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Top">
+                                        VerticalAlignment="Top"
+                                        Background="White"
+                                        BorderThickness="0">
                                     <Button.RenderTransform>
                                         <TranslateTransform X="0" Y="{Binding ElementName=_scroller, Path=VerticalOffset}"/>
                                     </Button.RenderTransform>
@@ -519,8 +524,13 @@
                                         Panel.ZIndex="101"
                                         Content="Time"
                                         Height="16"
+                                        Margin="0,-3,0,0"
+                                        HorizontalContentAlignment="Left"
+                                        VerticalContentAlignment="Center"
                                         HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Top">
+                                        VerticalAlignment="Top"
+                                        Background="White"
+                                        BorderThickness="0">
                                     <Button.RenderTransform>
                                         <TranslateTransform X="0" Y="{Binding ElementName=_scroller, Path=VerticalOffset}"/>
                                     </Button.RenderTransform>
