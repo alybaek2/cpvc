@@ -86,16 +86,16 @@
             </Style.Triggers>
         </Style>
         <Style x:Key="HistoryDotPath" TargetType="Path">
-            <Setter Property="StrokeThickness" Value="2"/>
+            <Setter Property="StrokeThickness" Value="0.25"/>
             <Setter Property="Stroke" Value="DarkBlue"/>
             <Setter Property="Fill" Value="DarkBlue"/>
             <Setter Property="Visibility" Value="Collapsed"/>
             <Setter Property="Data">
                 <Setter.Value>
                     <GeometryGroup>
-                        <EllipseGeometry Center="{Binding Center, Converter={StaticResource multiplyConverter}, ConverterParameter=8}"
-                                         RadiusX="3"
-                                         RadiusY="3"/>
+                        <EllipseGeometry Center="{Binding Center}"
+                                         RadiusX="0.375"
+                                         RadiusY="0.375"/>
                     </GeometryGroup>
                 </Setter.Value>
             </Setter>
@@ -233,6 +233,7 @@
         <cpvc:MachineDataTemplateSelector x:Key="TabItemTemplateSelector"
                                           HomeTemplate="{StaticResource TabItemHomeTemplate}"
                                           MachineTemplate="{StaticResource TabItemTemplate}"/>
+        <System:Double x:Key="ScaleFactor">8</System:Double>
     </Window.Resources>
     <Grid AllowDrop="True" Margin="0,0,0,0" Background="#FFF0F0F0">
         <Grid.ColumnDefinitions>
@@ -500,8 +501,8 @@
                                 <ItemsControl Grid.Row="1" 
                                               ItemsSource="{Binding Lines}"
                                               Margin="0,0,0,0"
-                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"
-                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"
+                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter=8}"
+                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=8}"
                                               HorizontalAlignment="Left"
                                               VerticalAlignment="Top"
                                               Canvas.ZIndex="100">
@@ -509,7 +510,11 @@
                                         <ItemsPanelTemplate>
                                             <Canvas>
                                                 <Canvas.RenderTransform>
-                                                    <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"/>
+                                                    <TransformGroup>
+                                                        <ScaleTransform ScaleX="{StaticResource ScaleFactor}" ScaleY="{StaticResource ScaleFactor}"/>
+                                                        <ScaleTransform ScaleX="1" ScaleY="-1"/>
+                                                        <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"/>
+                                                    </TransformGroup>
                                                 </Canvas.RenderTransform>
                                             </Canvas>
                                         </ItemsPanelTemplate>
@@ -524,8 +529,8 @@
                                 <ItemsControl Grid.Row="1"
                                               ItemsSource="{Binding Lines}"
                                               Margin="0,0,0,0"
-                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"
-                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"
+                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
+                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
                                               HorizontalAlignment="Left"
                                               VerticalAlignment="Top"
                                               Canvas.ZIndex="1">
@@ -533,7 +538,10 @@
                                         <ItemsPanelTemplate>
                                             <Canvas>
                                                 <Canvas.RenderTransform>
-                                                    <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"/>
+                                                    <TransformGroup>
+                                                        <ScaleTransform ScaleX="8" ScaleY="-8"/>
+                                                        <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=8}"/>
+                                                    </TransformGroup>
                                                 </Canvas.RenderTransform>
                                             </Canvas>
                                         </ItemsPanelTemplate>
@@ -557,7 +565,7 @@
                                                 </Path.Data>
                                             </Path>-->
                                             <Polyline Stroke="DarkBlue"
-                                                      StrokeThickness="2"
+                                                      StrokeThickness="0.25"
                                                       Points="{Binding PolyLinePoints}"
                                                       HorizontalAlignment="Left"
                                                       VerticalAlignment="Top"
@@ -573,8 +581,8 @@
                                               Grid.Column="2"
                                               ItemsSource="{Binding Lines}"
                                               Margin="0,0,0,0"
-                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"
-                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"
+                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter=8}"
+                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=8}"
                                               HorizontalAlignment="Left"
                                               VerticalAlignment="Top"
                                               Canvas.ZIndex="100">
@@ -582,7 +590,7 @@
                                         <ItemsPanelTemplate>
                                             <Canvas>
                                                 <Canvas.RenderTransform>
-                                                    <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=16}"/>
+                                                    <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=8}"/>
                                                 </Canvas.RenderTransform>
                                             </Canvas>
                                         </ItemsPanelTemplate>
@@ -593,7 +601,7 @@
                                                        HorizontalAlignment="Left" VerticalAlignment="Top">
                                                 <TextBlock.RenderTransform>
                                                     <TransformGroup>
-                                                        <TranslateTransform X="0" Y="{Binding Path=Center.Y, Converter={StaticResource multiplyConverter}, ConverterParameter=8}"/>
+                                                        <TranslateTransform X="0" Y="{Binding Path=Center.Y, Converter={StaticResource multiplyConverter}, ConverterParameter=-8}"/>
                                                         <TranslateTransform X="0" Y="-8"/>
                                                     </TransformGroup>
                                                 </TextBlock.RenderTransform>

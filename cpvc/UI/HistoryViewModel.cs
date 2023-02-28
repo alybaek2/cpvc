@@ -33,8 +33,8 @@ namespace CPvC
             _historyEvent = historyEvent;
         }
 
-        private const int _scalingX = 8;
-        private const int _scalingY = 8;
+        //private const int _scalingX = 8;
+        //private const int _scalingY = 8;
 
         private ListTreeNode<HistoryEvent> _historyEvent;
 
@@ -106,7 +106,7 @@ namespace CPvC
         {
             get
             {
-                return new PointCollection(_points.Select(p => new System.Windows.Point(_scalingX * p.X, _scalingY * p.Y)));
+                return new PointCollection(_points.Select(p => new System.Windows.Point(p.X, p.Y)));
             }
         }
 
@@ -292,10 +292,10 @@ namespace CPvC
                     // If the x position has shifted, draw over to below the point, then up to the point. This looks nicer!
                     if (previousX >= 0 && previousX != x)
                     {
-                        line.Add(x, -y * 2);
+                        line.Add(x, y * 2);
                     }
 
-                    line.Add(x, - (y * 2 + 1));
+                    line.Add(x, y * 2 + 1);
                     previousX = x;
 
                     globalMaxX = Math.Max(globalMaxX, x);
@@ -349,7 +349,7 @@ namespace CPvC
         {
             get
             {
-                return (_globalMaxX + 1) / 2;
+                return _globalMaxX + 1;
             }
         }
 
@@ -357,7 +357,7 @@ namespace CPvC
         {
             get
             {
-                return _lines.Count;
+                return _lines.Count * 2;
             }
         }
 

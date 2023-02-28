@@ -14,7 +14,8 @@ namespace CPvC.UI.Converters
         public object Convert(object value, Type targetType,
             object parameter, CultureInfo culture)
         {
-            if (parameter is string factorStr && Int32.TryParse(factorStr, out int factor))
+
+            if (GetFactor(parameter, out double factor))
             {
                 switch (value)
                 {
@@ -24,6 +25,8 @@ namespace CPvC.UI.Converters
                         return new Thickness(thickness.Left * factor, thickness.Top * factor, thickness.Right * factor, thickness.Bottom * factor);
                     case int integer:
                         return factor * integer;
+                    case float f:
+                        return factor * f;
                     case double d:
                         return factor * d;
                 }
@@ -36,6 +39,24 @@ namespace CPvC.UI.Converters
             object parameter, CultureInfo culture)
         {
             return null;
+        }
+
+        static private bool GetFactor(object parameter, out double d)
+        {
+            if (parameter is double)
+            {
+                d = (double)parameter;
+                return true;
+            }
+
+            if (parameter is string)
+            {
+                return double.TryParse((string)parameter, out d);
+            }
+
+            d = 1.0;
+
+            return false;
         }
     }
 
