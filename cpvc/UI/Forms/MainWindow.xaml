@@ -234,6 +234,7 @@
                                           HomeTemplate="{StaticResource TabItemHomeTemplate}"
                                           MachineTemplate="{StaticResource TabItemTemplate}"/>
         <System:Double x:Key="ScaleFactor">8</System:Double>
+        <System:Double x:Key="ScaleFactorReverse">-8</System:Double>
     </Window.Resources>
     <Grid AllowDrop="True" Margin="0,0,0,0" Background="#FFF0F0F0">
         <Grid.ColumnDefinitions>
@@ -432,7 +433,11 @@
                 </CompositeCollection>
             </TabControl.ItemsSource>
         </TabControl>
-        <TabControl Grid.Row="2" Grid.Column="1" Height="535" VerticalAlignment="Top" Visibility="{Binding ElementName=_showHistoryToggleButton, Path=IsChecked, Converter={StaticResource BoolToVisConverter}}">
+        <TabControl Grid.Row="2"
+                    Grid.Column="1"
+                    Height="Auto"
+                    VerticalAlignment="Top"
+                    Visibility="{Binding ElementName=_showHistoryToggleButton, Path=IsChecked, Converter={StaticResource BoolToVisConverter}}">
             <TabItem Header="History">
                 <Grid Grid.IsSharedSizeScope="True">
                     <Grid.ColumnDefinitions>
@@ -454,7 +459,7 @@
                                 Content="Jump"
                                 Click="JumpButton_Click" Margin="5"/>
                     </StackPanel>
-                    <Grid Grid.Row="1">
+                    <!--<Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="100" SharedSizeGroup="A"/>
                             <ColumnDefinition Width="0" />
@@ -475,14 +480,14 @@
                                       ResizeDirection="Columns"/>
                         <Button Grid.Row="0" Grid.Column="0" Content="History" Padding="0"/>
                         <Button Grid.Row="0" Grid.Column="2" Content="Time" Padding="0" Margin="-1,0,0,0"/>
-                    </Grid>
-                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="270" Height="480" HorizontalAlignment="Left" VerticalAlignment="Top">
+                    </Grid>-->
+                    <ScrollViewer x:Name="_scroller" Grid.Row="2" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="270" Height="480" HorizontalAlignment="Left" VerticalAlignment="Top">
                         <StackPanel Orientation="Vertical">
                             <Grid DataContext="{Binding ActiveMachineViewModel.History, Mode=OneWay}">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition SharedSizeGroup="A"/>
+                                    <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="0" />
-                                    <ColumnDefinition SharedSizeGroup="B"/>
+                                    <ColumnDefinition Width="100"/>
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -498,11 +503,43 @@
                                         </DrawingBrush.Drawing>
                                     </DrawingBrush>
                                 </Grid.Background>
+                                <Button Grid.Row="1"
+                                        Grid.Column="0"
+                                        Panel.ZIndex="101"
+                                        Content="History"
+                                        Height="16"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Top">
+                                    <Button.RenderTransform>
+                                        <TranslateTransform X="0" Y="{Binding ElementName=_scroller, Path=VerticalOffset}"/>
+                                    </Button.RenderTransform>
+                                </Button>
+                                <Button Grid.Row="1"
+                                        Grid.Column="2"
+                                        Panel.ZIndex="101"
+                                        Content="Time"
+                                        Height="16"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Top">
+                                    <Button.RenderTransform>
+                                        <TranslateTransform X="0" Y="{Binding ElementName=_scroller, Path=VerticalOffset}"/>
+                                    </Button.RenderTransform>
+                                </Button>
+                                <GridSplitter Grid.Column="1" 
+                                      Grid.Row="1" 
+                                      Panel.ZIndex="102"
+                                      Margin="-3,0"
+                                      BorderThickness="3,0"
+                                      BorderBrush="Transparent"
+                                      ResizeBehavior="PreviousAndCurrent"
+                                      HorizontalAlignment="Left" 
+                                      VerticalAlignment="Stretch"
+                                      ResizeDirection="Columns"/>
                                 <ItemsControl Grid.Row="1" 
                                               ItemsSource="{Binding Lines}"
-                                              Margin="0,0,0,0"
-                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter=8}"
-                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=8}"
+                                              Margin="0,16,0,0"
+                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
+                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
                                               HorizontalAlignment="Left"
                                               VerticalAlignment="Top"
                                               Canvas.ZIndex="100">
@@ -528,7 +565,7 @@
 
                                 <ItemsControl Grid.Row="1"
                                               ItemsSource="{Binding Lines}"
-                                              Margin="0,0,0,0"
+                                              Margin="0,16,0,0"
                                               Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
                                               Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
                                               HorizontalAlignment="Left"
@@ -539,8 +576,9 @@
                                             <Canvas>
                                                 <Canvas.RenderTransform>
                                                     <TransformGroup>
-                                                        <ScaleTransform ScaleX="8" ScaleY="-8"/>
-                                                        <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=8}"/>
+                                                        <ScaleTransform ScaleX="{StaticResource ScaleFactor}" ScaleY="{StaticResource ScaleFactor}"/>
+                                                        <ScaleTransform ScaleX="1" ScaleY="-1"/>
+                                                        <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"/>
                                                     </TransformGroup>
                                                 </Canvas.RenderTransform>
                                             </Canvas>
@@ -580,9 +618,9 @@
                                 <ItemsControl Grid.Row="1"
                                               Grid.Column="2"
                                               ItemsSource="{Binding Lines}"
-                                              Margin="0,0,0,0"
-                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter=8}"
-                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=8}"
+                                              Margin="0,16,0,0"
+                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
+                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
                                               HorizontalAlignment="Left"
                                               VerticalAlignment="Top"
                                               Canvas.ZIndex="100">
@@ -590,7 +628,9 @@
                                         <ItemsPanelTemplate>
                                             <Canvas>
                                                 <Canvas.RenderTransform>
-                                                    <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter=8}"/>
+                                                    <TransformGroup>
+                                                        <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"/>
+                                                    </TransformGroup>
                                                 </Canvas.RenderTransform>
                                             </Canvas>
                                         </ItemsPanelTemplate>
@@ -601,8 +641,8 @@
                                                        HorizontalAlignment="Left" VerticalAlignment="Top">
                                                 <TextBlock.RenderTransform>
                                                     <TransformGroup>
-                                                        <TranslateTransform X="0" Y="{Binding Path=Center.Y, Converter={StaticResource multiplyConverter}, ConverterParameter=-8}"/>
-                                                        <TranslateTransform X="0" Y="-8"/>
+                                                        <TranslateTransform X="0" Y="{Binding Path=Center.Y, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactorReverse}}"/>
+                                                        <TranslateTransform X="0" Y="{StaticResource ScaleFactorReverse}"/>
                                                     </TransformGroup>
                                                 </TextBlock.RenderTransform>
                                             </TextBlock>
