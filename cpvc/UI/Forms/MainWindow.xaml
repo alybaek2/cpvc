@@ -10,10 +10,12 @@
         Title="CPvC" Height="705.125" Closing="Window_Closing" Loaded="Window_Loaded" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp" SizeToContent="WidthAndHeight" ResizeMode="NoResize" Icon="../Resources/cpvc.png" ContextMenuOpening="MainWindow_ContextMenuOpening">
     <Window.Resources>
         <converters:Ticks x:Key="ticksConverter" />
+        <converters:Seconds x:Key="secondsConverter" />
         <converters:IsNotNull x:Key="isNotNullConverter" />
         <converters:RunningIcon x:Key="runningIconConverter" />
         <converters:BooleanInverter x:Key="booleanInverterConverter" />
         <converters:MachineBitmap x:Key="machineBitmapConverter" />
+        <converters:MultiplyConverter x:Key="multiplyConverter" />
         <BooleanToVisibilityConverter x:Key="BoolToVisConverter" />
         <DataTemplate x:Key="cellTemplate">
             <Canvas Width="{Binding ActualWidth, ElementName=_graphColumn, Mode=OneWay}" Height="16" ClipToBounds="True">
@@ -23,19 +25,12 @@
         <Style x:Key="GridViewColumnHeaderStyle" TargetType="{x:Type GridViewColumnHeader}">
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
         </Style>
-        <Style x:Key="MachineButtonStyle" TargetType="{x:Type Button}">
-            <Style.Resources>
-                <Style TargetType="{x:Type Image}">
-                    <Style.Triggers>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.5" />
-                        </Trigger>
-                    </Style.Triggers>
-                </Style>
-            </Style.Resources>
-            <Setter Property="IsEnabled" Value="{Binding ActiveMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
-        </Style>
-        <Style x:Key="RegularMachineButtonStyle" TargetType="{x:Type Button}">
+        <Style x:Key="CommandButtonStyle" TargetType="{x:Type Button}">
+            <Style.Triggers>
+                <Trigger Property="Command" Value="{x:Null}">
+                    <Setter Property="IsEnabled" Value="False" />
+                </Trigger>
+            </Style.Triggers>
             <Style.Resources>
                 <Style TargetType="{x:Type Image}">
                     <Style.Triggers>
@@ -46,7 +41,15 @@
                 </Style>
             </Style.Resources>
         </Style>
-        <Style x:Key="PausableMachineButtonStyle" TargetType="{x:Type Button}">
+        <Style x:Key="CommandMenuItemStyle" TargetType="{x:Type MenuItem}">
+            <Style.Triggers>
+                <Trigger Property="Command" Value="{x:Null}">
+                    <Setter Property="IsEnabled" Value="False" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Foreground" Value="#FF707070" />
+                </Trigger>
+            </Style.Triggers>
             <Style.Resources>
                 <Style TargetType="{x:Type Image}">
                     <Style.Triggers>
@@ -56,14 +59,182 @@
                     </Style.Triggers>
                 </Style>
             </Style.Resources>
-            <Setter Property="IsEnabled" Value="{Binding ActivePausableMachine, Converter={StaticResource isNotNullConverter}, Mode=OneWay}" />
         </Style>
-        <CollectionViewSource x:Key="Machines" Source="{Binding Machines}"/>
-        <CollectionViewSource x:Key="OpenMachines" Source="{Binding Machines}" Filter="CollectionViewSource_Filter" IsLiveFilteringRequested="True">
+        <Style x:Key="HistoryDot" TargetType="Ellipse">
+            <Setter Property="Stroke" Value="DarkBlue"/>
+            <Setter Property="Fill" Value="DarkBlue"/>
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Type}" Value="Terminus">
+                    <Setter Property="Stroke" Value="DarkBlue"/>
+                    <Setter Property="Fill" Value="DarkBlue"/>
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="SystemBookmark">
+                    <Setter Property="Stroke" Value="DarkRed"/>
+                    <Setter Property="Fill" Value="DarkRed"/>
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="UserBookmark">
+                    <Setter Property="Stroke" Value="Crimson"/>
+                    <Setter Property="Fill" Value="Crimson"/>
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Current}" Value="true">
+                    <Setter Property="Fill" Value="White"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="HistoryDotPath" TargetType="Path">
+            <Setter Property="StrokeThickness" Value="0.25"/>
+            <Setter Property="Stroke" Value="DarkBlue"/>
+            <Setter Property="Fill" Value="DarkBlue"/>
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Setter Property="Data">
+                <Setter.Value>
+                    <GeometryGroup>
+                        <EllipseGeometry Center="{Binding Center}"
+                                         RadiusX="0.375"
+                                         RadiusY="0.375"/>
+                    </GeometryGroup>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Type}" Value="Terminus">
+                    <Setter Property="Stroke" Value="DarkBlue"/>
+                    <Setter Property="Fill" Value="DarkBlue"/>
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="SystemBookmark">
+                    <Setter Property="Stroke" Value="DarkRed"/>
+                    <Setter Property="Fill" Value="DarkRed"/>
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="UserBookmark">
+                    <Setter Property="Stroke" Value="Crimson"/>
+                    <Setter Property="Fill" Value="Crimson"/>
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Current}" Value="true">
+                    <Setter Property="Fill" Value="White"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <CollectionViewSource x:Key="Machines" Source="{Binding MachineViewModels}"/>
+        <CollectionViewSource x:Key="OpenMachines" Source="{Binding MachineViewModels}" Filter="CollectionViewSource_Filter" IsLiveFilteringRequested="True">
             <CollectionViewSource.LiveFilteringProperties>
-                <System:String>IsOpen</System:String>
+                <System:String>Machine.IsOpen</System:String>
             </CollectionViewSource.LiveFilteringProperties>
         </CollectionViewSource>
+        <DataTemplate x:Key="HomeTemplate">
+            <ScrollViewer>
+                <Grid>
+                    <StackPanel>
+                        <Label Content="Machines" FontWeight="Bold" FontSize="14" />
+                        <ItemsControl ItemsSource="{Binding Source={StaticResource Machines}}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid MouseLeftButtonUp="MachinePreviewGrid_MouseLeftButtonUp">
+                                        <Grid.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Pause" Command="{Binding PauseCommand}"/>
+                                                <MenuItem Header="Resume" Command="{Binding ResumeCommand}"/>
+                                                <MenuItem Header="Open" Command="{Binding OpenCommand}"/>
+                                                <MenuItem Header="Close" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.CloseCommand}" CommandParameter="{Binding Machine}"/>
+                                                <MenuItem Header="Persist..." Command="{Binding PersistCommand}"/>
+                                                <MenuItem Header="Remove" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.RemoveCommand}" CommandParameter="{Binding Machine}"/>
+                                                <MenuItem Header="Compact" Command="{Binding CompactCommand}"/>
+                                            </ContextMenu>
+                                        </Grid.ContextMenu>
+                                        <StackPanel Margin="5">
+                                            <Image Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Source="{Binding Path=Machine, Converter={StaticResource machineBitmapConverter}}" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" ToolTip="{Binding Machine.PersistentFilepath, Mode=OneWay}" Cursor="Hand"/>
+                                            <Label Content="{Binding Machine.Name}" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+        </DataTemplate>
+        <DataTemplate x:Key="MachineTemplate">
+            <Grid MouseLeftButtonUp="ScreenGrid_MouseLeftButtonUp">
+                <Grid.Resources>
+                    <converters:Ticks x:Key="ticksConverter" />
+                    <converters:LocalDateTime x:Key="localDateTimeConverter" />
+                    <!--<Style x:Key="GridViewColumnHeaderStyle" TargetType="{x:Type GridViewColumnHeader}">
+                                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                            </Style>-->
+                    <!--<DataTemplate x:Key="cellTemplate">
+                                <Canvas Width="{Binding ActualWidth, ElementName=_graphColumn, Mode=OneWay}" Height="16" ClipToBounds="True">
+                                    <ContentPresenter Content="{Binding Canvas}" />
+                                </Canvas>
+                            </DataTemplate>-->
+                </Grid.Resources>
+                <Rectangle Fill="#7F000000" Stroke="#7F000000" Width="768" Height="576" VerticalAlignment="Top" HorizontalAlignment="Left" Panel.ZIndex="1">
+                    <Rectangle.Style>
+                        <Style TargetType="Rectangle">
+                            <Setter Property="Visibility" Value="Hidden"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Machine.RunningState}" Value="{x:Static cpvc:RunningState.Paused}">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Rectangle.Style>
+                </Rectangle>
+                <Image Width="768" Height="576" Source="{Binding Path=Machine, Converter={StaticResource machineBitmapConverter}}" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill"/>
+                <Grid Margin="0,0,20,20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Panel.ZIndex="2" Opacity="1.0">
+                    <Rectangle HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.7" Panel.ZIndex="0" Fill="Black" RadiusX="8" RadiusY="8"/>
+                    <Label Content="{Binding Machine.Status, NotifyOnTargetUpdated=True}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="24" Panel.ZIndex="1">
+                        <Label.Effect>
+                            <DropShadowEffect Direction="315" ShadowDepth="4" Color="Black" Opacity="1.0" BlurRadius="0.0"/>
+                        </Label.Effect>
+                    </Label>
+                    <Grid.Style>
+                        <Style TargetType="{x:Type Grid}">
+                            <Setter Property="Opacity" Value="1.0"/>
+                            <Style.Triggers>
+                                <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                                    <BeginStoryboard>
+                                        <Storyboard AutoReverse="False">
+                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity">
+                                                <LinearDoubleKeyFrame Value="1.0" KeyTime="0:0:0"/>
+                                                <LinearDoubleKeyFrame Value="1.0" KeyTime="0:0:2"/>
+                                                <LinearDoubleKeyFrame Value="0.0" KeyTime="0:0:2.5"/>
+                                            </DoubleAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
+                </Grid>
+            </Grid>
+        </DataTemplate>
+        <DataTemplate x:Key="TabItemTemplate">
+            <StackPanel Orientation="Horizontal">
+                <Image Width="16" Height="16" Stretch="None" Source="{Binding Machine.RunningState, Converter={StaticResource runningIconConverter}, Mode=OneWay}"/>
+                <TextBlock Text="{Binding Machine.Name, Mode=OneWay}"/>
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="TabItemHomeTemplate">
+            <TextBlock Text="Home"/>
+        </DataTemplate>
+        <cpvc:MachineDataTemplateSelector x:Key="MachineTemplateSelector"
+                                          HomeTemplate="{StaticResource HomeTemplate}"
+                                          MachineTemplate="{StaticResource MachineTemplate}"/>
+        <cpvc:MachineDataTemplateSelector x:Key="TabItemTemplateSelector"
+                                          HomeTemplate="{StaticResource TabItemHomeTemplate}"
+                                          MachineTemplate="{StaticResource TabItemTemplate}"/>
+        <System:Double x:Key="ScaleFactor">8</System:Double>
+        <System:Double x:Key="ScaleFactorReverse">-8</System:Double>
     </Window.Resources>
     <Grid AllowDrop="True" Margin="0,0,0,0" Background="#FFF0F0F0">
         <Grid.ColumnDefinitions>
@@ -80,9 +251,9 @@
             <MenuItem Header="File">
                 <MenuItem Header="New" Command="{Binding NewMachineCommand}" />
                 <MenuItem Header="Open..." Command="{Binding OpenMachineCommand}"/>
-                <MenuItem Header="Persist..." Command="{Binding PersistCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
+                <MenuItem Header="Persist..." Command="{Binding ActiveMachineViewModel.PersistCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
                 <Separator/>
-                <MenuItem Header="Close" Command="{Binding CloseCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
+                <MenuItem Header="Close" Command="{Binding CloseCommand}" CommandParameter="{Binding Path=ActiveMachineViewModel.Machine}"/>
                 <Separator/>
                 <MenuItem Header="Exit" Click="ExitMenuItem_Click"/>
             </MenuItem>
@@ -91,69 +262,84 @@
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
-                    <MenuItem Header="Load..." Command="{Binding DriveACommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
-                    <MenuItem Header="Eject" Command="{Binding DriveAEjectCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
+                    <MenuItem Header="Load..." Command="{Binding ActiveMachineViewModel.DriveACommand}" Style="{StaticResource CommandMenuItemStyle}"/>
+                    <MenuItem Header="Eject" Command="{Binding ActiveMachineViewModel.DriveAEjectCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
                 </MenuItem>
                 <MenuItem Header="Drive B:">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/floppy.png" />
                     </MenuItem.Icon>
-                    <MenuItem Header="Load..." Command="{Binding DriveBCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
-                    <MenuItem Header="Eject" Command="{Binding DriveBEjectCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
+                    <MenuItem Header="Load..." Command="{Binding ActiveMachineViewModel.DriveBCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
+                    <MenuItem Header="Eject" Command="{Binding ActiveMachineViewModel.DriveBEjectCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
                 </MenuItem>
                 <MenuItem Header="Tape">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/tape16.png" />
                     </MenuItem.Icon>
-                    <MenuItem Header="Load..." Command="{Binding TapeCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
-                    <MenuItem Header="Eject" Command="{Binding TapeEjectCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
+                    <MenuItem Header="Load..." Command="{Binding ActiveMachineViewModel.TapeCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
+                    <MenuItem Header="Eject" Command="{Binding ActiveMachineViewModel.TapeEjectCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Pause" Command="{Binding PauseCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <MenuItem Header="Pause" Command="{Binding ActiveMachineViewModel.PauseCommand}" Style="{StaticResource CommandMenuItemStyle}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/pause16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Resume" Command="{Binding ResumeCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <MenuItem Header="Resume" Command="{Binding ActiveMachineViewModel.ResumeCommand}" Style="{StaticResource CommandMenuItemStyle}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/running16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Reset" Command="{Binding ResetCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <MenuItem Header="Reset" Command="{Binding ActiveMachineViewModel.ResetCommand}" Style="{StaticResource CommandMenuItemStyle}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/reset16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Add Bookmark" Command="{Binding AddBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <MenuItem Header="Add Bookmark" Command="{Binding ActiveMachineViewModel.AddBookmarkCommand}" Style="{StaticResource CommandMenuItemStyle}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmarkadd16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Jump to Most Recent Bookmark" Command="{Binding JumpToMostRecentBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <MenuItem Header="Jump to Most Recent Bookmark" Command="{Binding ActiveMachineViewModel.JumpToMostRecentBookmarkCommand}" Style="{StaticResource CommandMenuItemStyle}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmarkprev16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Bookmarks..." Command="{Binding BrowseBookmarksCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <MenuItem Header="Bookmarks..." Command="{Binding ActiveMachineViewModel.BrowseBookmarksCommand}" Style="{StaticResource CommandMenuItemStyle}">
                     <MenuItem.Icon>
                         <Image Width="16" Height="16" Source="../Resources/bookmark16.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Rename machine..." Command="{Binding RenameCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
-                <MenuItem Header="Compact machine file" Command="{Binding CompactCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
+                <MenuItem Header="Rename..." Command="{Binding ActiveMachineViewModel.RenameCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
+                <MenuItem Header="Compact machine file" Command="{Binding ActiveMachineViewModel.CompactCommand}" Style="{StaticResource CommandMenuItemStyle}"/>
                 <Separator/>
-                <MenuItem Header="Reversible" Command="{Binding ToggleReversibility}" CommandParameter="{Binding Path=ActiveMachine}" IsCheckable="True">
+                <MenuItem Header="Reversible" Command="{Binding ActiveMachineViewModel.ToggleReversibility}" IsCheckable="True">
                     <MenuItem.Style>
                         <Style TargetType="MenuItem">
                             <Setter Property="IsChecked" Value="True"/>
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding Machine.SnapshotLimit}" Value="0">
+                                <DataTrigger Binding="{Binding ActiveMachineViewModel.Machine.SnapshotLimit}" Value="0">
                                     <Setter Property="IsChecked" Value="False"/>
                                 </DataTrigger>
+                                <Trigger Property="Command" Value="{x:Null}">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="#FF707070" />
+                                </Trigger>
                             </Style.Triggers>
+                            <Style.Resources>
+                                <Style TargetType="{x:Type Image}">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.5" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Style.Resources>
                         </Style>
                     </MenuItem.Style>
                 </MenuItem>
@@ -176,51 +362,51 @@
         </Menu>
         <ToolBarTray Margin="0" VerticalAlignment="Top" Grid.Row="1" Background="#FFF0F0F0">
             <ToolBar ToolBarTray.IsLocked="True" HorizontalContentAlignment="Left" VerticalAlignment="Center" VerticalContentAlignment="Center" Background="#FFF0F0F0">
-                <Button Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding DriveACommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource CommandButtonStyle}" Command="{Binding ActiveMachineViewModel.DriveACommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/floppy.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                         <TextBlock><Run Text="A:"/></TextBlock>
                     </StackPanel>
                 </Button>
-                <Button Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding DriveBCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="40" Style="{StaticResource CommandButtonStyle}" Command="{Binding ActiveMachineViewModel.DriveBCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/floppy.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                         <TextBlock><Run Text="B:"/></TextBlock>
                     </StackPanel>
                 </Button>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding TapeCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource CommandButtonStyle}" Command="{Binding ActiveMachineViewModel.TapeCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/tape16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
                 <Separator/>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding PauseCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource CommandButtonStyle}" Command="{Binding ActiveMachineViewModel.PauseCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/pause16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ResumeCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource CommandButtonStyle}" Command="{Binding ActiveMachineViewModel.ResumeCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/running16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource RegularMachineButtonStyle}" Command="{Binding ResetCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource CommandButtonStyle}" Command="{Binding ActiveMachineViewModel.ResetCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/reset16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
                 <Separator/>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding AddBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource CommandButtonStyle}" Command="{Binding ActiveMachineViewModel.AddBookmarkCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmarkadd16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding JumpToMostRecentBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource CommandButtonStyle}" Command="{Binding ActiveMachineViewModel.JumpToMostRecentBookmarkCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmarkprev16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
                 </Button>
-                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource MachineButtonStyle}" Command="{Binding BrowseBookmarksCommand}" CommandParameter="{Binding Path=ActiveMachine}">
+                <Button Height="25" VerticalAlignment="Top" Width="25" Style="{StaticResource CommandButtonStyle}" Command="{Binding ActiveMachineViewModel.BrowseBookmarksCommand}">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="../Resources/bookmark16.png" Width="16" Height="16" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" RenderOptions.EdgeMode="Aliased"/>
                     </StackPanel>
@@ -233,174 +419,257 @@
                 </ToggleButton>
             </ToolBar>
         </ToolBarTray>
-        <TabControl x:Name="_machines" Margin="5,5,5,5" Grid.Row="2" Height="576" Width="768" SelectedItem="{Binding ActiveItem, Mode=TwoWay}">
-            <TabControl.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Orientation="Horizontal">
-                        <Image Width="16" Height="16" Stretch="None" Source="{Binding RunningState, Converter={StaticResource runningIconConverter}, Mode=OneWay}"/>
-                        <TextBlock Text="{Binding Name, Mode=OneWay}"/>
-                    </StackPanel>
-                </DataTemplate>
-            </TabControl.ItemTemplate>
-            <TabControl.ContentTemplate>
-                <DataTemplate>
-                    <Grid MouseLeftButtonUp="ScreenGrid_MouseLeftButtonUp">
-                        <Grid.Resources>
-                            <converters:Ticks x:Key="ticksConverter" />
-                            <converters:LocalDateTime x:Key="localDateTimeConverter" />
-                            <!--<Style x:Key="GridViewColumnHeaderStyle" TargetType="{x:Type GridViewColumnHeader}">
-                                <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                            </Style>-->
-                            <!--<DataTemplate x:Key="cellTemplate">
-                                <Canvas Width="{Binding ActualWidth, ElementName=_graphColumn, Mode=OneWay}" Height="16" ClipToBounds="True">
-                                    <ContentPresenter Content="{Binding Canvas}" />
-                                </Canvas>
-                            </DataTemplate>-->
-                        </Grid.Resources>
-                        <Rectangle Fill="#7F000000" Stroke="#7F000000" Width="768" Height="576" VerticalAlignment="Top" HorizontalAlignment="Left" Panel.ZIndex="1">
-                            <Rectangle.Style>
-                                <Style TargetType="Rectangle">
-                                    <Setter Property="Visibility" Value="Hidden"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding RunningState}" Value="{x:Static cpvc:RunningState.Paused}">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Rectangle.Style>
-                        </Rectangle>
-                        <Image Width="768" Height="576" Source="{Binding Path=., Converter={StaticResource machineBitmapConverter}}" HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="True" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Fill"/>
-                        <Grid Margin="0,0,20,20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Panel.ZIndex="2" Opacity="1.0">
-                            <Rectangle HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.7" Panel.ZIndex="0" Fill="Black" RadiusX="8" RadiusY="8"/>
-                            <Label Content="{Binding Status, NotifyOnTargetUpdated=True}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="24" Panel.ZIndex="1">
-                                <Label.Effect>
-                                    <DropShadowEffect Direction="315" ShadowDepth="4" Color="Black" Opacity="1.0" BlurRadius="0.0"/>
-                                </Label.Effect>
-                            </Label>
-                            <Grid.Style>
-                                <Style TargetType="{x:Type Grid}">
-                                    <Setter Property="Opacity" Value="1.0"/>
-                                    <Style.Triggers>
-                                        <EventTrigger RoutedEvent="Binding.TargetUpdated">
-                                            <BeginStoryboard>
-                                                <Storyboard AutoReverse="False">
-                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity">
-                                                        <LinearDoubleKeyFrame Value="1.0" KeyTime="0:0:0"/>
-                                                        <LinearDoubleKeyFrame Value="1.0" KeyTime="0:0:2"/>
-                                                        <LinearDoubleKeyFrame Value="0.0" KeyTime="0:0:2.5"/>
-                                                    </DoubleAnimationUsingKeyFrames>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </EventTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Grid.Style>
-                        </Grid>
-                    </Grid>
-                </DataTemplate>
-            </TabControl.ContentTemplate>
+        <TabControl x:Name="_machines"
+                    Margin="5,5,5,5"
+                    Grid.Row="2"
+                    Height="576"
+                    Width="768"
+                    VerticalAlignment="Top"
+                    ContentTemplateSelector="{StaticResource MachineTemplateSelector}"
+                    ItemTemplateSelector="{StaticResource TabItemTemplateSelector}" SelectionChanged="Machines_SelectionChanged">
             <TabControl.ItemsSource>
-                <CompositeCollection>
-                    <TabItem Header="Home">
-                        <TabItem.HeaderTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Home"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </TabItem.HeaderTemplate>
-                        <TabItem.ContentTemplate>
-                            <DataTemplate>
-                                <ScrollViewer>
-                                    <Grid>
-                                        <StackPanel>
-                                            <Label Content="Machines" FontWeight="Bold" FontSize="14" />
-                                            <ItemsControl ItemsSource="{Binding Source={StaticResource Machines}}">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate>
-                                                        <WrapPanel/>
-                                                    </ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <Grid MouseLeftButtonUp="MachinePreviewGrid_MouseLeftButtonUp">
-                                                            <Grid.ContextMenu>
-                                                                <ContextMenu>
-                                                                    <MenuItem Header="Pause" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.PauseCommand}" CommandParameter="{Binding}"/>
-                                                                    <MenuItem Header="Resume" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.ResumeCommand}" CommandParameter="{Binding}"/>
-                                                                    <MenuItem Header="Open" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.OpenCommand}" CommandParameter="{Binding}"/>
-                                                                    <MenuItem Header="Close" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.CloseCommand}" CommandParameter="{Binding}"/>
-                                                                    <MenuItem Header="Persist..." Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.PersistCommand}" CommandParameter="{Binding}"/>
-                                                                    <MenuItem Header="Remove" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.RemoveCommand}" CommandParameter="{Binding}"/>
-                                                                    <MenuItem Header="Compact" Command="{Binding Source={x:Reference Name=_mainWindow}, Path=DataContext.CompactCommand}" CommandParameter="{Binding}"/>
-                                                                </ContextMenu>
-                                                            </Grid.ContextMenu>
-                                                            <StackPanel Margin="5">
-                                                                <Image Width="192" Height="144" HorizontalAlignment="Center" VerticalAlignment="Top" Source="{Binding Path=., Converter={StaticResource machineBitmapConverter}}" Focusable="True" RenderOptions.BitmapScalingMode="Linear" Stretch="Fill" Margin="0" ToolTip="{Binding PersistentFilepath, Mode=OneWay}" Cursor="Hand"/>
-                                                                <Label Content="{Binding Name}" HorizontalAlignment="Center"/>
-                                                            </StackPanel>
-                                                        </Grid>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </StackPanel>
-                                    </Grid>
-                                </ScrollViewer>
-                            </DataTemplate>
-                        </TabItem.ContentTemplate>
-                    </TabItem>
+                <CompositeCollection x:Name="_items">
                     <CollectionContainer Collection="{Binding Source={StaticResource OpenMachines}}" />
                 </CompositeCollection>
             </TabControl.ItemsSource>
         </TabControl>
-        <Grid x:Name="_historyCell"
-              Grid.Row="2"
-              Grid.Column="1"
-              Visibility="{Binding ElementName=_showHistoryToggleButton, Path=IsChecked, Converter={StaticResource BoolToVisConverter}}" Height="575" VerticalAlignment="Top">
-            <Button x:Name="_deleteBookmarkButton"
-                    Content="Delete Bookmark"
-                    Width="100"
-                    Height="32"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Top" Click="DeleteBookmarkButton_Click"/>
-            <Button x:Name="_deleteBranchButton"
-                    Content="Delete Branches"
-                    Width="100"
-                    Height="32"
-                    HorizontalAlignment="Left"
+        <TabControl Grid.Row="2"
+                    Grid.Column="1"
+                    Height="Auto"
                     VerticalAlignment="Top"
-                    Margin="110, 0, 0, 0" Click="DeleteBranchButton_Click"/>
-            <Button x:Name="_jumpButton"
-                    Content="Jump"
-                    Width="60"
-                    Height="32"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Top"
-                    Margin="220, 0, 0, 0" Click="JumpButton_Click"/>
-            <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="250" Margin="0,40,0,0">
-                <Grid>
-                    <cpvc:HistoryControl x:Name="_historyControl"
-                                  DataContext="{Binding ActiveMachine.History, Mode=OneWay}"
-                                  Width="0"
-                                  HorizontalAlignment="Left"
-                                  VerticalAlignment="Top"
-                                  Height="0"
-                                  RenderTransformOrigin="0.5,0.5">
-                        <cpvc:HistoryControl.RenderTransform>
-                            <ScaleTransform ScaleY="-1" />
-                        </cpvc:HistoryControl.RenderTransform>
-                    </cpvc:HistoryControl>
+                    Visibility="{Binding ElementName=_showHistoryToggleButton, Path=IsChecked, Converter={StaticResource BoolToVisConverter}}">
+            <TabItem Header="History">
+                <Grid Grid.IsSharedSizeScope="True">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="_deleteBookmarkButton"
+                                Content="Delete Bookmark"
+                                Click="DeleteBookmarkButton_Click" Margin="5"/>
+                        <Button x:Name="_deleteBranchButton"
+                                Content="Delete Branches"
+                                Click="DeleteBranchButton_Click" Margin="5"/>
+                        <Button x:Name="_jumpButton"
+                                Content="Jump"
+                                Click="JumpButton_Click" Margin="5"/>
+                    </StackPanel>
+                    <!--<Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100" SharedSizeGroup="A"/>
+                            <ColumnDefinition Width="0" />
+                            <ColumnDefinition Width="100" SharedSizeGroup="B"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <GridSplitter Grid.Column="1" 
+                                      Grid.Row="0" 
+                                      Panel.ZIndex="100"
+                                      Margin="-3,0"
+                                      BorderThickness="3,0"
+                                      BorderBrush="Transparent"
+                                      ResizeBehavior="PreviousAndCurrent"
+                                      HorizontalAlignment="Left" 
+                                      VerticalAlignment="Stretch"
+                                      ResizeDirection="Columns"/>
+                        <Button Grid.Row="0" Grid.Column="0" Content="History" Padding="0"/>
+                        <Button Grid.Row="0" Grid.Column="2" Content="Time" Padding="0" Margin="-1,0,0,0"/>
+                    </Grid>-->
+                    <ScrollViewer x:Name="_scroller" Grid.Row="2" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="270" Height="480" HorizontalAlignment="Left" VerticalAlignment="Top">
+                        <StackPanel Orientation="Vertical">
+                            <Grid DataContext="{Binding ActiveMachineViewModel.History, Mode=OneWay}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="0" />
+                                    <ColumnDefinition Width="100"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.Background>
+                                    <DrawingBrush Viewport="0,0,10,32" ViewportUnits="Absolute" TileMode="Tile">
+                                        <DrawingBrush.Drawing>
+                                            <DrawingGroup>
+                                                <GeometryDrawing Geometry="M0,0 L10,0 10,16 0,16 0,0Z" Brush="White" />
+                                                <GeometryDrawing Geometry="M0,16 L10,16 10,32 0,32 0,16Z" Brush="#F5F5F5" />
+                                            </DrawingGroup>
+                                        </DrawingBrush.Drawing>
+                                    </DrawingBrush>
+                                </Grid.Background>
+                                <Button Grid.Row="1"
+                                        Grid.Column="0"
+                                        Panel.ZIndex="101"
+                                        Content="History"
+                                        Height="16"
+                                        Margin="0,-3,0,0"
+                                        HorizontalContentAlignment="Left"
+                                        VerticalContentAlignment="Center"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Top"
+                                        Background="White"
+                                        BorderThickness="0">
+                                    <Button.RenderTransform>
+                                        <TranslateTransform X="0" Y="{Binding ElementName=_scroller, Path=VerticalOffset}"/>
+                                    </Button.RenderTransform>
+                                </Button>
+                                <Button Grid.Row="1"
+                                        Grid.Column="2"
+                                        Panel.ZIndex="101"
+                                        Content="Time"
+                                        Height="16"
+                                        Margin="0,-3,0,0"
+                                        HorizontalContentAlignment="Left"
+                                        VerticalContentAlignment="Center"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Top"
+                                        Background="White"
+                                        BorderThickness="0">
+                                    <Button.RenderTransform>
+                                        <TranslateTransform X="0" Y="{Binding ElementName=_scroller, Path=VerticalOffset}"/>
+                                    </Button.RenderTransform>
+                                </Button>
+                                <GridSplitter Grid.Column="1" 
+                                      Grid.Row="1" 
+                                      Panel.ZIndex="102"
+                                      Margin="-3,0"
+                                      BorderThickness="3,0"
+                                      BorderBrush="Transparent"
+                                      ResizeBehavior="PreviousAndCurrent"
+                                      HorizontalAlignment="Left" 
+                                      VerticalAlignment="Stretch"
+                                      ResizeDirection="Columns"/>
+                                <ItemsControl Grid.Row="1" 
+                                              ItemsSource="{Binding Lines}"
+                                              Margin="0,16,0,0"
+                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
+                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Top"
+                                              Canvas.ZIndex="100">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas>
+                                                <Canvas.RenderTransform>
+                                                    <TransformGroup>
+                                                        <ScaleTransform ScaleX="{StaticResource ScaleFactor}" ScaleY="{StaticResource ScaleFactor}"/>
+                                                        <ScaleTransform ScaleX="1" ScaleY="-1"/>
+                                                        <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"/>
+                                                    </TransformGroup>
+                                                </Canvas.RenderTransform>
+                                            </Canvas>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Path Style="{StaticResource HistoryDotPath}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <ItemsControl Grid.Row="1"
+                                              ItemsSource="{Binding Lines}"
+                                              Margin="0,16,0,0"
+                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
+                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Top"
+                                              Canvas.ZIndex="1">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas>
+                                                <Canvas.RenderTransform>
+                                                    <TransformGroup>
+                                                        <ScaleTransform ScaleX="{StaticResource ScaleFactor}" ScaleY="{StaticResource ScaleFactor}"/>
+                                                        <ScaleTransform ScaleX="1" ScaleY="-1"/>
+                                                        <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"/>
+                                                    </TransformGroup>
+                                                </Canvas.RenderTransform>
+                                            </Canvas>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <!--<Path StrokeThickness="2"
+                                                  Stroke="DarkBlue"
+                                                  
+                                                  Canvas.ZIndex="1">
+                                                <Path.Data>
+                                                    <PathGeometry>
+                                                        <PathGeometry.Figures>
+                                                            <PathFigure StartPoint="{Binding PolyLinePoints[0]}">
+                                                                <PathFigure.Segments>
+                                                                    <PolyLineSegment Points="{Binding PolyLinePoints}"/>
+                                                                </PathFigure.Segments>
+                                                            </PathFigure>
+                                                        </PathGeometry.Figures>
+                                                    </PathGeometry>
+                                                </Path.Data>
+                                            </Path>-->
+                                            <Polyline Stroke="DarkBlue"
+                                                      StrokeThickness="0.25"
+                                                      Points="{Binding PolyLinePoints}"
+                                                      HorizontalAlignment="Left"
+                                                      VerticalAlignment="Top"
+                                                      UseLayoutRounding="True"
+                                                      Canvas.ZIndex="1">
+                                            </Polyline>
+                                            <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <ItemsControl Grid.Row="1"
+                                              Grid.Column="2"
+                                              ItemsSource="{Binding Lines}"
+                                              Margin="0,16,0,0"
+                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
+                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Top"
+                                              Canvas.ZIndex="100">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas>
+                                                <Canvas.RenderTransform>
+                                                    <TransformGroup>
+                                                        <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"/>
+                                                    </TransformGroup>
+                                                </Canvas.RenderTransform>
+                                            </Canvas>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Node.Data.TicksInSeconds, Converter={StaticResource secondsConverter}, StringFormat=\{0:h\\:mm\\:ss\}}"
+                                                       HorizontalAlignment="Left" VerticalAlignment="Top">
+                                                <TextBlock.RenderTransform>
+                                                    <TransformGroup>
+                                                        <TranslateTransform X="0" Y="{Binding Path=Center.Y, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactorReverse}}"/>
+                                                        <TranslateTransform X="0" Y="{StaticResource ScaleFactorReverse}"/>
+                                                    </TransformGroup>
+                                                </TextBlock.RenderTransform>
+                                            </TextBlock>
+                                            <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+                        </StackPanel>
+                    </ScrollViewer>
                 </Grid>
-            </ScrollViewer>
-        </Grid>
+            </TabItem>
+        </TabControl>
         <StatusBar Height="30" Grid.Row="3" VerticalAlignment="Top">
-            <TextBlock TextWrapping="Wrap" Text="{Binding ActiveMachine.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
+            <TextBlock TextWrapping="Wrap" Text="{Binding ActiveMachineViewModel.Machine.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
             <Separator/>
-            <Slider Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding ActiveMachine.Volume, Mode=TwoWay}" ToolTip="{Binding ActiveMachine.Volume}" />
-            <Button Content="&lt;&lt;" Command="{Binding SeekToPrevBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
-            <Button Content=">>" Command="{Binding SeekToNextBookmarkCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
-            <Button Content=" |&lt; " Command="{Binding SeekToStartCommand}" CommandParameter="{Binding Path=ActiveMachine}"/>
-            <Slider Width="300" VerticalAlignment="Center" HorizontalAlignment="Right" Minimum="0" Maximum="{Binding ActiveMachine.EndTicks, Mode=OneWay}" Value="{Binding ActiveMachine.Ticks, Mode=OneWay}"/>
+            <Slider Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding ActiveMachineViewModel.Machine.Volume, Mode=TwoWay}" ToolTip="{Binding ActiveMachineViewModel.Machine.Volume}" />
         </StatusBar>
     </Grid>
 </Window>

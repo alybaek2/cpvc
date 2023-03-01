@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace CPvC
 {
@@ -77,7 +78,7 @@ namespace CPvC
                 {
                     currentCoreAction.StopTicks = runUntilAction.StopTicks;
 
-                    HistoryChangedEventArgs args = new HistoryChangedEventArgs(this, _currentNode.HistoryEvent, HistoryChangedAction.UpdateCurrent);
+                    HistoryChangedEventArgs args = new HistoryChangedEventArgs(this, _currentNode.HistoryEvent, HistoryChangedAction.UpdateCurrent, null);
                     Auditors?.Invoke(this, args);
 
                     return currentCoreActionNode.HistoryEvent as CoreActionHistoryEvent;
@@ -88,7 +89,7 @@ namespace CPvC
 
             _nextId = Math.Max(_nextId, id) + 1;
 
-            AddChildNode(historyNode, !(coreAction is RunUntilAction));
+            AddChildNode(historyNode);
 
             return historyNode.HistoryEvent as CoreActionHistoryEvent;
         }
@@ -114,7 +115,7 @@ namespace CPvC
                 throw new Exception("Can't add a bookmark with a smaller ticks than current!");
             }
 
-            AddChildNode(historyNode, true);
+            AddChildNode(historyNode);
 
             return historyNode.HistoryEvent as BookmarkHistoryEvent;
         }
@@ -156,7 +157,7 @@ namespace CPvC
 
             parent.InvalidateCachedMDT();
 
-            Notify(historyEvent, HistoryChangedAction.DeleteBranch);
+            Notify(historyEvent, HistoryChangedAction.DeleteBranch, parent.HistoryEvent);
 
             return true;
         }
@@ -191,7 +192,7 @@ namespace CPvC
             HistoryEvent oldParentEvent = historyNode.Parent.HistoryEvent;
             historyNode.Parent = null;
 
-            Notify(historyEvent, HistoryChangedAction.DeleteBookmark);
+            Notify(historyEvent, HistoryChangedAction.DeleteBookmark, oldParentEvent);
 
             return true;
         }
@@ -224,46 +225,29 @@ namespace CPvC
                     return;
                 }
 
-                // If the current node is a RunUntil, finish it off by sending a notification...
-                CoreActionHistoryNode currentCoreActionNode = _currentNode as CoreActionHistoryNode;
                 _currentNode = value.Node;
 
-                if (currentCoreActionNode != null && currentCoreActionNode.CoreAction is RunUntilAction)
-                {
-                    //Notify(currentCoreActionNode.HistoryEvent, null, HistoryChangedAction.Add);
-                }
-
-
-                Notify(_currentNode.HistoryEvent, HistoryChangedAction.SetCurrent);
+                Notify(_currentNode.HistoryEvent, HistoryChangedAction.SetCurrent, null);
             }
         }
 
-        private void AddChildNode(HistoryNode historyNode, bool notify)
+        private void AddChildNode(HistoryNode historyNode)
         {
-            bool notifyCurrent = !IsClosedEvent(_currentNode.HistoryEvent);
             _currentNode.Children.Add(historyNode);
             _nodes.Add(historyNode);
 
             // Could probably just get the MDT of the new node, and see if it's bigger...
             _currentNode.InvalidateCachedMDT();
 
-            if (notifyCurrent)
-            {
-                //Notify(_currentNode.HistoryEvent, null, HistoryChangedAction.Add);
-            }
-
             _currentNode = historyNode;
 
-            Notify(historyNode.HistoryEvent, HistoryChangedAction.Add);
+            Notify(historyNode.HistoryEvent, HistoryChangedAction.Add, null);
         }
 
-        private void Notify(HistoryEvent historyEvent, HistoryChangedAction action)
+        private void Notify(HistoryEvent historyEvent, HistoryChangedAction action, HistoryEvent originalParentHistoryEvent)
         {
-            //if (IsClosedEvent(historyEvent))
-            {
-                HistoryChangedEventArgs args = new HistoryChangedEventArgs(this, historyEvent, action);
-                Auditors?.Invoke(this, args);
-            }
+            HistoryChangedEventArgs args = new HistoryChangedEventArgs(this, historyEvent, action, originalParentHistoryEvent);
+            Auditors?.Invoke(this, args);
         }
     }
 }

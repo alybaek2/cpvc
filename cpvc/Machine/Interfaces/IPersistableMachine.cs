@@ -4,7 +4,7 @@
     {
         bool Persist(IFileSystem fileSystem, string filepath);
         void OpenFromFile(IFileSystem fileSystem);
-        string PersistantFilepath { get; }
+        string PersistentFilepath { get; }
         bool IsOpen { get; }
     }
 }

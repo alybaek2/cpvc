@@ -24,7 +24,7 @@ namespace CPvC
 
         private void Machine_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(LocalMachine.PersistantFilepath))
+            if (e.PropertyName == nameof(LocalMachine.PersistentFilepath))
             {
                 UpdateSettings();
             }
@@ -96,12 +96,12 @@ namespace CPvC
             {
                 foreach (IMachine machine in _machines)
                 {
-                    if (!(machine is IPersistableMachine pm) || pm.PersistantFilepath == null)
+                    if (!(machine is IPersistableMachine pm) || pm.PersistentFilepath == null)
                     {
                         continue;
                     }
 
-                    machineFilepathNameMap[pm.PersistantFilepath.ToLower()] = machine.Name;
+                    machineFilepathNameMap[pm.PersistentFilepath.ToLower()] = machine.Name;
                 }
             }
 
@@ -143,7 +143,7 @@ namespace CPvC
                 {
                     if (m is IPersistableMachine pm)
                     {
-                        return String.Compare(pm.PersistantFilepath, filepath, true) == 0;
+                        return String.Compare(pm.PersistentFilepath, filepath, true) == 0;
                     }
 
                     return false;

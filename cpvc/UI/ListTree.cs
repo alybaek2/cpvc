@@ -205,14 +205,23 @@ namespace CPvC
 
         public void RemoveNonRecursive(ListTreeNode<T> node)
         {
-            if (node.Parent == null)
+            // Remove the node, and reinsert its children to node's parent.
+            ListTreeNode<T> parentNode = node.Parent;
+            List<ListTreeNode<T>> children = node.Children.ToList();
+
+            foreach (ListTreeNode<T> childNode in children)
             {
-                throw new ArgumentException("Can't remove the root node!", nameof(node));
+                Move(childNode, parentNode);
             }
 
-            // Todo!
+            // Delete the node
+            node.Parent = null;
+            parentNode.Children.Remove(node);
+            _horizontalNodes.Remove(node);
+            _verticalNodes.Remove(node);
 
-            // Remove the node, and reinsert its children to node's parent.
+            RefreshHorizontalPositions(0);
+            RefreshVerticalPositions(0);
         }
 
         public bool Update(ListTreeNode<T> node)
@@ -235,6 +244,29 @@ namespace CPvC
             }
 
             return verticalChanged || horizontalChanged;
+        }
+
+        public void Move(ListTreeNode<T> node, ListTreeNode<T> newParentNode)
+        {
+            // Should probably check if node and parentNode actually belong to us...
+            ListTreeNode<T> oldParentNode = node.Parent;
+
+            node.Parent = null;
+            oldParentNode.Children.Remove(node);
+            int newChildIndex = GetChildIndex(newParentNode, node);
+            newParentNode.Children.Insert(newChildIndex, node);
+            node.Parent = newParentNode;
+
+            // Fix up horizontal ordering...
+            int leftmostHorizontalIndex = _horizontalPositions[node];
+            int rightmostHorizontalIndex = _horizontalPositions[node.RightmostDescendent];
+            int newHorizontalIndex = GetHorizontalInsertionIndex(newParentNode, newChildIndex);
+
+            MoveHorizontal(leftmostHorizontalIndex, newHorizontalIndex, rightmostHorizontalIndex - leftmostHorizontalIndex + 1);
+
+            // Probably should adjust the vertical ordering, at least for the node and its new parent (since they could be tied...).
+
+            RefreshHorizontalPositions(0);
         }
 
         protected void RefreshHorizontalPositions(int index)

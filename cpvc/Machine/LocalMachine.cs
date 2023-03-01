@@ -141,7 +141,7 @@ namespace CPvC
         {
             LocalMachine machine = new LocalMachine(name, history);
 
-            machine.PersistantFilepath = persistentFilepath;
+            machine.PersistentFilepath = persistentFilepath;
 
             return machine;
         }
@@ -451,7 +451,7 @@ namespace CPvC
                 throw new InvalidOperationException();
             }
 
-            string oldFilepath = PersistantFilepath;
+            string oldFilepath = PersistentFilepath;
             string newFilepath = oldFilepath + ".tmp";
 
             MachineFileInfo info = null;
@@ -474,7 +474,7 @@ namespace CPvC
         {
             get
             {
-                return PersistantFilepath != null && !IsOpen;
+                return PersistentFilepath != null && !IsOpen;
             }
         }
 
@@ -570,7 +570,7 @@ namespace CPvC
 
                 File = machineFile;
 
-                PersistantFilepath = filepath;
+                PersistentFilepath = filepath;
 
                 return true;
             }
@@ -579,7 +579,7 @@ namespace CPvC
         static public LocalMachine OpenFromFile(IFileSystem fileSystem, string filepath)
         {
             LocalMachine machine = new LocalMachine(null, new History());
-            machine.PersistantFilepath = filepath;
+            machine.PersistentFilepath = filepath;
 
             machine.IsOpen = false;
             machine.OpenFromFile(fileSystem);
@@ -606,7 +606,7 @@ namespace CPvC
 
             try
             {
-                textFile = fileSystem.OpenTextFile(PersistantFilepath);
+                textFile = fileSystem.OpenTextFile(PersistentFilepath);
                 MachineFileInfo info = MachineFile.Read(textFile);
                 MachineFile file = new MachineFile(textFile, info.History, info.NextLineId);
 
@@ -675,7 +675,7 @@ namespace CPvC
             }
         }
 
-        public string PersistantFilepath
+        public string PersistentFilepath
         {
             get
             {

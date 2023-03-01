@@ -72,6 +72,12 @@ namespace CPvC
         {
             ListTreeNode<HistoryEvent> child = new ListTreeNode<HistoryEvent>(historyEvent);
 
+            return Add(parent, child);
+        }
+
+        private ListTreeNode<HistoryEvent> Add(ListTreeNode<HistoryEvent> parent, ListTreeNode<HistoryEvent> child)
+        {
+
             // Check first if child already exists in the tree! And that parent exists in the tree!
 
             // Insert into children of parent first!
@@ -224,11 +230,43 @@ namespace CPvC
                     break;
                 case HistoryChangedAction.DeleteBranch:
                     {
-                        ListTreeNode<HistoryEvent> node = GetNode(args.HistoryEvent);
+                        List<HistoryEvent> eventsToDelete = new List<HistoryEvent>();
+                        eventsToDelete.Add(args.HistoryEvent);
 
-                        RemoveRecursive(node);
+                        while (eventsToDelete.Any())
+                        {
+                            HistoryEvent historyEvent = eventsToDelete[0];
+                            eventsToDelete.RemoveAt(0);
 
-                        changed = true;
+                            ListTreeNode<HistoryEvent> node = GetNode(historyEvent);
+                            if (node == null)
+                            {
+                                eventsToDelete.AddRange(historyEvent.Children);
+                            }
+                            else
+                            {
+                                RemoveRecursive(node);
+                                changed = true;
+                            }
+                        }
+
+                        ListTreeNode<HistoryEvent> parentNode = GetNode(args.OriginalParentEvent);
+                        if (parentNode != null)
+                        {
+                            if (!InterestingEvent(args.OriginalParentEvent))
+                            {
+                                RemoveNonRecursive(parentNode);
+                            }
+
+                            changed |= true;
+                        }
+                        else
+                        {
+                            if (AddEventToListTree(args.OriginalParentEvent))
+                            {
+                                changed = true;
+                            }
+                        }
                     }
                     break;
                 case HistoryChangedAction.DeleteBookmark:

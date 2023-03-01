@@ -187,7 +187,7 @@ namespace CPvC.Test
             {
                 // Verify
                 Assert.IsTrue(machine.IsOpen);
-                Assert.AreEqual(machine.PersistantFilepath, "test.cpvc");
+                Assert.AreEqual(machine.PersistentFilepath, "test.cpvc");
                 Assert.AreEqual(machine.Name, "test");
 
                 Assert.IsInstanceOf<RootHistoryEvent>(machine.History.RootEvent);
