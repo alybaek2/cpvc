@@ -173,13 +173,12 @@ namespace CPvC
         {
             get
             {
-                IHistoricalMachine historicalMachine = _machine as IHistoricalMachine;
-                if (historicalMachine == null)
+                if (_machine is IHistoricalMachine historicalMachine)
                 {
-                    return null;
+                    return HistoryViewModel.GetViewModel(historicalMachine.History);
                 }
 
-                return HistoryViewModel.GetViewModel(historicalMachine.History);
+                return null;
             }
         }
 
@@ -292,7 +291,6 @@ namespace CPvC
         {
             get { return _toggleSnapshotCommand; }
         }
-
 
         private void LoadDisc(IFileSystem fileSystem, IInteractiveMachine machine, byte drive)
         {

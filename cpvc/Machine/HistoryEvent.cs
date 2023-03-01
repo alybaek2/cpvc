@@ -47,6 +47,14 @@ namespace CPvC
             }
         }
 
+        public virtual UInt64 TicksInSeconds
+        {
+            get
+            {
+                return Node.Ticks / 4000000;
+            }
+        }
+
         public DateTime CreateDate
         {
             get
@@ -184,15 +192,10 @@ namespace CPvC
             if (e.PropertyName == nameof(RunUntilRequest.StopTicks))
             {
                 Node.InvalidateCachedMDT();
-
-                //HistoryEvent h = this;
-                //while (h != null)
-                //{
-                //    h.Node.InvalidateCachedMDT();
-                //    h = h.Parent;
-                //}
-
-                OnPropertyChanged(nameof(Ticks));
+            }
+            else if (e.PropertyName == nameof(RunUntilRequest.StopTicksInSeconds))
+            {
+                OnPropertyChanged(nameof(TicksInSeconds));
             }
         }
 

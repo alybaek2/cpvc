@@ -5,12 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:converters="clr-namespace:CPvC.UI.Converters"
         xmlns:cpvc="clr-namespace:CPvC"
-        xmlns:cpvcui="clr-namespace:CPvC.UI"
         xmlns:System="clr-namespace:System;assembly=mscorlib" x:Name="_mainWindow" x:Class="CPvC.UI.Forms.MainWindow"
         mc:Ignorable="d"
         Title="CPvC" Height="705.125" Closing="Window_Closing" Loaded="Window_Loaded" KeyDown="Window_KeyDown" KeyUp="Window_KeyUp" SizeToContent="WidthAndHeight" ResizeMode="NoResize" Icon="../Resources/cpvc.png" ContextMenuOpening="MainWindow_ContextMenuOpening">
     <Window.Resources>
         <converters:Ticks x:Key="ticksConverter" />
+        <converters:Seconds x:Key="secondsConverter" />
         <converters:IsNotNull x:Key="isNotNullConverter" />
         <converters:RunningIcon x:Key="runningIconConverter" />
         <converters:BooleanInverter x:Key="booleanInverterConverter" />
@@ -647,7 +647,7 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding Node.Data.Ticks, Converter={StaticResource ticksConverter}, StringFormat=\{0:h\\:mm\\:ss\}}"
+                                            <TextBlock Text="{Binding Node.Data.TicksInSeconds, Converter={StaticResource secondsConverter}, StringFormat=\{0:h\\:mm\\:ss\}}"
                                                        HorizontalAlignment="Left" VerticalAlignment="Top">
                                                 <TextBlock.RenderTransform>
                                                     <TransformGroup>

@@ -59,34 +59,4 @@ namespace CPvC.UI.Converters
             return false;
         }
     }
-
-    public class ThickConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType,
-            object parameter, CultureInfo culture)
-        {
-            if (parameter is string factorStr && Int32.TryParse(factorStr, out int factor))
-            {
-                switch (value)
-                {
-                    case System.Windows.Point point:
-                        return new System.Windows.Point(point.X * factor, point.Y * factor);
-                    case Thickness thickness:
-                        return new Thickness(thickness.Left * factor, thickness.Top * factor, thickness.Right * factor, thickness.Bottom * factor);
-                    case int integer:
-                        return factor * integer;
-                    case double d:
-                        return factor * d;
-                }
-            }
-
-            return value;
-        }
-
-        public object ConvertBack(object value, Type targetType,
-            object parameter, CultureInfo culture)
-        {
-            return null;
-        }
-    }
 }

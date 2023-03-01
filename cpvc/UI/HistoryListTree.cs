@@ -256,18 +256,6 @@ namespace CPvC
                             if (!InterestingEvent(args.OriginalParentEvent))
                             {
                                 RemoveNonRecursive(parentNode);
-                                //List<ListTreeNode<T>> children = node.Children;
-                                //ListTreeNode<T> parentNode = node.Parent;
-                                //node.Parent = null;
-                                //parentNode.Children.Remove(node);
-
-                                //// Reinsert children.
-                                //foreach (ListTreeNode<T> childNode in children)
-                                //{
-                                //    int newChildIndex = GetChildIndex(parentNode, childNode);
-                                //    parentNode.Children.Insert(newChildIndex, childNode);
-                                //    childNode.Parent = parentNode;
-                                //}
                             }
 
                             changed |= true;

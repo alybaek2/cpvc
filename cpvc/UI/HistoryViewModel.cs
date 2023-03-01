@@ -33,9 +33,6 @@ namespace CPvC
             _historyEvent = historyEvent;
         }
 
-        //private const int _scalingX = 8;
-        //private const int _scalingY = 8;
-
         private ListTreeNode<HistoryEvent> _historyEvent;
 
         public void Start()
@@ -71,11 +68,7 @@ namespace CPvC
             if (_changed)
             {
                 OnPropertyChanged(nameof(PolyLinePoints));
-                //OnPropertyChanged(nameof(YMargin));
-                //OnPropertyChanged(nameof(X));
-                //OnPropertyChanged(nameof(Y));
                 OnPropertyChanged(nameof(Center));
-                //OnPropertyChanged(nameof(CircleMargin));
 
                 _version++;
             }
@@ -170,7 +163,7 @@ namespace CPvC
         public event PropertyChangedEventHandler PropertyChanged;
     }
 
-    public class Point : INotifyPropertyChanged
+    public class Point
     {
         public Point(int x, int y)
         {
@@ -180,13 +173,6 @@ namespace CPvC
 
         public int X { get; }
         public int Y { get; }
-
-        protected virtual void OnPropertyChanged([CallerMemberName] string name = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
     }
 
     public class HistoryViewModel : INotifyPropertyChanged
@@ -245,7 +231,6 @@ namespace CPvC
                 // Draw!
                 line.Start();
 
-                // Need to set _changed to true if the following two things are different!
                 line.Current = ReferenceEquals(node.Data, _history?.CurrentEvent);
                 if (node.Data is RootHistoryEvent)
                 {

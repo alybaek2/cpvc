@@ -205,13 +205,6 @@ namespace CPvC
 
         public void RemoveNonRecursive(ListTreeNode<T> node)
         {
-            //if (node.Parent == null)
-            //{
-            //    throw new ArgumentException("Can't remove the root node!", nameof(node));
-            //}
-
-            // Todo!
-
             // Remove the node, and reinsert its children to node's parent.
             ListTreeNode<T> parentNode = node.Parent;
             List<ListTreeNode<T>> children = node.Children.ToList();
@@ -271,7 +264,7 @@ namespace CPvC
 
             MoveHorizontal(leftmostHorizontalIndex, newHorizontalIndex, rightmostHorizontalIndex - leftmostHorizontalIndex + 1);
 
-            // Probably should adjust the vertical ordering, at least for the node and its new parent (since they could be tied...
+            // Probably should adjust the vertical ordering, at least for the node and its new parent (since they could be tied...).
 
             RefreshHorizontalPositions(0);
         }
