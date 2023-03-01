@@ -123,8 +123,15 @@ namespace CPvC
                     return;
                 }
 
-                _stopTicks = value;
-                OnPropertyChanged();
+                if ((_stopTicks / 4000000) != (value / 4000000))
+                {
+                    _stopTicks = value;
+                    OnPropertyChanged();
+                }
+                else
+                {
+                    _stopTicks = value;
+                }
             }
         }
 
