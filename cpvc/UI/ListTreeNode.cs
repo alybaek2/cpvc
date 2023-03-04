@@ -32,7 +32,7 @@ namespace CPvC
             get
             {
                 ListTreeNode<T> node = this;
-                while (node.Children.Count > 0)
+                while (node.Children.Any())
                 {
                     node = node.Children.Last();
                 }

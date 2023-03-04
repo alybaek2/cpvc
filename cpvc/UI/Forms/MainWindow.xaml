@@ -573,6 +573,46 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
 
+                                <ItemsControl Grid.Row="1" 
+                                              ItemsSource="{Binding Lines}"
+                                              Margin="0,16,0,0"
+                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
+                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Top"
+                                              Canvas.ZIndex="100">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas>
+                                                <Canvas.RenderTransform>
+                                                    <TransformGroup>
+                                                        <ScaleTransform ScaleX="{StaticResource ScaleFactor}" ScaleY="{StaticResource ScaleFactor}"/>
+                                                        <ScaleTransform ScaleX="1" ScaleY="-1"/>
+                                                        <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"/>
+                                                    </TransformGroup>
+                                                </Canvas.RenderTransform>
+                                            </Canvas>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Rectangle Fill="Transparent" Width="2" Height="2" ToolTip="Click me you fool!">
+                                                <Rectangle.RenderTransform>
+                                                    <TransformGroup>
+                                                        <TranslateTransform X="{Binding Center.X}"
+                                                                            Y="{Binding Center.Y}"/>
+                                                        <TranslateTransform X="-1"
+                                                                            Y="-1"/>
+                                                        <!--<ScaleTransform ScaleX="{StaticResource ScaleFactor}" ScaleY="{StaticResource ScaleFactor}"/>
+                                                        <ScaleTransform ScaleX="1" ScaleY="-1"/>
+                                                        <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"/>-->
+                                                    </TransformGroup>
+                                                </Rectangle.RenderTransform>
+                                            </Rectangle>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
                                 <ItemsControl Grid.Row="1"
                                               ItemsSource="{Binding Lines}"
                                               Margin="0,16,0,0"

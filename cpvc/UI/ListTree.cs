@@ -15,7 +15,7 @@ namespace CPvC
             _verticalPositions = new Dictionary<ListTreeNode<T>, int>();
             _horizontalPositions = new Dictionary<ListTreeNode<T>, int>();
             _eventsToNodes = new Dictionary<T, ListTreeNode<T>>();
-            _verticalTies = new HashSet<Tuple<T, T>>(); // new Dictionary<T, T>();
+            _verticalTies = new HashSet<Tuple<T, T>>();
         }
 
         public ListTreeNode<T> Root
@@ -32,11 +32,6 @@ namespace CPvC
             _horizontalNodes.Add(Root);
             _verticalPositions.Add(Root, 0);
             _horizontalPositions.Add(Root, 0);
-        }
-
-        public System.Drawing.Point GetPosition(ListTreeNode<T> node)
-        {
-            return new System.Drawing.Point(_horizontalPositions[node], _verticalPositions[node]);
         }
 
         public ListTreeNode<T> GetNode(T historyEvent)
@@ -90,6 +85,7 @@ namespace CPvC
             return parent.Children.FindIndex(x => ReferenceEquals(x, child));
         }
 
+        // Could change this to add a new node, then move the other node to be a child of the new node.
         public ListTreeNode<T> InsertNewParent(ListTreeNode<T> node, T historyEvent)
         {
             if (_eventsToNodes.ContainsKey(historyEvent))
@@ -233,6 +229,7 @@ namespace CPvC
             // If the vertical position changed, this could possibly affact the max descendent
             // ticks of all our ancestor nodes. Since that could affect the horizontal position
             // of those nodes, check them!
+            // Shouldn't this logic be in HistoryListTree?!
             if (verticalChanged)
             {
                 ListTreeNode<T> parent = node.Parent;
