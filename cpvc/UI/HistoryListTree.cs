@@ -96,6 +96,8 @@ namespace CPvC
                 descendentChildIndex++;
             }
 
+            // This is wrong! All of parent's children could be descendents of child!
+
             int childIndex;
             if (descendentChildIndex < parent.Children.Count)
             {
@@ -275,6 +277,8 @@ namespace CPvC
 
                         RemoveNonRecursive(node);
 
+                        AddEventToListTree(args.OriginalParentEvent);
+
                         changed = true;
                     }
                     break;
@@ -288,6 +292,66 @@ namespace CPvC
             }
 
             return null;
+        }
+
+        private void RefreshNode(HistoryEvent historyEvent)
+        {
+            bool wasVisible = _eventsToNodes.ContainsKey(historyEvent);
+            bool isVisible = InterestingEvent(historyEvent);
+
+            if (wasVisible && !isVisible)
+            {
+                // Remove the node and attach its children to the node's parents.
+            }
+            else if (!wasVisible && isVisible)
+            {
+                // Insert a new node in the tree!
+
+                // First, find our closest immediate ancestor in the tree.
+                ListTreeNode<HistoryEvent> ancestorNode = null;
+                HistoryEvent h = historyEvent.Parent;
+                while (h != null)
+                {
+                    if (_eventsToNodes.ContainsKey(h))
+                    {
+                        ancestorNode = _eventsToNodes[h];
+                        break;
+                    }
+                }
+
+                // Add the node!
+                ListTreeNode<HistoryEvent> node = new ListTreeNode<HistoryEvent>(historyEvent);
+
+                int childIndex = GetChildIndex(ancestorNode, node);
+                int horizontalIndex = GetHorizontalInsertionIndex(ancestorNode, childIndex);
+                _horizontalNodes.Insert(horizontalIndex, node);
+
+                // Go through all of ancestorNode's children and move them over to the new node if they're descendents
+                for (int c = ancestorNode.Children.Count - 1; c < 0; c--)
+                {
+                    ListTreeNode<HistoryEvent> childNode = ancestorNode.Children[c];
+                    if (ReferenceEquals(node, childNode))
+                    {
+                        continue;
+                    }
+
+                    if (ancestorNode.Data.IsEqualToOrAncestorOf(childNode.Data))
+                    {
+                        ancestorNode.Children.RemoveAt(c);
+                        node.Children.Insert(0, childNode);
+                        childNode.Parent = node;
+
+                        _horizontalNodes.Remove(childNode);
+                        horizontalIndex = GetHorizontalInsertionIndex(ancestorNode, 0);
+                        _horizontalNodes.Insert(horizontalIndex, childNode);
+                    }
+                }
+            }
+            else
+            {
+                // No change!
+            }
+
         }
 
         protected override int HorizontalSort(HistoryEvent x, HistoryEvent y)

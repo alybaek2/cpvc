@@ -11,6 +11,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 
 namespace CPvC.UI.Forms
 {
@@ -570,11 +571,11 @@ namespace CPvC.UI.Forms
         // Consider bringing MachineViewModel back!
         private void DeleteBookmarkButton_Click(object sender, RoutedEventArgs e)
         {
-            IHistoricalMachine historyMachine = _mainViewModel.ActiveMachineViewModel as IHistoricalMachine;
-            if (historyMachine == null)
-            {
-                return;
-            }
+            //IHistoricalMachine historyMachine = _mainViewModel.ActiveMachineViewModel as IHistoricalMachine;
+            //if (historyMachine == null)
+            //{
+            //    return;
+            //}
 
             MessageBoxResult result = MessageBox.Show(this, "Are you sure you want to delete these bookmarks?", "CPvC", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result != MessageBoxResult.Yes)
@@ -582,23 +583,25 @@ namespace CPvC.UI.Forms
                 return;
             }
 
-            List<HistoryEvent> bookmarks = new List<HistoryEvent>();
+            //List<HistoryEvent> bookmarks = new List<HistoryEvent>();
 
             //foreach (object item in _historyControl.SelectedItems)
             //{
             //    bookmarks.Add(((HistoryViewItem)item).HistoryEvent);
             //}
 
-            historyMachine.DeleteBookmarks(bookmarks);
+            //historyMachine.DeleteBookmarks(bookmarks);
+
+            _mainViewModel.ActiveMachineViewModel.History.DeleteSelectedBookmarks();
         }
 
         private void DeleteBranchButton_Click(object sender, RoutedEventArgs e)
         {
-            IHistoricalMachine historyMachine = _mainViewModel.ActiveMachineViewModel as IHistoricalMachine;
-            if (historyMachine == null)
-            {
-                return;
-            }
+            //IHistoricalMachine historyMachine = _mainViewModel.ActiveMachineViewModel as IHistoricalMachine;
+            //if (historyMachine == null)
+            //{
+            //    return;
+            //}
 
             MessageBoxResult result = MessageBox.Show(this, "Are you sure you want to delete these branches?", "CPvC", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (result != MessageBoxResult.Yes)
@@ -606,14 +609,15 @@ namespace CPvC.UI.Forms
                 return;
             }
 
-            List<HistoryEvent> branches = new List<HistoryEvent>();
+            //List<HistoryEvent> branches = new List<HistoryEvent>();
 
             //foreach (object item in _historyControl.SelectedItems)
             //{
             //    branches.Add(((HistoryViewItem)item).HistoryEvent);
             //}
 
-            historyMachine.DeleteBranches(branches);
+            _mainViewModel.ActiveMachineViewModel.History.DeleteSelectedBranches();
+            //historyMachine.DeleteBranches(branches);
         }
 
         private void JumpButton_Click(object sender, RoutedEventArgs e)
@@ -623,6 +627,16 @@ namespace CPvC.UI.Forms
             {
                 return;
             }
+
+            BookmarkHistoryEvent bookmarkHistoryEvent = _mainViewModel.ActiveMachineViewModel.History.SelectedBookmark;
+
+            if (_mainViewModel.ActiveMachineViewModel.Machine is IHistoricalMachine historicalMachine && bookmarkHistoryEvent != null)
+            {
+                historicalMachine.JumpToBookmark(bookmarkHistoryEvent);
+
+                _mainViewModel.ActiveMachineViewModel.History.ClearSelection();
+            }
+
 
             //if (_historyControl.SelectedItems.Count == 1)
             //{
@@ -645,6 +659,36 @@ namespace CPvC.UI.Forms
             {
                 _mainViewModel.ActiveMachineViewModel = machineViewModel;
             }
+        }
+
+        private void Polyline_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            Polyline polyline = (Polyline)sender;
+            HistoryLineViewModel viewModel = (HistoryLineViewModel)polyline.DataContext;
+
+            SelectionMode mode = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control ? SelectionMode.Toggle : SelectionMode.New;
+            //viewModel.Select(mode);
+            //viewModel.SelectionState = SelectionState.Node;
+            viewModel.SelectBranch();
+
+            if ((Keyboard.Modifiers & ModifierKeys.Control) != ModifierKeys.Control)
+            {
+                _mainViewModel.ActiveMachineViewModel.History.ClearSelection();
+            }
+
+            viewModel.SelectBranch();
+        }
+
+        private void Path_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            Rectangle rectangle = (Rectangle)sender;
+            HistoryLineViewModel viewModel = (HistoryLineViewModel)rectangle.DataContext;
+
+            //SelectionMode mode = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control ? SelectionMode.Toggle : SelectionMode.New;
+            //viewModel.Select(mode);
+            //viewModel.SelectionState = SelectionState.Node;
+
+            _mainViewModel.ActiveMachineViewModel.History.SelectBookmark(viewModel);
         }
     }
 }
