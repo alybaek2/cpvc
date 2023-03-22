@@ -220,7 +220,9 @@ namespace CPvC
             {
                 case HistoryChangedAction.Add:
                     {
-                        changed = AddEventToListTree(args.HistoryEvent);
+                        //changed = AddEventToListTree(args.HistoryEvent);
+                        changed = RefreshNode(args.HistoryEvent.Parent);
+                        changed |= RefreshNode(args.HistoryEvent);
                     }
                     break;
                 case HistoryChangedAction.UpdateCurrent:
@@ -294,7 +296,7 @@ namespace CPvC
             return null;
         }
 
-        private void RefreshNode(HistoryEvent historyEvent)
+        private bool RefreshNode(HistoryEvent historyEvent)
         {
             bool wasVisible = _eventsToNodes.ContainsKey(historyEvent);
             bool isVisible = InterestingEvent(historyEvent);
@@ -302,6 +304,35 @@ namespace CPvC
             if (wasVisible && !isVisible)
             {
                 // Remove the node and attach its children to the node's parents.
+                ListTreeNode<HistoryEvent> node = _eventsToNodes[historyEvent];
+                ListTreeNode<HistoryEvent> parentNode = node.Parent;
+
+                parentNode.Children.Remove(node);
+                _verticalNodes.Remove(node);
+                node.Parent = null;
+                _horizontalNodes.Remove(node);
+                _eventsToNodes.Remove(historyEvent);
+
+                foreach (ListTreeNode<HistoryEvent> childNode in node.Children)
+                {
+                    _horizontalNodes.Remove(childNode);
+                    //_eventsToNodes.Remove(childNode.Data);
+                }
+
+                foreach (ListTreeNode<HistoryEvent> childNode in node.Children)
+                {
+                    int childIndex = GetChildIndex(parentNode, childNode);
+                    childNode.Parent = parentNode;
+                    parentNode.Children.Insert(childIndex, childNode);
+
+                    int horizontalIndex = GetHorizontalInsertionIndex(parentNode, childIndex);
+                    _horizontalNodes.Insert(horizontalIndex, childNode);
+                }
+
+                RefreshHorizontalPositions(0);
+                RefreshVerticalPositions(0);
+
+                return true;
             }
             else if (!wasVisible && isVisible)
             {
@@ -317,17 +348,25 @@ namespace CPvC
                         ancestorNode = _eventsToNodes[h];
                         break;
                     }
+
+                    h = h.Parent;
                 }
 
                 // Add the node!
                 ListTreeNode<HistoryEvent> node = new ListTreeNode<HistoryEvent>(historyEvent);
 
                 int childIndex = GetChildIndex(ancestorNode, node);
+                ancestorNode.Children.Insert(childIndex, node);
+                node.Parent = ancestorNode;
                 int horizontalIndex = GetHorizontalInsertionIndex(ancestorNode, childIndex);
                 _horizontalNodes.Insert(horizontalIndex, node);
+                int verticalIndex = GetVerticalIndex(node);
+                _verticalNodes.Insert(verticalIndex, node);
+                _eventsToNodes.Add(historyEvent, node);
+
 
                 // Go through all of ancestorNode's children and move them over to the new node if they're descendents
-                for (int c = ancestorNode.Children.Count - 1; c < 0; c--)
+                for (int c = ancestorNode.Children.Count - 1; c >= 0; c--)
                 {
                     ListTreeNode<HistoryEvent> childNode = ancestorNode.Children[c];
                     if (ReferenceEquals(node, childNode))
@@ -335,23 +374,35 @@ namespace CPvC
                         continue;
                     }
 
-                    if (ancestorNode.Data.IsEqualToOrAncestorOf(childNode.Data))
+                    if (node.Data.IsEqualToOrAncestorOf(childNode.Data))
                     {
                         ancestorNode.Children.RemoveAt(c);
                         node.Children.Insert(0, childNode);
                         childNode.Parent = node;
 
                         _horizontalNodes.Remove(childNode);
-                        horizontalIndex = GetHorizontalInsertionIndex(ancestorNode, 0);
+                        horizontalIndex = GetHorizontalInsertionIndex(node, 0);
                         _horizontalNodes.Insert(horizontalIndex, childNode);
+
+                        _verticalNodes.Remove(childNode);
+                        verticalIndex = GetVerticalIndex(childNode);
+                        _verticalNodes.Insert(verticalIndex, childNode);
+
+                        //_eventsToNodes.Add(childNode.Data, childNode);
                     }
                 }
+
+                RefreshHorizontalPositions(0);
+                RefreshVerticalPositions(0);
+
+                return true;
             }
             else
             {
                 // No change!
             }
 
+            return false;
         }
 
         protected override int HorizontalSort(HistoryEvent x, HistoryEvent y)
