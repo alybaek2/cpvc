@@ -230,6 +230,7 @@ namespace CPvC
                         ListTreeNode<HistoryEvent> node = GetNode(args.HistoryEvent);
 
                         changed = Update(node);
+                        //changed = RefreshNode(args.HistoryEvent);
                     }
                     break;
                 case HistoryChangedAction.DeleteBranch:
@@ -275,13 +276,16 @@ namespace CPvC
                     break;
                 case HistoryChangedAction.DeleteBookmark:
                     {
-                        ListTreeNode<HistoryEvent> node = GetNode(args.HistoryEvent);
+                        //ListTreeNode<HistoryEvent> node = GetNode(args.HistoryEvent);
 
-                        RemoveNonRecursive(node);
+                        //RemoveNonRecursive(node);
 
-                        AddEventToListTree(args.OriginalParentEvent);
+                        //AddEventToListTree(args.OriginalParentEvent);
 
-                        changed = true;
+                        //changed = true;
+
+                        changed = RefreshNode(args.OriginalParentEvent);
+                        changed |= RefreshNode(args.HistoryEvent);
                     }
                     break;
             }
@@ -299,7 +303,7 @@ namespace CPvC
         private bool RefreshNode(HistoryEvent historyEvent)
         {
             bool wasVisible = _eventsToNodes.ContainsKey(historyEvent);
-            bool isVisible = InterestingEvent(historyEvent);
+            bool isVisible = InterestingEvent(historyEvent) && _history.Contains(historyEvent);
 
             if (wasVisible && !isVisible)
             {

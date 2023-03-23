@@ -191,10 +191,16 @@ namespace CPvC
             historyNode.Parent.InvalidateCachedMDT();
             HistoryEvent oldParentEvent = historyNode.Parent.HistoryEvent;
             historyNode.Parent = null;
+            _nodes.Remove(historyNode);
 
             Notify(historyEvent, HistoryChangedAction.DeleteBookmark, oldParentEvent);
 
             return true;
+        }
+
+        public bool Contains(HistoryEvent historyEvent)
+        {
+            return _nodes.Contains(historyEvent.Node);
         }
 
         // Browsing methods
