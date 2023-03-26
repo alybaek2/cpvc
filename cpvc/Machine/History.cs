@@ -198,10 +198,10 @@ namespace CPvC
             return true;
         }
 
-        public bool Contains(HistoryEvent historyEvent)
-        {
-            return _nodes.Contains(historyEvent.Node);
-        }
+        //public bool Contains(HistoryEvent historyEvent)
+        //{
+        //    return _nodes.Contains(historyEvent.Node);
+        //}
 
         // Browsing methods
         public RootHistoryEvent RootEvent

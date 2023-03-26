@@ -221,8 +221,8 @@ namespace CPvC
                 case HistoryChangedAction.Add:
                     {
                         //changed = AddEventToListTree(args.HistoryEvent);
-                        changed = RefreshNode(args.HistoryEvent.Parent);
-                        changed |= RefreshNode(args.HistoryEvent);
+                        changed = RefreshNode(args.HistoryEvent.Parent, InterestingEvent(args.HistoryEvent.Parent));
+                        changed |= RefreshNode(args.HistoryEvent, InterestingEvent(args.HistoryEvent));
                     }
                     break;
                 case HistoryChangedAction.UpdateCurrent:
@@ -276,16 +276,113 @@ namespace CPvC
                     break;
                 case HistoryChangedAction.DeleteBookmark:
                     {
-                        //ListTreeNode<HistoryEvent> node = GetNode(args.HistoryEvent);
+                        ListTreeNode<HistoryEvent> node = GetNode(args.HistoryEvent);
 
-                        //RemoveNonRecursive(node);
+                        // Special case
+                        ListTreeNode<HistoryEvent> originalParentNode = GetNode(args.OriginalParentEvent);
+                        bool interestingParent = InterestingEvent(args.OriginalParentEvent);
+                        if (originalParentNode == null && interestingParent)
+                        {
+                            // Just swap out the data!
+                            node.Data = args.OriginalParentEvent;
+                            changed = true;
+                        }
+                        else if (originalParentNode == null && !interestingParent)
+                        {
+                            // Go up the tree until we find an event with a node! Then add the deleted nodes' children to that node.
+                            throw new NotImplementedException();
+                        }
+                        else if (originalParentNode != null && interestingParent)
+                        {
+                            // Just move the children of the deleted node over to originalParentNode!
+                        }
+                        else
+                        {
+                            // This is weird!
+                            throw new NotImplementedException();
+                        }
 
                         //AddEventToListTree(args.OriginalParentEvent);
 
+                        //RemoveNonRecursive(node);
+
                         //changed = true;
 
-                        changed = RefreshNode(args.OriginalParentEvent);
-                        changed |= RefreshNode(args.HistoryEvent);
+                        // The parent of the deleted bookmark event is now null... this screws up the moving of child nodes to the ancestor node!
+                        // Need to find a solution to this!
+                        //changed = RefreshNode(args.OriginalParentEvent, InterestingEvent(args.OriginalParentEvent));
+                        //changed |= RefreshNode(args.HistoryEvent, false);
+
+                        // Has the parent event gone from being not interesting to interesting? If so, make a new node and insert it
+                        // Or, why not just change the Data for the existing node? Need to update _eventsToNodes of course!
+
+                        //HistoryEvent interestingParentEvent = args.OriginalParentEvent;
+                        //while (interestingParentEvent != null)
+                        //{
+                        //    if (InterestingEvent(interestingParentEvent))
+                        //    {
+                        //        break;
+                        //    }
+
+                        //    interestingParentEvent = interestingParentEvent.Parent;
+                        //}
+
+                        //// Does this event have a node?
+                        //if (!_eventsToNodes.TryGetValue(interestingParentEvent, out ListTreeNode<HistoryEvent> parentNode))
+                        //{
+                        //    // Now figure out which node this new node should belong to!
+                        //    ListTreeNode<HistoryEvent> interestingParentParentNode = null;
+                        //    HistoryEvent interestingParentParentEvent = interestingParentEvent.Parent;
+                        //    while (interestingParentParentEvent != null)
+                        //    {
+                        //        if (_eventsToNodes.TryGetValue(interestingParentParentEvent, out interestingParentParentNode))
+                        //        {
+                        //            break;
+                        //        }
+
+                        //        interestingParentParentEvent = interestingParentParentEvent.Parent;
+                        //    }
+
+                        //    parentNode = CreateNode(interestingParentParentNode, interestingParentEvent);
+
+
+                        //}
+
+                        //// If the parent event is already interesting, move the deleted nodes children
+                        //ListTreeNode<HistoryEvent> nodeToDelete = _eventsToNodes[args.HistoryEvent];
+
+                        //foreach (ListTreeNode<HistoryEvent> childNode in nodeToDelete.Children)
+                        //{
+                        //    _horizontalNodes.Remove(childNode);
+                        //    //_eventsToNodes.Remove(childNode.Data);
+                        //}
+
+                        //RefreshHorizontalPositions(0);
+                        ////RefreshVerticalPositions(0);
+
+                        //foreach (ListTreeNode<HistoryEvent> childNode in nodeToDelete.Children)
+                        //{
+                        //    int childIndex = GetChildIndex(parentNode, childNode);
+                        //    childNode.Parent = parentNode;
+                        //    parentNode.Children.Insert(childIndex, childNode);
+
+                        //    int horizontalIndex = GetHorizontalInsertionIndex(parentNode, childIndex);
+                        //    _horizontalNodes.Insert(horizontalIndex, childNode);
+
+                        //    RefreshHorizontalPositions(0);
+                        //}
+
+                        //// 
+                        //parentNode.Children.Remove(nodeToDelete);
+                        //_verticalNodes.Remove(nodeToDelete);
+                        //nodeToDelete.Parent = null;
+                        //_horizontalNodes.Remove(nodeToDelete);
+                        //_eventsToNodes.Remove(args.HistoryEvent);
+
+                        //RefreshHorizontalPositions(0);
+                        //RefreshVerticalPositions(0);
+
+                        //changed = true;
                     }
                     break;
             }
@@ -300,10 +397,27 @@ namespace CPvC
             return null;
         }
 
-        private bool RefreshNode(HistoryEvent historyEvent)
+        private ListTreeNode<HistoryEvent> CreateNode(ListTreeNode<HistoryEvent> parentNode, HistoryEvent childEvent)
+        {
+            // Child node is assumed to be interesting!
+            ListTreeNode<HistoryEvent> node = new ListTreeNode<HistoryEvent>(childEvent);
+
+            int childIndex = GetChildIndex(parentNode, node);
+            parentNode.Children.Insert(childIndex, node);
+            node.Parent = parentNode;
+            int horizontalIndex = GetHorizontalInsertionIndex(parentNode, childIndex);
+            _horizontalNodes.Insert(horizontalIndex, node);
+            int verticalIndex = GetVerticalIndex(node);
+            _verticalNodes.Insert(verticalIndex, node);
+            _eventsToNodes.Add(childEvent, node);
+
+            return node;
+        }
+
+        private bool RefreshNode(HistoryEvent historyEvent, bool isVisible)
         {
             bool wasVisible = _eventsToNodes.ContainsKey(historyEvent);
-            bool isVisible = InterestingEvent(historyEvent) && _history.Contains(historyEvent);
+            //bool isVisible = InterestingEvent(historyEvent) && !remove;
 
             if (wasVisible && !isVisible)
             {
