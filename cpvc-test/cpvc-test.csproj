@@ -116,6 +116,7 @@
     <Compile Include="FileSystemTests.cs" />
     <Compile Include="HelpersTests.cs" />
     <Compile Include="HistoryEventTests.cs" />
+    <Compile Include="HistoryListTreeTests.cs" />
     <Compile Include="HistoryViewNodeTests.cs" />
     <Compile Include="KeyboardMappingTests.cs" />
     <Compile Include="MachineFileTests.cs" />
