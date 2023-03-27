@@ -86,7 +86,7 @@ namespace CPvC
         }
 
         // Could change this to add a new node, then move the other node to be a child of the new node.
-        public ListTreeNode<T> InsertNewParent(ListTreeNode<T> node, T historyEvent)
+        protected ListTreeNode<T> InsertNewParent(ListTreeNode<T> node, T historyEvent)
         {
             if (_eventsToNodes.ContainsKey(historyEvent))
             {
@@ -167,7 +167,7 @@ namespace CPvC
             RefreshHorizontalPositions(refreshIndex);
         }
 
-        public void RemoveRecursive(ListTreeNode<T> child)
+        protected void RemoveRecursive(ListTreeNode<T> child)
         {
             ListTreeNode<T> parent = child.Parent;
 
@@ -199,7 +199,7 @@ namespace CPvC
             RefreshHorizontalPositions(leftmostHorizontalIndex);
         }
 
-        public void RemoveNonRecursive(ListTreeNode<T> node)
+        protected void RemoveNonRecursive(ListTreeNode<T> node)
         {
             // Remove the node, and reinsert its children to node's parent.
             ListTreeNode<T> parentNode = node.Parent;
@@ -220,7 +220,7 @@ namespace CPvC
             RefreshVerticalPositions(0);
         }
 
-        public bool Update(ListTreeNode<T> node)
+        protected bool Update(ListTreeNode<T> node)
         {
             // The sort order may have changed!! Check it!
             bool verticalChanged = AdjustVerticalOrderIfNeeded(node);
@@ -243,7 +243,7 @@ namespace CPvC
             return verticalChanged || horizontalChanged;
         }
 
-        public void Move(ListTreeNode<T> node, ListTreeNode<T> newParentNode)
+        private void Move(ListTreeNode<T> node, ListTreeNode<T> newParentNode)
         {
             // Should probably check if node and parentNode actually belong to us...
             ListTreeNode<T> oldParentNode = node.Parent;

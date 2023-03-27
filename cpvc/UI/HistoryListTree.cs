@@ -13,7 +13,7 @@ namespace CPvC
             SetHistory(history);
         }
 
-        public void SetHistory(History history)
+        private void SetHistory(History history)
         {
             if (_history != null)
             {
@@ -47,7 +47,7 @@ namespace CPvC
             }
         }
 
-        public void ProcessHistoryChange(object sender, HistoryChangedEventArgs args)
+        private void ProcessHistoryChange(object sender, HistoryChangedEventArgs args)
         {
             PositionChangedEventArgs<HistoryEvent> changeArgs = UpdateListTree(args);
             if (changeArgs != null)
@@ -133,8 +133,6 @@ namespace CPvC
 
             return child;
         }
-
-
 
         private bool AddEventToListTree(HistoryEvent historyEvent)
         {
