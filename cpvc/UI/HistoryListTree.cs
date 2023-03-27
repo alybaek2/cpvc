@@ -295,10 +295,13 @@ namespace CPvC
                         else if (originalParentNode != null && interestingParent)
                         {
                             // Just move the children of the deleted node over to originalParentNode!
+                            throw new NotImplementedException();
                         }
                         else
                         {
-                            // This is weird!
+                            // Original parent node exists but is no longer interesting. Could happen if the parent node had 2 children, but now
+                            // only has one as a result of this bookmark node being deleted. Need to remove the parent node and add its remaining
+                            // children to its parent.
                             throw new NotImplementedException();
                         }
 
