@@ -220,9 +220,7 @@ namespace CPvC
             {
                 case HistoryChangedAction.Add:
                     {
-                        //changed = AddEventToListTree(args.HistoryEvent);
-                        changed = RefreshNode(args.HistoryEvent.Parent, InterestingEvent(args.HistoryEvent.Parent));
-                        changed |= RefreshNode(args.HistoryEvent, InterestingEvent(args.HistoryEvent));
+                        changed = AddEventToListTree(args.HistoryEvent);
                     }
                     break;
                 case HistoryChangedAction.UpdateCurrent:
@@ -230,7 +228,6 @@ namespace CPvC
                         ListTreeNode<HistoryEvent> node = GetNode(args.HistoryEvent);
 
                         changed = Update(node);
-                        //changed = RefreshNode(args.HistoryEvent);
                     }
                     break;
                 case HistoryChangedAction.DeleteBranch:
@@ -304,88 +301,6 @@ namespace CPvC
                             // children to its parent.
                             throw new NotImplementedException();
                         }
-
-                        //AddEventToListTree(args.OriginalParentEvent);
-
-                        //RemoveNonRecursive(node);
-
-                        //changed = true;
-
-                        // The parent of the deleted bookmark event is now null... this screws up the moving of child nodes to the ancestor node!
-                        // Need to find a solution to this!
-                        //changed = RefreshNode(args.OriginalParentEvent, InterestingEvent(args.OriginalParentEvent));
-                        //changed |= RefreshNode(args.HistoryEvent, false);
-
-                        // Has the parent event gone from being not interesting to interesting? If so, make a new node and insert it
-                        // Or, why not just change the Data for the existing node? Need to update _eventsToNodes of course!
-
-                        //HistoryEvent interestingParentEvent = args.OriginalParentEvent;
-                        //while (interestingParentEvent != null)
-                        //{
-                        //    if (InterestingEvent(interestingParentEvent))
-                        //    {
-                        //        break;
-                        //    }
-
-                        //    interestingParentEvent = interestingParentEvent.Parent;
-                        //}
-
-                        //// Does this event have a node?
-                        //if (!_eventsToNodes.TryGetValue(interestingParentEvent, out ListTreeNode<HistoryEvent> parentNode))
-                        //{
-                        //    // Now figure out which node this new node should belong to!
-                        //    ListTreeNode<HistoryEvent> interestingParentParentNode = null;
-                        //    HistoryEvent interestingParentParentEvent = interestingParentEvent.Parent;
-                        //    while (interestingParentParentEvent != null)
-                        //    {
-                        //        if (_eventsToNodes.TryGetValue(interestingParentParentEvent, out interestingParentParentNode))
-                        //        {
-                        //            break;
-                        //        }
-
-                        //        interestingParentParentEvent = interestingParentParentEvent.Parent;
-                        //    }
-
-                        //    parentNode = CreateNode(interestingParentParentNode, interestingParentEvent);
-
-
-                        //}
-
-                        //// If the parent event is already interesting, move the deleted nodes children
-                        //ListTreeNode<HistoryEvent> nodeToDelete = _eventsToNodes[args.HistoryEvent];
-
-                        //foreach (ListTreeNode<HistoryEvent> childNode in nodeToDelete.Children)
-                        //{
-                        //    _horizontalNodes.Remove(childNode);
-                        //    //_eventsToNodes.Remove(childNode.Data);
-                        //}
-
-                        //RefreshHorizontalPositions(0);
-                        ////RefreshVerticalPositions(0);
-
-                        //foreach (ListTreeNode<HistoryEvent> childNode in nodeToDelete.Children)
-                        //{
-                        //    int childIndex = GetChildIndex(parentNode, childNode);
-                        //    childNode.Parent = parentNode;
-                        //    parentNode.Children.Insert(childIndex, childNode);
-
-                        //    int horizontalIndex = GetHorizontalInsertionIndex(parentNode, childIndex);
-                        //    _horizontalNodes.Insert(horizontalIndex, childNode);
-
-                        //    RefreshHorizontalPositions(0);
-                        //}
-
-                        //// 
-                        //parentNode.Children.Remove(nodeToDelete);
-                        //_verticalNodes.Remove(nodeToDelete);
-                        //nodeToDelete.Parent = null;
-                        //_horizontalNodes.Remove(nodeToDelete);
-                        //_eventsToNodes.Remove(args.HistoryEvent);
-
-                        //RefreshHorizontalPositions(0);
-                        //RefreshVerticalPositions(0);
-
-                        //changed = true;
                     }
                     break;
             }
@@ -415,115 +330,6 @@ namespace CPvC
             _eventsToNodes.Add(childEvent, node);
 
             return node;
-        }
-
-        private bool RefreshNode(HistoryEvent historyEvent, bool isVisible)
-        {
-            bool wasVisible = _eventsToNodes.ContainsKey(historyEvent);
-            //bool isVisible = InterestingEvent(historyEvent) && !remove;
-
-            if (wasVisible && !isVisible)
-            {
-                // Remove the node and attach its children to the node's parents.
-                ListTreeNode<HistoryEvent> node = _eventsToNodes[historyEvent];
-                ListTreeNode<HistoryEvent> parentNode = node.Parent;
-
-                parentNode.Children.Remove(node);
-                _verticalNodes.Remove(node);
-                node.Parent = null;
-                _horizontalNodes.Remove(node);
-                _eventsToNodes.Remove(historyEvent);
-
-                foreach (ListTreeNode<HistoryEvent> childNode in node.Children)
-                {
-                    _horizontalNodes.Remove(childNode);
-                    //_eventsToNodes.Remove(childNode.Data);
-                }
-
-                foreach (ListTreeNode<HistoryEvent> childNode in node.Children)
-                {
-                    int childIndex = GetChildIndex(parentNode, childNode);
-                    childNode.Parent = parentNode;
-                    parentNode.Children.Insert(childIndex, childNode);
-
-                    int horizontalIndex = GetHorizontalInsertionIndex(parentNode, childIndex);
-                    _horizontalNodes.Insert(horizontalIndex, childNode);
-                }
-
-                RefreshHorizontalPositions(0);
-                RefreshVerticalPositions(0);
-
-                return true;
-            }
-            else if (!wasVisible && isVisible)
-            {
-                // Insert a new node in the tree!
-
-                // First, find our closest immediate ancestor in the tree.
-                ListTreeNode<HistoryEvent> ancestorNode = null;
-                HistoryEvent h = historyEvent.Parent;
-                while (h != null)
-                {
-                    if (_eventsToNodes.ContainsKey(h))
-                    {
-                        ancestorNode = _eventsToNodes[h];
-                        break;
-                    }
-
-                    h = h.Parent;
-                }
-
-                // Add the node!
-                ListTreeNode<HistoryEvent> node = new ListTreeNode<HistoryEvent>(historyEvent);
-
-                int childIndex = GetChildIndex(ancestorNode, node);
-                ancestorNode.Children.Insert(childIndex, node);
-                node.Parent = ancestorNode;
-                int horizontalIndex = GetHorizontalInsertionIndex(ancestorNode, childIndex);
-                _horizontalNodes.Insert(horizontalIndex, node);
-                int verticalIndex = GetVerticalIndex(node);
-                _verticalNodes.Insert(verticalIndex, node);
-                _eventsToNodes.Add(historyEvent, node);
-
-
-                // Go through all of ancestorNode's children and move them over to the new node if they're descendents
-                for (int c = ancestorNode.Children.Count - 1; c >= 0; c--)
-                {
-                    ListTreeNode<HistoryEvent> childNode = ancestorNode.Children[c];
-                    if (ReferenceEquals(node, childNode))
-                    {
-                        continue;
-                    }
-
-                    if (node.Data.IsEqualToOrAncestorOf(childNode.Data))
-                    {
-                        ancestorNode.Children.RemoveAt(c);
-                        node.Children.Insert(0, childNode);
-                        childNode.Parent = node;
-
-                        _horizontalNodes.Remove(childNode);
-                        horizontalIndex = GetHorizontalInsertionIndex(node, 0);
-                        _horizontalNodes.Insert(horizontalIndex, childNode);
-
-                        _verticalNodes.Remove(childNode);
-                        verticalIndex = GetVerticalIndex(childNode);
-                        _verticalNodes.Insert(verticalIndex, childNode);
-
-                        //_eventsToNodes.Add(childNode.Data, childNode);
-                    }
-                }
-
-                RefreshHorizontalPositions(0);
-                RefreshVerticalPositions(0);
-
-                return true;
-            }
-            else
-            {
-                // No change!
-            }
-
-            return false;
         }
 
         protected override int HorizontalSort(HistoryEvent x, HistoryEvent y)
