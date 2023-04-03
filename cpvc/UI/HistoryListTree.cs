@@ -285,19 +285,110 @@ namespace CPvC
                         else if (originalParentNode == null && !interestingParent)
                         {
                             // Go up the tree until we find an event with a node! Then add the deleted nodes' children to that node.
-                            throw new NotImplementedException();
+                            //throw new NotImplementedException();
+                            //ListTreeNode<HistoryEvent> parentNode = node.Parent;
+                            originalParentNode = node.Parent;
+
+                            // Copied from below!
+                            originalParentNode.Children.Remove(node);
+                            _horizontalNodes.Remove(node);
+
+                            // Just move the children of the deleted node over to originalParentNode!
+                            for (int c = 0; c < node.Children.Count; c++)
+                            {
+                                _horizontalNodes.Remove(node.Children[c]);
+                            }
+
+                            RefreshHorizontalPositions(0);
+                            RefreshVerticalPositions(0);
+
+                            for (int c = 0; c < node.Children.Count; c++)
+                            {
+                                MoveNode(node.Children[c], originalParentNode);
+                            }
+
+                            _verticalNodes.Remove(node);
+                            _eventsToNodes.Remove(node.Data);
+
+                            RefreshHorizontalPositions(0);
+                            RefreshVerticalPositions(0);
+
+                            changed = true;
                         }
                         else if (originalParentNode != null && interestingParent)
                         {
+                            originalParentNode.Children.Remove(node);
+                            _horizontalNodes.Remove(node);
+
                             // Just move the children of the deleted node over to originalParentNode!
-                            throw new NotImplementedException();
+                            for (int c = 0; c < node.Children.Count; c++)
+                            {
+                                _horizontalNodes.Remove(node.Children[c]);
+                            }
+
+                            RefreshHorizontalPositions(0);
+                            RefreshVerticalPositions(0);
+
+                            for (int c = 0; c < node.Children.Count; c++)
+                            {
+                                MoveNode(node.Children[c], originalParentNode);
+                            }
+
+                            _verticalNodes.Remove(node);
+                            _eventsToNodes.Remove(node.Data);
+
+                            RefreshHorizontalPositions(0);
+                            RefreshVerticalPositions(0);
+
+                            changed = true;
                         }
                         else
                         {
+                            //throw new NotImplementedException();
+
                             // Original parent node exists but is no longer interesting. Could happen if the parent node had 2 children, but now
                             // only has one as a result of this bookmark node being deleted. Need to remove the parent node and add its remaining
                             // children to its parent.
-                            throw new NotImplementedException();
+                            originalParentNode.Children.Remove(node);
+                            node.Parent = null;
+
+                            _horizontalNodes.Remove(node);
+                            _verticalNodes.Remove(node);
+                            _eventsToNodes.Remove(node.Data);
+
+                            // Now move all of the parent (now not interesting!) to its parent.
+
+                            // Go up the tree until we find an event with a node! Then add the deleted nodes' children to that node.
+                            //throw new NotImplementedException();
+                            //ListTreeNode<HistoryEvent> parentNode = node.Parent;
+                            node = originalParentNode;
+                            originalParentNode = originalParentNode.Parent;
+
+                            // Copied from below!
+                            originalParentNode.Children.Remove(node);
+                            _horizontalNodes.Remove(node);
+
+                            // Just move the children of the deleted node over to originalParentNode!
+                            for (int c = 0; c < node.Children.Count; c++)
+                            {
+                                _horizontalNodes.Remove(node.Children[c]);
+                            }
+
+                            RefreshHorizontalPositions(0);
+                            RefreshVerticalPositions(0);
+
+                            for (int c = 0; c < node.Children.Count; c++)
+                            {
+                                MoveNode(node.Children[c], originalParentNode);
+                            }
+
+                            _verticalNodes.Remove(node);
+                            _eventsToNodes.Remove(node.Data);
+
+                            RefreshHorizontalPositions(0);
+                            RefreshVerticalPositions(0);
+
+                            changed = true;
                         }
                     }
                     break;
@@ -311,6 +402,20 @@ namespace CPvC
             }
 
             return null;
+        }
+
+        private void MoveNode(ListTreeNode<HistoryEvent> node, ListTreeNode<HistoryEvent> newParentNode)
+        {
+            //ListTreeNode<HistoryEvent> childNode = node.Children[c];
+            int newIndex = GetChildIndex(newParentNode, node);
+            newParentNode.Children.Insert(newIndex, node);
+            node.Parent = newParentNode;
+
+            int horizontalIndex = GetHorizontalInsertionIndex(newParentNode, newIndex);
+            _horizontalNodes.Insert(horizontalIndex, node);
+
+            RefreshHorizontalPositions(0);
+            RefreshVerticalPositions(0);
         }
 
         private ListTreeNode<HistoryEvent> CreateNode(ListTreeNode<HistoryEvent> parentNode, HistoryEvent childEvent)

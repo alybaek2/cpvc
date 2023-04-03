@@ -103,6 +103,23 @@ namespace CPvC.Test
         }
 
         [Test]
+        public void DeleteBookmarkParentBecomesInvisible()
+        {
+            // Act
+            HistoryEvent event1 = _history.AddCoreAction(new KeyPressAction(100, Keys.A, true));
+            HistoryEvent event2 = _history.AddCoreAction(new KeyPressAction(200, Keys.A, false));
+            _history.CurrentEvent = event1;
+            HistoryEvent event3 = _history.AddBookmark(200, null);
+            _history.CurrentEvent = event1; // Switch to event1 since we can't delete event3 while it's the current event.
+
+            _history.DeleteBookmark(event3);
+
+            // Verify - note the Id is used in the event of a tie.
+            VerifyOrderings(_historyListTree.HorizontalOrdering(), _history.RootEvent, event2);
+            VerifyOrderings(_historyListTree.VerticalOrdering(), _history.RootEvent, event2);
+        }
+
+        [Test]
         public void DeleteBookmarkParentAlreadyVisible()
         {
             // Act
@@ -118,9 +135,53 @@ namespace CPvC.Test
             VerifyOrderings(_historyListTree.VerticalOrdering(), _history.RootEvent, event1, event3, event4);
         }
 
+        [Test]
+        public void NonBookmarkIsVisible()
+        {
+            // Act
+            HistoryEvent event1 = _history.AddCoreAction(new RunUntilAction(100, 200, null));
+            HistoryEvent event2 = _history.AddCoreAction(new KeyPressAction(300, Keys.A, true));
+            _history.CurrentEvent = event1;
+            HistoryEvent event3 = _history.AddCoreAction(new RunUntilAction(200, 400, null));
+
+            // Verify
+            VerifyOrderings(_historyListTree.HorizontalOrdering(), _history.RootEvent, event1, event3, event2);
+            VerifyOrderings(_historyListTree.VerticalOrdering(), _history.RootEvent, event1, event2, event3);
+        }
+
+        [Test]
+        public void DeleteChildMakesParentInvisible()
+        {
+            // Act
+            HistoryEvent event1 = _history.AddCoreAction(new RunUntilAction(100, 200, null));
+            HistoryEvent event2 = _history.AddCoreAction(new KeyPressAction(300, Keys.A, true));
+            _history.CurrentEvent = event1;
+            HistoryEvent event3 = _history.AddCoreAction(new RunUntilAction(200, 400, null));
+            _history.DeleteBranch(event2);
+
+            // Verify
+            VerifyOrderings(_historyListTree.HorizontalOrdering(), _history.RootEvent, event3);
+            VerifyOrderings(_historyListTree.VerticalOrdering(), _history.RootEvent, event3);
+        }
+
+        [Test]
+        public void DeleteBookmark()
+        {
+            // Act
+            HistoryEvent event1 = _history.AddBookmark(100, null);
+            HistoryEvent event2 = _history.AddCoreAction(new KeyPressAction(200, Keys.A, true));
+            HistoryEvent event3 = _history.AddBookmark(300, null);
+            HistoryEvent event4 = _history.AddCoreAction(new KeyPressAction(200, Keys.A, false));
+            _history.DeleteBookmark(event3);
+
+            // Verify
+            VerifyOrderings(_historyListTree.HorizontalOrdering(), _history.RootEvent, event1, event4);
+            VerifyOrderings(_historyListTree.VerticalOrdering(), _history.RootEvent, event1, event4);
+        }
+
         private void VerifyOrderings(List<ListTreeNode<HistoryEvent>> actualOrdering, params object[] expectedOrdering)
         {
-            Assert.AreEqual(actualOrdering.Select(x => x.Data), expectedOrdering);
+            Assert.AreEqual(expectedOrdering, actualOrdering.Select(x => x.Data));
         }
 
         private History _history;

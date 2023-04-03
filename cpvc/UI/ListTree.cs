@@ -243,7 +243,7 @@ namespace CPvC
             return verticalChanged || horizontalChanged;
         }
 
-        private void Move(ListTreeNode<T> node, ListTreeNode<T> newParentNode)
+        protected void Move(ListTreeNode<T> node, ListTreeNode<T> newParentNode)
         {
             // Should probably check if node and parentNode actually belong to us...
             ListTreeNode<T> oldParentNode = node.Parent;
