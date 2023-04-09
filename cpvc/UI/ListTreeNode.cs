@@ -8,6 +8,49 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
+    public class ListTreeOrderingEvent<T> : INotifyPropertyChanged
+    {
+        public ListTreeOrderingEvent(T data, ListTreeOrderingEvent<T> parent)
+        {
+            Data = data;
+            Parent = parent;
+        }
+
+        public ListTreeOrderingEvent<T> Parent
+        {
+            get;
+            set;
+        }
+
+        public T Data
+        {
+            get
+            {
+                return _data;
+            }
+
+            set
+            {
+                if (value.Equals(_data))
+                {
+                    return;
+                }
+
+                _data = value;
+                OnPropertyChanged();
+            }
+        }
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private T _data;
+    }
+
     public class ListTreeNode<T> : INotifyPropertyChanged
     {
         public ListTreeNode(T data)

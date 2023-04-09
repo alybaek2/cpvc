@@ -248,12 +248,12 @@ namespace CPvC
             _selectedBookmarks = new HashSet<HistoryLineViewModel>();
             _selectedBranches = new HashSet<HistoryLineViewModel>();
 
-            UpdateLines(_listTree.HorizontalOrdering().ToList(), _listTree.VerticalOrdering().ToList());
+            UpdateLines(_listTree.HorizontalOrdering().ToList(), _listTree.VerticalOrdering().ToList(), _listTree.InterestingParents);
         }
 
         private void ListTree_PositionChanged(object sender, PositionChangedEventArgs<HistoryEvent> e)
         {
-            UpdateLines(e.HorizontalOrdering, e.VerticalOrdering);
+            UpdateLines(e.HorizontalOrdering, e.VerticalOrdering, e.InterestingParents);
         }
 
         protected void OnPropertyChanged([CallerMemberName] string name = null)
@@ -261,25 +261,25 @@ namespace CPvC
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        private void UpdateLines(List<ListTreeNode<HistoryEvent>> horizontalOrdering, List<ListTreeNode<HistoryEvent>> verticalOrdering)
+        private void UpdateLines(List<ListTreeNode<HistoryEvent>> horizontalOrdering, List<ListTreeNode<HistoryEvent>> verticalOrdering, Dictionary<HistoryEvent, HistoryEvent> interestingParents)
         {
             Dictionary<ListTreeNode<HistoryEvent>, HistoryLineViewModel> newNodesToLines = new Dictionary<ListTreeNode<HistoryEvent>, HistoryLineViewModel>();
             Dictionary<int, int> maxXPerY = new Dictionary<int, int>();
 
             int globalMaxX = 0;
-            foreach (ListTreeNode<HistoryEvent> node in horizontalOrdering)
+            foreach (ListTreeNode<HistoryEvent> ordEvent in horizontalOrdering)
             {
                 // Find the parent!
-                ListTreeNode<HistoryEvent> parentNode = node.Parent;
+                ListTreeNode<HistoryEvent> parentNode = ordEvent.Parent;
                 HistoryLineViewModel parentLine = null;
                 if (parentNode != null)
                 {
                     parentLine = newNodesToLines[parentNode];
                 }
 
-                if (!_nodesToLines.TryGetValue(node, out HistoryLineViewModel line))
+                if (!_nodesToLines.TryGetValue(ordEvent, out HistoryLineViewModel line))
                 {
-                    line = new HistoryLineViewModel(this, node);
+                    line = new HistoryLineViewModel(this, ordEvent);
                     lock (_lines)
                     {
                         _lines.Add(line);
@@ -290,16 +290,16 @@ namespace CPvC
                 // Draw!
                 line.Start();
 
-                line.Current = ReferenceEquals(node.Data, _history?.CurrentEvent);
-                if (node.Data is RootHistoryEvent)
+                line.Current = ReferenceEquals(ordEvent.Data, _history?.CurrentEvent);
+                if (ordEvent.Data is RootHistoryEvent)
                 {
                     line.Type = LinePointType.None;
                 }
-                else if (node.Data is BookmarkHistoryEvent bookmarkEvent)
+                else if (ordEvent.Data is BookmarkHistoryEvent bookmarkEvent)
                 {
                     line.Type = bookmarkEvent.Bookmark.System ? LinePointType.SystemBookmark : LinePointType.UserBookmark;
                 }
-                else if (node.Data.Children.Count == 0 || node.Data is RootHistoryEvent)
+                else if (ordEvent.Data.Children.Count == 0 || ordEvent.Data is RootHistoryEvent)
                 {
                     line.Type = LinePointType.Terminus;
                 }
@@ -320,7 +320,7 @@ namespace CPvC
                 }
 
                 // What's our vertical ordering?
-                int verticalIndex = verticalOrdering.FindIndex(n => ReferenceEquals(n, node));
+                int verticalIndex = verticalOrdering.FindIndex(n => ReferenceEquals(n, ordEvent));
                 int parentVerticalIndex = verticalOrdering.FindIndex(n => ReferenceEquals(n, parentNode));
 
                 for (int y = parentVerticalIndex + 1; y <= verticalIndex; y++)
@@ -349,7 +349,7 @@ namespace CPvC
 
                 line.End();
 
-                newNodesToLines.Add(node, line);
+                newNodesToLines.Add(ordEvent, line);
             }
 
             foreach (HistoryLineViewModel viewModel in _nodesToLines.Values)

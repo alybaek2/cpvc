@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,6 +12,29 @@ namespace CPvC
         public HistoryListTree(History history)
         {
             SetHistory(history);
+
+            _interestingParents = new Dictionary<HistoryEvent, HistoryEvent>();
+        }
+
+        public Dictionary<HistoryEvent, HistoryEvent> InterestingParents
+        {
+            get
+            {
+                _interestingParents.Clear();
+
+                foreach (ListTreeNode<HistoryEvent> node in _horizontalNodes)
+                {
+                    if (node.Parent == null)
+                    {
+                        // This is the root!
+                        continue;
+                    }
+
+                    _interestingParents.Add(node.Data, GetInterestingParent(node.Data));
+                }
+
+                return _interestingParents;
+            }
         }
 
         private void SetHistory(History history)
@@ -27,6 +51,8 @@ namespace CPvC
                 Init();
                 _history.Auditors += ProcessHistoryChange;
             }
+
+            _sortedChildren = new ConditionalWeakTable<HistoryEvent, List<HistoryEvent>>();
         }
 
         private void Init()
@@ -42,6 +68,12 @@ namespace CPvC
                 nodes.RemoveAt(0);
 
                 AddEventToListTree(historyEvent);
+
+                if (historyEvent.Children.Count > 1)
+                {
+                    List<HistoryEvent> sortedChildren = new List<HistoryEvent>(historyEvent.Children);
+                    sortedChildren.Sort(HorizontalSort);
+                }
 
                 nodes.AddRange(historyEvent.Children);
             }
@@ -71,6 +103,8 @@ namespace CPvC
         private ListTreeNode<HistoryEvent> Add(ListTreeNode<HistoryEvent> parent, HistoryEvent historyEvent)
         {
             ListTreeNode<HistoryEvent> child = new ListTreeNode<HistoryEvent>(historyEvent);
+
+            InterestingParents[historyEvent] = parent.Data;
 
             return Add(parent, child);
         }
@@ -106,6 +140,7 @@ namespace CPvC
 
                 child.Children.Add(descendentChild);
                 descendentChild.Parent = child;
+                InterestingParents[descendentChild.Data] = child.Data;
 
                 parent.Children.RemoveAt(descendentChildIndex);
             }
@@ -116,6 +151,7 @@ namespace CPvC
 
             parent.Children.Insert(childIndex, child);
             child.Parent = parent;
+            InterestingParents[child.Data] = parent.Data;
             _eventsToNodes.Add(child.Data, child);
 
             // Insert into horizontal events!
@@ -194,6 +230,8 @@ namespace CPvC
             else if (wasParentInteresting && !isParentInteresting)
             {
                 // Replace the parent node with the child!
+                InterestingParents.Add(historyEvent, InterestingParents[parentHistoryEvent]);
+                InterestingParents.Remove(parentHistoryEvent);
                 Update(parentHistoryEvent, historyEvent);
                 add = false;
             }
@@ -210,6 +248,144 @@ namespace CPvC
             return true;
         }
 
+        private bool RemoveEventFromChildrenMap(HistoryEvent historyEvent)
+        {
+            bool somethingRemoved = _sortedChildren.Remove(historyEvent);
+
+            return somethingRemoved;
+        }
+
+        private bool AddEventToChildrenMap(HistoryEvent historyEvent)
+        {
+            bool somethingAdded = false;
+
+            //// historyEVent should have no child events!
+            //if (historyEvent.Children.Any())
+            //{
+            //    throw new ArgumentException("This method doesn't handle events with children!", nameof(historyEvent));
+            //}
+
+            if (_sortedChildren.TryGetValue(historyEvent, out List<HistoryEvent> _))
+            {
+                throw new InvalidOperationException("Event already exists!");
+            }
+
+            if (historyEvent.Children.Count > 1)
+            {
+                List<HistoryEvent> children = new List<HistoryEvent>(historyEvent.Children);
+                children.Sort(HorizontalSort);
+
+                _sortedChildren.Add(historyEvent, children);
+
+                somethingAdded = true;
+            }
+
+            // This may affect the parent!
+            if (historyEvent.Parent != null && historyEvent.Parent.Children.Count > 1)
+            {
+                if (!_sortedChildren.TryGetValue(historyEvent.Parent, out List<HistoryEvent> children))
+                {
+                    children = new List<HistoryEvent>(historyEvent.Parent.Children);
+                    children.Sort(HorizontalSort);
+
+                    _sortedChildren.Add(historyEvent.Parent, children);
+
+                    somethingAdded = true;
+                }
+                else
+                {
+                    // Can probably be optimized if children is already sorted!
+                    children.Add(historyEvent);
+                    children.Sort(HorizontalSort);
+                }
+            }
+
+            return somethingAdded;
+        }
+
+        private bool UpdateChildrenMap(HistoryEvent historyEvent)
+        {
+            bool somethingChanged = false;
+
+            // If historyEvent's Ticks has changed, this might affect the horizontal sorting of all ancestor events!
+            List<HistoryEvent> events = new List<HistoryEvent>();
+
+            events.Add(historyEvent);
+
+            while (events.Any())
+            {
+                HistoryEvent he = events[0];
+                events.RemoveAt(0);
+
+                if (_sortedChildren.TryGetValue(he, out List<HistoryEvent> children))
+                {
+                    if (children.Count > 1)
+                    {
+                        children.Sort(HorizontalSort);
+                        somethingChanged = true;
+                    }
+                }
+
+                events.AddRange(he.Children);
+            }
+
+            return somethingChanged;
+        }
+
+        private List<ListTreeNode<HistoryEvent>> GenerateHorizontalOrdering()
+        {
+            List<ListTreeNode<HistoryEvent>> horizontalOrdering = new List<ListTreeNode<HistoryEvent>>();
+
+            List<ListTreeNode<HistoryEvent>> events = new List<ListTreeNode<HistoryEvent>>();
+            events.Add(new ListTreeNode<HistoryEvent>(_history.RootEvent));
+
+            while (events.Any())
+            {
+                ListTreeNode<HistoryEvent> he = events[0];
+                events.RemoveAt(0);
+
+                ListTreeNode<HistoryEvent> parentNode = null;
+                if (InterestingEvent(he.Data))
+                {
+                    horizontalOrdering.Add(he);
+                    parentNode = he;
+                }
+                else
+                {
+                    parentNode = he.Parent;
+                }
+
+
+                // Add children
+                if (he.Data.Children.Count == 1)
+                {
+                    ListTreeNode<HistoryEvent> ch = new ListTreeNode<HistoryEvent>(he.Data.Children[0]);
+                    ch.Parent = parentNode;
+                    events.Insert(0, ch);
+                }
+                else if (he.Data.Children.Count > 1)
+                {
+                    if (!_sortedChildren.TryGetValue(he.Data, out List<HistoryEvent> children))
+                    {
+                        throw new Exception("There should be a node here!");
+                    }
+
+                    //for (int c = 0; c < children.Count; c++)
+                    //{
+
+                    //}
+
+                    events.InsertRange(0, children.Select(x => {
+                        ListTreeNode<HistoryEvent> ch = new ListTreeNode<HistoryEvent>(x);
+                        ch.Parent = parentNode;
+                        return ch;
+                    }));
+                }
+            }
+
+            return horizontalOrdering;
+        }
+
         private PositionChangedEventArgs<HistoryEvent> UpdateListTree(HistoryChangedEventArgs args)
         {
             bool changed = false;
@@ -219,6 +395,8 @@ namespace CPvC
                 case HistoryChangedAction.Add:
                     {
                         changed = AddEventToListTree(args.HistoryEvent);
+
+                        AddEventToChildrenMap(args.HistoryEvent);
                     }
                     break;
                 case HistoryChangedAction.UpdateCurrent:
@@ -226,10 +404,18 @@ namespace CPvC
                         ListTreeNode<HistoryEvent> node = GetNode(args.HistoryEvent);
 
                         changed = Update(node);
+
+                        UpdateChildrenMap(args.HistoryEvent);
                     }
                     break;
                 case HistoryChangedAction.DeleteBranch:
                     {
+                        RemoveEventFromChildrenMap(args.HistoryEvent);
+                        if (args.OriginalParentEvent.Children.Count <= 1)
+                        {
+                            RemoveEventFromChildrenMap(args.OriginalParentEvent);
+                        }
+
                         List<HistoryEvent> eventsToDelete = new List<HistoryEvent>();
                         eventsToDelete.Add(args.HistoryEvent);
 
@@ -267,10 +453,18 @@ namespace CPvC
                                 changed = true;
                             }
                         }
+
+                        RemoveEventFromChildrenMap(args.HistoryEvent);
                     }
                     break;
                 case HistoryChangedAction.DeleteBookmark:
                     {
+                        RemoveEventFromChildrenMap(args.HistoryEvent);
+                        if (args.OriginalParentEvent.Children.Count <= 1)
+                        {
+                            RemoveEventFromChildrenMap(args.OriginalParentEvent);
+                        }
+
                         ListTreeNode<HistoryEvent> node = GetNode(args.HistoryEvent);
 
                         // Special case
@@ -279,8 +473,36 @@ namespace CPvC
                         if (originalParentNode == null && interestingParent)
                         {
                             // Just swap out the data!
+
+                            // Probably better to just walk up the tree to find the nearest interesting event!
+                            InterestingParents[args.OriginalParentEvent] = InterestingParents[node.Data];
+
                             node.Data = args.OriginalParentEvent;
                             changed = true;
+
+                            if (args.OriginalParentEvent.Children.Count > 1)
+                            {
+                                List<HistoryEvent> children = new List<HistoryEvent>(args.OriginalParentEvent.Children);
+                                children.Sort(HorizontalSort);
+
+                                _sortedChildren.Add(args.OriginalParentEvent, children);
+
+                                //somethingAdded = true;
+                            }
+
+                            foreach (HistoryEvent ce in args.OriginalParentEvent.Children)
+                            {
+                                if (InterestingEvent(ce))
+                                {
+                                    InterestingParents[ce] = args.OriginalParentEvent;
+                                }
+                                else
+                                {
+                                    InterestingParents.Remove(ce);
+                                }
+                            }
+
+                            InterestingParents.Remove(args.HistoryEvent);
                         }
                         else if (originalParentNode == null && !interestingParent)
                         {
@@ -351,6 +573,7 @@ namespace CPvC
                             // children to its parent.
                             originalParentNode.Children.Remove(node);
                             node.Parent = null;
+                            InterestingParents.Remove(node.Data); // [descendentChild.Data] = child.Data;
 
                             _horizontalNodes.Remove(node);
                             _verticalNodes.Remove(node);
@@ -396,12 +619,75 @@ namespace CPvC
 
             if (changed)
             {
-                PositionChangedEventArgs<HistoryEvent> changeArgs = new PositionChangedEventArgs<HistoryEvent>(HorizontalOrdering(), VerticalOrdering());
+                // Do our new ordering!
+                List<ListTreeNode<HistoryEvent>> newOrdering = GenerateHorizontalOrdering();
+
+                // Check our parent map thingy!
+                foreach (ListTreeNode<HistoryEvent> node in HorizontalOrdering())
+                {
+                    if (node.Parent != null)
+                    {
+                        if (!InterestingParents.ContainsKey(node.Data) || InterestingParents[node.Data] != node.Parent.Data)
+                        {
+                            CPvC.Diagnostics.Trace("Whoops!");
+                        }
+                    }
+                    else
+                    {
+                        if (InterestingParents.ContainsKey(node.Data))
+                        {
+                            CPvC.Diagnostics.Trace("Whoops 2!");
+                        }
+                    }
+                }
+
+                //Dictionary<ListTreeNode<HistoryEvent>, ListTreeOrderingEvent<HistoryEvent>> oldMap = new Dictionary<ListTreeNode<HistoryEvent>, ListTreeOrderingEvent<HistoryEvent>>();
+
+                //List<ListTreeOrderingEvent<HistoryEvent>> oldOrdering = GetNewStyleOrdering(HorizontalOrdering());
+
+                //List<ListTreeOrderingEvent<HistoryEvent>> oldOrdering = HorizontalOrdering().Select(x => new ListTreeOrderingEvent<HistoryEvent>(x.Data, x.Parent);
+                PositionChangedEventArgs<HistoryEvent> changeArgs = new PositionChangedEventArgs<HistoryEvent>(HorizontalOrdering(), VerticalOrdering(), InterestingParents);
+                //PositionChangedEventArgs<HistoryEvent> changeArgs = new PositionChangedEventArgs<HistoryEvent>(oldOrdering, VerticalOrdering());
 
                 return changeArgs;
             }
 
             return null;
+        }
+
+        public List<ListTreeOrderingEvent<HistoryEvent>> GetNewStyleOrdering(List<ListTreeNode<HistoryEvent>> ordering)
+        {
+            Dictionary<ListTreeNode<HistoryEvent>, ListTreeOrderingEvent<HistoryEvent>> oldMap = new Dictionary<ListTreeNode<HistoryEvent>, ListTreeOrderingEvent<HistoryEvent>>();
+
+            List<ListTreeOrderingEvent<HistoryEvent>> oldOrdering = new List<ListTreeOrderingEvent<HistoryEvent>>();
+            foreach (ListTreeNode<HistoryEvent> node in ordering)
+            {
+                ListTreeOrderingEvent<HistoryEvent> ordEvent = new ListTreeOrderingEvent<HistoryEvent>(node.Data, null);
+                oldMap.Add(node, ordEvent);
+
+                oldOrdering.Add(ordEvent);
+            }
+
+            foreach (ListTreeNode<HistoryEvent> node in oldMap.Keys)
+            {
+                if (node.Parent != null)
+                {
+                    oldMap[node].Parent = oldMap[node.Parent];
+                }
+            }
+
+            return oldOrdering;
+        }
+
+        private HistoryEvent GetInterestingParent(HistoryEvent historyEvent)
+        {
+            HistoryEvent interestingParent = historyEvent.Parent;
+            while (interestingParent != null && !InterestingEvent(interestingParent))
+            {
+                interestingParent = interestingParent.Parent;
+            }
+
+            return interestingParent;
         }
 
         private void MoveNode(ListTreeNode<HistoryEvent> node, ListTreeNode<HistoryEvent> newParentNode)
@@ -410,6 +696,21 @@ namespace CPvC
             int newIndex = GetChildIndex(newParentNode, node);
             newParentNode.Children.Insert(newIndex, node);
             node.Parent = newParentNode;
+            InterestingParents[node.Data] = newParentNode.Data;
+
+            if (newParentNode.Data.Children.Count > 1)
+            {
+                List<HistoryEvent> children = new List<HistoryEvent>(newParentNode.Data.Children);
+                children.Sort(HorizontalSort);
+
+                if (_sortedChildren.TryGetValue(newParentNode.Data, out _))
+                {
+                    _sortedChildren.Remove(newParentNode.Data);
+                }
+
+                _sortedChildren.Add(newParentNode.Data, children);
+            }
+
 
             int horizontalIndex = GetHorizontalInsertionIndex(newParentNode, newIndex);
             _horizontalNodes.Insert(horizontalIndex, node);
@@ -418,22 +719,22 @@ namespace CPvC
             RefreshVerticalPositions(0);
         }
 
-        private ListTreeNode<HistoryEvent> CreateNode(ListTreeNode<HistoryEvent> parentNode, HistoryEvent childEvent)
-        {
-            // Child node is assumed to be interesting!
-            ListTreeNode<HistoryEvent> node = new ListTreeNode<HistoryEvent>(childEvent);
+        //private ListTreeNode<HistoryEvent> CreateNode(ListTreeNode<HistoryEvent> parentNode, HistoryEvent childEvent)
+        //{
+        //    // Child node is assumed to be interesting!
+        //    ListTreeNode<HistoryEvent> node = new ListTreeNode<HistoryEvent>(childEvent);
 
-            int childIndex = GetChildIndex(parentNode, node);
-            parentNode.Children.Insert(childIndex, node);
-            node.Parent = parentNode;
-            int horizontalIndex = GetHorizontalInsertionIndex(parentNode, childIndex);
-            _horizontalNodes.Insert(horizontalIndex, node);
-            int verticalIndex = GetVerticalIndex(node);
-            _verticalNodes.Insert(verticalIndex, node);
-            _eventsToNodes.Add(childEvent, node);
+        //    int childIndex = GetChildIndex(parentNode, node);
+        //    parentNode.Children.Insert(childIndex, node);
+        //    node.Parent = parentNode;
+        //    int horizontalIndex = GetHorizontalInsertionIndex(parentNode, childIndex);
+        //    _horizontalNodes.Insert(horizontalIndex, node);
+        //    int verticalIndex = GetVerticalIndex(node);
+        //    _verticalNodes.Insert(verticalIndex, node);
+        //    _eventsToNodes.Add(childEvent, node);
 
-            return node;
-        }
+        //    return node;
+        //}
 
         protected override int HorizontalSort(HistoryEvent x, HistoryEvent y)
         {
@@ -488,6 +789,9 @@ namespace CPvC
         }
 
         private History _history;
+
+        private ConditionalWeakTable<HistoryEvent, List<HistoryEvent>> _sortedChildren;
+        private Dictionary<HistoryEvent, HistoryEvent> _interestingParents;
 
         public event NotifyPositionChangedEventHandler<HistoryEvent> PositionChanged;
     }
