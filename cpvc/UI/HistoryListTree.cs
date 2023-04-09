@@ -184,12 +184,14 @@ namespace CPvC
     {
         public HistoryListTree(History history)
         {
-            SetHistory(history);
+            _sortedChildren = new ConditionalWeakTable<HistoryEvent, List<HistoryEvent>>();
 
             _interestingParents = new Dictionary<HistoryEvent, HistoryEvent>();
             _verticalEvents = new SortedVerticalHistoryEventList();
 
-            _verticalEvents.Add(history.RootEvent);
+            SetHistory(history);
+
+            //_verticalEvents.Add(history.RootEvent);
         }
 
         public Dictionary<HistoryEvent, HistoryEvent> InterestingParents
@@ -229,32 +231,47 @@ namespace CPvC
                 Init();
                 _history.Auditors += ProcessHistoryChange;
             }
-
-            _sortedChildren = new ConditionalWeakTable<HistoryEvent, List<HistoryEvent>>();
         }
 
         private void Init()
         {
+
             InitRoot(_history.RootEvent);
 
-            List<HistoryEvent> nodes = new List<HistoryEvent>();
-            nodes.AddRange(_history.RootEvent.Children);
+            // Add the vertical nodes!
+            List<HistoryEvent> allNodes = new List<HistoryEvent>();
+            allNodes.Add(_history.RootEvent);
 
-            while (nodes.Any())
+            for (int c = 0; c < allNodes.Count; c++)
             {
-                HistoryEvent historyEvent = nodes[0];
-                nodes.RemoveAt(0);
+                RefreshSortedChildrenMap(allNodes[c]);
 
-                AddEventToListTree(historyEvent);
-
-                if (historyEvent.Children.Count > 1)
-                {
-                    List<HistoryEvent> sortedChildren = new List<HistoryEvent>(historyEvent.Children);
-                    sortedChildren.Sort(HorizontalSort);
-                }
-
-                nodes.AddRange(historyEvent.Children);
+                allNodes.AddRange(allNodes[c].Children);
             }
+
+            foreach(HistoryEvent he in allNodes)
+            {
+                _verticalEvents.Add(he);
+            }
+
+            //List<HistoryEvent> nodes = new List<HistoryEvent>();
+            //nodes.AddRange(_history.RootEvent.Children);
+
+            //while (nodes.Any())
+            //{
+            //    HistoryEvent historyEvent = nodes[0];
+            //    nodes.RemoveAt(0);
+
+            //    AddEventToListTree(historyEvent);
+
+            //    if (historyEvent.Children.Count > 1)
+            //    {
+            //        List<HistoryEvent> sortedChildren = new List<HistoryEvent>(historyEvent.Children);
+            //        sortedChildren.Sort(HorizontalSort);
+            //    }
+
+            //    nodes.AddRange(historyEvent.Children);
+            //}
         }
 
         private void ProcessHistoryChange(object sender, HistoryChangedEventArgs args)
@@ -348,85 +365,85 @@ namespace CPvC
             return child;
         }
 
-        private bool AddEventToListTree(HistoryEvent historyEvent)
-        {
-            HistoryEvent parentHistoryEvent = historyEvent.Parent;
-            ListTreeNode<HistoryEvent> parentNode = GetNode(parentHistoryEvent);
-            bool wasParentInteresting = parentNode != null;
-            bool isParentInteresting = InterestingEvent(parentHistoryEvent);
-            ListTreeNode<HistoryEvent> node = GetNode(historyEvent);
+        //private bool AddEventToListTree(HistoryEvent historyEvent)
+        //{
+        //    HistoryEvent parentHistoryEvent = historyEvent.Parent;
+        //    ListTreeNode<HistoryEvent> parentNode = GetNode(parentHistoryEvent);
+        //    bool wasParentInteresting = parentNode != null;
+        //    bool isParentInteresting = InterestingEvent(parentHistoryEvent);
+        //    ListTreeNode<HistoryEvent> node = GetNode(historyEvent);
 
-            if (node != null)
-            {
-                // The node is already in the tree... we shouldn't be trying to add it!
-                throw new Exception("Node was already in the tree.");
-            }
+        //    if (node != null)
+        //    {
+        //        // The node is already in the tree... we shouldn't be trying to add it!
+        //        throw new Exception("Node was already in the tree.");
+        //    }
 
-            if (!InterestingEvent(historyEvent))
-            {
-                return false;
-            }
+        //    if (!InterestingEvent(historyEvent))
+        //    {
+        //        return false;
+        //    }
 
-            bool add = true;
+        //    bool add = true;
 
-            // First, check if the parent's interestingness has changed from false to true.
-            if (!wasParentInteresting && isParentInteresting)
-            {
-                // Need to add the parent!
+        //    // First, check if the parent's interestingness has changed from false to true.
+        //    if (!wasParentInteresting && isParentInteresting)
+        //    {
+        //        // Need to add the parent!
 
-                // But first, find the child who will share this new parent!
-                ListTreeNode<HistoryEvent> cousinNode;
-                HistoryEvent he = parentHistoryEvent;
-                //while (true)
-                while (he != null && he.Children.Count > 0)
-                {
-                    he = he.Children[0];
-                    cousinNode = GetNode(he);
-                    if (cousinNode != null)
-                    {
-                        parentNode = InsertNewParent(cousinNode, parentHistoryEvent);
-                        break;
-                    }
-                }
+        //        // But first, find the child who will share this new parent!
+        //        ListTreeNode<HistoryEvent> cousinNode;
+        //        HistoryEvent he = parentHistoryEvent;
+        //        //while (true)
+        //        while (he != null && he.Children.Count > 0)
+        //        {
+        //            he = he.Children[0];
+        //            cousinNode = GetNode(he);
+        //            if (cousinNode != null)
+        //            {
+        //                parentNode = InsertNewParent(cousinNode, parentHistoryEvent);
+        //                break;
+        //            }
+        //        }
 
-                //parentNode = InsertNewParent(cousinNode, parentHistoryEvent);
-            }
-            else if (!wasParentInteresting && !isParentInteresting)
-            {
-                // Work our way up the tree to find who should be our parent!
-                HistoryEvent he = parentHistoryEvent;
-                while (true)
-                {
-                    ListTreeNode<HistoryEvent> n = GetNode(he);
-                    if (n != null)
-                    {
-                        parentNode = n;
-                        break;
-                    }
+        //        //parentNode = InsertNewParent(cousinNode, parentHistoryEvent);
+        //    }
+        //    else if (!wasParentInteresting && !isParentInteresting)
+        //    {
+        //        // Work our way up the tree to find who should be our parent!
+        //        HistoryEvent he = parentHistoryEvent;
+        //        while (true)
+        //        {
+        //            ListTreeNode<HistoryEvent> n = GetNode(he);
+        //            if (n != null)
+        //            {
+        //                parentNode = n;
+        //                break;
+        //            }
 
-                    he = he.Parent;
-                }
-            }
-            else if (wasParentInteresting && !isParentInteresting)
-            {
-                // Replace the parent node with the child!
-                InterestingParents.Add(historyEvent, InterestingParents[parentHistoryEvent]);
-                InterestingParents.Remove(parentHistoryEvent);
-                Update(parentHistoryEvent, historyEvent);
-                add = false;
-            }
-            else if (wasParentInteresting && isParentInteresting)
-            {
-                // Nothing to do! Just add the new node!
-            }
+        //            he = he.Parent;
+        //        }
+        //    }
+        //    else if (wasParentInteresting && !isParentInteresting)
+        //    {
+        //        // Replace the parent node with the child!
+        //        InterestingParents.Add(historyEvent, InterestingParents[parentHistoryEvent]);
+        //        InterestingParents.Remove(parentHistoryEvent);
+        //        Update(parentHistoryEvent, historyEvent);
+        //        add = false;
+        //    }
+        //    else if (wasParentInteresting && isParentInteresting)
+        //    {
+        //        // Nothing to do! Just add the new node!
+        //    }
 
-            if (add && InterestingEvent(historyEvent))
-            {
-                Add(parentNode, historyEvent);
-            }
+        //    if (add && InterestingEvent(historyEvent))
+        //    {
+        //        Add(parentNode, historyEvent);
+        //    }
 
-            return true;
-        }
+        //    return true;
+        //}
 
         //private bool RemoveEventFromChildrenMap(HistoryEvent historyEvent)
         //{
