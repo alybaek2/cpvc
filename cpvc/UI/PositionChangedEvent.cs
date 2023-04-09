@@ -17,7 +17,7 @@ namespace CPvC
 
     public class PositionChangedEventArgs<T> : EventArgs
     {
-        public PositionChangedEventArgs(List<ListTreeNode<T>> horizontalOrdering, List<ListTreeNode<T>> verticalOrdering, Dictionary<T, T> interestingParents)
+        public PositionChangedEventArgs(List<T> horizontalOrdering, List<T> verticalOrdering, Dictionary<T, T> interestingParents)
         {
             // Make copies of the orderings... don't use the "live" copies of them!
             HorizontalOrdering = horizontalOrdering.ToList();
@@ -25,8 +25,8 @@ namespace CPvC
             InterestingParents = new Dictionary<T, T>(interestingParents);
         }
 
-        public List<ListTreeNode<T>> HorizontalOrdering { get; }
-        public List<ListTreeNode<T>> VerticalOrdering { get; }
+        public List<T> HorizontalOrdering { get; }
+        public List<T> VerticalOrdering { get; }
         public Dictionary<T, T> InterestingParents { get; }
     }
 

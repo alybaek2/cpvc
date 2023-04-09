@@ -614,7 +614,7 @@
                                                     <Style TargetType="{x:Type Rectangle}">
                                                         <Setter Property="Visibility" Value="Visible"/>
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Path=Node.Data.Bookmark}" Value="{x:Null}">
+                                                            <DataTrigger Binding="{Binding Path=Node.Bookmark}" Value="{x:Null}">
                                                                 <Setter Property="Visibility" Value="Collapsed"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
@@ -624,7 +624,7 @@
                                                     <ToolTip>
                                                         <Image Width="192"
                                                                Height="144"
-                                                               Source="{Binding Path=Node.Data.Bookmark.Screen, Converter={StaticResource blobBitmapConverter}}"
+                                                               Source="{Binding Path=Node.Bookmark.Screen, Converter={StaticResource blobBitmapConverter}}"
                                                                RenderOptions.BitmapScalingMode="Linear"
                                                                Stretch="Fill"/>
                                                     </ToolTip>
@@ -716,7 +716,7 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding Node.Data.TicksInSeconds, Converter={StaticResource secondsConverter}, StringFormat=\{0:h\\:mm\\:ss\}}"
+                                            <TextBlock Text="{Binding Node.TicksInSeconds, Converter={StaticResource secondsConverter}, StringFormat=\{0:h\\:mm\\:ss\}}"
                                                        HorizontalAlignment="Left" VerticalAlignment="Top">
                                                 <TextBlock.RenderTransform>
                                                     <TransformGroup>
