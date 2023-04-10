@@ -207,7 +207,7 @@ namespace CPvC.UI
 
                 children.Clear();
                 children.AddRange(historyEvent.Children);
-                children.Sort((x, y) => x.GetMaxDescendentTicks().CompareTo(y.GetMaxDescendentTicks()));
+                children.Sort((x, y) => x.MaxDescendentTicks.CompareTo(y.MaxDescendentTicks));
 
                 if (InterestingEvent(historyEvent))
                 {
