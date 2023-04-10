@@ -7,174 +7,9 @@ using System.Threading.Tasks;
 
 namespace CPvC
 {
-    public class SortedVerticalHistoryEventList
+    public class HistoryEventOrdering
     {
-        public SortedVerticalHistoryEventList()
-        {
-            _historyEvents = new List<HistoryEvent>();
-            _verticalTies = new HashSet<Tuple<HistoryEvent, HistoryEvent>>();
-        }
-
-        public bool Add(HistoryEvent historyEvent)
-        {
-            if (_historyEvents.Contains(historyEvent))
-            {
-                return false;
-            }
-
-
-            int insertionIndex = 0;
-            while (insertionIndex < _historyEvents.Count)
-            {
-                int comparison = VerticalSort(historyEvent, _historyEvents[insertionIndex]);
-                if (comparison <= 0)
-                {
-                    break;
-                }
-
-                insertionIndex++;
-            }
-
-            _historyEvents.Insert(insertionIndex, historyEvent);
-
-            return true;
-        }
-
-        public bool Remove(HistoryEvent historyEvent)
-        {
-            bool removed = _historyEvents.Remove(historyEvent);
-
-            // Get rid of ties...
-            List<Tuple<HistoryEvent, HistoryEvent>> removeTies = new List<Tuple<HistoryEvent, HistoryEvent>>();
-            foreach (Tuple<HistoryEvent, HistoryEvent> tie in _verticalTies)
-            {
-                if (tie.Item1 == historyEvent || tie.Item2 == historyEvent)
-                {
-                    removeTies.Add(tie);
-                }
-            }
-
-            foreach (Tuple<HistoryEvent, HistoryEvent> tie in removeTies)
-            {
-                _verticalTies.Remove(tie);
-            }
-
-            return removed;
-        }
-
-        public bool FixOrder(HistoryEvent historyEvent)
-        {
-            if (CheckOrder(historyEvent))
-            {
-                // Update the vertical order
-                int verticalIndex = _historyEvents.IndexOf(historyEvent);
-
-                _historyEvents.RemoveAt(verticalIndex);
-
-                int newVerticalIndex = 0;
-                while (newVerticalIndex < _historyEvents.Count)
-                {
-                    if (VerticalSort(historyEvent, _historyEvents[newVerticalIndex]) < 0)
-                    {
-                        break;
-                    }
-
-                    newVerticalIndex++;
-                }
-
-                _historyEvents.Insert(newVerticalIndex, historyEvent);
-
-                return true;
-            }
-
-            return false;
-        }
-
-        private bool CheckOrder(HistoryEvent historyEvent)
-        {
-            int verticalIndex = _historyEvents.IndexOf(historyEvent);
-
-            if (verticalIndex > 0)
-            {
-                bool previouslyTied = _verticalTies.Any() && _verticalTies.Contains(new Tuple<HistoryEvent, HistoryEvent>(historyEvent, _historyEvents[verticalIndex - 1]));
-                if (VerticalSort(_historyEvents[verticalIndex - 1], historyEvent) >= 0)
-                {
-                    return true;
-                }
-
-                if (previouslyTied)
-                {
-                    return true;
-                }
-            }
-
-            if (verticalIndex + 1 < _historyEvents.Count)
-            {
-                bool previouslyTied = _verticalTies.Any() && _verticalTies.Contains(new Tuple<HistoryEvent, HistoryEvent>(historyEvent, _historyEvents[verticalIndex + 1]));
-                if (VerticalSort(historyEvent, _historyEvents[verticalIndex + 1]) >= 0)
-                {
-                    return true;
-                }
-
-                if (previouslyTied)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private int VerticalSort(HistoryEvent x, HistoryEvent y)
-        {
-            if (_verticalTies.Any())
-            {
-                _verticalTies.Remove(new Tuple<HistoryEvent, HistoryEvent>(x, y));
-                _verticalTies.Remove(new Tuple<HistoryEvent, HistoryEvent>(y, x));
-            }
-
-            if (x.Ticks < y.Ticks)
-            {
-                return -1;
-            }
-            else if (x.Ticks > y.Ticks)
-            {
-                return 1;
-            }
-            else
-            {
-                if (ReferenceEquals(x, y))
-                {
-                    return 0;
-                }
-                else if (x.IsEqualToOrAncestorOf(y))
-                {
-                    return -1;
-                }
-                else if (y.IsEqualToOrAncestorOf(x))
-                {
-                    return 1;
-                }
-            }
-
-            _verticalTies.Add(new Tuple<HistoryEvent, HistoryEvent>(x, y));
-            _verticalTies.Add(new Tuple<HistoryEvent, HistoryEvent>(y, x));
-
-            return x.Id.CompareTo(y.Id);
-        }
-
-        public List<HistoryEvent> GetEvents()
-        {
-            return _historyEvents.Where(n => HistoryListTree.InterestingEvent(n)).ToList();
-        }
-
-        private List<HistoryEvent> _historyEvents;
-        private HashSet<Tuple<HistoryEvent, HistoryEvent>> _verticalTies;
-    }
-
-    public class HistoryListTree
-    {
-        public HistoryListTree(History history)
+        public HistoryEventOrdering(History history)
         {
             _sortedChildren = new ConditionalWeakTable<HistoryEvent, List<HistoryEvent>>();
 
@@ -237,19 +72,13 @@ namespace CPvC
 
                 allNodes.AddRange(allNodes[c].Children);
             }
-
-            //foreach(HistoryEvent he in allNodes)
-            //{
-            //    _verticalEvents.Add(he);
-            //}
         }
 
         private void ProcessHistoryChange(object sender, HistoryChangedEventArgs args)
         {
-            PositionChangedEventArgs<HistoryEvent> changeArgs = UpdateListTree(args);
-            if (changeArgs != null)
+            if (Update(args))
             {
-                PositionChanged?.Invoke(this, changeArgs);
+                OrderingChanged?.Invoke(this, new PositionChangedEventArgs<HistoryEvent>(HorizontalOrdering, VerticalOrdering, InterestingParents));
             }
         }
 
@@ -372,7 +201,7 @@ namespace CPvC
             return true;
         }
 
-        private PositionChangedEventArgs<HistoryEvent> UpdateListTree(HistoryChangedEventArgs args)
+        private bool Update(HistoryChangedEventArgs args)
         {
             bool changed = false;
 
@@ -432,12 +261,12 @@ namespace CPvC
                     break;
             }
 
-            if (changed)
-            {
-                return new PositionChangedEventArgs<HistoryEvent>(HorizontalOrdering, VerticalOrdering, InterestingParents);
-            }
+            //if (changed)
+            //{
+            //    return new PositionChangedEventArgs<HistoryEvent>(HorizontalOrdering, VerticalOrdering, InterestingParents);
+            //}
 
-            return null;
+            return changed;
         }
 
         private HistoryEvent GetInterestingParent(HistoryEvent historyEvent)
@@ -472,6 +301,180 @@ namespace CPvC
         private ConditionalWeakTable<HistoryEvent, List<HistoryEvent>> _sortedChildren;
         private Dictionary<HistoryEvent, HistoryEvent> _interestingParents;
 
-        public event NotifyPositionChangedEventHandler<HistoryEvent> PositionChanged;
+        public event NotifyPositionChangedEventHandler<HistoryEvent> OrderingChanged;
+
+        private class SortedVerticalHistoryEventList
+        {
+            public SortedVerticalHistoryEventList()
+            {
+                _historyEvents = new List<HistoryEvent>();
+                _ties = new HashSet<Tuple<HistoryEvent, HistoryEvent>>();
+            }
+
+            public bool Add(HistoryEvent historyEvent)
+            {
+                if (_historyEvents.Contains(historyEvent))
+                {
+                    return false;
+                }
+
+
+                int insertionIndex = 0;
+                while (insertionIndex < _historyEvents.Count)
+                {
+                    int comparison = VerticalSort(historyEvent, _historyEvents[insertionIndex]);
+                    if (comparison <= 0)
+                    {
+                        break;
+                    }
+
+                    insertionIndex++;
+                }
+
+                _historyEvents.Insert(insertionIndex, historyEvent);
+
+                return true;
+            }
+
+            public bool Remove(HistoryEvent historyEvent)
+            {
+                bool removed = _historyEvents.Remove(historyEvent);
+
+                // Get rid of ties...
+                List<Tuple<HistoryEvent, HistoryEvent>> removeTies = new List<Tuple<HistoryEvent, HistoryEvent>>();
+                foreach (Tuple<HistoryEvent, HistoryEvent> tie in _ties)
+                {
+                    if (tie.Item1 == historyEvent || tie.Item2 == historyEvent)
+                    {
+                        removeTies.Add(tie);
+                    }
+                }
+
+                foreach (Tuple<HistoryEvent, HistoryEvent> tie in removeTies)
+                {
+                    _ties.Remove(tie);
+                }
+
+                return removed;
+            }
+
+            public bool FixOrder(HistoryEvent historyEvent)
+            {
+                int verticalIndex = _historyEvents.IndexOf(historyEvent);
+
+                bool CheckOrder()
+                {
+                    if (verticalIndex > 0)
+                    {
+                        HistoryEvent previousHistoryEvent = _historyEvents[verticalIndex - 1];
+                        bool wasTied = IsTied(historyEvent, previousHistoryEvent);
+                        if (VerticalSort(previousHistoryEvent, historyEvent) >= 0)
+                        {
+                            return true;
+                        }
+
+                        if (wasTied)
+                        {
+                            return true;
+                        }
+                    }
+
+                    if (verticalIndex + 1 < _historyEvents.Count)
+                    {
+                        HistoryEvent nextHistoryEvent = _historyEvents[verticalIndex + 1];
+                        bool wasTied = IsTied(historyEvent, nextHistoryEvent);
+                        if (VerticalSort(historyEvent, nextHistoryEvent) >= 0)
+                        {
+                            return true;
+                        }
+
+                        if (wasTied)
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }
+
+                if (CheckOrder())
+                {
+                    _historyEvents.RemoveAt(verticalIndex);
+
+                    int newVerticalIndex = 0;
+                    while (newVerticalIndex < _historyEvents.Count)
+                    {
+                        if (VerticalSort(historyEvent, _historyEvents[newVerticalIndex]) < 0)
+                        {
+                            break;
+                        }
+
+                        newVerticalIndex++;
+                    }
+
+                    _historyEvents.Insert(newVerticalIndex, historyEvent);
+
+                    return true;
+                }
+
+                return false;
+            }
+
+            private bool IsTied(HistoryEvent x, HistoryEvent y)
+            {
+                if (!_ties.Any())
+                {
+                    return false;
+                }
+
+                return _ties.Contains(new Tuple<HistoryEvent, HistoryEvent>(x, y));
+            }
+
+            private int VerticalSort(HistoryEvent x, HistoryEvent y)
+            {
+                if (_ties.Any())
+                {
+                    _ties.Remove(new Tuple<HistoryEvent, HistoryEvent>(x, y));
+                    _ties.Remove(new Tuple<HistoryEvent, HistoryEvent>(y, x));
+                }
+
+                if (x.Ticks < y.Ticks)
+                {
+                    return -1;
+                }
+                else if (x.Ticks > y.Ticks)
+                {
+                    return 1;
+                }
+                else
+                {
+                    if (ReferenceEquals(x, y))
+                    {
+                        return 0;
+                    }
+                    else if (x.IsEqualToOrAncestorOf(y))
+                    {
+                        return -1;
+                    }
+                    else if (y.IsEqualToOrAncestorOf(x))
+                    {
+                        return 1;
+                    }
+                }
+
+                _ties.Add(new Tuple<HistoryEvent, HistoryEvent>(x, y));
+                _ties.Add(new Tuple<HistoryEvent, HistoryEvent>(y, x));
+
+                return x.Id.CompareTo(y.Id);
+            }
+
+            public List<HistoryEvent> GetEvents()
+            {
+                return _historyEvents.Where(n => HistoryEventOrdering.InterestingEvent(n)).ToList();
+            }
+
+            private List<HistoryEvent> _historyEvents;
+            private HashSet<Tuple<HistoryEvent, HistoryEvent>> _ties;
+        }
     }
 }

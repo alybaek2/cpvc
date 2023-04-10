@@ -236,8 +236,8 @@ namespace CPvC
         private HistoryViewModel(History history)
         {
             _history = history;
-            _listTree = new HistoryListTree(history);
-            _listTree.PositionChanged += ListTree_PositionChanged;
+            _listTree = new HistoryEventOrdering(history);
+            _listTree.OrderingChanged += ListTree_PositionChanged;
             _nodesToLines = new Dictionary<HistoryEvent, HistoryLineViewModel>();
 
             _globalMaxX = 0;
@@ -581,7 +581,7 @@ namespace CPvC
 
         private ObservableCollection<HistoryLineViewModel> _lines;
 
-        private HistoryListTree _listTree;
+        private HistoryEventOrdering _listTree;
         public event PropertyChangedEventHandler PropertyChanged;
 
         static private ConditionalWeakTable<History, HistoryViewModel> _viewModels;

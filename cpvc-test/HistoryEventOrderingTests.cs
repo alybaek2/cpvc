@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 
 namespace CPvC.Test
 {
-    public class HistoryListTreeTests
+    public class HistoryEventOrderingTests
     {
         [SetUp]
         public void Setup()
         {
             _history = new History();
-            _historyListTree = new HistoryListTree(_history);
+            _historyListTree = new HistoryEventOrdering(_history);
         }
 
         [Test]
@@ -186,6 +186,6 @@ namespace CPvC.Test
         }
 
         private History _history;
-        private HistoryListTree _historyListTree;
+        private HistoryEventOrdering _historyListTree;
     }
 }

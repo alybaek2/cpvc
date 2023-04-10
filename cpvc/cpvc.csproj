@@ -208,7 +208,7 @@
     <Compile Include="UI\Forms\StartServerWindow.xaml.cs">
       <DependentUpon>StartServerWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UI\HistoryListTree.cs" />
+    <Compile Include="UI\HistoryEventOrdering.cs" />
     <Compile Include="UI\HistoryViewItem.cs" />
     <Compile Include="UI\HistoryViewModel.cs" />
     <Compile Include="UI\MachineDataTemplateSelector.cs" />
