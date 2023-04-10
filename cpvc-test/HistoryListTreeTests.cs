@@ -25,7 +25,7 @@ namespace CPvC.Test
 
             // Verify
             VerifyOrderings(_historyListTree.GenerateHorizontalOrdering(), _history.RootEvent, event1);
-            VerifyOrderings(_historyListTree.VerticalEvents(), _history.RootEvent, event1);
+            VerifyOrderings(_historyListTree.GenerateVerticalOrdering(), _history.RootEvent, event1);
         }
 
         [Test]
@@ -37,7 +37,7 @@ namespace CPvC.Test
 
             // Verify
             VerifyOrderings(_historyListTree.GenerateHorizontalOrdering(), _history.RootEvent, event2);
-            VerifyOrderings(_historyListTree.VerticalEvents(), _history.RootEvent, event2);
+            VerifyOrderings(_historyListTree.GenerateVerticalOrdering(), _history.RootEvent, event2);
         }
 
         [Test]
@@ -52,7 +52,7 @@ namespace CPvC.Test
 
             // Verify
             VerifyOrderings(_historyListTree.GenerateHorizontalOrdering(), _history.RootEvent, event2, event3, event4);
-            VerifyOrderings(_historyListTree.VerticalEvents(), _history.RootEvent, event2, event4, event3);
+            VerifyOrderings(_historyListTree.GenerateVerticalOrdering(), _history.RootEvent, event2, event4, event3);
         }
 
         [Test]
@@ -67,7 +67,7 @@ namespace CPvC.Test
 
             // Verify - note the Id is used in the event of a tie.
             VerifyOrderings(_historyListTree.GenerateHorizontalOrdering(), _history.RootEvent, event2, event4, event3);
-            VerifyOrderings(_historyListTree.VerticalEvents(), _history.RootEvent, event2, event3, event4);
+            VerifyOrderings(_historyListTree.GenerateVerticalOrdering(), _history.RootEvent, event2, event3, event4);
         }
 
         [Test]
@@ -83,7 +83,7 @@ namespace CPvC.Test
 
             // Verify - note the Id is used in the event of a tie.
             VerifyOrderings(_historyListTree.GenerateHorizontalOrdering(), _history.RootEvent, event2, event5, event3);
-            VerifyOrderings(_historyListTree.VerticalEvents(), _history.RootEvent, event2, event3, event5);
+            VerifyOrderings(_historyListTree.GenerateVerticalOrdering(), _history.RootEvent, event2, event3, event5);
         }
 
         [Test]
@@ -99,7 +99,7 @@ namespace CPvC.Test
 
             // Verify - note the Id is used in the event of a tie.
             VerifyOrderings(_historyListTree.GenerateHorizontalOrdering(), _history.RootEvent, event1, event4, event3);
-            VerifyOrderings(_historyListTree.VerticalEvents(), _history.RootEvent, event1, event3, event4);
+            VerifyOrderings(_historyListTree.GenerateVerticalOrdering(), _history.RootEvent, event1, event3, event4);
         }
 
         [Test]
@@ -116,7 +116,7 @@ namespace CPvC.Test
 
             // Verify - note the Id is used in the event of a tie.
             VerifyOrderings(_historyListTree.GenerateHorizontalOrdering(), _history.RootEvent, event2);
-            VerifyOrderings(_historyListTree.VerticalEvents(), _history.RootEvent, event2);
+            VerifyOrderings(_historyListTree.GenerateVerticalOrdering(), _history.RootEvent, event2);
         }
 
         [Test]
@@ -132,7 +132,7 @@ namespace CPvC.Test
 
             // Verify - note the Id is used in the event of a tie.
             VerifyOrderings(_historyListTree.GenerateHorizontalOrdering(), _history.RootEvent, event1, event4, event3);
-            VerifyOrderings(_historyListTree.VerticalEvents(), _history.RootEvent, event1, event3, event4);
+            VerifyOrderings(_historyListTree.GenerateVerticalOrdering(), _history.RootEvent, event1, event3, event4);
         }
 
         [Test]
@@ -146,7 +146,7 @@ namespace CPvC.Test
 
             // Verify
             VerifyOrderings(_historyListTree.GenerateHorizontalOrdering(), _history.RootEvent, event1, event3, event2);
-            VerifyOrderings(_historyListTree.VerticalEvents(), _history.RootEvent, event1, event2, event3);
+            VerifyOrderings(_historyListTree.GenerateVerticalOrdering(), _history.RootEvent, event1, event2, event3);
         }
 
         [Test]
@@ -161,7 +161,7 @@ namespace CPvC.Test
 
             // Verify
             VerifyOrderings(_historyListTree.GenerateHorizontalOrdering(), _history.RootEvent, event3);
-            VerifyOrderings(_historyListTree.VerticalEvents(), _history.RootEvent, event3);
+            VerifyOrderings(_historyListTree.GenerateVerticalOrdering(), _history.RootEvent, event3);
         }
 
         [Test]
@@ -176,7 +176,7 @@ namespace CPvC.Test
 
             // Verify
             VerifyOrderings(_historyListTree.GenerateHorizontalOrdering(), _history.RootEvent, event1, event4);
-            VerifyOrderings(_historyListTree.VerticalEvents(), _history.RootEvent, event1, event4);
+            VerifyOrderings(_historyListTree.GenerateVerticalOrdering(), _history.RootEvent, event1, event4);
         }
 
         private void VerifyOrderings(List<HistoryEvent> actualOrdering, params object[] expectedOrdering)

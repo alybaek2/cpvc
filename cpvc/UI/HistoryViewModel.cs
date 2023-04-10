@@ -248,7 +248,7 @@ namespace CPvC
             _selectedBookmarks = new HashSet<HistoryLineViewModel>();
             _selectedBranches = new HashSet<HistoryLineViewModel>();
 
-            UpdateLines(_listTree.GenerateHorizontalOrdering(), _listTree.VerticalEvents(), _listTree.InterestingParents);
+            UpdateLines(_listTree.GenerateHorizontalOrdering(), _listTree.GenerateVerticalOrdering(), _listTree.InterestingParents);
         }
 
         private void ListTree_PositionChanged(object sender, PositionChangedEventArgs<HistoryEvent> e)

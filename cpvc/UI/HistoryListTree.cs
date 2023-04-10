@@ -180,7 +180,7 @@ namespace CPvC
         private HashSet<Tuple<HistoryEvent, HistoryEvent>> _verticalTies;
     }
 
-    public class HistoryListTree : ListTree<HistoryEvent>
+    public class HistoryListTree //: ListTree<HistoryEvent>
     {
         public HistoryListTree(History history)
         {
@@ -200,7 +200,7 @@ namespace CPvC
             {
                 _interestingParents.Clear();
 
-                List<HistoryEvent> allEvents = VerticalEvents();
+                List<HistoryEvent> allEvents = GenerateVerticalOrdering();
 
                 foreach (HistoryEvent historyEvent in allEvents)
                 {
@@ -236,7 +236,7 @@ namespace CPvC
         private void Init()
         {
 
-            InitRoot(_history.RootEvent);
+            //InitRoot(_history.RootEvent);
 
             // Add the vertical nodes!
             List<HistoryEvent> allNodes = new List<HistoryEvent>();
@@ -295,75 +295,75 @@ namespace CPvC
             return false;
         }
 
-        private ListTreeNode<HistoryEvent> Add(ListTreeNode<HistoryEvent> parent, HistoryEvent historyEvent)
-        {
-            ListTreeNode<HistoryEvent> child = new ListTreeNode<HistoryEvent>(historyEvent);
+        //private ListTreeNode<HistoryEvent> Add(ListTreeNode<HistoryEvent> parent, HistoryEvent historyEvent)
+        //{
+        //    ListTreeNode<HistoryEvent> child = new ListTreeNode<HistoryEvent>(historyEvent);
 
-            InterestingParents[historyEvent] = parent.Data;
+        //    InterestingParents[historyEvent] = parent.Data;
 
-            return Add(parent, child);
-        }
+        //    return Add(parent, child);
+        //}
 
-        private ListTreeNode<HistoryEvent> Add(ListTreeNode<HistoryEvent> parent, ListTreeNode<HistoryEvent> child)
-        {
+        //private ListTreeNode<HistoryEvent> Add(ListTreeNode<HistoryEvent> parent, ListTreeNode<HistoryEvent> child)
+        //{
 
-            // Check first if child already exists in the tree! And that parent exists in the tree!
+        //    // Check first if child already exists in the tree! And that parent exists in the tree!
 
-            // Insert into children of parent first!
-            // But! We must either add a new child, or inject this child inbetween the parent and an existing child!
-            // Which case are we?
+        //    // Insert into children of parent first!
+        //    // But! We must either add a new child, or inject this child inbetween the parent and an existing child!
+        //    // Which case are we?
 
-            // This class should not be doing this! HistoryControl should be... ListTree should be made to be generic at some point!
-            int descendentChildIndex = 0;
-            while (descendentChildIndex < parent.Children.Count)
-            {
-                if (child.Data.IsEqualToOrAncestorOf(parent.Children[descendentChildIndex].Data))
-                {
-                    break;
-                }
+        //    // This class should not be doing this! HistoryControl should be... ListTree should be made to be generic at some point!
+        //    int descendentChildIndex = 0;
+        //    while (descendentChildIndex < parent.Children.Count)
+        //    {
+        //        if (child.Data.IsEqualToOrAncestorOf(parent.Children[descendentChildIndex].Data))
+        //        {
+        //            break;
+        //        }
 
-                descendentChildIndex++;
-            }
+        //        descendentChildIndex++;
+        //    }
 
-            // This is wrong! All of parent's children could be descendents of child!
+        //    // This is wrong! All of parent's children could be descendents of child!
 
-            int childIndex;
-            if (descendentChildIndex < parent.Children.Count)
-            {
-                ListTreeNode<HistoryEvent> descendentChild = parent.Children[descendentChildIndex];
-                childIndex = descendentChildIndex;
+        //    int childIndex;
+        //    if (descendentChildIndex < parent.Children.Count)
+        //    {
+        //        ListTreeNode<HistoryEvent> descendentChild = parent.Children[descendentChildIndex];
+        //        childIndex = descendentChildIndex;
 
-                child.Children.Add(descendentChild);
-                descendentChild.Parent = child;
-                InterestingParents[descendentChild.Data] = child.Data;
+        //        child.Children.Add(descendentChild);
+        //        descendentChild.Parent = child;
+        //        InterestingParents[descendentChild.Data] = child.Data;
 
-                parent.Children.RemoveAt(descendentChildIndex);
-            }
-            else
-            {
-                childIndex = GetChildIndex(parent, child);
-            }
+        //        parent.Children.RemoveAt(descendentChildIndex);
+        //    }
+        //    else
+        //    {
+        //        childIndex = GetChildIndex(parent, child);
+        //    }
 
-            parent.Children.Insert(childIndex, child);
-            child.Parent = parent;
-            InterestingParents[child.Data] = parent.Data;
-            _eventsToNodes.Add(child.Data, child);
+        //    parent.Children.Insert(childIndex, child);
+        //    child.Parent = parent;
+        //    InterestingParents[child.Data] = parent.Data;
+        //    _eventsToNodes.Add(child.Data, child);
 
-            // Insert into horizontal events!
-            int newHorizontalIndex = GetHorizontalInsertionIndex(parent, childIndex);
+        //    // Insert into horizontal events!
+        //    int newHorizontalIndex = GetHorizontalInsertionIndex(parent, childIndex);
 
-            _horizontalNodes.Insert(newHorizontalIndex, child);
+        //    _horizontalNodes.Insert(newHorizontalIndex, child);
 
-            //RefreshHorizontalPositions(newHorizontalIndex);
+        //    //RefreshHorizontalPositions(newHorizontalIndex);
 
-            // Insert vertically!
-            int verticalIndex = GetVerticalIndex(child);
-            _verticalNodes.Insert(verticalIndex, child.Data);
+        //    // Insert vertically!
+        //    int verticalIndex = GetVerticalIndex(child);
+        //    _verticalNodes.Insert(verticalIndex, child.Data);
 
-            //RefreshVerticalPositions(verticalIndex);
+        //    //RefreshVerticalPositions(verticalIndex);
 
-            return child;
-        }
+        //    return child;
+        //}
 
         //private bool AddEventToListTree(HistoryEvent historyEvent)
         //{
@@ -540,31 +540,36 @@ namespace CPvC
         //    return somethingChanged;
         //}
 
-        public List<HistoryEvent> VerticalEvents()
+        //public List<HistoryEvent> VerticalEvents()
+        //{
+        //    List<HistoryEvent> allNodes = new List<HistoryEvent>();
+        //    List<HistoryEvent> verticalNodes = new List<HistoryEvent>();
+
+        //    allNodes.Add(_history.RootEvent);
+
+        //    while (allNodes.Any())
+        //    {
+        //        HistoryEvent data = allNodes[0];
+        //        allNodes.RemoveAt(0);
+
+        //        if (InterestingEvent(data))
+        //        {
+        //            verticalNodes.Add(data);
+        //        }
+
+        //        allNodes.AddRange(data.Children);
+        //    }
+
+        //    //_verticalNodes = _horizontalNodes
+
+        //    verticalNodes.Sort(VerticalSort);
+
+        //    return verticalNodes;
+        //}
+
+        public List<HistoryEvent> GenerateVerticalOrdering()
         {
-            List<HistoryEvent> allNodes = new List<HistoryEvent>();
-            List<HistoryEvent> verticalNodes = new List<HistoryEvent>();
-
-            allNodes.Add(_history.RootEvent);
-
-            while (allNodes.Any())
-            {
-                HistoryEvent data = allNodes[0];
-                allNodes.RemoveAt(0);
-
-                if (InterestingEvent(data))
-                {
-                    verticalNodes.Add(data);
-                }
-
-                allNodes.AddRange(data.Children);
-            }
-
-            //_verticalNodes = _horizontalNodes
-
-            verticalNodes.Sort(VerticalSort);
-
-            return verticalNodes;
+            return _verticalEvents.GetEvents();
         }
 
         public List<HistoryEvent> GenerateHorizontalOrdering()
@@ -692,10 +697,10 @@ namespace CPvC
             return true;
         }
 
-        private bool UpdateEvent(HistoryEvent historyEvent)
-        {
-            return false;
-        }
+        //private bool UpdateEvent(HistoryEvent historyEvent)
+        //{
+        //    return false;
+        //}
 
         private PositionChangedEventArgs<HistoryEvent> UpdateListTree(HistoryChangedEventArgs args)
         {
@@ -1012,7 +1017,7 @@ namespace CPvC
 
                 //List<HistoryEvent> horizontal = HorizontalEvents(); // HorizontalOrdering().Select(n => n.Data).ToList();
                 //List<HistoryEvent> vertical = VerticalEvents(); // VerticalOrdering().Select(n => n.Data).ToList();
-                List<HistoryEvent> vertical = _verticalEvents.GetEvents();
+                List<HistoryEvent> vertical = GenerateVerticalOrdering(); // _verticalEvents.GetEvents();
 
                 //if (newOrdering.Count != horizontal.Count)
                 //{
@@ -1039,29 +1044,29 @@ namespace CPvC
             return null;
         }
 
-        public List<ListTreeOrderingEvent<HistoryEvent>> GetNewStyleOrdering(List<ListTreeNode<HistoryEvent>> ordering)
-        {
-            Dictionary<ListTreeNode<HistoryEvent>, ListTreeOrderingEvent<HistoryEvent>> oldMap = new Dictionary<ListTreeNode<HistoryEvent>, ListTreeOrderingEvent<HistoryEvent>>();
+        //public List<ListTreeOrderingEvent<HistoryEvent>> GetNewStyleOrdering(List<ListTreeNode<HistoryEvent>> ordering)
+        //{
+        //    Dictionary<ListTreeNode<HistoryEvent>, ListTreeOrderingEvent<HistoryEvent>> oldMap = new Dictionary<ListTreeNode<HistoryEvent>, ListTreeOrderingEvent<HistoryEvent>>();
 
-            List<ListTreeOrderingEvent<HistoryEvent>> oldOrdering = new List<ListTreeOrderingEvent<HistoryEvent>>();
-            foreach (ListTreeNode<HistoryEvent> node in ordering)
-            {
-                ListTreeOrderingEvent<HistoryEvent> ordEvent = new ListTreeOrderingEvent<HistoryEvent>(node.Data, null);
-                oldMap.Add(node, ordEvent);
+        //    List<ListTreeOrderingEvent<HistoryEvent>> oldOrdering = new List<ListTreeOrderingEvent<HistoryEvent>>();
+        //    foreach (ListTreeNode<HistoryEvent> node in ordering)
+        //    {
+        //        ListTreeOrderingEvent<HistoryEvent> ordEvent = new ListTreeOrderingEvent<HistoryEvent>(node.Data, null);
+        //        oldMap.Add(node, ordEvent);
 
-                oldOrdering.Add(ordEvent);
-            }
+        //        oldOrdering.Add(ordEvent);
+        //    }
 
-            foreach (ListTreeNode<HistoryEvent> node in oldMap.Keys)
-            {
-                if (node.Parent != null)
-                {
-                    oldMap[node].Parent = oldMap[node.Parent];
-                }
-            }
+        //    foreach (ListTreeNode<HistoryEvent> node in oldMap.Keys)
+        //    {
+        //        if (node.Parent != null)
+        //        {
+        //            oldMap[node].Parent = oldMap[node.Parent];
+        //        }
+        //    }
 
-            return oldOrdering;
-        }
+        //    return oldOrdering;
+        //}
 
         private HistoryEvent GetInterestingParent(HistoryEvent historyEvent)
         {
@@ -1120,7 +1125,7 @@ namespace CPvC
         //    return node;
         //}
 
-        protected override int HorizontalSort(HistoryEvent x, HistoryEvent y)
+        protected int HorizontalSort(HistoryEvent x, HistoryEvent y)
         {
             UInt64 yMax = y.GetMaxDescendentTicks();
             UInt64 xMax = x.GetMaxDescendentTicks();
@@ -1134,43 +1139,43 @@ namespace CPvC
             return y.Id.CompareTo(x.Id);
         }
 
-        protected override int VerticalSort(HistoryEvent x, HistoryEvent y)
-        {
-            if (_verticalTies.Any())
-            {
-                _verticalTies.Remove(new Tuple<HistoryEvent, HistoryEvent>(x, y));
-                _verticalTies.Remove(new Tuple<HistoryEvent, HistoryEvent>(y, x));
-            }
+        //protected override int VerticalSort(HistoryEvent x, HistoryEvent y)
+        //{
+        //    if (_verticalTies.Any())
+        //    {
+        //        _verticalTies.Remove(new Tuple<HistoryEvent, HistoryEvent>(x, y));
+        //        _verticalTies.Remove(new Tuple<HistoryEvent, HistoryEvent>(y, x));
+        //    }
 
-            if (x.Ticks < y.Ticks)
-            {
-                return -1;
-            }
-            else if (x.Ticks > y.Ticks)
-            {
-                return 1;
-            }
-            else
-            {
-                if (ReferenceEquals(x, y))
-                {
-                    return 0;
-                }
-                else if (x.IsEqualToOrAncestorOf(y))
-                {
-                    return -1;
-                }
-                else if (y.IsEqualToOrAncestorOf(x))
-                {
-                    return 1;
-                }
-            }
+        //    if (x.Ticks < y.Ticks)
+        //    {
+        //        return -1;
+        //    }
+        //    else if (x.Ticks > y.Ticks)
+        //    {
+        //        return 1;
+        //    }
+        //    else
+        //    {
+        //        if (ReferenceEquals(x, y))
+        //        {
+        //            return 0;
+        //        }
+        //        else if (x.IsEqualToOrAncestorOf(y))
+        //        {
+        //            return -1;
+        //        }
+        //        else if (y.IsEqualToOrAncestorOf(x))
+        //        {
+        //            return 1;
+        //        }
+        //    }
 
-            _verticalTies.Add(new Tuple<HistoryEvent, HistoryEvent>(x, y));
-            _verticalTies.Add(new Tuple<HistoryEvent, HistoryEvent>(y, x));
+        //    _verticalTies.Add(new Tuple<HistoryEvent, HistoryEvent>(x, y));
+        //    _verticalTies.Add(new Tuple<HistoryEvent, HistoryEvent>(y, x));
 
-            return x.Id.CompareTo(y.Id);
-        }
+        //    return x.Id.CompareTo(y.Id);
+        //}
 
         private History _history;
 
