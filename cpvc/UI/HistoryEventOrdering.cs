@@ -14,7 +14,7 @@ namespace CPvC
             //_sortedChildren = new ConditionalWeakTable<HistoryEvent, List<HistoryEvent>>();
             _sortedChildren2 = new Dictionary<HistoryEvent, List<HistoryEvent>>();
 
-            _interestingParents = new Dictionary<HistoryEvent, HistoryEvent>();
+            //_interestingParents = new Dictionary<HistoryEvent, HistoryEvent>();
             _interestingParents2 = new Dictionary<HistoryEvent, HistoryEvent>();
             _verticalEvents = new SortedVerticalHistoryEventList();
 
@@ -25,19 +25,20 @@ namespace CPvC
         {
             get
             {
-                _interestingParents.Clear();
+                return _interestingParents2;
+                //_interestingParents.Clear();
 
-                List<HistoryEvent> allEvents = VerticalOrdering;
+                //List<HistoryEvent> allEvents = VerticalOrdering;
 
-                foreach (HistoryEvent historyEvent in allEvents)
-                {
-                    if (historyEvent.Parent != null)
-                    {
-                        _interestingParents.Add(historyEvent, GetInterestingParent(historyEvent));
-                    }
-                }
+                //foreach (HistoryEvent historyEvent in allEvents)
+                //{
+                //    if (historyEvent.Parent != null)
+                //    {
+                //        _interestingParents.Add(historyEvent, GetInterestingParent(historyEvent));
+                //    }
+                //}
 
-                return _interestingParents;
+                //return _interestingParents;
             }
         }
 
@@ -98,22 +99,22 @@ namespace CPvC
                 Dictionary<HistoryEvent, HistoryEvent> interestingParents = InterestingParents;
 
                 // Check!
-                if (interestingParents.Keys.Count != _interestingParents2.Keys.Count)
-                {
-                    throw new Exception("Oh no!");
-                }
+                //if (interestingParents.Keys.Count != _interestingParents2.Keys.Count)
+                //{
+                //    throw new Exception("Oh no!");
+                //}
 
-                foreach (HistoryEvent he in interestingParents.Keys)
-                {
-                    if (!_interestingParents2.ContainsKey(he))
-                    {
-                        throw new Exception("Noooo!");
-                    }
-                    if (interestingParents[he] != _interestingParents2[he])
-                    {
-                        throw new Exception("Blargh!");
-                    }
-                }
+                //foreach (HistoryEvent he in interestingParents.Keys)
+                //{
+                //    if (!_interestingParents2.ContainsKey(he))
+                //    {
+                //        throw new Exception("Noooo!");
+                //    }
+                //    if (interestingParents[he] != _interestingParents2[he])
+                //    {
+                //        throw new Exception("Blargh!");
+                //    }
+                //}
 
                 OrderingChanged?.Invoke(this, new PositionChangedEventArgs<HistoryEvent>(HorizontalOrdering2, VerticalOrdering, interestingParents));
             }
@@ -657,42 +658,31 @@ namespace CPvC
                                 interestingParentEvent = interestingParentEvent.Parent;
                             }
 
-                            //foreach (HistoryEvent child in args.OriginalChildrenEvents)
-                            //{
-
-                            //}
-
                             List<HistoryEvent> interestingChildren = new List<HistoryEvent>(args.OriginalChildrenEvents);
 
-                            for (int i = 0; i < interestingChildren.Count;)
+                            while (interestingChildren.Any())
                             {
-                                HistoryEvent he = interestingChildren[i];
+                                HistoryEvent he = interestingChildren[0];
+                                interestingChildren.RemoveAt(0);
 
                                 if (InterestingEvent(he))
                                 {
-                                    i++;
+                                    _interestingParents2[he] = interestingParentEvent;
                                 }
                                 else
                                 {
-                                    interestingChildren.RemoveAt(i);
                                     interestingChildren.AddRange(he.Children);
                                 }
                             }
 
-                            foreach (HistoryEvent he in interestingChildren)
-                            {
-                                _interestingParents2[he] = interestingParentEvent;
-                            }
+                            //foreach (HistoryEvent he in interestingChildren)
+                            //{
+                            //    _interestingParents2[he] = interestingParentEvent;
+                            //}
                         }
-
                     }
                     break;
             }
-
-            //if (changed)
-            //{
-            //    return new PositionChangedEventArgs<HistoryEvent>(HorizontalOrdering, VerticalOrdering, InterestingParents);
-            //}
 
             return changed;
         }
@@ -727,7 +717,7 @@ namespace CPvC
         private SortedVerticalHistoryEventList _verticalEvents;
 
         //private ConditionalWeakTable<HistoryEvent, List<HistoryEvent>> _sortedChildren;
-        private Dictionary<HistoryEvent, HistoryEvent> _interestingParents;
+        //private Dictionary<HistoryEvent, HistoryEvent> _interestingParents;
         private Dictionary<HistoryEvent, HistoryEvent> _interestingParents2;
 
         private Dictionary<HistoryEvent, List<HistoryEvent>> _sortedChildren2;
