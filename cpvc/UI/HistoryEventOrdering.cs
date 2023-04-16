@@ -11,9 +11,9 @@ namespace CPvC
     {
         public HistoryEventOrdering(History history)
         {
-            _sortedChildren2 = new Dictionary<HistoryEvent, List<HistoryEvent>>();
+            _sortedChildren = new Dictionary<HistoryEvent, List<HistoryEvent>>();
 
-            _interestingParents2 = new Dictionary<HistoryEvent, HistoryEvent>();
+            _interestingParents = new Dictionary<HistoryEvent, HistoryEvent>();
             _verticalEvents = new SortedVerticalHistoryEventList();
 
             SetHistory(history);
@@ -23,7 +23,7 @@ namespace CPvC
         {
             get
             {
-                return _interestingParents2;
+                return _interestingParents;
             }
         }
 
@@ -51,7 +51,7 @@ namespace CPvC
 
             for (int c = 0; c < allNodes.Count; c++)
             {
-                InitChildren2(allNodes[c]);
+                InitChildren(allNodes[c]);
 
                 _verticalEvents.Add(allNodes[c]);
 
@@ -114,9 +114,9 @@ namespace CPvC
                     }
                     else if (he.Children.Count > 1)
                     {
-                        if (!_sortedChildren2.TryGetValue(he, out List<HistoryEvent> children))
+                        if (!_sortedChildren.TryGetValue(he, out List<HistoryEvent> children))
                         {
-                            throw new Exception("There should be a node here!");
+                            throw new Exception("History event should exist in sorted children dictionary!");
                         }
 
                         events.InsertRange(0, children);
@@ -138,32 +138,31 @@ namespace CPvC
                 HistoryEvent he = descendents[0];
                 descendents.RemoveAt(0);
 
-                _sortedChildren2.Remove(he);
-                _interestingParents2.Remove(he);
+                _sortedChildren.Remove(he);
+                _interestingParents.Remove(he);
 
                 descendents.AddRange(he.Children);
             }
 
-            if (_sortedChildren2.TryGetValue(originalParentEvent, out List<HistoryEvent> sortedChildren))
+            if (_sortedChildren.TryGetValue(originalParentEvent, out List<HistoryEvent> sortedChildren))
             {
                 sortedChildren.Remove(originalParentEvent);
             }
         }
 
-        private bool UpdateHistoryTicks2(HistoryEvent historyEvent)
+        private bool UpdateHistoryTicks(HistoryEvent historyEvent)
         {
             if (historyEvent.Parent == null)
             {
                 return false;
             }
 
-            if (!_sortedChildren2.TryGetValue(historyEvent.Parent, out List<HistoryEvent> sortedChildren))
+            if (!_sortedChildren.TryGetValue(historyEvent.Parent, out List<HistoryEvent> sortedChildren))
             {
                 return false;
             }
 
             int index = sortedChildren.IndexOf(historyEvent);
-
             if (index > 0)
             {
                 // Go left?
@@ -216,50 +215,33 @@ namespace CPvC
             return false;
         }
 
-        private void DeleteBookmark2(HistoryEvent historyEvent, HistoryEvent originalParentEvent, List<HistoryEvent> originalChildrenEvents)
+        private void DeleteBookmark(HistoryEvent historyEvent, HistoryEvent originalParentEvent, List<HistoryEvent> originalChildrenEvents)
         {
+            _interestingParents.Remove(historyEvent);
+            UpdateInterestingParent(originalParentEvent);
+
             foreach (HistoryEvent child in originalChildrenEvents)
             {
-                UpdateInterestingParent2(child);
+                UpdateInterestingParent(child);
             }
 
             if (originalParentEvent.Children.Count <= 1)
             {
-                _sortedChildren2.Remove(originalParentEvent);
-                _interestingParents2.Remove(historyEvent);
-                UpdateInterestingParent2(originalParentEvent);
-
-                foreach (HistoryEvent child in originalChildrenEvents)
-                {
-                    UpdateInterestingParent2(child);
-                }
-
-                return;
-            }
-
-            // The original parent will have had historyEvent's children added to it, so just re-sort all the children!
-            if (!_sortedChildren2.TryGetValue(originalParentEvent, out List<HistoryEvent> sortedChildren))
-            {
-                sortedChildren = new List<HistoryEvent>(originalParentEvent.Children);
-                _sortedChildren2.Add(originalParentEvent, sortedChildren);
-                sortedChildren.Sort(HorizontalSort);
+                _sortedChildren.Remove(originalParentEvent);
             }
             else
             {
+                if (!_sortedChildren.TryGetValue(originalParentEvent, out List<HistoryEvent> sortedChildren))
+                {
+                    sortedChildren = new List<HistoryEvent>(originalParentEvent.Children);
+                    _sortedChildren.Add(originalParentEvent, sortedChildren);
+                }
+
                 sortedChildren.Sort(HorizontalSort);
-            }
-
-            UpdateInterestingParent2(historyEvent);
-            UpdateInterestingParent2(originalParentEvent);
-            _interestingParents2.Remove(historyEvent);
-
-            foreach (HistoryEvent child in originalChildrenEvents)
-            {
-                UpdateInterestingParent2(child);
             }
         }
 
-        private void InitChildren2(HistoryEvent historyEvent)
+        private void InitChildren(HistoryEvent historyEvent)
         {
             if (historyEvent.Children.Count <= 1)
             {
@@ -267,11 +249,11 @@ namespace CPvC
             }
 
             List<HistoryEvent> sortedChildren = new List<HistoryEvent>(historyEvent.Children);
-            _sortedChildren2.Add(historyEvent, sortedChildren);
+            _sortedChildren.Add(historyEvent, sortedChildren);
             sortedChildren.Sort(HorizontalSort);
         }
 
-        private void AddEventToChildren2(HistoryEvent historyEvent)
+        private void AddEventToChildren(HistoryEvent historyEvent)
         {
             if (historyEvent.Parent == null)
             {
@@ -280,15 +262,15 @@ namespace CPvC
 
             if (historyEvent.Parent.Children.Count <= 1)
             {
-                _sortedChildren2.Remove(historyEvent.Parent);
+                _sortedChildren.Remove(historyEvent.Parent);
 
                 return;
             }
 
-            if (!_sortedChildren2.TryGetValue(historyEvent.Parent, out List<HistoryEvent> sortedChildren))
+            if (!_sortedChildren.TryGetValue(historyEvent.Parent, out List<HistoryEvent> sortedChildren))
             {
                 sortedChildren = new List<HistoryEvent>(historyEvent.Parent.Children);
-                _sortedChildren2.Add(historyEvent.Parent, sortedChildren);
+                _sortedChildren.Add(historyEvent.Parent, sortedChildren);
                 sortedChildren.Sort(HorizontalSort);
             }
             else
@@ -309,40 +291,43 @@ namespace CPvC
             }
         }
 
-        private bool UpdateInterestingParent2(HistoryEvent historyEvent)
+        private bool UpdateInterestingParent(HistoryEvent historyEvent)
         {
             // Really need to check if historyEvent is part of our tree!
             // If not, remove it!
 
             bool isInteresting = InterestingEvent(historyEvent);
-            bool wasInteresting = _interestingParents2.ContainsKey(historyEvent);
+            bool wasInteresting = _interestingParents.ContainsKey(historyEvent);
 
             if (isInteresting && !wasInteresting)
             {
                 // Find our interesting children!
                 List<HistoryEvent> interestingChildren = new List<HistoryEvent>(historyEvent.Children);
 
-                int i = 0;
-                while (i < interestingChildren.Count)
+                //int i = 0;
+                while (interestingChildren.Any())
                 {
-                    HistoryEvent he = interestingChildren[i];
+                    HistoryEvent he = interestingChildren[0];
+                    interestingChildren.RemoveAt(0);
 
                     if (InterestingEvent(he))
                     {
-                        i++;
+                        // We are now the interesting parent!
+                        _interestingParents[he] = historyEvent;
+                        //i++;
                     }
                     else
                     {
-                        interestingChildren.RemoveAt(i);
+                        //interestingChildren.RemoveAt(i);
                         interestingChildren.AddRange(he.Children);
                     }
                 }
 
-                foreach (HistoryEvent he in interestingChildren)
-                {
-                    // We are now the interesting parent!
-                    _interestingParents2[he] = historyEvent;
-                }
+                //foreach (HistoryEvent he in interestingChildren)
+                //{
+                //    // We are now the interesting parent!
+                //    _interestingParents[he] = historyEvent;
+                //}
 
                 // Find our parent!
                 HistoryEvent ourParent = historyEvent.Parent;
@@ -353,39 +338,39 @@ namespace CPvC
 
                 if (ourParent != null)
                 {
-                    _interestingParents2[historyEvent] = ourParent;
+                    _interestingParents[historyEvent] = ourParent;
                 }
 
                 return true;
             }
             else if (!isInteresting && wasInteresting)
             {
-                HistoryEvent ourInterestingParent = _interestingParents2[historyEvent];
+                HistoryEvent ourInterestingParent = _interestingParents[historyEvent];
 
                 // Find our interesting children!
                 List<HistoryEvent> interestingChildren = new List<HistoryEvent>(historyEvent.Children);
 
-                for (int i = 0; i < interestingChildren.Count;)
+                while (interestingChildren.Any())
                 {
-                    HistoryEvent he = interestingChildren[i];
+                    HistoryEvent he = interestingChildren[0];
+                    interestingChildren.RemoveAt(0);
 
                     if (InterestingEvent(he))
                     {
-                        i++;
+                        _interestingParents[he] = ourInterestingParent;
                     }
                     else
                     {
-                        interestingChildren.RemoveAt(i);
                         interestingChildren.AddRange(he.Children);
                     }
                 }
 
-                foreach (HistoryEvent he in interestingChildren)
-                {
-                    _interestingParents2[he] = ourInterestingParent;
-                }
+                //foreach (HistoryEvent he in interestingChildren)
+                //{
+                //    _interestingParents[he] = ourInterestingParent;
+                //}
 
-                _interestingParents2.Remove(historyEvent);
+                _interestingParents.Remove(historyEvent);
 
                 return true;
             }
@@ -406,17 +391,17 @@ namespace CPvC
                         _verticalEvents.Add(args.HistoryEvent);
 
                         // 
-                        AddEventToChildren2(args.HistoryEvent);
-                        UpdateInterestingParent2(args.HistoryEvent);
+                        AddEventToChildren(args.HistoryEvent);
+                        UpdateInterestingParent(args.HistoryEvent);
                         if (args.HistoryEvent.Parent != null)
                         {
-                            UpdateInterestingParent2(args.HistoryEvent.Parent);
+                            UpdateInterestingParent(args.HistoryEvent.Parent);
                         }
 
                         HistoryEvent ancestor = args.HistoryEvent.Parent;
                         while (ancestor != null)
                         {
-                            UpdateHistoryTicks2(ancestor);
+                            UpdateHistoryTicks(ancestor);
                             ancestor = ancestor.Parent;
                         }
                     }
@@ -426,14 +411,14 @@ namespace CPvC
                         changed = _verticalEvents.FixOrder(args.HistoryEvent);
                         bool verticalChanged = changed;
 
-                        changed |= UpdateHistoryTicks2(args.HistoryEvent);
+                        changed |= UpdateHistoryTicks(args.HistoryEvent);
 
                         if (verticalChanged)
                         {
                             HistoryEvent ancestor = args.HistoryEvent.Parent;
                             while (ancestor != null)
                             {
-                                UpdateHistoryTicks2(ancestor);
+                                UpdateHistoryTicks(ancestor);
                                 ancestor = ancestor.Parent;
                             }
                         }
@@ -457,7 +442,7 @@ namespace CPvC
                         }
 
                         DeleteBranch2(args.HistoryEvent, args.OriginalParentEvent);
-                        UpdateInterestingParent2(args.OriginalParentEvent);
+                        UpdateInterestingParent(args.OriginalParentEvent);
                     }
                     break;
                 case HistoryChangedAction.DeleteBookmark:
@@ -466,7 +451,7 @@ namespace CPvC
 
                         _verticalEvents.Remove(args.HistoryEvent);
 
-                        DeleteBookmark2(args.HistoryEvent, args.OriginalParentEvent, args.OriginalChildrenEvents);
+                        DeleteBookmark(args.HistoryEvent, args.OriginalParentEvent, args.OriginalChildrenEvents);
 
                         // Find out who the interesting parent of all the moved children should be...
                         if (args.OriginalChildrenEvents.Any())
@@ -487,7 +472,7 @@ namespace CPvC
 
                                 if (InterestingEvent(he))
                                 {
-                                    _interestingParents2[he] = interestingParentEvent;
+                                    _interestingParents[he] = interestingParentEvent;
                                 }
                                 else
                                 {
@@ -519,8 +504,8 @@ namespace CPvC
         private History _history;
 
         private SortedVerticalHistoryEventList _verticalEvents;
-        private Dictionary<HistoryEvent, HistoryEvent> _interestingParents2;
-        private Dictionary<HistoryEvent, List<HistoryEvent>> _sortedChildren2;
+        private Dictionary<HistoryEvent, HistoryEvent> _interestingParents;
+        private Dictionary<HistoryEvent, List<HistoryEvent>> _sortedChildren;
 
         public event NotifyPositionChangedEventHandler<HistoryEvent> OrderingChanged;
 
