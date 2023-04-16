@@ -146,7 +146,7 @@ namespace CPvC
 
             if (_sortedChildren.TryGetValue(originalParentEvent, out List<HistoryEvent> sortedChildren))
             {
-                sortedChildren.Remove(originalParentEvent);
+                sortedChildren.Remove(historyEvent);
             }
         }
 
@@ -291,20 +291,21 @@ namespace CPvC
             }
         }
 
+        private HistoryEvent GetInterestingParent(HistoryEvent parentHistoryEvent)
+        {
+            while (parentHistoryEvent != null && !InterestingEvent(parentHistoryEvent))
+            {
+                parentHistoryEvent = parentHistoryEvent.Parent;
+            }
+
+            return parentHistoryEvent;
+        }
+
         private bool UpdateInterestingParent(HistoryEvent historyEvent)
         {
-            // Really need to check if historyEvent is part of our tree!
-            // If not, remove it!
-
-            bool isInteresting = InterestingEvent(historyEvent);
-            bool wasInteresting = _interestingParents.ContainsKey(historyEvent);
-
-            if (isInteresting && !wasInteresting)
+            void SetInterestingParentForInterestingDescendents(List<HistoryEvent> historyEvents, HistoryEvent newParentEvent)
             {
-                // Find our interesting children!
-                List<HistoryEvent> interestingChildren = new List<HistoryEvent>(historyEvent.Children);
-
-                //int i = 0;
+                List<HistoryEvent> interestingChildren = new List<HistoryEvent>(historyEvents);
                 while (interestingChildren.Any())
                 {
                     HistoryEvent he = interestingChildren[0];
@@ -313,29 +314,27 @@ namespace CPvC
                     if (InterestingEvent(he))
                     {
                         // We are now the interesting parent!
-                        _interestingParents[he] = historyEvent;
-                        //i++;
+                        _interestingParents[he] = newParentEvent;
                     }
                     else
                     {
-                        //interestingChildren.RemoveAt(i);
                         interestingChildren.AddRange(he.Children);
                     }
                 }
+            }
 
-                //foreach (HistoryEvent he in interestingChildren)
-                //{
-                //    // We are now the interesting parent!
-                //    _interestingParents[he] = historyEvent;
-                //}
+            // Really need to check if historyEvent is part of our tree!
+            // If not, remove it!
+
+            bool isInteresting = InterestingEvent(historyEvent);
+            bool wasInteresting = _interestingParents.ContainsKey(historyEvent);
+
+            if (isInteresting && !wasInteresting)
+            {
+                SetInterestingParentForInterestingDescendents(historyEvent.Children, historyEvent);
 
                 // Find our parent!
-                HistoryEvent ourParent = historyEvent.Parent;
-                while (ourParent != null && !InterestingEvent(ourParent))
-                {
-                    ourParent = ourParent.Parent;
-                }
-
+                HistoryEvent ourParent = GetInterestingParent(historyEvent.Parent);
                 if (ourParent != null)
                 {
                     _interestingParents[historyEvent] = ourParent;
@@ -347,28 +346,7 @@ namespace CPvC
             {
                 HistoryEvent ourInterestingParent = _interestingParents[historyEvent];
 
-                // Find our interesting children!
-                List<HistoryEvent> interestingChildren = new List<HistoryEvent>(historyEvent.Children);
-
-                while (interestingChildren.Any())
-                {
-                    HistoryEvent he = interestingChildren[0];
-                    interestingChildren.RemoveAt(0);
-
-                    if (InterestingEvent(he))
-                    {
-                        _interestingParents[he] = ourInterestingParent;
-                    }
-                    else
-                    {
-                        interestingChildren.AddRange(he.Children);
-                    }
-                }
-
-                //foreach (HistoryEvent he in interestingChildren)
-                //{
-                //    _interestingParents[he] = ourInterestingParent;
-                //}
+                SetInterestingParentForInterestingDescendents(historyEvent.Children, ourInterestingParent);
 
                 _interestingParents.Remove(historyEvent);
 
@@ -456,12 +434,7 @@ namespace CPvC
                         // Find out who the interesting parent of all the moved children should be...
                         if (args.OriginalChildrenEvents.Any())
                         {
-                            HistoryEvent interestingParentEvent = args.OriginalParentEvent;
-
-                            while (interestingParentEvent != null && !InterestingEvent(interestingParentEvent))
-                            {
-                                interestingParentEvent = interestingParentEvent.Parent;
-                            }
+                            HistoryEvent interestingParentEvent = GetInterestingParent(args.OriginalParentEvent);
 
                             List<HistoryEvent> interestingChildren = new List<HistoryEvent>(args.OriginalChildrenEvents);
 

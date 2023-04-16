@@ -179,6 +179,57 @@ namespace CPvC.Test
             VerifyOrderings(_historyListTree.VerticalOrdering, _history.RootEvent, event1, event4);
         }
 
+        [Test]
+        public void DeleteBranchWithNoDescendents()
+        {
+            // Act
+            HistoryEvent event1 = _history.AddBookmark(100, null);
+            HistoryEvent event2 = _history.AddCoreAction(new KeyPressAction(200, Keys.A, true));
+            _history.CurrentEvent = event1;
+            HistoryEvent event3 = _history.AddCoreAction(new KeyPressAction(200, Keys.A, false));
+            _history.DeleteBranch(event2);
+
+            // Verify
+            VerifyOrderings(_historyListTree.HorizontalOrdering2, _history.RootEvent, event1, event3);
+            VerifyOrderings(_historyListTree.VerticalOrdering, _history.RootEvent, event1, event3);
+        }
+
+        [Test]
+        public void DeleteBranchWithOneDescendent()
+        {
+            // Act
+            HistoryEvent event1 = _history.AddBookmark(100, null);
+            HistoryEvent event2 = _history.AddCoreAction(new KeyPressAction(200, Keys.A, true));
+            HistoryEvent event3 = _history.AddBookmark(300, null);
+
+            _history.CurrentEvent = event1;
+            HistoryEvent event4 = _history.AddCoreAction(new KeyPressAction(200, Keys.A, false));
+            _history.DeleteBranch(event2);
+
+            // Verify
+            VerifyOrderings(_historyListTree.HorizontalOrdering2, _history.RootEvent, event1, event4);
+            VerifyOrderings(_historyListTree.VerticalOrdering, _history.RootEvent, event1, event4);
+        }
+
+        [Test]
+        public void DeleteBranchWithMultipleDescendents()
+        {
+            // Act
+            HistoryEvent event1 = _history.AddBookmark(100, null);
+            HistoryEvent event2 = _history.AddBookmark(200, null);
+            HistoryEvent event3 = _history.AddCoreAction(new KeyPressAction(200, Keys.A, true));
+            _history.CurrentEvent = event2;
+            HistoryEvent event4 = _history.AddCoreAction(new KeyPressAction(300, Keys.A, false));
+
+            _history.CurrentEvent = event1;
+            HistoryEvent event5 = _history.AddCoreAction(new KeyPressAction(200, Keys.B, false));
+            _history.DeleteBranch(event2);
+
+            // Verify
+            VerifyOrderings(_historyListTree.HorizontalOrdering2, _history.RootEvent, event1, event5);
+            VerifyOrderings(_historyListTree.VerticalOrdering, _history.RootEvent, event1, event5);
+        }
+
         private void VerifyOrderings(List<HistoryEvent> actualOrdering, params object[] expectedOrdering)
         {
             //Assert.AreEqual(expectedOrdering, actualOrdering.Select(x => x.Data));
