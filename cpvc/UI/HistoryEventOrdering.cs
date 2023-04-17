@@ -359,6 +359,26 @@ namespace CPvC
             return false;
         }
 
+        private void UpdateAdd(HistoryEvent historyEvent)
+        {
+            _verticalEvents.Add(historyEvent);
+
+            // 
+            AddEventToChildren(historyEvent);
+            UpdateInterestingParent(historyEvent);
+            if (historyEvent.Parent != null)
+            {
+                UpdateInterestingParent(historyEvent.Parent);
+            }
+
+            HistoryEvent ancestor = historyEvent.Parent;
+            while (ancestor != null)
+            {
+                UpdateHistoryTicks(ancestor);
+                ancestor = ancestor.Parent;
+            }
+        }
+
         private bool Update(HistoryChangedEventArgs args)
         {
             bool changed = false;
@@ -369,22 +389,7 @@ namespace CPvC
                     {
                         changed = true;
 
-                        _verticalEvents.Add(args.HistoryEvent);
-
-                        // 
-                        AddEventToChildren(args.HistoryEvent);
-                        UpdateInterestingParent(args.HistoryEvent);
-                        if (args.HistoryEvent.Parent != null)
-                        {
-                            UpdateInterestingParent(args.HistoryEvent.Parent);
-                        }
-
-                        HistoryEvent ancestor = args.HistoryEvent.Parent;
-                        while (ancestor != null)
-                        {
-                            UpdateHistoryTicks(ancestor);
-                            ancestor = ancestor.Parent;
-                        }
+                        UpdateAdd(args.HistoryEvent);
                     }
                     break;
                 case HistoryChangedAction.UpdateCurrent:
