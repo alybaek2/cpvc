@@ -55,6 +55,12 @@ namespace CPvC
 
                 _verticalEvents.Add(allNodes[c]);
 
+                HistoryEvent interestingParent = GetInterestingParent(allNodes[c].Parent);
+                if (interestingParent != null)
+                {
+                    _interestingParents.Add(allNodes[c], interestingParent);
+                }
+
                 allNodes.AddRange(allNodes[c].Children);
             }
         }
@@ -63,7 +69,7 @@ namespace CPvC
         {
             if (Update(args))
             {
-                OrderingChanged?.Invoke(this, new PositionChangedEventArgs<HistoryEvent>(HorizontalOrdering2, VerticalOrdering, InterestingParents));
+                OrderingChanged?.Invoke(this, new PositionChangedEventArgs<HistoryEvent>(HorizontalOrdering, VerticalOrdering, InterestingParents));
             }
         }
 
@@ -87,7 +93,7 @@ namespace CPvC
             }
         }
 
-        public List<HistoryEvent> HorizontalOrdering2
+        public List<HistoryEvent> HorizontalOrdering
         {
             get
             {
@@ -127,7 +133,7 @@ namespace CPvC
             }
         }
 
-        private void DeleteBranch2(HistoryEvent historyEvent, HistoryEvent originalParentEvent)
+        private void DeleteBranch(HistoryEvent historyEvent, HistoryEvent originalParentEvent)
         {
             List<HistoryEvent> descendents = new List<HistoryEvent>();
 
@@ -335,10 +341,7 @@ namespace CPvC
 
                 // Find our parent!
                 HistoryEvent ourParent = GetInterestingParent(historyEvent.Parent);
-                if (ourParent != null)
-                {
-                    _interestingParents[historyEvent] = ourParent;
-                }
+                _interestingParents[historyEvent] = ourParent;
 
                 return true;
             }
@@ -419,7 +422,7 @@ namespace CPvC
                             childEvents.AddRange(he.Children);
                         }
 
-                        DeleteBranch2(args.HistoryEvent, args.OriginalParentEvent);
+                        DeleteBranch(args.HistoryEvent, args.OriginalParentEvent);
                         UpdateInterestingParent(args.OriginalParentEvent);
                     }
                     break;
