@@ -116,6 +116,7 @@
     <Compile Include="FileSystemTests.cs" />
     <Compile Include="HelpersTests.cs" />
     <Compile Include="HistoryEventTests.cs" />
+    <Compile Include="HistoryEventOrderingTests.cs" />
     <Compile Include="HistoryViewNodeTests.cs" />
     <Compile Include="KeyboardMappingTests.cs" />
     <Compile Include="MachineFileTests.cs" />
@@ -123,6 +124,7 @@
     <Compile Include="MachineServerConnectionTests.cs" />
     <Compile Include="MachineServerListenerTests.cs" />
     <Compile Include="LocalMachineTests.cs" />
+    <Compile Include="MachineViewModelTests.cs" />
     <Compile Include="MainModelTests.cs" />
     <Compile Include="MainViewModelTests.cs" />
     <Compile Include="MemoryByteStreamTests.cs" />

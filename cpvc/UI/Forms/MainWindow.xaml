@@ -15,6 +15,7 @@
         <converters:RunningIcon x:Key="runningIconConverter" />
         <converters:BooleanInverter x:Key="booleanInverterConverter" />
         <converters:MachineBitmap x:Key="machineBitmapConverter" />
+        <converters:BlobBitmap x:Key="blobBitmapConverter" />
         <converters:MultiplyConverter x:Key="multiplyConverter" />
         <BooleanToVisibilityConverter x:Key="BoolToVisConverter" />
         <DataTemplate x:Key="cellTemplate">
@@ -114,6 +115,14 @@
                     <Setter Property="Stroke" Value="Crimson"/>
                     <Setter Property="Fill" Value="Crimson"/>
                     <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding SelectionState}" Value="{x:Static cpvc:SelectionState.Node}">
+                    <Setter Property="Stroke" Value="Magenta"/>
+                    <Setter Property="Fill" Value="Magenta"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding SelectionState}" Value="{x:Static cpvc:SelectionState.NodeAndBranch}">
+                    <Setter Property="Stroke" Value="Magenta"/>
+                    <Setter Property="Fill" Value="Magenta"/>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Current}" Value="true">
                     <Setter Property="Fill" Value="White"/>
@@ -568,7 +577,70 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Path Style="{StaticResource HistoryDotPath}"/>
+                                            <Path Style="{StaticResource HistoryDotPath}">
+                                            </Path>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <ItemsControl Grid.Row="1" 
+                                              ItemsSource="{Binding Lines}"
+                                              Margin="0,16,0,0"
+                                              Width="{Binding Width, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
+                                              Height="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Top"
+                                              Canvas.ZIndex="100">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas>
+                                                <Canvas.RenderTransform>
+                                                    <TransformGroup>
+                                                        <ScaleTransform ScaleX="{StaticResource ScaleFactor}" ScaleY="{StaticResource ScaleFactor}"/>
+                                                        <ScaleTransform ScaleX="1" ScaleY="-1"/>
+                                                        <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"/>
+                                                    </TransformGroup>
+                                                </Canvas.RenderTransform>
+                                            </Canvas>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Rectangle Fill="Transparent"
+                                                       Width="2"
+                                                       Height="2"
+                                                       MouseLeftButtonUp="Path_MouseLeftButtonUp">
+                                                <Rectangle.Style>
+                                                    <Style TargetType="{x:Type Rectangle}">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Path=Node.Bookmark}" Value="{x:Null}">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Rectangle.Style>
+                                                <Rectangle.ToolTip>
+                                                    <ToolTip>
+                                                        <Image Width="192"
+                                                               Height="144"
+                                                               Source="{Binding Path=Node.Bookmark.Screen, Converter={StaticResource blobBitmapConverter}}"
+                                                               RenderOptions.BitmapScalingMode="Linear"
+                                                               Stretch="Fill"/>
+                                                    </ToolTip>
+                                                </Rectangle.ToolTip>
+                                                <Rectangle.RenderTransform>
+                                                    <TransformGroup>
+                                                        <TranslateTransform X="{Binding Center.X}"
+                                                                            Y="{Binding Center.Y}"/>
+                                                        <TranslateTransform X="-1"
+                                                                            Y="-1"/>
+                                                        <!--<ScaleTransform ScaleX="{StaticResource ScaleFactor}" ScaleY="{StaticResource ScaleFactor}"/>
+                                                        <ScaleTransform ScaleX="1" ScaleY="-1"/>
+                                                        <TranslateTransform Y="{Binding Height, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactor}}"/>-->
+                                                    </TransformGroup>
+                                                </Rectangle.RenderTransform>
+                                            </Rectangle>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
@@ -596,29 +668,26 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <!--<Path StrokeThickness="2"
-                                                  Stroke="DarkBlue"
-                                                  
-                                                  Canvas.ZIndex="1">
-                                                <Path.Data>
-                                                    <PathGeometry>
-                                                        <PathGeometry.Figures>
-                                                            <PathFigure StartPoint="{Binding PolyLinePoints[0]}">
-                                                                <PathFigure.Segments>
-                                                                    <PolyLineSegment Points="{Binding PolyLinePoints}"/>
-                                                                </PathFigure.Segments>
-                                                            </PathFigure>
-                                                        </PathGeometry.Figures>
-                                                    </PathGeometry>
-                                                </Path.Data>
-                                            </Path>-->
-                                            <Polyline Stroke="DarkBlue"
-                                                      StrokeThickness="0.25"
+                                            <Polyline StrokeThickness="0.25"
                                                       Points="{Binding PolyLinePoints}"
                                                       HorizontalAlignment="Left"
                                                       VerticalAlignment="Top"
                                                       UseLayoutRounding="True"
-                                                      Canvas.ZIndex="1">
+                                                      Canvas.ZIndex="1"
+                                                      MouseLeftButtonUp="Polyline_MouseLeftButtonUp">
+                                                <Polyline.Style>
+                                                    <Style TargetType="Polyline">
+                                                        <Setter Property="Stroke" Value="DarkBlue"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding SelectionState}" Value="{x:Static cpvc:SelectionState.NodeAndBranch}">
+                                                                <Setter Property="Stroke" Value="Red"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding SelectionState}" Value="{x:Static cpvc:SelectionState.Branch}">
+                                                                <Setter Property="Stroke" Value="Red"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Polyline.Style>
                                             </Polyline>
                                             <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
                                         </DataTemplate>
@@ -647,7 +716,7 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding Node.Data.TicksInSeconds, Converter={StaticResource secondsConverter}, StringFormat=\{0:h\\:mm\\:ss\}}"
+                                            <TextBlock Text="{Binding Node.TicksInSeconds, Converter={StaticResource secondsConverter}, StringFormat=\{0:h\\:mm\\:ss\}}"
                                                        HorizontalAlignment="Left" VerticalAlignment="Top">
                                                 <TextBlock.RenderTransform>
                                                     <TransformGroup>
