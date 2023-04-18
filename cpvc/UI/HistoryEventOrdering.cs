@@ -607,6 +607,16 @@ namespace CPvC
                 return false;
             }
 
+            private Tuple<HistoryEvent, HistoryEvent> GetTieTuple(HistoryEvent x, HistoryEvent y)
+            {
+                if (x.Id < y.Id)
+                {
+                    return new Tuple<HistoryEvent, HistoryEvent>(x, y);
+                }
+
+                return new Tuple<HistoryEvent, HistoryEvent>(y, x);
+            }
+
             private bool IsTied(HistoryEvent x, HistoryEvent y)
             {
                 if (!_ties.Any())
@@ -614,15 +624,14 @@ namespace CPvC
                     return false;
                 }
 
-                return _ties.Contains(new Tuple<HistoryEvent, HistoryEvent>(x, y));
+                return _ties.Contains(GetTieTuple(x, y));
             }
 
             private int VerticalSort(HistoryEvent x, HistoryEvent y)
             {
                 if (_ties.Any())
                 {
-                    _ties.Remove(new Tuple<HistoryEvent, HistoryEvent>(x, y));
-                    _ties.Remove(new Tuple<HistoryEvent, HistoryEvent>(y, x));
+                    _ties.Remove(GetTieTuple(y, x));
                 }
 
                 if (x.Ticks < y.Ticks)
@@ -649,8 +658,7 @@ namespace CPvC
                     }
                 }
 
-                _ties.Add(new Tuple<HistoryEvent, HistoryEvent>(x, y));
-                _ties.Add(new Tuple<HistoryEvent, HistoryEvent>(y, x));
+                _ties.Add(GetTieTuple(x, y));
 
                 return x.Id.CompareTo(y.Id);
             }
