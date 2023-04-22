@@ -15,6 +15,7 @@ namespace CPvC
 
             _interestingParents = new Dictionary<HistoryEvent, HistoryEvent>();
             _verticalEvents = new SortedVerticalHistoryEventList();
+            _descendentWithMaxTicks = new Dictionary<HistoryEvent, HistoryEvent>();
 
             SetHistory(history);
         }
@@ -63,6 +64,8 @@ namespace CPvC
 
                 allNodes.AddRange(allNodes[c].Children);
             }
+
+            GetDescendentWithMaxTicks(_history.RootEvent);
         }
 
         private void ProcessHistoryChange(object sender, HistoryChangedEventArgs args)
@@ -102,7 +105,7 @@ namespace CPvC
                 List<HistoryEvent> events = new List<HistoryEvent>();
                 events.Add(_history.RootEvent);
 
-                while (events.Any())
+                while (events.Count > 0)
                 {
                     HistoryEvent he = events[0];
                     events.RemoveAt(0);
@@ -139,7 +142,7 @@ namespace CPvC
 
             descendents.Add(historyEvent);
 
-            while (descendents.Any())
+            while (descendents.Count > 0)
             {
                 HistoryEvent he = descendents[0];
                 descendents.RemoveAt(0);
@@ -312,7 +315,7 @@ namespace CPvC
             void SetInterestingParentForInterestingDescendents(List<HistoryEvent> historyEvents, HistoryEvent newParentEvent)
             {
                 List<HistoryEvent> interestingChildren = new List<HistoryEvent>(historyEvents);
-                while (interestingChildren.Any())
+                while (interestingChildren.Count > 0)
                 {
                     HistoryEvent he = interestingChildren[0];
                     interestingChildren.RemoveAt(0);
@@ -359,6 +362,47 @@ namespace CPvC
             return false;
         }
 
+        private HistoryEvent GetDescendentWithMaxTicks(HistoryEvent historyEvent)
+        {
+            if (_descendentWithMaxTicks.TryGetValue(historyEvent, out HistoryEvent max))
+            {
+                return max;
+            }
+
+            List<HistoryEvent> descendents = new List<HistoryEvent>();
+            descendents.Add(historyEvent);
+
+            for (int d = 0; d < descendents.Count; d++)
+            {
+                descendents.AddRange(descendents[d].Children.Where(child => !_descendentWithMaxTicks.ContainsKey(child)));
+            }
+
+            for (int d = descendents.Count - 1; d >= 0; d--)
+            {
+                HistoryEvent he = descendents[d];
+
+                if (he.Children.Count == 0)
+                {
+                    _descendentWithMaxTicks[he] = he;
+                }
+                else
+                {
+                    HistoryEvent maxChild = he.Children[0];
+                    for (int i = 1; i < he.Children.Count; i++)
+                    {
+                        if (HorizontalSort(_descendentWithMaxTicks[he.Children[i]], _descendentWithMaxTicks[maxChild]) < 0)
+                        {
+                            maxChild = he.Children[i];
+                        }
+                    }
+
+                    _descendentWithMaxTicks[he] = _descendentWithMaxTicks[maxChild];
+                }
+            }
+
+            return _descendentWithMaxTicks[historyEvent];
+        }
+
         private void UpdateAdd(HistoryEvent historyEvent)
         {
             _verticalEvents.Add(historyEvent);
@@ -379,6 +423,22 @@ namespace CPvC
             }
         }
 
+        private void InvalidateMax(HistoryEvent historyEvent)
+        {
+            while (historyEvent != null)
+            {
+                // Assume that if "historyEvent" is already invalidated, then so are its ancestors.
+                if (!_descendentWithMaxTicks.ContainsKey(historyEvent))
+                {
+                    break;
+                }
+
+                _descendentWithMaxTicks.Remove(historyEvent);
+
+                historyEvent = historyEvent.Parent;
+            }
+        }
+
         private bool Update(HistoryChangedEventArgs args)
         {
             bool changed = false;
@@ -390,6 +450,8 @@ namespace CPvC
                         changed = true;
 
                         UpdateAdd(args.HistoryEvent);
+
+                        InvalidateMax(args.HistoryEvent.Parent);
                     }
                     break;
                 case HistoryChangedAction.UpdateCurrent:
@@ -398,6 +460,8 @@ namespace CPvC
                         bool verticalChanged = changed;
 
                         changed |= UpdateHistoryTicks(args.HistoryEvent);
+
+                        InvalidateMax(args.HistoryEvent);
 
                         if (verticalChanged)
                         {
@@ -417,7 +481,7 @@ namespace CPvC
                         List<HistoryEvent> childEvents = new List<HistoryEvent>();
                         childEvents.Add(args.HistoryEvent);
 
-                        while (childEvents.Any())
+                        while (childEvents.Count > 0)
                         {
                             HistoryEvent he = childEvents[0];
                             childEvents.RemoveAt(0);
@@ -429,6 +493,7 @@ namespace CPvC
 
                         DeleteBranch(args.HistoryEvent, args.OriginalParentEvent);
                         UpdateInterestingParent(args.OriginalParentEvent);
+                        InvalidateMax(args.OriginalParentEvent);
                     }
                     break;
                 case HistoryChangedAction.DeleteBookmark:
@@ -440,13 +505,13 @@ namespace CPvC
                         DeleteBookmark(args.HistoryEvent, args.OriginalParentEvent, args.OriginalChildrenEvents);
 
                         // Find out who the interesting parent of all the moved children should be...
-                        if (args.OriginalChildrenEvents.Any())
+                        if (args.OriginalChildrenEvents.Count > 0)
                         {
                             HistoryEvent interestingParentEvent = GetInterestingParent(args.OriginalParentEvent);
 
                             List<HistoryEvent> interestingChildren = new List<HistoryEvent>(args.OriginalChildrenEvents);
 
-                            while (interestingChildren.Any())
+                            while (interestingChildren.Count > 0)
                             {
                                 HistoryEvent he = interestingChildren[0];
                                 interestingChildren.RemoveAt(0);
@@ -461,6 +526,11 @@ namespace CPvC
                                 }
                             }
                         }
+
+                        if (args.OriginalChildrenEvents.Count == 0)
+                        {
+                            InvalidateMax(args.OriginalParentEvent);
+                        }
                     }
                     break;
             }
@@ -470,16 +540,39 @@ namespace CPvC
 
         protected int HorizontalSort(HistoryEvent x, HistoryEvent y)
         {
-            UInt64 yMax = y.MaxDescendentTicks;
-            UInt64 xMax = x.MaxDescendentTicks;
-            int result = yMax.CompareTo(xMax);
+            HistoryEvent yMax = GetDescendentWithMaxTicks(y);
+            HistoryEvent xMax = GetDescendentWithMaxTicks(x);
 
-            if (result != 0)
+            return VerticalSort(yMax, xMax);
+        }
+
+        static private int VerticalSort(HistoryEvent x, HistoryEvent y)
+        {
+            if (x.Ticks < y.Ticks)
             {
-                return result;
+                return -1;
+            }
+            else if (x.Ticks > y.Ticks)
+            {
+                return 1;
+            }
+            else
+            {
+                if (ReferenceEquals(x, y))
+                {
+                    return 0;
+                }
+                else if (x.IsEqualToOrAncestorOf(y))
+                {
+                    return -1;
+                }
+                else if (y.IsEqualToOrAncestorOf(x))
+                {
+                    return 1;
+                }
             }
 
-            return y.Id.CompareTo(x.Id);
+            return x.Id.CompareTo(y.Id);
         }
 
         private History _history;
@@ -487,6 +580,7 @@ namespace CPvC
         private SortedVerticalHistoryEventList _verticalEvents;
         private Dictionary<HistoryEvent, HistoryEvent> _interestingParents;
         private Dictionary<HistoryEvent, List<HistoryEvent>> _sortedChildren;
+        private Dictionary<HistoryEvent, HistoryEvent> _descendentWithMaxTicks;
 
         public event NotifyPositionChangedEventHandler<HistoryEvent> OrderingChanged;
 
@@ -495,7 +589,6 @@ namespace CPvC
             public SortedVerticalHistoryEventList()
             {
                 _historyEvents = new List<HistoryEvent>();
-                _ties = new HashSet<Tuple<HistoryEvent, HistoryEvent>>();
             }
 
             public bool Add(HistoryEvent historyEvent)
@@ -527,21 +620,6 @@ namespace CPvC
             {
                 bool removed = _historyEvents.Remove(historyEvent);
 
-                // Get rid of ties...
-                List<Tuple<HistoryEvent, HistoryEvent>> removeTies = new List<Tuple<HistoryEvent, HistoryEvent>>();
-                foreach (Tuple<HistoryEvent, HistoryEvent> tie in _ties)
-                {
-                    if (tie.Item1 == historyEvent || tie.Item2 == historyEvent)
-                    {
-                        removeTies.Add(tie);
-                    }
-                }
-
-                foreach (Tuple<HistoryEvent, HistoryEvent> tie in removeTies)
-                {
-                    _ties.Remove(tie);
-                }
-
                 return removed;
             }
 
@@ -553,14 +631,7 @@ namespace CPvC
                 {
                     if (verticalIndex > 0)
                     {
-                        HistoryEvent previousHistoryEvent = _historyEvents[verticalIndex - 1];
-                        bool wasTied = IsTied(historyEvent, previousHistoryEvent);
-                        if (VerticalSort(previousHistoryEvent, historyEvent) >= 0)
-                        {
-                            return true;
-                        }
-
-                        if (wasTied)
+                        if (VerticalSort(_historyEvents[verticalIndex - 1], historyEvent) >= 0)
                         {
                             return true;
                         }
@@ -568,14 +639,7 @@ namespace CPvC
 
                     if (verticalIndex + 1 < _historyEvents.Count)
                     {
-                        HistoryEvent nextHistoryEvent = _historyEvents[verticalIndex + 1];
-                        bool wasTied = IsTied(historyEvent, nextHistoryEvent);
-                        if (VerticalSort(historyEvent, nextHistoryEvent) >= 0)
-                        {
-                            return true;
-                        }
-
-                        if (wasTied)
+                        if (VerticalSort(historyEvent, _historyEvents[verticalIndex + 1]) >= 0)
                         {
                             return true;
                         }
@@ -607,69 +671,12 @@ namespace CPvC
                 return false;
             }
 
-            private Tuple<HistoryEvent, HistoryEvent> GetTieTuple(HistoryEvent x, HistoryEvent y)
-            {
-                if (x.Id < y.Id)
-                {
-                    return new Tuple<HistoryEvent, HistoryEvent>(x, y);
-                }
-
-                return new Tuple<HistoryEvent, HistoryEvent>(y, x);
-            }
-
-            private bool IsTied(HistoryEvent x, HistoryEvent y)
-            {
-                if (!_ties.Any())
-                {
-                    return false;
-                }
-
-                return _ties.Contains(GetTieTuple(x, y));
-            }
-
-            private int VerticalSort(HistoryEvent x, HistoryEvent y)
-            {
-                if (_ties.Any())
-                {
-                    _ties.Remove(GetTieTuple(y, x));
-                }
-
-                if (x.Ticks < y.Ticks)
-                {
-                    return -1;
-                }
-                else if (x.Ticks > y.Ticks)
-                {
-                    return 1;
-                }
-                else
-                {
-                    if (ReferenceEquals(x, y))
-                    {
-                        return 0;
-                    }
-                    else if (x.IsEqualToOrAncestorOf(y))
-                    {
-                        return -1;
-                    }
-                    else if (y.IsEqualToOrAncestorOf(x))
-                    {
-                        return 1;
-                    }
-                }
-
-                _ties.Add(GetTieTuple(x, y));
-
-                return x.Id.CompareTo(y.Id);
-            }
-
             public List<HistoryEvent> GetEvents()
             {
                 return _historyEvents.Where(historyEvent => InterestingEvent(historyEvent)).ToList();
             }
 
             private List<HistoryEvent> _historyEvents;
-            private HashSet<Tuple<HistoryEvent, HistoryEvent>> _ties;
         }
     }
 }

@@ -172,7 +172,7 @@ namespace CPvC.UI
             Queue<HistoryEvent> historyEvents = new Queue<HistoryEvent>();
             historyEvents.Enqueue(history.RootEvent);
 
-            while (historyEvents.Any())
+            while (historyEvents.Count > 0)
             {
                 HistoryEvent historyEvent = historyEvents.Dequeue();
 
@@ -201,7 +201,7 @@ namespace CPvC.UI
 
             List<HistoryEvent> children = new List<HistoryEvent>();
 
-            while (historyEventsStack.Any())
+            while (historyEventsStack.Count > 0)
             {
                 HistoryEvent historyEvent = historyEventsStack.Pop();
 

@@ -70,7 +70,7 @@ namespace CPvC
                 HistoryNode node = descendents[i];
                 if (node.Children.Count > 0)
                 {
-                   node._maxDescendentTicks = node.Children.Select(x => x.GetCachedMDT()).Max();
+                    node._maxDescendentTicks = node.Children.Select(x => x.GetCachedMDT()).Max();
                 }
             }
 
