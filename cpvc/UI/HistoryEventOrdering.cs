@@ -159,6 +159,11 @@ namespace CPvC
             }
         }
 
+        private bool AreEventsHorizontalSortedCorrectly(HistoryEvent first, HistoryEvent second)
+        {
+            return HorizontalSort(first, second) < 0;
+        }
+
         private bool UpdateHistoryTicks(HistoryEvent historyEvent)
         {
             if (historyEvent.Parent == null)
@@ -175,14 +180,14 @@ namespace CPvC
             if (index > 0)
             {
                 // Go left?
-                if (HorizontalSort(historyEvent, sortedChildren[index - 1]) < 0)
+                if (AreEventsHorizontalSortedCorrectly(historyEvent, sortedChildren[index - 1]))
                 {
                     // Yes!
                     int originalIndex = index;
                     index--;
                     while (index > 0)
                     {
-                        if (HorizontalSort(historyEvent, sortedChildren[index - 1]) > 0)
+                        if (!AreEventsHorizontalSortedCorrectly(historyEvent, sortedChildren[index - 1]))
                         {
                             break;
                         }
@@ -199,14 +204,14 @@ namespace CPvC
             else if ((index + 1) < sortedChildren.Count)
             {
                 // Go right?
-                if (HorizontalSort(historyEvent, sortedChildren[index + 1]) > 0)
+                if (!AreEventsHorizontalSortedCorrectly(historyEvent, sortedChildren[index + 1]))
                 {
                     // Yes!
                     int originalIndex = index;
                     index--;
                     while ((index + 1) < sortedChildren.Count)
                     {
-                        if (HorizontalSort(historyEvent, sortedChildren[index + 1]) < 0)
+                        if (AreEventsHorizontalSortedCorrectly(historyEvent, sortedChildren[index + 1]))
                         {
                             break;
                         }
@@ -288,7 +293,7 @@ namespace CPvC
                 int newChildIndex = 0;
                 while (newChildIndex < sortedChildren.Count)
                 {
-                    if (HorizontalSort(historyEvent, sortedChildren[newChildIndex]) <= 0)
+                    if (AreEventsHorizontalSortedCorrectly(historyEvent, sortedChildren[newChildIndex]))
                     {
                         break;
                     }
@@ -390,7 +395,7 @@ namespace CPvC
                     HistoryEvent maxChild = he.Children[0];
                     for (int i = 1; i < he.Children.Count; i++)
                     {
-                        if (HorizontalSort(_descendentWithMaxTicks[he.Children[i]], _descendentWithMaxTicks[maxChild]) < 0)
+                        if (AreEventsHorizontalSortedCorrectly(_descendentWithMaxTicks[he.Children[i]], _descendentWithMaxTicks[maxChild]))
                         {
                             maxChild = he.Children[i];
                         }
