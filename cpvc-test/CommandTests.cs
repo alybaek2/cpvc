@@ -1,7 +1,6 @@
 ﻿using NUnit.Framework;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows.Threading;
 
 namespace CPvC.Test
 {

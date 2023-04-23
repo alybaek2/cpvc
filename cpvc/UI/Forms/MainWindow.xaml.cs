@@ -3,13 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
@@ -44,7 +40,8 @@ namespace CPvC.UI.Forms
 
             ViewModelFactory<IMachine, MachineViewModel> factory =
                 new ViewModelFactory<IMachine, MachineViewModel>(
-                    machine => {
+                    machine =>
+                    {
                         MachineViewModel machineViewModel = new MachineViewModel(machine, _fileSystem, canExecuteChangedInvoker);
 
                         machineViewModel.PromptForFile += MainViewModel_PromptForFile;
@@ -548,13 +545,6 @@ namespace CPvC.UI.Forms
             EventArgs args = new EventArgs();
             _mainViewModel.CloseCommand.InvokeCanExecuteChanged(sender, args);
             _mainViewModel.RemoveCommand.InvokeCanExecuteChanged(sender, args);
-        }
-
-        private WriteableBitmap GetBitmap(Machine machine)
-        {
-            Converters.MachineBitmap bitmapConverter = (Converters.MachineBitmap)FindResource("machineBitmapConverter");
-
-            return (WriteableBitmap)bitmapConverter.Convert(machine, typeof(WriteableBitmap), null, null);
         }
 
         static public void CopyScreen(byte[] screen, WriteableBitmap bitmap)

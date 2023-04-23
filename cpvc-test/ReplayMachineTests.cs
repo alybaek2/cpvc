@@ -244,7 +244,7 @@ namespace CPvC.Test
             // Setup
             ReplayMachine machine = CreateMachine(true);
             machine.Start();
-            while (machine.Ticks == 0);
+            while (machine.Ticks == 0) ;
 
             machine.Stop().Wait();
 

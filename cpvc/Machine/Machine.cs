@@ -21,7 +21,7 @@ namespace CPvC
         protected RunningState _runningState;
         protected RunningState _requestedRunningState;
         protected RunningState _actualRunningState;
-        
+
         protected int _lockCount;
 
         public event PropertyChangedEventHandler PropertyChanged;

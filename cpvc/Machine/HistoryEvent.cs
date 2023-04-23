@@ -70,7 +70,7 @@ namespace CPvC
 
         public void Sort(Comparison<HistoryEvent> comparison)
         {
-           Node.Children.Sort((x, y) => comparison(x.HistoryEvent, y.HistoryEvent));
+            Node.Children.Sort((x, y) => comparison(x.HistoryEvent, y.HistoryEvent));
         }
 
         public T MostRecent<T>() where T : HistoryEvent

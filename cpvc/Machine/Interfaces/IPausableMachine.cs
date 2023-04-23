@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace CPvC
+﻿namespace CPvC
 {
     public interface IPausableMachine : IMachine
     {

@@ -1,10 +1,4 @@
-﻿using Moq;
-using NUnit.Framework;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows.Controls;
-
-namespace CPvC.Test
+﻿namespace CPvC.Test
 {
     public class HistoryViewNodeTests
     {

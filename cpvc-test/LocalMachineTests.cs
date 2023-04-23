@@ -1343,7 +1343,7 @@ namespace CPvC.Test
                 // Verify - probably need some better checks here...
                 Assert.NotNull(screen);
                 Assert.AreEqual(Display.Height * Display.Pitch, screen.Length);
-                
+
                 for (int i = 0; i < screenSize; i++)
                 {
                     Assert.AreEqual(Marshal.ReadByte(buffer, i), screen[i]);

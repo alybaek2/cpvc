@@ -5,9 +5,6 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Threading;
 
 namespace CPvC
 {

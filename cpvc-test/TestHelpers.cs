@@ -105,7 +105,7 @@ namespace CPvC.Test
             }
 
             machine.Stop();
-            
+
         }
 
         static public void ProcessRemoteRequest(RemoteMachine machine, ReceiveCoreActionDelegate receive, IMachineAction action)
