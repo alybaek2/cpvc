@@ -456,6 +456,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <StackPanel Orientation="Horizontal">
                         <Button x:Name="_deleteBookmarkButton"
@@ -467,6 +468,14 @@
                         <Button x:Name="_jumpButton"
                                 Content="Jump"
                                 Click="JumpButton_Click" Margin="5"/>
+                    </StackPanel>
+                    <StackPanel Grid.Row="1" Orientation="Horizontal">
+                        <Button x:Name="_replayButton"
+                                Content="Replay"
+                                Margin="5" Click="ReplayButton_Click"/>
+                        <Button x:Name="_replayStopButton"
+                                Content="Stop"
+                                Margin="5" Click="_replayStopButton_Click"/>
                     </StackPanel>
                     <!--<Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
@@ -490,7 +499,7 @@
                         <Button Grid.Row="0" Grid.Column="0" Content="History" Padding="0"/>
                         <Button Grid.Row="0" Grid.Column="2" Content="Time" Padding="0" Margin="-1,0,0,0"/>
                     </Grid>-->
-                    <ScrollViewer x:Name="_scroller" Grid.Row="2" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="270" Height="480" HorizontalAlignment="Left" VerticalAlignment="Top">
+                    <ScrollViewer x:Name="_scroller" Grid.Row="3" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Width="270" Height="480" HorizontalAlignment="Left" VerticalAlignment="Top">
                         <StackPanel Orientation="Vertical">
                             <Grid DataContext="{Binding ActiveMachineViewModel.History, Mode=OneWay}">
                                 <Grid.ColumnDefinitions>

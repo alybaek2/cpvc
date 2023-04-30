@@ -128,6 +128,7 @@
     <Compile Include="Machine\HistoryEvent.cs" />
     <Compile Include="Machine\HistoryNode.cs" />
     <Compile Include="Machine\Interfaces\IHistoricalMachine.cs" />
+    <Compile Include="Machine\Interfaces\IReplayableMachine.cs" />
     <Compile Include="Machine\Machine.cs" />
     <Compile Include="Core\ICore.cs" />
     <Compile Include="IO\IByteStream.cs" />

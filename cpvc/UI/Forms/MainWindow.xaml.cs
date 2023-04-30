@@ -680,5 +680,23 @@ namespace CPvC.UI.Forms
 
             _mainViewModel.ActiveMachineViewModel.History.SelectBookmark(viewModel);
         }
+
+        private void ReplayButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_mainViewModel.ActiveMachineViewModel.Machine is IReplayableMachine replayableMachine)
+            {
+                BookmarkHistoryEvent bookmarkHistoryEvent = _mainViewModel.ActiveMachineViewModel.History.SelectedBookmark;
+                replayableMachine.StartReplay(bookmarkHistoryEvent, null);
+            }
+        }
+
+        private void _replayStopButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_mainViewModel.ActiveMachineViewModel.Machine is IReplayableMachine replayableMachine)
+            {
+                replayableMachine.StopReplay();
+            }
+
+        }
     }
 }

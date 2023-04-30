@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -24,6 +25,7 @@ namespace CPvC
         ICompactableMachine,
         IPersistableMachine,
         IHistoricalMachine,
+        IReplayableMachine,
         INotifyPropertyChanged,
         IDisposable
     {
@@ -75,6 +77,8 @@ namespace CPvC
 
         private string _filepath;
 
+        private bool _replaying;
+
         public int SnapshotLimit
         {
             get
@@ -100,6 +104,8 @@ namespace CPvC
 
             _core.Create(Core.LatestVersion, Core.Type.CPC6128);
             IsOpen = true;
+
+            _replaying = false;
         }
 
         public void Dispose()
@@ -241,7 +247,8 @@ namespace CPvC
 
             RaiseEvent(action);
 
-            if (!(action is CreateSnapshotAction) &&
+            if (!_replaying &&
+                !(action is CreateSnapshotAction) &&
                 !(action is DeleteSnapshotAction) &&
                 !(action is RevertToSnapshotAction))
             {
@@ -535,6 +542,19 @@ namespace CPvC
             return request;
         }
 
+        public void StartReplay(BookmarkHistoryEvent beginEvent, HistoryEvent endEvent)
+        {
+            // Need to clear the requests queue?
+            _replaying = true;
+
+            JumpToBookmark(beginEvent);
+        }
+
+        public void StopReplay()
+        {
+            _replaying = false;
+        }
+
         public void ToggleReversibilityEnabled()
         {
             if (SnapshotLimit == 0)
@@ -691,6 +711,40 @@ namespace CPvC
             }
         }
 
+        private IMachineAction SkipToNextReplayableEvent()
+        {
+            HistoryEvent historyEvent = _history.CurrentEvent;
+
+            if (Ticks < historyEvent.Ticks)
+            {
+                return new RunUntilAction(Ticks, historyEvent.Ticks, null);
+            }
+            else if (Ticks > historyEvent.Ticks)
+            {
+                return null;
+            }
+
+            IMachineAction actionToReturn = null;
+            if (historyEvent is CoreActionHistoryEvent coreActionHistoryEvent)
+            {
+                actionToReturn = coreActionHistoryEvent.CoreAction;
+            }
+
+            if (historyEvent.Children.Count == 1)
+            {
+                historyEvent = historyEvent.Children[0];
+            }
+            else if (historyEvent.Children.Count > 1)
+            {
+                UInt64 maxTicks = historyEvent.Children.Max(c => c.MaxDescendentTicks);
+                historyEvent = historyEvent.Children.Find(c => c.MaxDescendentTicks == maxTicks);
+            }
+
+            _history.CurrentEvent = historyEvent;
+
+            return actionToReturn;
+        }
+
         protected override void OnPropertyChanged([CallerMemberName] string name = null)
         {
             if (name == nameof(RunningState))
@@ -709,7 +763,15 @@ namespace CPvC
             {
                 if (_requestedRunningState == RunningState.Running)
                 {
-                    request = new RunUntilRequest(Ticks + 1000);
+                    if (_replaying)
+                    {
+                        IMachineAction ma = SkipToNextReplayableEvent();
+                        request = ma as MachineRequest;
+                    }
+                    else
+                    {
+                        request = new RunUntilRequest(Ticks + 1000);
+                    }
                 }
                 else if (_requestedRunningState == RunningState.Reverse)
                 {
