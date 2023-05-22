@@ -78,6 +78,9 @@ namespace CPvC
         private string _filepath;
 
         private bool _replaying;
+        private HistoryEvent _preReplayEvent;
+        private UInt64 _preReplayTicks;
+        private Bookmark _preReplayBookmark;
 
         public int SnapshotLimit
         {
@@ -155,6 +158,8 @@ namespace CPvC
         {
             if (IsOpen)
             {
+                StopReplay();
+
                 Stop().Wait(Timeout.Infinite);
 
                 try
@@ -544,15 +549,48 @@ namespace CPvC
 
         public void StartReplay(BookmarkHistoryEvent beginEvent, HistoryEvent endEvent)
         {
-            // Need to clear the requests queue?
-            _replaying = true;
+            using (Lock())
+            {
+                if (_replaying)
+                {
+                    return;
+                }
 
-            JumpToBookmark(beginEvent);
+                _replaying = true;
+
+                _preReplayEvent = _history.CurrentEvent;
+                _preReplayTicks = Ticks;
+                _preReplayBookmark = new Bookmark(true, _core.Version, _core.GetState(), _core.GetScreen());
+
+                SetCurrentEvent(beginEvent);
+            }
         }
 
         public void StopReplay()
         {
-            _replaying = false;
+            using (Lock())
+            {
+                if (!_replaying)
+                {
+                    return;
+                }
+
+                if (_preReplayTicks != _preReplayEvent.Ticks)
+                {
+                    throw new Exception();
+                }
+
+                _core.CreateFromBookmark(Core.LatestVersion, _preReplayBookmark.State.GetBytes());
+
+                SetScreen(_preReplayBookmark.Screen.GetBytes());
+
+                IMachineAction action = new LoadCoreAction(_preReplayTicks, _preReplayBookmark.State, _preReplayBookmark.Screen);
+                RaiseEvent(action);
+
+                _history.CurrentEvent = _preReplayEvent;
+
+                _replaying = false;
+            }
         }
 
         public void ToggleReversibilityEnabled()

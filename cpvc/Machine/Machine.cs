@@ -170,9 +170,22 @@ namespace CPvC
         {
             // We need to make sure that our overrun threshold is enough so that we can fully satisfy at
             // least the next callback from NAudio. Without this, CPvC playback can become "stuttery."
+            
+            if (_audioBuffer.OverrunThreshold != samplesRequested * 2)
+            {
+                Diagnostics.Trace("Samples requested changed from {0} to {1}...", _audioBuffer.OverrunThreshold / 2, samplesRequested);
+            }
+
             _audioBuffer.OverrunThreshold = samplesRequested * 2;
 
-            return _audioBuffer.Render16BitStereo(Volume, buffer, offset, samplesRequested, false);
+            int samples = _audioBuffer.Render16BitStereo(Volume, buffer, offset, samplesRequested, false);
+
+            if (samples < samplesRequested)
+            {
+                Diagnostics.Trace("{0} samples requested, but only {1} samples returned", samplesRequested, samples);
+            }
+
+            return samples;
         }
 
         public void AdvancePlayback(int samples)

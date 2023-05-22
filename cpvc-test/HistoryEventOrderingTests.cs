@@ -105,7 +105,7 @@ namespace CPvC.Test
             HistoryEvent event2 = _history.AddCoreAction(new KeyPressAction(200, Keys.A, false));
             _history.CurrentEvent = event1;
             HistoryEvent event3 = _history.AddBookmark(200, null);
-            _history.CurrentEvent = event1; // Switch to event1 since we can't delete event3 while it's the current event.
+            _history.CurrentEvent = event2; // Switch to a different event since we can't delete event3 while it's the current event.
 
             _history.DeleteBookmark(event3);
 

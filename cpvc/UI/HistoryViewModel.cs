@@ -486,6 +486,8 @@ namespace CPvC
 
         public void SelectBookmark(HistoryLineViewModel historyLineViewModel)
         {
+            ClearSelection();
+
             foreach (HistoryLineViewModel viewModel in _lines)
             {
                 viewModel.SelectionState = SelectionState.None;

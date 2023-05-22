@@ -73,10 +73,11 @@ namespace CPvC
             }
         }
 
-        static public bool InterestingEvent(HistoryEvent historyEvent)
+        private bool InterestingEvent(HistoryEvent historyEvent)
         {
             if (historyEvent is RootHistoryEvent ||
                 historyEvent is BookmarkHistoryEvent ||
+                historyEvent == _history.CurrentEvent ||
                 historyEvent.Children.Count != 1)
             {
                 return true;
@@ -89,7 +90,7 @@ namespace CPvC
         {
             get
             {
-                return _verticalEvents.GetEvents();
+                return _verticalEvents.GetEvents().Where(historyEvent => InterestingEvent(historyEvent)).ToList();
             }
         }
 
@@ -597,42 +598,42 @@ namespace CPvC
             public SortedVerticalHistoryEventList()
             {
                 _historyEvents = new List<HistoryEvent>();
+                _historyEventIndices = new Dictionary<HistoryEvent, int>();
             }
 
             public bool Add(HistoryEvent historyEvent)
             {
-                if (_historyEvents.Contains(historyEvent))
+                if (Contains(historyEvent))
                 {
                     return false;
                 }
 
+                // The list is sorted, so do a binary search
+                int binarySearchInsertionIndexLower = 0;
+                int binarySearchInsertionIndexUpper = _historyEvents.Count;
 
-                int insertionIndex = 0;
-                while (insertionIndex < _historyEvents.Count)
+                while (binarySearchInsertionIndexLower < binarySearchInsertionIndexUpper)
                 {
-                    if (VerticallySorted(historyEvent, _historyEvents[insertionIndex]))
-                    {
-                        break;
-                    }
+                    int index = (binarySearchInsertionIndexUpper + binarySearchInsertionIndexLower) / 2;
 
-                    insertionIndex++;
+                    if (VerticallySorted(historyEvent, _historyEvents[index]))
+                    {
+                        binarySearchInsertionIndexUpper = index;
+                    }
+                    else
+                    {
+                        binarySearchInsertionIndexLower = index + 1;
+                    }
                 }
 
-                _historyEvents.Insert(insertionIndex, historyEvent);
+                Insert(binarySearchInsertionIndexUpper, historyEvent);
 
                 return true;
             }
 
-            public bool Remove(HistoryEvent historyEvent)
-            {
-                bool removed = _historyEvents.Remove(historyEvent);
-
-                return removed;
-            }
-
             public bool FixOrder(HistoryEvent historyEvent)
             {
-                int verticalIndex = _historyEvents.IndexOf(historyEvent);
+                int verticalIndex = IndexOf(historyEvent);
 
                 bool CheckOrder()
                 {
@@ -657,7 +658,7 @@ namespace CPvC
 
                 if (CheckOrder())
                 {
-                    _historyEvents.RemoveAt(verticalIndex);
+                    RemoveAt(verticalIndex);
 
                     int newVerticalIndex = 0;
                     while (newVerticalIndex < _historyEvents.Count)
@@ -670,7 +671,7 @@ namespace CPvC
                         newVerticalIndex++;
                     }
 
-                    _historyEvents.Insert(newVerticalIndex, historyEvent);
+                    Insert(newVerticalIndex, historyEvent);
 
                     return true;
                 }
@@ -680,10 +681,52 @@ namespace CPvC
 
             public List<HistoryEvent> GetEvents()
             {
-                return _historyEvents.Where(historyEvent => InterestingEvent(historyEvent)).ToList();
+                return _historyEvents;
+            }
+
+            private void Insert(int index, HistoryEvent historyEvent)
+            {
+                _historyEvents.Insert(index, historyEvent);
+                _historyEventIndices[historyEvent] = index;
+
+                for (int i = index + 1; i < _historyEvents.Count; i++)
+                {
+                    _historyEventIndices[_historyEvents[i]] = i;
+                }
+            }
+
+            public bool Remove(HistoryEvent historyEvent)
+            {
+                int index = _historyEventIndices[historyEvent];
+                RemoveAt(index);
+
+                return true;
+            }
+
+            private void RemoveAt(int index)
+            {
+                HistoryEvent historyEvent = _historyEvents[index];
+                _historyEvents.RemoveAt(index);
+                _historyEventIndices.Remove(historyEvent);
+
+                for (int i = index; i < _historyEvents.Count; i++)
+                {
+                    _historyEventIndices[_historyEvents[i]] = i;
+                }
+            }
+
+            private bool Contains(HistoryEvent historyEvent)
+            {
+                return _historyEventIndices.ContainsKey(historyEvent);
+            }
+
+            private int IndexOf(HistoryEvent historyEvent)
+            {
+                return _historyEventIndices[historyEvent];
             }
 
             private List<HistoryEvent> _historyEvents;
+            private Dictionary<HistoryEvent, int> _historyEventIndices;
         }
     }
 }
