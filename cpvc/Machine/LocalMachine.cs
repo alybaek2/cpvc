@@ -749,40 +749,6 @@ namespace CPvC
             }
         }
 
-        private IMachineAction SkipToNextReplayableEvent()
-        {
-            HistoryEvent historyEvent = _history.CurrentEvent;
-
-            if (Ticks < historyEvent.Ticks)
-            {
-                return new RunUntilAction(Ticks, historyEvent.Ticks, null);
-            }
-            else if (Ticks > historyEvent.Ticks)
-            {
-                return null;
-            }
-
-            IMachineAction actionToReturn = null;
-            if (historyEvent is CoreActionHistoryEvent coreActionHistoryEvent)
-            {
-                actionToReturn = coreActionHistoryEvent.CoreAction;
-            }
-
-            if (historyEvent.Children.Count == 1)
-            {
-                historyEvent = historyEvent.Children[0];
-            }
-            else if (historyEvent.Children.Count > 1)
-            {
-                UInt64 maxTicks = historyEvent.Children.Max(c => c.MaxDescendentTicks);
-                historyEvent = historyEvent.Children.Find(c => c.MaxDescendentTicks == maxTicks);
-            }
-
-            _history.CurrentEvent = historyEvent;
-
-            return actionToReturn;
-        }
-
         protected override void OnPropertyChanged([CallerMemberName] string name = null)
         {
             if (name == nameof(RunningState))
@@ -794,6 +760,27 @@ namespace CPvC
             base.OnPropertyChanged(name);
         }
 
+        private HistoryEvent GetNextReplayEvent()
+        {
+            HistoryEvent currentEvent = _history.CurrentEvent;
+
+            if (currentEvent.Children.Count == 1)
+            {
+                currentEvent = currentEvent.Children[0];
+            }
+            else if (currentEvent.Children.Count > 1)
+            {
+                UInt64 maxTicks = currentEvent.Children.Max(c => c.MaxDescendentTicks);
+                currentEvent = currentEvent.Children.Find(c => c.MaxDescendentTicks == maxTicks);
+            }
+            else
+            {
+                currentEvent = null;
+            }
+
+            return currentEvent;
+        }
+
         protected override MachineRequest GetNextCoreRequest()
         {
             MachineRequest request = base.GetNextCoreRequest();
@@ -803,8 +790,28 @@ namespace CPvC
                 {
                     if (_replaying)
                     {
-                        IMachineAction ma = SkipToNextReplayableEvent();
-                        request = ma as MachineRequest;
+                        HistoryEvent nextEvent = GetNextReplayEvent();
+                        if (nextEvent != null)
+                        {
+                            if (Ticks < nextEvent.Ticks)
+                            {
+                                UInt64 endTicks = Math.Min(nextEvent.Ticks, Ticks + 1000);
+                                request = new RunUntilAction(Ticks, endTicks, null);
+                            }
+                            else if (Ticks == nextEvent.Ticks)
+                            {
+                                _history.CurrentEvent = nextEvent;
+                                if (nextEvent is CoreActionHistoryEvent coreActionEvent)
+                                {
+                                    request = coreActionEvent.CoreAction as MachineRequest;
+                                }
+                            }
+                            else
+                            {
+                                // This should not happen!
+                                throw new Exception();
+                            }
+                        }
                     }
                     else
                     {
@@ -831,7 +838,7 @@ namespace CPvC
 
         public override void ProcessResume()
         {
-            if (_actualRunningState == RunningState.Reverse)
+            if (_actualRunningState == RunningState.Reverse && !_replaying)
             {
                 AllKeysUp();
             }
