@@ -44,22 +44,25 @@ namespace CPvC
         private void Init()
         {
             // Add the vertical nodes!
-            List<HistoryEvent> allNodes = new List<HistoryEvent>();
-            allNodes.Add(_history.RootEvent);
+            List<HistoryEvent> allEvents = new List<HistoryEvent>();
+            allEvents.Add(_history.RootEvent);
 
-            for (int c = 0; c < allNodes.Count; c++)
+            for (int c = 0; c < allEvents.Count; c++)
             {
-                InitChildren(allNodes[c]);
+                InitChildren(allEvents[c]);
 
-                _verticalEvents.Add(allNodes[c]);
+                _verticalEvents.Add(allEvents[c]);
 
-                HistoryEvent interestingParent = GetInterestingParent(allNodes[c].Parent);
-                if (interestingParent != null)
+                if (InterestingEvent(allEvents[c]))
                 {
-                    _interestingParents.Add(allNodes[c], interestingParent);
+                    HistoryEvent interestingParent = GetInterestingParent(allEvents[c].Parent);
+                    if (interestingParent != null)
+                    {
+                        _interestingParents.Add(allEvents[c], interestingParent);
+                    }
                 }
 
-                allNodes.AddRange(allNodes[c].Children);
+                allEvents.AddRange(allEvents[c].Children);
             }
 
             GetDescendentWithMaxTicks(_history.RootEvent);
@@ -540,6 +543,11 @@ namespace CPvC
                             InvalidateMax(args.OriginalParentEvent);
                         }
                     }
+                    break;
+                case HistoryChangedAction.SetCurrent:
+                    UpdateInterestingParent(_history.CurrentEvent);
+                    UpdateInterestingParent(args.OriginalCurrent);
+                    changed = true;
                     break;
             }
 
