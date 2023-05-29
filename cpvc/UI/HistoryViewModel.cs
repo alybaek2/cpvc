@@ -12,7 +12,7 @@ namespace CPvC
     public enum LinePointType
     {
         None,
-        Terminus,
+        Action,
         SystemBookmark,
         UserBookmark
     }
@@ -310,9 +310,9 @@ namespace CPvC
                 {
                     line.Type = bookmarkEvent.Bookmark.System ? LinePointType.SystemBookmark : LinePointType.UserBookmark;
                 }
-                else if (node.Children.Count == 0 || node is RootHistoryEvent)
+                else if (node.Children.Count == 0 || node is RootHistoryEvent || node == _history.CurrentEvent)
                 {
-                    line.Type = LinePointType.Terminus;
+                    line.Type = LinePointType.Action;
                 }
                 else
                 {
