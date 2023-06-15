@@ -338,6 +338,7 @@ namespace CPvC
                     }
                     else
                     {
+                        _interestingParents.Remove(he);
                         interestingChildren.AddRange(he.Children);
                     }
                 }

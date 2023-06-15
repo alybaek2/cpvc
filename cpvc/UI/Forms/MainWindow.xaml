@@ -66,7 +66,7 @@
             <Setter Property="Fill" Value="DarkBlue"/>
             <Setter Property="Visibility" Value="Collapsed"/>
             <Style.Triggers>
-                <DataTrigger Binding="{Binding Type}" Value="Terminus">
+                <DataTrigger Binding="{Binding Type}" Value="Action">
                     <Setter Property="Stroke" Value="DarkBlue"/>
                     <Setter Property="Fill" Value="DarkBlue"/>
                     <Setter Property="Visibility" Value="Visible"/>
@@ -101,7 +101,7 @@
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
-                <DataTrigger Binding="{Binding Type}" Value="Terminus">
+                <DataTrigger Binding="{Binding Type}" Value="Action">
                     <Setter Property="Stroke" Value="DarkBlue"/>
                     <Setter Property="Fill" Value="DarkBlue"/>
                     <Setter Property="Visibility" Value="Visible"/>
