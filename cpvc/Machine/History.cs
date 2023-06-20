@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace CPvC
 {
@@ -13,7 +15,7 @@ namespace CPvC
     }
 
 
-    public class History
+    public class History : INotifyPropertyChanged
     {
         private RootHistoryNode _rootNode;
         private HistoryNode _currentNode;
@@ -237,8 +239,12 @@ namespace CPvC
                 _currentNode = value.Node;
 
                 Notify(_currentNode.HistoryEvent, HistoryChangedAction.SetCurrent, null, null, originalCurrent.HistoryEvent);
+
+                OnPropertyChanged();
             }
         }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         private void AddChildNode(HistoryNode historyNode)
         {
@@ -249,6 +255,7 @@ namespace CPvC
             _currentNode.InvalidateCachedMDT();
 
             _currentNode = historyNode;
+            OnPropertyChanged(nameof(CurrentEvent));
 
             Notify(historyNode.HistoryEvent, HistoryChangedAction.Add, null, null, null);
         }
@@ -257,6 +264,11 @@ namespace CPvC
         {
             HistoryChangedEventArgs args = new HistoryChangedEventArgs(this, historyEvent, action, originalParentHistoryEvent, originalChildrenEvents, originalCurrent);
             Auditors?.Invoke(this, args);
+        }
+
+        private void OnPropertyChanged([CallerMemberName] string name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
     }
 }

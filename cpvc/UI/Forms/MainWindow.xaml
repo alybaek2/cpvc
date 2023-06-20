@@ -17,6 +17,8 @@
         <converters:MachineBitmap x:Key="machineBitmapConverter" />
         <converters:BlobBitmap x:Key="blobBitmapConverter" />
         <converters:MultiplyConverter x:Key="multiplyConverter" />
+        <converters:ReferenceEqualityToVisibilityConverter x:Key="referenceEqualityConverter" />
+        <converters:ReferenceInequalityToVisibilityConverter x:Key="referenceInequalityConverter" />
         <BooleanToVisibilityConverter x:Key="BoolToVisConverter" />
         <DataTemplate x:Key="cellTemplate">
             <Canvas Width="{Binding ActualWidth, ElementName=_graphColumn, Mode=OneWay}" Height="16" ClipToBounds="True">
@@ -725,15 +727,32 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding Node.TicksInSeconds, Converter={StaticResource secondsConverter}, StringFormat=\{0:h\\:mm\\:ss\}}"
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Node.TicksInSeconds, Converter={StaticResource secondsConverter}, StringFormat=\{0:h\\:mm\\:ss\}}"
                                                        HorizontalAlignment="Left" VerticalAlignment="Top">
-                                                <TextBlock.RenderTransform>
+                                                    <TextBlock.Visibility>
+                                                        <MultiBinding Converter="{StaticResource referenceInequalityConverter}">
+                                                            <Binding Path="Node"/>
+                                                            <Binding Path="DataContext.ActiveMachineViewModel.Machine.History.CurrentEvent" ElementName="_machines"/>
+                                                        </MultiBinding>
+                                                    </TextBlock.Visibility>
+                                                </TextBlock>
+                                                <TextBlock Text="{Binding DataContext.ActiveMachineViewModel.Machine.TicksInSeconds, ElementName=_machines, Converter={StaticResource secondsConverter}, StringFormat=\{0:h\\:mm\\:ss\}}"
+                                                       HorizontalAlignment="Left" VerticalAlignment="Top">
+                                                    <TextBlock.Visibility>
+                                                        <MultiBinding Converter="{StaticResource referenceEqualityConverter}">
+                                                            <Binding Path="Node"/>
+                                                            <Binding Path="DataContext.ActiveMachineViewModel.Machine.History.CurrentEvent" ElementName="_machines"/>
+                                                        </MultiBinding>
+                                                    </TextBlock.Visibility>
+                                                </TextBlock>
+                                                <StackPanel.RenderTransform>
                                                     <TransformGroup>
                                                         <TranslateTransform X="0" Y="{Binding Path=Center.Y, Converter={StaticResource multiplyConverter}, ConverterParameter={StaticResource ScaleFactorReverse}}"/>
                                                         <TranslateTransform X="0" Y="{StaticResource ScaleFactorReverse}"/>
                                                     </TransformGroup>
-                                                </TextBlock.RenderTransform>
-                                            </TextBlock>
+                                                </StackPanel.RenderTransform>
+                                            </StackPanel>
                                             <!--<Line Stroke="DarkBlue" X1="{Binding Points[0].X}" Y1="{Binding Points[0].Y}" X2="{Binding Points[1].X}" Y2="{Binding Points[1].Y}"/>-->
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -745,7 +764,7 @@
             </TabItem>
         </TabControl>
         <StatusBar Height="30" Grid.Row="3" VerticalAlignment="Top">
-            <TextBlock TextWrapping="Wrap" Text="{Binding ActiveMachineViewModel.Machine.Ticks, Converter={StaticResource ticksConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
+            <TextBlock TextWrapping="Wrap" Text="{Binding ActiveMachineViewModel.Machine.TicksInSeconds, Converter={StaticResource secondsConverter}, Mode=OneWay, StringFormat=\{0:h\\:mm\\:ss\}}"/>
             <Separator/>
             <Slider Width="60" VerticalAlignment="Center" Maximum="255" TickPlacement="BottomRight" TickFrequency="64" Value="{Binding ActiveMachineViewModel.Machine.Volume, Mode=TwoWay}" ToolTip="{Binding ActiveMachineViewModel.Machine.Volume}" />
         </StatusBar>

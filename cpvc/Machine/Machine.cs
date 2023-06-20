@@ -87,6 +87,14 @@ namespace CPvC
             }
         }
 
+        public UInt64 TicksInSeconds
+        {
+            get
+            {
+                return Ticks / 4000000;
+            }
+        }
+
         public AudioBuffer AudioBuffer
         {
             get
@@ -376,6 +384,7 @@ namespace CPvC
                         RaiseDisplayUpdated();
                     }
                     OnPropertyChanged(nameof(Ticks));
+                    OnPropertyChanged(nameof(TicksInSeconds));
 
                     action = new LoadCoreAction(ticks, loadCoreRequest.State, loadCoreRequest.Screen);
                     break;
@@ -556,6 +565,7 @@ namespace CPvC
         {
             DisplayUpdated?.Invoke(this, null);
             OnPropertyChanged(nameof(Ticks));
+            OnPropertyChanged(nameof(TicksInSeconds));
         }
 
         protected void BlankScreen()

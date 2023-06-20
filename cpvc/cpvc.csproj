@@ -177,6 +177,8 @@
     <Compile Include="UI\BookmarksViewModel.cs" />
     <Compile Include="UI\Converters\BlobBitmap.cs" />
     <Compile Include="UI\Converters\BooleanInverter.cs" />
+    <Compile Include="UI\Converters\ReferenceEqualityToVisibilityConverter.cs" />
+    <Compile Include="UI\Converters\ReferenceInequalityToVisibilityConverter.cs" />
     <Compile Include="UI\Converters\LocalDateTime.cs" />
     <Compile Include="UI\Converters\MachineBitmap.cs" />
     <Compile Include="UI\Converters\MultiplyConverter.cs" />

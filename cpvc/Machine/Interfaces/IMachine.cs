@@ -9,6 +9,7 @@ namespace CPvC
         int ReadAudio(byte[] buffer, int offset, int samplesRequested);
 
         UInt64 Ticks { get; }
+        UInt64 TicksInSeconds { get; }
         RunningState RunningState { get; }
 
         string Status { get; set; }
