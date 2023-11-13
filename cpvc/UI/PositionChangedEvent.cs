@@ -15,17 +15,12 @@ namespace CPvC
 
     public class PositionChangedEventArgs<T> : EventArgs
     {
-        public PositionChangedEventArgs(List<T> horizontalOrdering, List<T> verticalOrdering, Dictionary<T, T> interestingParents)
+        public PositionChangedEventArgs(List<InterestingEvent> horizontalInterestingEvents)
         {
-            // Make copies of the orderings... don't use the "live" copies of them!
-            HorizontalOrdering = horizontalOrdering.ToList();
-            VerticalOrdering = verticalOrdering.ToList();
-            InterestingParents = new Dictionary<T, T>(interestingParents);
+            HorizontalInterestingEvents = horizontalInterestingEvents;
         }
 
-        public List<T> HorizontalOrdering { get; }
-        public List<T> VerticalOrdering { get; }
-        public Dictionary<T, T> InterestingParents { get; }
+        public List<InterestingEvent> HorizontalInterestingEvents { get; }
     }
 
     public delegate void NotifyPositionChangedEventHandler<T>(object sender, PositionChangedEventArgs<T> e);

@@ -4,6 +4,22 @@ using System.Linq;
 
 namespace CPvC
 {
+    public class InterestingEvent
+    {
+        public InterestingEvent(InterestingEvent parent, HistoryEvent historyEvent, bool isCurrent, int verticalIndex)
+        {
+            Parent = parent;
+            HistoryEvent = historyEvent;
+            IsCurrent = isCurrent;
+            VerticalIndex = verticalIndex;
+        }
+
+        public InterestingEvent Parent { get; }
+        public HistoryEvent HistoryEvent { get; }
+        public bool IsCurrent { get; }
+        public int VerticalIndex { get; set; }
+    }
+
     public class HistoryEventOrdering
     {
         public HistoryEventOrdering(History history)
@@ -15,14 +31,6 @@ namespace CPvC
             _descendentWithMaxTicks = new Dictionary<HistoryEvent, HistoryEvent>();
 
             SetHistory(history);
-        }
-
-        public Dictionary<HistoryEvent, HistoryEvent> InterestingParents
-        {
-            get
-            {
-                return _interestingParents;
-            }
         }
 
         private void SetHistory(History history)
@@ -72,7 +80,7 @@ namespace CPvC
         {
             if (Update(args))
             {
-                OrderingChanged?.Invoke(this, new PositionChangedEventArgs<HistoryEvent>(HorizontalOrdering, VerticalOrdering, InterestingParents));
+                OrderingChanged?.Invoke(this, new PositionChangedEventArgs<HistoryEvent>(HorizontalInterestingEvents));
             }
         }
 
@@ -89,38 +97,40 @@ namespace CPvC
             return false;
         }
 
-        public List<HistoryEvent> VerticalOrdering
+        public List<InterestingEvent> HorizontalInterestingEvents
         {
             get
             {
-                return _verticalEvents.GetEvents().Where(historyEvent => InterestingEvent(historyEvent)).ToList();
-            }
-        }
+                List<HistoryEvent> verticalOrdering = _verticalEvents.GetEvents().Where(historyEvent => InterestingEvent(historyEvent)).ToList();
 
-        public List<HistoryEvent> HorizontalOrdering
-        {
-            get
-            {
-                List<HistoryEvent> horizontalEvents = new List<HistoryEvent>();
+                List<InterestingEvent> horizontalEvents = new List<InterestingEvent>();
 
-                List<HistoryEvent> events = new List<HistoryEvent>();
-                events.Add(_history.RootEvent);
+                List<Tuple<InterestingEvent, HistoryEvent>> events = new List<Tuple<InterestingEvent, HistoryEvent>>();
+                events.Add(new Tuple<InterestingEvent, HistoryEvent>(null, _history.RootEvent));
 
                 while (events.Count > 0)
                 {
-                    HistoryEvent he = events[0];
+                    (InterestingEvent ip, HistoryEvent he) = events[0];
                     events.RemoveAt(0);
 
                     if (InterestingEvent(he))
                     {
-                        horizontalEvents.Add(he);
+                        int v = verticalOrdering.FindIndex(x => x == he);
+                        if (v == -1)
+                        {
+                            throw new Exception("Can't find vertical index!!!");
+                        }
+
+                        InterestingEvent ie = new InterestingEvent(ip, he, false, v);
+                        horizontalEvents.Add(ie);
+                        ip = ie;
                     }
 
                     // Add children
                     if (he.Children.Count == 1)
                     {
                         HistoryEvent ch = he.Children[0];
-                        events.Insert(0, ch);
+                        events.Insert(0, new Tuple<InterestingEvent, HistoryEvent>(ip, ch));
                     }
                     else if (he.Children.Count > 1)
                     {
@@ -129,7 +139,7 @@ namespace CPvC
                             throw new Exception("History event should exist in sorted children dictionary!");
                         }
 
-                        events.InsertRange(0, children);
+                        events.InsertRange(0, children.Select(x => new Tuple<InterestingEvent, HistoryEvent>(ip, x)));
                     }
                 }
 
@@ -419,7 +429,6 @@ namespace CPvC
         {
             _verticalEvents.Add(historyEvent);
 
-            // 
             AddEventToChildren(historyEvent);
             UpdateInterestingParent(historyEvent);
             if (historyEvent.Parent != null)
