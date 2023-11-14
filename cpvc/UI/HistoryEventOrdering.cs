@@ -121,7 +121,7 @@ namespace CPvC
                             throw new Exception("Can't find vertical index!!!");
                         }
 
-                        InterestingEvent ie = new InterestingEvent(ip, he, false, v);
+                        InterestingEvent ie = new InterestingEvent(ip, he, he == _history.CurrentEvent, v);
                         horizontalEvents.Add(ie);
                         ip = ie;
                     }

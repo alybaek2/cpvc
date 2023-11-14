@@ -288,7 +288,9 @@ namespace CPvC
                 // Draw!
                 line.Start();
 
-                line.Current = ReferenceEquals(node, _history?.CurrentEvent);
+                bool current = interestingEvent.IsCurrent;
+
+                line.Current = current;
                 if (node is RootHistoryEvent)
                 {
                     line.Type = LinePointType.None;
@@ -297,7 +299,7 @@ namespace CPvC
                 {
                     line.Type = bookmarkEvent.Bookmark.System ? LinePointType.SystemBookmark : LinePointType.UserBookmark;
                 }
-                else if (node.Children.Count == 0 || node is RootHistoryEvent || node == _history.CurrentEvent)
+                else if (node.Children.Count == 0 || node is RootHistoryEvent || current)
                 {
                     line.Type = LinePointType.Action;
                 }
