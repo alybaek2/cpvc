@@ -1,3 +1,6 @@
 [submodule "core/v1"]
 	path = core/v1
 	url = https://github.com/alybaek2/cpvc-core.git
+[submodule "ListTreeControl"]
+	path = ListTreeControl
+	url = https://github.com/alybaek2/ListTreeControl.git

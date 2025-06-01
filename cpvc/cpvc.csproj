@@ -214,6 +214,7 @@
     <Compile Include="UI\HistoryEventOrdering.cs" />
     <Compile Include="UI\HistoryViewItem.cs" />
     <Compile Include="UI\HistoryViewModel.cs" />
+    <Compile Include="UI\FilteredHistory.cs" />
     <Compile Include="UI\MachineDataTemplateSelector.cs" />
     <Compile Include="UI\MachineViewModel.cs" />
     <Compile Include="UI\MainModel.cs" />
@@ -339,6 +340,10 @@
     <ProjectReference Include="..\core\v1\cpvc-core-clr\cpvc-core-clr.vcxproj">
       <Project>{b8cb8856-640d-4fde-ad40-c4b409720ed1}</Project>
       <Name>cpvc-core-clr</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ListTreeControl\ListTreeControl\ListTreeControl.csproj">
+      <Project>{85b61db9-52dd-413e-bd1d-deb3a7f60714}</Project>
+      <Name>ListTreeControl</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

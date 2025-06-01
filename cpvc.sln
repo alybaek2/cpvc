@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2027
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34316.72
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cpvc", "cpvc\cpvc.csproj", "{B5258E5F-96D2-4D7B-B92C-61414BE3F4C5}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -24,6 +24,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cpvc-core-clr", "core\v1\cpvc-core-clr\cpvc-core-clr.vcxproj", "{B8CB8856-640D-4FDE-AD40-C4B409720ED1}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cpvc-core-test", "core\v1\cpvc-core-test\cpvc-core-test.vcxproj", "{0C5619B2-D04A-4113-840A-C5452250BCAC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ListTreeControl", "ListTreeControl\ListTreeControl\ListTreeControl.csproj", "{85B61DB9-52DD-413E-BD1D-DEB3A7F60714}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -89,6 +91,18 @@ Global
 		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x64.Build.0 = Release|x64
 		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x86.ActiveCfg = Release|Win32
 		{0C5619B2-D04A-4113-840A-C5452250BCAC}.Release|x86.Build.0 = Release|Win32
+		{85B61DB9-52DD-413E-BD1D-DEB3A7F60714}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{85B61DB9-52DD-413E-BD1D-DEB3A7F60714}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{85B61DB9-52DD-413E-BD1D-DEB3A7F60714}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{85B61DB9-52DD-413E-BD1D-DEB3A7F60714}.Debug|x64.Build.0 = Debug|Any CPU
+		{85B61DB9-52DD-413E-BD1D-DEB3A7F60714}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{85B61DB9-52DD-413E-BD1D-DEB3A7F60714}.Debug|x86.Build.0 = Debug|Any CPU
+		{85B61DB9-52DD-413E-BD1D-DEB3A7F60714}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{85B61DB9-52DD-413E-BD1D-DEB3A7F60714}.Release|Any CPU.Build.0 = Release|Any CPU
+		{85B61DB9-52DD-413E-BD1D-DEB3A7F60714}.Release|x64.ActiveCfg = Release|Any CPU
+		{85B61DB9-52DD-413E-BD1D-DEB3A7F60714}.Release|x64.Build.0 = Release|Any CPU
+		{85B61DB9-52DD-413E-BD1D-DEB3A7F60714}.Release|x86.ActiveCfg = Release|Any CPU
+		{85B61DB9-52DD-413E-BD1D-DEB3A7F60714}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
